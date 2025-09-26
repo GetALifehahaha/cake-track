@@ -64,6 +64,12 @@ class Ingredient(models.Model):
     unit = models.CharField(choices=UNIT, max_length=15, default='g')
 
 
+class RecipeIngredient(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_ingredient')
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name='recipe_ingredient')
+    amount = models.IntegerField()
+
+
 class IngredientStorage(models.Model):
     ingredients = models.ForeignKey(
         Ingredient,
