@@ -77,7 +77,7 @@ class IngredientStorage(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredients'
+        related_name='ingredient_storage'
     )
     
     quantity = models.DecimalField(max_digits=10, decimal_places=2)

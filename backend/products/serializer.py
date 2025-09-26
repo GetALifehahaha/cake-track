@@ -4,13 +4,13 @@ from .models import Product, ProductStorage, Recipe, Ingredient, IngredientStora
 class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = ['id', 'name', 'prep_time', 'cook_time']
+        fields = ['id', 'name', 'instructions', 'prep_time', 'cook_time']
 
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['name', 'price', 'had_recipe', 'has_storage', 'recipe']
+        fields = ['id', 'name', 'price', 'has_recipe', 'has_storage', 'recipe']
         extra_kwargs = {'recipe': {'read_only': True}}
 
 
