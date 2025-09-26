@@ -74,7 +74,7 @@ class RecipeIngredient(models.Model):
 
 
 class IngredientStorage(models.Model):
-    ingredients = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         related_name='ingredients'
