@@ -21,6 +21,13 @@ class ProductStorageSerializer(serializers.ModelSerializer):
         extra_kwargs = {'product': {'read_only': True}}
 
 
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecipeIngredient
+        fields = ['id', 'recipe', 'ingredient', 'amount']
+        read_only_fields = ['recipe', 'ingredient']
+
+
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
