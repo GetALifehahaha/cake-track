@@ -6,7 +6,6 @@ const App = () => {
 		<>
 			<Routes>
 				<Route element={<Layout />}> {/* Change this into protected auth later */}
-
 					<Route path='/' element={<Home />} />
 				</Route>
 			</Routes>

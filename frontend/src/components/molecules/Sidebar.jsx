@@ -9,10 +9,10 @@ const Sidebar = () => {
 
     const [expanded, setExpanded] = useState(true);
 
-    const navStyle = 'flex flex-row cursor-pointer gap-8 px-4 py-2 rounded-sm hover:bg-main-dark items-center ';
+    const navStyle = 'flex flex-row cursor-pointer gap-8 px-4 py-2 rounded-sm hover:bg-main-dark items-center relative ';
     const navText = expanded ? 'flex ' : 'hidden ';
     const inactiveNavStyle = 'text-text ';
-    const activeNavStyle = 'text-accent hover:text-accent-dark ';
+    const activeNavStyle = 'text-accent hover:text-accent-dark before:content-[""] before:absolute before:w-4 before:h-full before:bg-accent before:right-[100%] before:rounded -sm  ';
 
     const listSidebar = SidebarConfig.map(({label, link, icon: Icon}) => 
         <NavLink 
