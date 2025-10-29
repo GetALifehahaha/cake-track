@@ -22,6 +22,9 @@ class Product(models.Model):
     has_recipe = models.BooleanField()
     has_storage = models.BooleanField()
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     recipe = models.OneToOneField(
         Recipe,
         blank=True,
@@ -71,10 +74,10 @@ class RecipeIngredient(models.Model):
 
 
 class IngredientStorage(models.Model):
-    ingredients = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredients'
+        related_name='ingredient_storage'
     )
     
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
