@@ -1,10 +1,22 @@
 @import 'tailwindcss';
 
+@font-face {
+    font-family: "Jakarta Sans";
+    src: url('./assets/fonts/PlusJakartaSans-VariableFont_wght.ttf') format('truetype');
+    font-variant: 100 900;
+    font-display: swap;
+}
+
+*{
+    font-family: "Jakarta Sans";
+}
+
 @theme {
   --color-main: #F9F9F9;
   --color-main-white: #FFFFFF;
   --color-main-dark: #D8D8D8;
-  --color-border: #D5D5D5;
+  --color-gray: #A9A9A9;
+  --color-gray-light: #C9C9C9;
   --color-dark: #030213;
   --color-dark-light: #D2D2D2;
   --color-accent: #B18053; /* also applicable for text accents */
@@ -13,15 +25,25 @@
   --color-accent-text: #A47551;
   --color-text: #000000;
   --color-text-light: #4A5565;
+  --color-border: #D5D5D5;
 
   /* Utilities */
   --color-red: #E7000B;
   --color-red-light: #FFC9C9;
   --color-red-dark: #82181A;
-
   --color-green: #00A63E;
   --color-green-light: #B9F8CF;
   --color-green-light-fill: #DCFCE7;
   --color-green-dark: #0D542B;
+}
 
+::-webkit-scrollbar {
+    width: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: var(--color-main-dark);
+    border-radius: 2rem;
+}
+::-webkit-scrollbar-thumb:hover {
+    cursor: pointer;
 }

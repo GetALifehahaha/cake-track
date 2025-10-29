@@ -1,3 +1,5 @@
 export {default as Sidebar} from './Sidebar'
 export {default as Searchbar} from './Searchbar'
 export {default as ProductCard} from './ProductCard'
+export {default as ProfileCard} from './ProfileCard'
+export {default as CheckoutProduct} from './CheckoutProduct'

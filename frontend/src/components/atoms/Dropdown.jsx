@@ -21,15 +21,15 @@ const Dropdown = ({defaultValue=null, selectionName="Option", selections=[{name:
     };
 
     return (
-        <div className='basis-1/6 relative'>
-            <div onClick={handleSetIsExpanded} className='p-3 flex justify-between items-center cursor-pointer bg-accent-mute rounded-md text-main shadow-sm'>
+        <div className='basis-1/6 relative z-10'>
+            <div onClick={handleSetIsExpanded} className='p-3 flex justify-between items-center cursor-pointer bg-accent-mute hover:bg-accent-dark rounded-md text-main shadow-sm'>
                 <h5>{selected}</h5>
 
                 <ChevronDown onClick={handleSetIsExpanded} className={`${(isExpanded) ? 'rotate-180' : ''} duration-200 ease-in `}/>
             </div>
 
             {isExpanded && 
-                <div className='flex flex-col gap-2 bg-main rounded-md absolute mt-2 w-full p-2 shadow-sm'>
+                <div className='flex flex-col gap-2 bg-main rounded-md absolute mt-2 w-full p-2 border-border border'>
                     <div className='cursor-pointer hover:bg-main-dark px-1 py-2 rounded-sm text-medium' onClick={() => handleSetSelected(selectionName, null)}>
                         <h5>{selectionName}</h5>
                     </div>
