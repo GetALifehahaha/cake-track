@@ -29,9 +29,9 @@ const Dropdown = ({defaultValue=null, selectionName="Option", selections=[{name:
             </div>
 
             {isExpanded && 
-                <div className='flex flex-col gap-2 bg-main rounded-md absolute mt-2 w-full p-2 border-border border'>
+                <div className='flex flex-col gap-2 bg-main-white rounded-md absolute mt-2 w-full p-2 border-border border'>
                     <div className='cursor-pointer hover:bg-main-dark px-1 py-2 rounded-sm text-medium' onClick={() => handleSetSelected(selectionName, null)}>
-                        <h5>{selectionName}</h5>
+                        <h5>All Products</h5>
                     </div>
                     {listSelections}
                 </div>

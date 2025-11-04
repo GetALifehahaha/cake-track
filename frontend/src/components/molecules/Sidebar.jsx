@@ -12,7 +12,7 @@ const Sidebar = () => {
     const navStyle = 'flex flex-row cursor-pointer gap-8 px-4 py-2 rounded-sm hover:bg-main-dark items-center relative font-medium ';
     const navText = expanded ? 'flex ' : 'hidden ';
     const inactiveNavStyle = 'text-text ';
-    const activeNavStyle = 'text-accent hover:text-accent-dark before:content-[""] before:absolute before:w-4 before:h-full before:bg-accent before:right-[100%] before:rounded -sm  ';
+    const activeNavStyle = 'text-accent hover:text-accent-dark before:content-[""] before:absolute before:w-4 before:h-full before:bg-accent before:right-[100%] before:rounded-sm  ';
 
     const listSidebar = SidebarConfig.map(({label, link, icon: Icon}) => 
         <NavLink 
@@ -29,7 +29,7 @@ const Sidebar = () => {
 
     return (
         <div className='bg-main-white border-border border-r-2 px-2 py-2 w-fit flex flex-col'>
-            <button onClick={handleSetExpanded} className={navStyle + 'font-extrabold text-lg'}>
+            <button onClick={handleSetExpanded} className={navStyle + 'font-extrabold text-md'}>
                 <Menu size={28}/> 
                 <div className={navText}>
                     <h5 className='text-accent'>Cake</h5>
