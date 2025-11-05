@@ -2,7 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import { Button, Label } from '../atoms';
 import { CheckoutProduct } from '../molecules';
 
-const CheckoutSection = ({checkoutProducts, onRemove}) => {
+const CheckoutSection = ({checkoutProducts, onRemove, onProceedToCheckout}) => {
 
     const [activeButton, setActiveButton] = useState("left");
     const [grossTotal, setGrossTotal] = useState(0);
@@ -31,6 +31,14 @@ const CheckoutSection = ({checkoutProducts, onRemove}) => {
     const handleSetActiveButton = (direction) => setActiveButton(direction);
 
     const handleRemoveAllProducts = () => onRemove(null, true);
+
+    const handleOnProceedToCheckout = () => {
+        if (!netTotal) {
+            return;
+        }
+
+        onProceedToCheckout(netTotal);
+    }
     
     return (
         <div className='w-full h-full bg-main-white rounded-4xl shadow-md shadow-black/25 flex flex-col'>
@@ -67,7 +75,7 @@ const CheckoutSection = ({checkoutProducts, onRemove}) => {
                     <Label variant='small' text='Total'/>
                     <h5 className='text-text font-semibold text-sm'>₱ {Number(netTotal || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                 </div>
-                <Button variant='main' text='Proceed'/>
+                <Button variant='main' text='Proceed' onClick={handleOnProceedToCheckout}/>
             </div>
         </div>
     )

@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import { Dropdown, Button } from '../components/atoms'
 import {Searchbar, ProfileCard} from '../components/molecules'
-import {ProductsGrid, CheckoutSection} from '../components/organisms/'
+import {ProductsGrid, CheckoutSection, PaymentModal} from '../components/organisms/'
 import { Plus } from 'lucide-react'
 import userImage from '../assets/image/user_image.jpg'
 import DrinksData from '../data/DrinksData'
@@ -16,6 +16,8 @@ const Home = () => {
 
     const [searchText, setSearchText] = useState();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
+    const [netTotal, setNetTotal] = useState(0);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     const productSelection = [
         {name: "Drinks", value: "drinks"},
@@ -40,6 +42,16 @@ const Home = () => {
         })
     }
 
+    const proceedToCheckout = (value) => {
+        setNetTotal(value);
+
+        setShowPaymentModal(true);
+    }
+
+    const completePayment = (value) => {
+        setShowPaymentModal(false);
+    }
+
     return (
         <div className='w-full flex flex-row px-6 py-4 gap-4'>
             {/* Middle */}
@@ -56,8 +68,13 @@ const Home = () => {
             {/* Current Order */}
             <div className='basis-1/4 flex flex-col gap-4'>
                 <ProfileCard user={user}/>
-                <CheckoutSection checkoutProducts={checkoutProducts} onRemove={handleToggleCheckoutProduct}/>
+                <CheckoutSection checkoutProducts={checkoutProducts} onRemove={handleToggleCheckoutProduct} onProceedToCheckout={proceedToCheckout}/>
             </div>
+
+            {/* Modals */}
+            {showPaymentModal &&
+                <PaymentModal totalPrice={netTotal} onConfirm={completePayment}/>
+            }
         </div>
     )
 }
