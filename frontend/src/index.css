@@ -15,26 +15,34 @@
   --color-main: #F9F9F9;
   --color-main-white: #FFFFFF;
   --color-main-dark: #D8D8D8;
-  --color-gray: #A9A9A9;
+
   --color-gray-light: #C9C9C9;
+  --color-gray: #A9A9A9;
+  --color-gray-dark: #818089;
+
   --color-dark: #030213;
   --color-dark-light: #D2D2D2;
+
   --color-accent: #B18053; /* also applicable for text accents */
   --color-accent-dark: #53311F; 
   --color-accent-mute: #B9A395;
   --color-accent-text: #A47551;
+
   --color-text: #000000;
   --color-text-light: #4A5565;
+  
   --color-border: #D5D5D5;
 
   /* Utilities */
-  --color-red: #E7000B;
-  --color-red-light: #FFC9C9;
-  --color-red-dark: #82181A;
-  --color-green: #00A63E;
-  --color-green-light: #B9F8CF;
-  --color-green-light-fill: #DCFCE7;
-  --color-green-dark: #0D542B;
+  --color-error: #E7000B;
+  --color-error-border: #FFC9C9;
+  --color-error-fill: #FEF2F2;
+  --color-error-text: #82181A;
+
+  --color-success: #00A63E;
+  --color-success-border: #B9F8CF;
+  --color-success-fill: #F0FDF4;
+  --color-success-text: #0D542B;
 }
 
 ::-webkit-scrollbar {
