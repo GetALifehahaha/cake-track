@@ -14,7 +14,7 @@ const ProductCard = ({product={name: '', price: 0.00, imagePath: null}, onToggle
                 <button className='text-text/50 font-medium px-4 text-sm rounded-sm hover:bg-main-dark cursor-pointer w-full text-left '>Edit</button>
             </div>
             }
-            <div onClick={handleToggleClick} className='cursor-pointer bg-main-white flex flex-col gap-4 px-2 py-4 rounded-4xl shadow-md shadow-black/15 hover:shadow-black/25'>
+            <div onClick={handleToggleClick} className='cursor-pointer bg-main-white flex flex-col gap-4 px-2 py-4 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25'>
                 {product.imagePath && 
                     <img className='object-contain aspect-square h-40' src={product.imagePath}/>
                 }

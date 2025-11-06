@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import { Dropdown, Button } from '../components/atoms'
 import {Searchbar, ProfileCard} from '../components/molecules'
 import {ProductsGrid, CheckoutSection, PaymentModal, AddProductModal} from '../components/organisms/'
@@ -8,11 +8,10 @@ import DrinksData from '../data/DrinksData'
 const Home = () => {
     // use auth context ot get the user
 
-    const [searchText, setSearchText] = useState();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [netTotal, setNetTotal] = useState(0);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [showAddProductModal, setShowAddProductModal] = useState(true);
+    const [showAddProductModal, setShowAddProductModal] = useState(false);
 
     const productSelection = [
         {name: "Drinks", value: "drinks"},
@@ -20,9 +19,6 @@ const Home = () => {
         {name: "Cupcakes", value: "cupcakes"},
     ]
 
-    const handleSetSearchText = (value) => setSearchText(value);
-
-    const logSearchText = () => console.log(searchText);
 
     const handleToggleCheckoutProduct = (product, removeAll) => {
         if (removeAll) {setCheckoutProducts([]); return;}
@@ -33,8 +29,16 @@ const Home = () => {
                 return prod.filter(p => p.id != product.id)
             }
 
-            return [...prod, product]
+            return [...prod, {...product, amount: 1}];
         })
+    }
+
+    const handleChangeAmount = (id, value) => {
+        setCheckoutProducts(cp => 
+            cp.map(p =>
+                p.id === id ? { ...p, amount: value } : p
+            )
+        )
     }
 
     const proceedToCheckout = (value) => {
@@ -44,6 +48,7 @@ const Home = () => {
     }
 
     const completePayment = (value) => {
+        if (value) handleToggleCheckoutProduct(null, true);
         setShowPaymentModal(false);
     }
 
@@ -67,7 +72,7 @@ const Home = () => {
 
             {/* Current Order */}
             <div className='basis-1/4 flex flex-col gap-4'>
-                <CheckoutSection checkoutProducts={checkoutProducts} onRemove={handleToggleCheckoutProduct} onProceedToCheckout={proceedToCheckout}/>
+                <CheckoutSection checkoutProducts={checkoutProducts} onRemove={handleToggleCheckoutProduct} onProceedToCheckout={proceedToCheckout} onAdjustAmount={handleChangeAmount}/>
             </div>
 
             {/* Modals */}

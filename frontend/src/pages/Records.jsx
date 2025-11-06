@@ -9,9 +9,6 @@ const Records = () => {
 
     const tableContent = [
         {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', total: 'P200',},
-        {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', total: 'P200',},
-        {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', total: 'P200',},
-        {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', total: 'P200',},
     ];
 
     return (

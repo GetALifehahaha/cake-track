@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Label, Title } from '../atoms';
 import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../molecules';
 import { X } from 'lucide-react';
@@ -40,7 +40,9 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
                 selectAmounts.push({value, selected});
             })
 
+
             return selectAmounts;
+
         })
     }
 
@@ -49,14 +51,16 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
         setReceivedPayment(e.target.value);
         handleRenderSelectAmount(0);
         setIsExact(true);
+    }
 
-        if (e.target.value >= totalPrice) {
-            setModalFeedbackContent({type: "success", label: "Change Due", details: '₱' + Number(e.target.value - totalPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})})
+    useMemo(() => {
+        if (receivedPayment >= totalPrice) {
+            setModalFeedbackContent({type: "success", label: "Change Due", details: '₱' + Number(receivedPayment - totalPrice).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})})
             setShowModalFeedback(true);
         } else {
             setShowModalFeedback(false);
         }
-    }
+    }, [receivedPayment])
 
     const handleToggleExact = () => {
         setIsExact(!isExact);

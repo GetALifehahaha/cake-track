@@ -42,7 +42,7 @@ const Sidebar = () => {
             </div>
 
             <NavLink
-            to={'/logout'}
+            to={'/login'}
             className={navStyle + inactiveNavStyle + 'mt-auto'}
             >
                 <LogOut /> <h5 className={navText}>LOG OUT</h5>

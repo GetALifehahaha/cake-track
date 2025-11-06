@@ -2,7 +2,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import { Button, Label } from '../atoms';
 import { CheckoutProduct } from '../molecules';
 
-const CheckoutSection = ({checkoutProducts, onRemove, onProceedToCheckout}) => {
+const CheckoutSection = ({checkoutProducts, onRemove, onProceedToCheckout, onAdjustAmount}) => {
 
     const [activeButton, setActiveButton] = useState("left");
     const [grossTotal, setGrossTotal] = useState(0);
@@ -12,21 +12,15 @@ const CheckoutSection = ({checkoutProducts, onRemove, onProceedToCheckout}) => {
     useMemo(() => {
         let price = 0;
         checkoutProducts.forEach(product => {
-            price += product.price;
+            price += product.price * product.amount;
         });
+
         setGrossTotal(price);
     }, [checkoutProducts]);
 
     useMemo(() => {
         setNetTotal(grossTotal - grossTotal * discount);
     }, [grossTotal]);
-
-    const listCheckoutProducts = checkoutProducts.map((product) => 
-        <CheckoutProduct 
-        key={product.id} 
-        product={product} 
-        onChangeAmount={() => handleSetTotal(amount)}
-        onToggle={() => onRemove(product, false)}/>)
 
     const handleSetActiveButton = (direction) => setActiveButton(direction);
 
@@ -39,6 +33,18 @@ const CheckoutSection = ({checkoutProducts, onRemove, onProceedToCheckout}) => {
 
         onProceedToCheckout(netTotal);
     }
+
+    const handleSetTotal = (id, value) => {
+        onAdjustAmount(id, value);
+    }
+
+    const listCheckoutProducts = checkoutProducts.map((product) => 
+        <CheckoutProduct 
+        key={product.id} 
+        product={product} 
+        onChangeAmount={handleSetTotal}
+        onToggle={() => onRemove(product, false)}/>)
+
     
     return (
         <div className='w-full h-full bg-main-white rounded-4xl shadow-md shadow-black/25 flex flex-col'>
