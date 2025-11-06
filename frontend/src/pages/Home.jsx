@@ -1,18 +1,18 @@
 import React, {useState} from 'react'
 import { Dropdown, Button } from '../components/atoms'
 import {Searchbar, ProfileCard} from '../components/molecules'
-import {ProductsGrid, CheckoutSection, PaymentModal} from '../components/organisms/'
+import {ProductsGrid, CheckoutSection, PaymentModal, AddProductModal} from '../components/organisms/'
 import { Plus } from 'lucide-react'
 import DrinksData from '../data/DrinksData'
 
 const Home = () => {
     // use auth context ot get the user
 
-
     const [searchText, setSearchText] = useState();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [netTotal, setNetTotal] = useState(0);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showAddProductModal, setShowAddProductModal] = useState(true);
 
     const productSelection = [
         {name: "Drinks", value: "drinks"},
@@ -47,13 +47,19 @@ const Home = () => {
         setShowPaymentModal(false);
     }
 
+    const proceedToAddProduct = () => setShowAddProductModal(true);
+
+    const addProduct = (value) => {
+        setShowAddProductModal(false);
+    }
+
     return (
         <div className='flex gap-4 flex-1'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row justify-between'>
                     <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
-                    <Button text='Add Item' icon={Plus} onClick={logSearchText}/>
+                    <Button text='Add Item' icon={Plus} onClick={proceedToAddProduct}/>
                 </div>
 
                 <ProductsGrid products={DrinksData} checkoutProducts={checkoutProducts} onToggleCheckoutProduct={handleToggleCheckoutProduct} />
@@ -67,6 +73,10 @@ const Home = () => {
             {/* Modals */}
             {showPaymentModal &&
                 <PaymentModal totalPrice={netTotal} onConfirm={completePayment}/>
+            }
+
+            {showAddProductModal &&
+                <AddProductModal onConfirm={addProduct}/>
             }
         </div>
     )

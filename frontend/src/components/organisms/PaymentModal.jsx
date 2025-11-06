@@ -125,8 +125,6 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
                     <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => handleConfirmModal(false)}/>
                     <Button variant='modalBlock' size='modalSize' text='Complete Payment' onClick={() => handleConfirmModal(true)}/>
                 </div>
-                {/* PaymentModalSelectionCard */}
-                {/* PaymentModalInput */}
             </div>
         </div>
     )
