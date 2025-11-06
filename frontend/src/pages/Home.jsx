@@ -3,16 +3,11 @@ import { Dropdown, Button } from '../components/atoms'
 import {Searchbar, ProfileCard} from '../components/molecules'
 import {ProductsGrid, CheckoutSection, PaymentModal} from '../components/organisms/'
 import { Plus } from 'lucide-react'
-import userImage from '../assets/image/user_image.jpg'
 import DrinksData from '../data/DrinksData'
 
 const Home = () => {
     // use auth context ot get the user
-    const user = { //temporary
-        name: "Adrian Agraviador",
-        role: "Cashier",
-        imagePath: userImage
-    }
+
 
     const [searchText, setSearchText] = useState();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
@@ -53,10 +48,9 @@ const Home = () => {
     }
 
     return (
-        <div className='w-full flex flex-row px-6 py-4 gap-4'>
+        <div className='flex gap-4 flex-1'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
-                <Searchbar onChange={(value) => handleSetSearchText(value)}/>
                 <div className='flex flex-row justify-between'>
                     <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
                     <Button text='Add Item' icon={Plus} onClick={logSearchText}/>
@@ -67,7 +61,6 @@ const Home = () => {
 
             {/* Current Order */}
             <div className='basis-1/4 flex flex-col gap-4'>
-                <ProfileCard user={user}/>
                 <CheckoutSection checkoutProducts={checkoutProducts} onRemove={handleToggleCheckoutProduct} onProceedToCheckout={proceedToCheckout}/>
             </div>
 

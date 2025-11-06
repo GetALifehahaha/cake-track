@@ -1,14 +1,29 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
-import { Sidebar } from '../components/molecules'
-
+import { Sidebar, Searchbar, ProfileCard } from '../components/molecules'
+import userImage from '../assets/image/user_image.jpg'
 
 const Layout = () => {
+
+    const user = { //temporary
+        name: "Adrian Agraviador",
+        role: "Cashier",
+        imagePath: userImage
+    }
 
     return (
         <div className='w-screen h-screen bg-main flex flex-row'>
             <Sidebar />
-            <Outlet />
+
+            <div className='w-full flex flex-col px-6 py-4 gap-8'>
+                <div className='flex justify-between'>
+                    <span className='basis-1/2'>
+                        <Searchbar onChange={(value) => handleSetSearchText(value)}/>
+                    </span>
+                    <ProfileCard user={user}/>
+                </div>
+                <Outlet />
+            </div>
         </div>
     )
 }
