@@ -1,5 +1,5 @@
 import {Routes, Route} from 'react-router-dom'
-import { Layout, Home } from './pages'
+import { Layout, Home, Records, NotFound } from './pages'
 
 const App = () => {
 	return (
@@ -7,7 +7,9 @@ const App = () => {
 			<Routes>
 				<Route element={<Layout />}> {/* Change this into protected auth later */}
 					<Route path='/' element={<Home />} />
+					<Route path='/records' element={<Records />} />
 				</Route>
+				<Route path='*' element={<NotFound />} />
 			</Routes>
 		</>
 	)

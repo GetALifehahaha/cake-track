@@ -8,7 +8,6 @@ const Layout = () => {
     return (
         <div className='w-screen h-screen bg-main flex flex-row'>
             <Sidebar />
-            
             <Outlet />
         </div>
     )

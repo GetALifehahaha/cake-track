@@ -12,6 +12,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
 
     const [quickSelectAmounts, setQuickSelectAmounts] = useState([
         {value: 50, selected: false},
+        {value: 100, selected: false},
         {value: 200, selected: false},
         {value: 500, selected: false},
         {value: 1000, selected: false},
@@ -73,6 +74,8 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
 
     const handleConfirmModal = (value) => {
 
+        if (!value) onConfirm(false);
+
         if (receivedPayment < totalPrice) {
             setModalFeedbackContent({type: "error", label: "Insufficient", details: 'Short ₱' + Number(totalPrice - receivedPayment).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})});
             setShowModalFeedback(true);
@@ -88,7 +91,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
     )
 
     return (
-        <div className='absolute top-0 left-0 w-full h-screen flex justify-center items-center'>
+        <div className='absolute top-0 left-0 w-full h-screen flex justify-center items-center z-1000'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
             {/* Header */}
                 <div className='flex justify-between items-center w-full'>
@@ -111,7 +114,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
 
                 <div className='flex flex-col gap-2'>
                     <Label variant='small' text='Or Enter Amount'/>
-                    <input type='number' value={receivedPayment} onChange={(e) => handleSetReceivedPayment(e)} className={`focus:outline-none p-4 rounded-lg border-main-dark/50 border  ${(isExact) ? '' : 'bg-main-dark/50'}`}/>
+                    <input type='number' min={0} maxLength={11} value={receivedPayment} onChange={(e) => handleSetReceivedPayment(e)} className={`focus:outline-none p-4 rounded-lg border-main-dark/50 border  ${(isExact) ? '' : 'bg-main-dark/50'}`}/>
                 </div>
 
                 { showModalFeedback &&
