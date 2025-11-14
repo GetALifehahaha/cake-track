@@ -87,7 +87,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
             return;
         }
 
-        onConfirm(value);
+        onConfirm(receivedPayment);
     }
 
     const listQuickSelectAmounts = quickSelectAmounts.map(({value, selected}, index) => 
@@ -95,7 +95,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
     )
 
     return (
-        <div className='absolute top-0 left-0 w-full h-screen flex justify-center items-center z-1000'>
+        <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-1000'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
             {/* Header */}
                 <div className='flex justify-between items-center w-full'>

@@ -1,20 +1,26 @@
-import React, {useEffect, useState, useMemo} from 'react'
+import React, { useState, useMemo } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
-import { CheckoutProduct } from '../components/molecules'
-import {ProductsGrid, CheckoutSection, PaymentModal, AddProductModal} from '../components/organisms/'
-import { Plus } from 'lucide-react'
+import { CheckoutProduct, ProductCard } from '../components/molecules'
+import { PaymentModal, PaymentSuccessModal, } from '../components/organisms/'
 import DrinksData from '../data/DrinksData'
 
 const Home = () => {
     // use auth context ot get the user
-
+    
     const [checkoutProducts, setCheckoutProducts] = useState([]);
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [grossTotal, setGrossTotal] = useState(0);
-    const [discount, setDiscount] = useState(0.50);
+    const [discount, setDiscount] = useState(0);
     const [netTotal, setNetTotal] = useState(0);
+    const [receivedPayment, setReceivedPayment] = useState(0);
     const [orderType, setOrderType] = useState("dine-in");
+
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
+    
+    const discountSelections = {
+        "Senior Citizen": .20,
+        "Valentines": .10,
+    }
 
     const productSelection = [
         {name: "Drinks", value: "drinks"},
@@ -23,8 +29,7 @@ const Home = () => {
     ]
 
 
-    const handleToggleCheckoutProduct = (product, removeAll) => {
-        if (removeAll) {setCheckoutProducts([]); return;}
+    const handleToggleCheckoutProduct = (product) => {
         setCheckoutProducts(cp => {
             let prod = [...cp];
 
@@ -37,19 +42,19 @@ const Home = () => {
     }
 
     const proceedToCheckout = () => {
+        if (!netTotal) return
         setShowPaymentModal(true);
     }
 
     const completePayment = (value) => {
-        if (value) handleToggleCheckoutProduct(null, true);
+        if (value) {
+            setReceivedPayment(value);
+            setShowPaymentSuccessModal(true);
+        }
         setShowPaymentModal(false);
     }
 
-    const proceedToAddProduct = () => setShowAddProductModal(true);
-
-    const addProduct = (value) => {
-        setShowAddProductModal(false);
-    }
+    // ------------------------- PRODUCTS FUNCTIONS -------------------------------------
 
     // ------------------------- CHECKOUT FUNCTIONS ------------------------------------
 
@@ -65,6 +70,7 @@ const Home = () => {
 
     useMemo(() => {
         setNetTotal(grossTotal - grossTotal * discount);
+        console.log(netTotal)
     }, [grossTotal])
 
     const handleSetOrderType = (value) => setOrderType(value);
@@ -75,18 +81,9 @@ const Home = () => {
         setCheckoutProducts(checkoutProducts => checkoutProducts.filter(product => product.id != id))
     }
 
-    // const handleOnProceedToCheckout = () => {
-    //     if (!netTotal) {
-    //         return;
-    //     }
-
-    //     onProceedToCheckout(netTotal);
-    // }
-
     const handleSetAmount = (id, value) => {
         setCheckoutProducts(prod => {
             let products = prod;
-            console.log("Before:", products)
             
             products = products.map(product => {
                 if (product.id == id) {
@@ -96,10 +93,14 @@ const Home = () => {
                 return product;
             })
             
-            console.log("After:", products)
             return products
 
         })
+    }
+
+    const handleTogglePaymentSuccessModal = () => {
+        handleRemoveAllProducts();
+        setShowPaymentSuccessModal(!showPaymentSuccessModal);
     }
     
     const listCheckoutProducts = checkoutProducts.map((product) => 
@@ -110,21 +111,34 @@ const Home = () => {
         onToggle={handleRemoveProductFromCheckout}/>
     )
 
+    const listProduct = DrinksData.map((product) => 
+        <ProductCard 
+        product={product} 
+        key={product.id} 
+        isSelected={checkoutProducts.some(p => p.id == product.id)}
+        onToggle={() => handleToggleCheckoutProduct(product)}/>
+    )
+
+    const listDiscounts = Object.entries(discountSelections).map(([key, value], index) => 
+        <option key={index} value={value}>{key}: {value*100}%</option>
+    )
+
     return (
         <div className='flex gap-4 flex-1'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row justify-between'>
                     <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
-                    <Button text='Add Item' icon={Plus} onClick={proceedToAddProduct}/>
                 </div>
 
-                <ProductsGrid products={DrinksData} checkoutProducts={checkoutProducts} onToggleCheckoutProduct={handleToggleCheckoutProduct} />
+            {/* Product Section */}
+                <div className='grid grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
+                    {listProduct}
+                </div>
             </div>
 
-            {/* Current Order */}
+            {/* Checkout Section */}
             <div className='basis-1/4 flex flex-col gap-4'>
-                {/* <CheckoutSection checkoutProducts={checkoutProducts} onRemove={handleToggleCheckoutProduct} onProceedToCheckout={proceedToCheckout} onAdjustAmount={handleChangeAmount}/> */}
                 <div className='w-full h-full bg-main-white rounded-4xl shadow-md shadow-black/25 flex flex-col'>
                     <div className='flex flex-row justify-between items-center text-text px-4 py-8'>
                         <div>
@@ -151,7 +165,10 @@ const Home = () => {
                             </div>
                             <div className='flex items-center justify-between'>
                                 <Label variant='small' text='Discount'/>
-                                <h5 className='w-20 p-0.5 rounded-lg border-2 border-border border-dotted text-text font-semibold text-sm text-right'>{`${discount*100} %`}</h5>
+                                <select className='w-fit p-0.5 rounded-lg border-2 border-border border-dotted text-text font-semibold text-sm text-right' onChange={(e) => setDiscount(e.target.value)}>
+                                    <option className='mr-2' value={0}>No discount</option>
+                                    {listDiscounts}
+                                </select>
                             </div>
                         </div>
                         <hr className='text-border'></hr>
@@ -169,8 +186,8 @@ const Home = () => {
                 <PaymentModal totalPrice={netTotal} onConfirm={completePayment}/>
             }
 
-            {showAddProductModal &&
-                <AddProductModal onConfirm={addProduct}/>
+            {showPaymentSuccessModal && 
+                <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} />
             }
         </div>
     )
