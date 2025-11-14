@@ -21,11 +21,11 @@ const Dropdown = ({defaultValue=null, selectionName="Option", selections=[{name:
     };
 
     return (
-        <div className='basis-1/6 relative z-10'>
+        <div className='w-fit relative z-10'>
             <div onClick={handleSetIsExpanded} className='p-3 flex justify-between items-center cursor-pointer bg-accent-mute hover:bg-accent-dark rounded-md text-main shadow-sm'>
                 <h5>{selected}</h5>
 
-                <ChevronDown onClick={handleSetIsExpanded} className={`${(isExpanded) ? 'rotate-180' : ''} duration-200 ease-in `}/>
+                <ChevronDown onClick={handleSetIsExpanded} className={`${(isExpanded) ? 'rotate-180' : ''} duration-200 ease-in ml-4 `}/>
             </div>
 
             {isExpanded && 
