@@ -43,6 +43,21 @@
   --color-success-border: #B9F8CF;
   --color-success-fill: #F0FDF4;
   --color-success-text: #0D542B;
+
+  --color-warning: #FFBB00;
+  --color-warning-border: #F6F2D1;
+  --color-warning-fill: #F6F2D1;
+  --color-warning-text: #FFBB00;
+
+  --color-none: #878787;
+  --color-none-border: #D7D7D7;
+  --color-none-fill: #D7D7D7;
+  --color-none-text: #878787;
+
+  --color-missing: #F0A044;
+  --color-missing-border: #F0DBCE;
+  --color-missing-fill: #F0DBCE;
+  --color-missing-text: #F0A044;
 }
 
 ::-webkit-scrollbar {

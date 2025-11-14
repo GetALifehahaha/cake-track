@@ -2,7 +2,7 @@ import React from 'react';
 import { Title } from '../components/atoms';
 import { ReceiptsTable } from '../components/organisms';
 
-const Records = () => {
+const Transactions = () => {
     
     // add backend later
     const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Total'];
@@ -21,4 +21,4 @@ const Records = () => {
     )
 }
 
-export default Records;
+export default Transactions;
