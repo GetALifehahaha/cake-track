@@ -12,8 +12,8 @@ const CheckoutProduct = ({product={id: 0, name: "Product", price: 0, amount: 0},
         if (method == "minus") {
             onChangeAmount(product.id, product.amount-1);
             
-            if (amountState-1==0) {
-                onToggle(product);
+            if (product.amount-1==0) {
+                onToggle(product.id);
             }
         } else if (method == "add") {
             onChangeAmount(product.id, product.amount+1);

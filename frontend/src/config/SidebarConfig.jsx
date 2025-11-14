@@ -1,7 +1,8 @@
-import { Monitor, File, Box, Clipboard, ClipboardPenLine, BookmarkCheck, User2Icon } from "lucide-react"
+import { Monitor, File, Box, Clipboard, ClipboardPenLine, BookmarkCheck, User2Icon, Coffee } from "lucide-react"
 export const SidebarConfig = [
     {label: "POS", link:'/', icon: Monitor},
-    {label: "RECORDS", link:'/records', icon: File},
+    {label: "PRODUCTS", link:'/products', icon: Coffee},
+    {label: "TRANSACTIONS", link:'/records', icon: File},
     {label: "INVENTORY", link:'/inventory', icon: Box},
     {label: "QUEUE", link:'/queue', icon: Clipboard},
     {label: "RECIPE", link:'/recipe',  icon: ClipboardPenLine},
