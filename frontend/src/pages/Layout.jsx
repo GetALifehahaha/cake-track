@@ -16,17 +16,17 @@ const Layout = () => {
     const handleSetSearchText = (value) => setSearchText(value);
 
     return (
-        <div className='w-screen h-screen bg-main flex flex-row'>
+        <div className='w-full min-h-screen bg-main flex'>
             <Sidebar />
 
-            <div className='w-full flex flex-col px-6 py-4 gap-8'>
+            <div className='flex-1 flex flex-col px-6 py-4 gap-8'>
                 <div className='flex justify-between'>
                     <span className='basis-1/2'>
                         <Searchbar onChange={(value) => handleSetSearchText(value)}/>
                     </span>
                     <ProfileCard user={user}/>
                 </div>
-                <Outlet />
+                <Outlet className='overflow-y-auto' />
             </div>
         </div>
     )

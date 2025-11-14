@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
 import DrinksData from '../data/DrinksData'
 
 const Home = () => {
@@ -16,6 +16,7 @@ const Home = () => {
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
+    const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     
     const discountSelections = {
         "Senior Citizen": .20,
@@ -75,7 +76,21 @@ const Home = () => {
 
     const handleSetOrderType = (value) => setOrderType(value);
 
-    const handleRemoveAllProducts = () => setCheckoutProducts([]);
+    const removeAllProducts = () => {
+        setCheckoutProducts([]);
+    };
+
+    const confirmRemoveCheckoutItems = () => {
+        if (checkoutProducts.length > 0) setShowClearCheckoutModal(true);
+    }
+
+    const removeCheckoutItems = (value) => {
+        if (value) {
+            setCheckoutProducts([]);
+        }
+
+        setShowClearCheckoutModal(false);
+    }
 
     const handleRemoveProductFromCheckout = (id) => {
         setCheckoutProducts(checkoutProducts => checkoutProducts.filter(product => product.id != id))
@@ -99,9 +114,11 @@ const Home = () => {
     }
 
     const handleTogglePaymentSuccessModal = () => {
-        handleRemoveAllProducts();
+        removeAllProducts();
         setShowPaymentSuccessModal(!showPaymentSuccessModal);
     }
+
+    // ------------------------------ lISTS ------------------------------------------
     
     const listCheckoutProducts = checkoutProducts.map((product) => 
         <CheckoutProduct 
@@ -124,7 +141,7 @@ const Home = () => {
     )
 
     return (
-        <div className='flex gap-4 flex-1'>
+        <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row justify-between'>
@@ -145,7 +162,7 @@ const Home = () => {
                             <h5 className='font-bold text-xl'>Current Order</h5>
                             <h3 className='font-base'>#1337</h3> {/* Dummy Data:*/}
                         </div>
-                            <Button variant='outline' text='Clear' onClick={handleRemoveAllProducts}/>
+                            <Button variant='outline' text='Clear' onClick={confirmRemoveCheckoutItems}/>
                         </div>
 
                     <div className='flex flex-row gap-2 px-4'>
@@ -188,6 +205,10 @@ const Home = () => {
 
             {showPaymentSuccessModal && 
                 <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} />
+            }
+
+            {showShowClearCheckoutModal && 
+                <ClearCheckoutModal onConfirm={removeCheckoutItems} />
             }
         </div>
     )
