@@ -44,7 +44,7 @@ const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon,
     }
 
     return (
-        <div className={`bg-main-white p-6 border ${borderVariants[variant]} rounded-lg flex flex-row gap-8 items-center relative
+        <div className={`bg-main-white p-6 border ${borderVariants[variant]} rounded-lg flex flex-1 flex-row gap-8 items-center relative
         before:content-[""] before:w-1 before:h-full before:left-0 before:top-0 before:-translate-x-full before:rounded-l-full ${beforeBgVariants[variant]} before:absolute
         `}>
             <div className={`p-3 rounded-md h-fit ${softBgVariants[variant]}`}>

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { InventoryDashboardCard } from '../components/molecules';
 import { Button, Title } from '../components/atoms';
+import { InventoryDashboardCard } from '../components/molecules';
+import { InventoryAddItem } from '../components/organisms';
 import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, CircleQuestionMark, Ellipsis, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Inventory = () => {
 
     const [pageNum, setPageNum] = useState(1);
+
+    const [showAddItemModal, setShowAddItemModal] = useState(true);
 
     const handleSetPageNum = (direction) => {
         if (direction == "prev") {
@@ -17,6 +20,10 @@ const Inventory = () => {
         } else if (direction == "next") {
             setPageNum(p => p+1)
         }
+    }
+
+    const handleShowAddItemModal = (value) => {
+        setShowAddItemModal(!showAddItemModal)
     }
 
     const dummyData = [
@@ -36,7 +43,7 @@ const Inventory = () => {
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
-            <div className='h-fit w-full flex justify-between'>
+            <div className='h-fit w-full flex gap-4'>
                 <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success'/>
                 <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error'/>
                 <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning'/>
@@ -50,12 +57,12 @@ const Inventory = () => {
                     <Title variant='block' text='Inventory Overview'/>
 
                     <div className='flex flex-row items-center gap-2'>
-                        <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={() => alert("Add button clicked")} />
+                        <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} />
                     </div>
                 </div>
                 
                 {/* Table */}
-                <div className='mt-2 flex flex-col'>
+                <div className='mt-2 flex flex-col min-h-120'>
                     <div className='p-2 bg-accent-mute rounded-lg flex flex-row items-center text-white text-sm text-center'>
                         <h5 className='basis-1/6'>Item Name</h5>
                         <h5 className='basis-1/6'>Amount</h5>
@@ -67,8 +74,9 @@ const Inventory = () => {
                     
                     {listDummyData}
 
-                    <div className='flex flex-row items-center gap-2 mt-4 mx-auto'>
-                        <button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark'>
+                    {/* Pagination */}
+                    <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
+                        <button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
                             <ChevronLeft size={18}/>
                         </button>
                         <span className='rounded-sm bg-main-dark aspect-square w-6 flex justify-center items-center'>
@@ -76,12 +84,19 @@ const Inventory = () => {
                                 {pageNum}
                             </h5>
                         </span>
-                        <button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark'>
+                        <button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
                             <ChevronRight size={18}/>
                         </button>
                     </div>
+
                 </div>
             </div>
+
+            {/* Modals */}
+
+            {showAddItemModal && 
+                <InventoryAddItem onConfirm={handleShowAddItemModal} />
+            }
         </div>
     )
 }

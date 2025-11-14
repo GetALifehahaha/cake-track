@@ -3,3 +3,5 @@ export {default as ReceiptsTable} from './ReceiptsTable'
 export {default as AddProductModal} from './AddProductModal'
 export {default as PaymentSuccessModal} from './PaymentSuccessModal'
 export {default as ClearCheckoutModal} from './ClearCheckoutModal'
+export {default as InventoryAddItem} from './InventoryAddItem'
+
