@@ -3,8 +3,6 @@ import { SidebarConfig } from '../../config/SidebarConfig'
 import { NavLink } from 'react-router-dom'
 import { Menu, LogOut } from 'lucide-react'
 
-// {label: "LOG OUT", link:'/logout', icon: LogOut},
-
 const Sidebar = () => {
 
     const [expanded, setExpanded] = useState(true);

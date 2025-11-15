@@ -5,5 +5,7 @@ export {default as NotFound} from './NotFound'
 export {default as Inventory} from './Inventory'
 export {default as Products} from './Products'
 export {default as Login} from './Login'
+
 export {default as QueueLayout} from './Queue/QueueLayout'
 export {default as QueueOverview} from './Queue/QueueOverview'
+export {default as QueuePending} from './Queue/QueuePending'
