@@ -8,7 +8,7 @@ const Inventory = () => {
 
     const [pageNum, setPageNum] = useState(1);
 
-    const [showAddItemModal, setShowAddItemModal] = useState(true);
+    const [showAddItemModal, setShowAddItemModal] = useState(false);
 
     const handleSetPageNum = (direction) => {
         if (direction == "prev") {
@@ -48,7 +48,6 @@ const Inventory = () => {
                 <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error'/>
                 <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning'/>
                 <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none'/>
-                <InventoryDashboardCard title='MISSING' subtitle='LOST' icon={CircleQuestionMark} variant='missing'/>
             </div>
             
             <div className='border-accent-mute border rounded-lg p-4'>

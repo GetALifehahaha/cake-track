@@ -21,7 +21,7 @@ const Dropdown = ({defaultValue=null, selectionName="Option", selections=[{name:
     };
 
     return (
-        <div className='w-fit relative z-10'>
+        <div className='min-w-60 relative z-10'>
             <div onClick={handleSetIsExpanded} className='p-3 flex justify-between items-center cursor-pointer bg-accent-mute hover:bg-accent-dark rounded-md text-main shadow-sm'>
                 <h5>{selected}</h5>
 

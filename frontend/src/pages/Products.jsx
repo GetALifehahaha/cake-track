@@ -3,10 +3,26 @@ import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings } from 'lucide-react';
 import DrinksData from '../data/DrinksData'
+import AddProductModal from '../components/organisms/AddProductModal';
 
 const Products = () => {
 
     const [products, setProducts] = useState(DrinksData); 
+
+    const [showAddProductModal, setShowAddProductModal] = useState(false);
+
+    const handleShowAddProductModal = () => {
+        setShowAddProductModal(!showAddProductModal);
+    }
+
+    const addProduct = (value) => {
+        if (value) {
+            
+        }
+
+
+        handleShowAddProductModal();
+    }
 
     const productSelection = [
         {name: "Drinks", value: "drinks"},
@@ -23,18 +39,24 @@ const Products = () => {
         <div className='flex flex-col gap-8'>
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center gap-4'>
-                    <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
+                    <span className='basis-1/2 '>
+                        <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
+                    </span>
                     <Button variant='block2' text='Archives' icon={Archive} />
                 </div>
                 <div className='flex items-center gap-4'>
                     <Button variant='block2' text='Manage Categories' icon={Settings} />
-                    <Button variant='block' text='Add Item' icon={Plus} />
+                    <Button variant='block' text='Add Item' icon={Plus} onClick={handleShowAddProductModal} />
                 </div>
             </div>
 
             <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
                 {listProducts}
             </div>
+
+            {showAddProductModal &&
+            <AddProductModal onConfirm={addProduct} />
+            }
         </div>
     )
 }

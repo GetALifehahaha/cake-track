@@ -43,7 +43,7 @@ const ClearCheckoutModal = ({onConfirm}) => {
                     <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
                 }
 
-                <div className='flex gap-4'>
+                <div className='flex gap-4 ml-auto'>
                     <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => onConfirm(false)}/>
                     <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode}/>
                 </div>
