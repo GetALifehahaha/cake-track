@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
-import { EllipsisVertical, ChevronLeft, ChevronRight } from 'lucide-react'
+import { EllipsisVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const QueuePending = () => {
+const QueueAccepted = () => {
 
 	const [pageNum, setPageNum] = useState(1);
-
+	
 	const handleSetPageNum = (direction) => {
 		if (direction == "prev") {
 			if (pageNum - 1 == 0) return;
@@ -31,36 +31,8 @@ const QueuePending = () => {
 				flavor: "Chocolate",
 				finish: "Frosting"
 			},
-			client: "Maria Antoniette Clare Gurain"
-		},
-		{
-			id: 1426,
-			cake: {
-				name: "Birthday Cake",
-				amount: 1,
-				flavor: "Chocolate",
-				filling: "Custard",
-				shape: "Round", 
-				inscription: "On-Cake"
-			},
-			cupcake: {
-				amount: 12,
-				flavor: "Chocolate",
-				finish: "Frosting"
-			},
-			client: "Maria Antoniette Clare Gurain"
-		},
-		{
-			id: 1427,
-			cake: {
-				name: "Birthday Cake",
-				amount: 1,
-				flavor: "Chocolate",
-				filling: "Custard",
-				shape: "Round", 
-				inscription: "On-Cake"
-			},
-			client: "Maria Antoniette Clare Gurain"
+			client: "Maria Antoniette Clare Gurain",
+			due_date: "October 20, 2025"
 		},
 	]
 
@@ -71,6 +43,10 @@ const QueuePending = () => {
 				<EllipsisVertical size={16} />
 			</div>
 			<h5 className='text-accent-text text-xs'>{cake.client}</h5>
+			<span className='flex items-center gap-1'>
+				<h5 className='text-accent-text text-xs'>Due:</h5>
+				<h5 className='text-error text-xs'>{cake.due_date}</h5>
+			</span>
 
 			{/* Cake Details */}
 			<div className='flex mt-4'>
@@ -103,6 +79,7 @@ const QueuePending = () => {
 		</div>
 	)
 
+
 	return (
 		<div className='flex flex-col min-h-140'>
 			<div className='grid grid-cols-5 gap-4'>
@@ -126,4 +103,4 @@ const QueuePending = () => {
 	)
 }
 
-export default QueuePending
+export default QueueAccepted

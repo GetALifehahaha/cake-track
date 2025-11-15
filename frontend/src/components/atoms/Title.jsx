@@ -6,7 +6,8 @@ const Title = ({variant="page", text="Text"}) => {
         modal: 'text-md font-bold text-text',
         page: 'text-xl font-semibold text-accent-text',
         block: 'text-md font-semibold text-accent-text',
-        form: 'text-4xl font-bold text-text'
+        form: 'text-4xl font-bold text-text',
+        table: 'font-bold text-text text-lg',
         
     }
 
