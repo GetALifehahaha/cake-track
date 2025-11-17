@@ -5,10 +5,11 @@ import { ReceiptsTable } from '../components/organisms';
 const Transactions = () => {
     
     // add backend later
-    const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Total'];
+    const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Status', 'Total'];
 
     const tableContent = [
-        {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', total: 'P200',},
+        {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', status: 'Success', total: 'P200',},
+        {time: '11: 00 AM', id: '1556', cashier: 'Mary F.', status: 'Voided', total: 'P200',},
     ];
 
     return (

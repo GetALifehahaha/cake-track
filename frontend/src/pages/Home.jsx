@@ -57,13 +57,19 @@ const Home = () => {
         setShowPaymentModal(false);
     }
 
-    console.log(discount)
-
     // ------------------------- PRODUCTS FUNCTIONS -------------------------------------
 
     const handleSetDiscount = (value) => {
         setDiscount(value)
     }
+
+    const handleSetFilter = (value) => {
+        setFilter(filter => {
+            if (filter == value) return null;
+
+            return value
+        })
+    };
 
     // ------------------------- CHECKOUT FUNCTIONS ------------------------------------
 
@@ -147,8 +153,9 @@ const Home = () => {
         <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
-                <div className='flex flex-row justify-between'>
-                    <Dropdown selection="Filter Product" options={productSelection}/>
+                <div className='flex flex-row gap-1 items-center'>
+                    <Dropdown value={filter} selection="Filter Product" size='regular' options={productSelection} onSelect={handleSetFilter}/>
+                    {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
                 </div>
 
             {/* Product Section */}

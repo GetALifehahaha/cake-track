@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
-import { Archive, Plus, Settings } from 'lucide-react';
+import { Archive, Plus, Settings, Minus } from 'lucide-react';
 import DrinksData from '../data/DrinksData'
-import AddProductModal from '../components/organisms/AddProductModal';
+import {AddProductModal, ArchivedModal} from '../components/organisms';
 
 const Products = () => {
 
     const [products, setProducts] = useState(DrinksData); 
+    const [filter, setFilter] = useState(null);
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
+    const [showArchivedModal, setShowArchivedModal] = useState(false);
 
     const handleShowAddProductModal = () => {
         setShowAddProductModal(!showAddProductModal);
@@ -19,9 +21,11 @@ const Products = () => {
         if (value) {
             
         }
-
-
         handleShowAddProductModal();
+    }
+
+    const handleSetFilter = (value) => {
+        setFilter(value);
     }
 
     const productSelection = {
@@ -38,11 +42,11 @@ const Products = () => {
     return (
         <div className='flex flex-col gap-8'>
             <div className='flex flex-row justify-between'>
-                <div className='flex items-center gap-4'>
-                    <span className='basis-1/2 '>
-                        <Dropdown selection='Filter Product' options={productSelection} size='regular' />
-                    </span>
-                    <Button variant='block2' text='Archives' icon={Archive} />
+                <div className='flex items-center'>
+                    <Dropdown value={filter} selection='Filter Product' onSelect={setFilter} options={productSelection} size='regular' />
+                    {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
+                    <div className='mx-4' />
+                    <Button variant='block2' text='Archives' icon={Archive} onClick={() => setShowArchivedModal(true)} />
                 </div>
                 <div className='flex items-center gap-4'>
                     <Button variant='block2' text='Manage Categories' icon={Settings} />
@@ -56,6 +60,10 @@ const Products = () => {
 
             {showAddProductModal &&
             <AddProductModal onConfirm={addProduct} />
+            }
+
+            {showArchivedModal &&
+            <ArchivedModal onClose={setShowArchivedModal} />
             }
         </div>
     )

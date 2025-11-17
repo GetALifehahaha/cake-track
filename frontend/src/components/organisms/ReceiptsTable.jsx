@@ -19,6 +19,7 @@ const ReceiptsTable = memo(({headers=['id', 'name', 'number'], content=[{}]}) =>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.time}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.id}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.cashier}</h5>
+            <h5 className={`${item.status == "Success" ? 'text-success' : 'text-error'} font-medium text-center py-0.5 ${basis}`}>{item.status}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.total}</h5>
             <Ellipsis className={`text-text ${basis} cursor-pointer`}/>
         </div>
