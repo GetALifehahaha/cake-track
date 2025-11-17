@@ -13,7 +13,7 @@ const OrderDetails = ({orderDetails, onClose}) => {
         : null
 
     return (
-        <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
+        <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[40vw] flex flex-col gap-10'>
                 <div className="flex justify-between items-start w-full">
                     <div>
@@ -27,14 +27,19 @@ const OrderDetails = ({orderDetails, onClose}) => {
                     </div>
                 </div>
 
+                <hr className='text-accent-dark w-4/5 mx-auto'/>
+
                 {/* Ingredients */}
                 {listIngredients &&
-                    <div className="">
-                        <Label text='Ingredient' variant='large' />
-                        <div className='px-6 py-1'>
-                            {listIngredients}
+                    <>
+                        <div className="">
+                            <Label text='Ingredient' variant='large' />
+                            <div className='px-6 py-1'>
+                                {listIngredients}
+                            </div>
                         </div>
-                    </div>
+                        <hr className='text-accent-dark/50 w-4/5 mx-auto'/>
+                    </>
                 }
 
                 {/* Cake Details */}
@@ -66,8 +71,10 @@ const OrderDetails = ({orderDetails, onClose}) => {
 
                 {/* Reference Images */}
                 <div className="">
-                    <Label text='Cake Details' variant='large' />
-                    <h5 className='text-text/25 font-medium'>NO IMAGE</h5>
+                    <Label text='Reference Details' variant='large' />
+                    <div className='min-h-20 flex justify-center items-center'>
+                        <h5 className='text-text/25 font-medium text-center'>NO IMAGE</h5>
+                    </div>
                 </div>
             </div>
         </div>
