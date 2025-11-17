@@ -103,7 +103,7 @@ const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
                     }
 
                     <div className='flex gap-4 mt-4 ml-auto'>
-                        <Button variant='modalOutline' size='modalSize' text='Delete' onClick={() => onDelete(recipe.id)}/>
+                        <Button variant='error' size='modalSize' text='Delete' onClick={() => onDelete(recipe.id)}/>
                         <Button variant='modalBlock' size='modalSize' text='Save' onClick={handleConfirm}/>
                     </div>
                 </div>

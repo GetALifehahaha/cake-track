@@ -10,4 +10,5 @@ export {default as AcceptedCard} from './AcceptedCard'
 export {default as OrderDetails} from './OrderDetails'
 export {default as EditRecipeModal} from './EditRecipeModal'
 export {default as AddRecipeModal} from './AddRecipeModal'
+export {default as TransactionDetails} from './TransactionDetails'
 
