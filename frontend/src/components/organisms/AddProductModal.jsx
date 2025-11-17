@@ -103,8 +103,7 @@ const AddProductModal = ({onConfirm}) => {
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Category' />
                             <div className='flex gap-2'>
-                                <Dropdown variant='modal' selection="e.g., Drinks" size='full' options={categoryOptions} onSelect={handleSetCategory} />
-
+                                <Dropdown variant='modal' value={category} selection="e.g., Drinks" size='full' options={categoryOptions} onSelect={handleSetCategory} />
                                 <Button variant='icon' text='' icon={Plus}/>
                             </div>
                         </div>

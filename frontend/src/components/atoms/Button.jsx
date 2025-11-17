@@ -15,7 +15,9 @@ const Button = ({variant="block", size="base",  text="Button", icon: Icon, onCli
         modalOutline: "font-medium border-border border rounded-lg px-4 py-2 text-text",
         modalBlock: "font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-text",
         form: 'w-full border border-accent-mute bg-accent-mute text-white rounded-2xl font-bold px-8 py-2 ',
-        icon: 'h-full border-main-dark rounded-md border aspect-square'
+        icon: 'h-full border-main-dark rounded-md border aspect-square',
+        success: 'bg-success text-white px-6 py-3 rounded-lg font-semibold',
+        error: 'bg-error text-white px-6 py-3 rounded-lg font-semibold',
 
     }
     

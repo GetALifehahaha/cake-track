@@ -1,21 +1,10 @@
 import React, { useState } from 'react'
 import { EllipsisVertical, ChevronLeft, ChevronRight } from 'lucide-react'
+import { QueueCard } from '@/components/organisms';
 
 const QueuePending = () => {
 
-	const [pageNum, setPageNum] = useState(1);
-
-	const handleSetPageNum = (direction) => {
-		if (direction == "prev") {
-			if (pageNum - 1 == 0) return;
-
-			setPageNum(pageNum - 1);
-		} else if (direction == "next") {
-			setPageNum(pageNum + 1);
-		}
-	}
-
-	const orderData = [
+	const orderDataDummy = [
 		{
 			id: 1425,
 			cake: {
@@ -64,43 +53,30 @@ const QueuePending = () => {
 		},
 	]
 
+	const [pageNum, setPageNum] = useState(1);
+	const [orderData, setOrderData] = useState(orderDataDummy)
+
+	const handleSetPageNum = (direction) => {
+		if (direction == "prev") {
+			if (pageNum - 1 == 0) return;
+
+			setPageNum(pageNum - 1);
+		} else if (direction == "next") {
+			setPageNum(pageNum + 1);
+		}
+	}
+
+	
+	const acceptOrder = (id) => {
+		setOrderData(order => {
+			let curr = order.filter(ord => ord.id != id)
+
+			return curr
+		})
+	}
+
 	const listOrder = orderData.map((cake, index) => 
-		<div key={index} className='rounded-lg border border-border p-6 bg-main-white'>
-			<div className='flex justify-between items-center'>
-				<h5 className='text-accent-text text-sm'>Order {cake.id}</h5>
-				<EllipsisVertical size={16} />
-			</div>
-			<h5 className='text-accent-text text-xs'>{cake.client}</h5>
-
-			{/* Cake Details */}
-			<div className='flex mt-4'>
-				<h5 className='basis-1/5 text-center font-bold text-md'>
-					{cake.cake.amount}x
-				</h5>
-				<div className='flex flex-col gap-0.5'>
-					<h5 className='font-bold text-md'>{cake.cake.name}</h5>
-					<h5 className='text-xs text-accent-text'>Flavor: {cake.cake.flavor}</h5>
-					<h5 className='text-xs text-accent-text'>Finish: {cake.cake.finish}</h5>
-					<h5 className='text-xs text-accent-text'>Filling: {cake.cake.filling}</h5>
-					<h5 className='text-xs text-accent-text'>Shape: {cake.cake.shape}</h5>
-					<h5 className='text-xs text-accent-text'>Inscription: {cake.cake.inscription}</h5>
-				</div>
-			</div>
-
-			{/* Cupcake if there's any */}
-			{cake.cupcake && 
-			<div className='flex mt-2 mb-4'>
-				<h5 className='basis-1/5 text-center font-bold text-md'>
-					{cake.cupcake.amount}x
-				</h5>
-				<div className='flex flex-col gap-0.5'>
-					<h5 className='font-bold text-md'>Cupcakes</h5>
-					<h5 className='text-xs text-accent-text'>Flavor: {cake.cupcake.flavor}</h5>
-					<h5 className='text-xs text-accent-text'>Finish: {cake.cupcake.finish}</h5>
-				</div>
-			</div>
-			}
-		</div>
+		<QueueCard order={cake} onAccept={acceptOrder} />
 	)
 
 	return (
