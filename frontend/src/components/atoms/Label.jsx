@@ -3,6 +3,7 @@ import React from 'react'
 const Label = ({text="Text", variant='medium'}) => {
 
     const labelVariants = {
+        large: 'text-text font-semibold text-lg',
         medium: 'text-text/50 font-semibold text-md',
         small: 'text-text/50 font-semibold text-sm',
         login: 'text-text font-extrabold text-md',

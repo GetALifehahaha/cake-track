@@ -2,22 +2,34 @@ import React, { useState } from 'react';
 import { Button } from '../atoms';
 import { Ellipsis } from 'lucide-react';
 
-const QueueCard = ({order, onAccept, onReject}) => {
+const QueueCard = ({order, onAccept, onReject, onShowDetails}) => {
 
     const [showOptions, setShowOptions] = useState(false);
 
     return (
-        <div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md'>
-            {showOptions &&
-                <div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'>
-                    <Button variant='success' text='ACCEPT' onClick={() => {onAccept(order.id); setShowOptions(false);}}/>
-                    <Button variant='error' text='DECLINE' onClick={() => {onReject(order.id); setShowOptions(false)}}/>
-                    <Button variant='outline' text='Close' onClick={() => setShowOptions(false)}/>
-                </div>
-            }
+        <div 
+			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer'
+			onClick={() => setShowOptions(!showOptions)}
+		>
+			{showOptions &&
+				<div 
+					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
+					onClick={(e) => {e.stopPropagation(); setShowOptions(!showOptions)}}
+				>
+					<Button variant='success' text='ACCEPT' onClick={() => {onAccept(order.id); setShowOptions(false);}}/>
+					<Button variant='error' text='DECLINE' onClick={() => {onReject(order.id); setShowOptions(false)}}/>
+				</div>
+			}
 			<div className='flex justify-between items-center'>
 				<h5 className='text-accent-text text-sm'>Order {order.id}</h5>
-                <Ellipsis onClick={() => setShowOptions(true)} className='cursor-pointer' size={16} />
+				<Ellipsis 
+					onClick={(e) => {
+						e.stopPropagation();
+						onShowDetails(order);
+					}} 
+					className='cursor-pointer' 
+					size={16} 
+				/>
 			</div>
 			<h5 className='text-accent-text text-xs'>{order.client}</h5>
 

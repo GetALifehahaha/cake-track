@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { EllipsisVertical, ChevronLeft, ChevronRight } from 'lucide-react'
-import { QueueCard } from '@/components/organisms';
+import { OrderDetails, QueueCard } from '../../components/organisms';
 
 const QueuePending = () => {
 
@@ -12,15 +12,27 @@ const QueuePending = () => {
 				amount: 1,
 				flavor: "Chocolate",
 				filling: "Custard",
+				finish: 'Frosting',
+				shape: 'Round',
+				tier: 1,
 				shape: "Round", 
-				inscription: "On-Cake"
+				inscription: "On-Cake",
+				inscription_message: 'HAPPY BIRTHDAY Melinda!'
 			},
 			cupcake: {
 				amount: 12,
 				flavor: "Chocolate",
 				finish: "Frosting"
 			},
-			client: "Maria Antoniette Clare Gurain"
+			client: "Maria Antoniette Clare Gurain",
+			contact: '09177828636',
+			ingredients: [
+				"2 cups of flour",
+				"2 cups sugar",
+				"2 eggs",
+				"Vanilla Extract",
+				"Salt",
+			]
 		},
 		{
 			id: 1426,
@@ -29,15 +41,21 @@ const QueuePending = () => {
 				amount: 1,
 				flavor: "Chocolate",
 				filling: "Custard",
+				finish: 'Frosting',
+				shape: 'Round',
+				tier: 1,
 				shape: "Round", 
-				inscription: "On-Cake"
+				inscription: "On-Cake",
+				inscription_message: 'HAPPY BIRTHDAY Melinda!'
 			},
 			cupcake: {
 				amount: 12,
 				flavor: "Chocolate",
 				finish: "Frosting"
 			},
-			client: "Maria Antoniette Clare Gurain"
+			client: "Maria Antoniette Clare Gurain",
+			contact: '09177828636',
+
 		},
 		{
 			id: 1427,
@@ -46,15 +64,23 @@ const QueuePending = () => {
 				amount: 1,
 				flavor: "Chocolate",
 				filling: "Custard",
+				finish: 'Frosting',
+				shape: 'Round',
+				tier: 1,
 				shape: "Round", 
-				inscription: "On-Cake"
+				inscription: "On-Cake",
+				inscription_message: 'HAPPY BIRTHDAY Melinda!'
 			},
-			client: "Maria Antoniette Clare Gurain"
+			client: "Maria Antoniette Clare Gurain",
+			contact: '09177828636',
 		},
 	]
 
 	const [pageNum, setPageNum] = useState(1);
 	const [orderData, setOrderData] = useState(orderDataDummy)
+	const [orderDetails, setOrderDetails] = useState(null);
+
+	const [showOrderDetails, setShowOrderDetails] = useState(false);
 
 	const handleSetPageNum = (direction) => {
 		if (direction == "prev") {
@@ -65,7 +91,6 @@ const QueuePending = () => {
 			setPageNum(pageNum + 1);
 		}
 	}
-
 	
 	const acceptOrder = (id) => {
 		setOrderData(order => {
@@ -75,8 +100,19 @@ const QueuePending = () => {
 		})
 	}
 
+	const handleSetOrderDetails = (order) => {
+		setOrderDetails(order);
+		handleShowOrderDetails();
+	}
+
+	const handleShowOrderDetails = () => {
+		if (!orderDetails) setShowOrderDetails(false);
+
+		setShowOrderDetails(!showOrderDetails)
+	}
+
 	const listOrder = orderData.map((cake, index) => 
-		<QueueCard order={cake} onAccept={acceptOrder} />
+		<QueueCard order={cake} onAccept={acceptOrder} onShowDetails={handleSetOrderDetails} />
 	)
 
 	return (
@@ -98,6 +134,10 @@ const QueuePending = () => {
 					<ChevronRight size={18}/>
 				</button>
 			</div>
+
+			{showOrderDetails &&
+				<OrderDetails orderDetails={orderDetails} onClose={handleShowOrderDetails} />
+			}
 		</div>
 	)
 }
