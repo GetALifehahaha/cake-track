@@ -12,7 +12,8 @@ import {
 	QueuePending, 
 	QueueAccepted, 
 	QueueCompleted,
-	Recipe
+	Recipe,
+	Invoice
 	} from './pages'
 
 const App = () => {
@@ -31,6 +32,7 @@ const App = () => {
 						<Route path='completed' element={<QueueCompleted />}/>
 					</Route>
 					<Route path='/recipe' element={<Recipe />}/> 
+					<Route path='/invoice' element={<Invoice />}/> 
 				</Route>
 				<Route path='/login' element={<Login />} />
 				<Route path='*' element={<NotFound />} />
