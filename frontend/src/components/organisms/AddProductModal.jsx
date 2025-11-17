@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
-import { Button, Label, Title } from '../atoms';
+import { Button, Dropdown, Label, Title } from '../atoms';
 import { X, Plus, Upload } from 'lucide-react'
+import { ModalFeedbackCard } from '../molecules';
 
 const AddProductModal = ({onConfirm}) => {
 
@@ -11,6 +12,14 @@ const AddProductModal = ({onConfirm}) => {
     const [categories] = useState(['drinks', 'cakes', 'cupcakes']);
     const [preview, setPreview] = useState(null);
 
+    const [feedback, setFeedback] = useState("");
+
+    const categoryOptions = {
+        Drinks: "drinks",
+        Cakes: "cakes",
+        Cupcakes: "cupcakes",
+    }
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) setPreview(URL.createObjectURL(file));
@@ -19,6 +28,17 @@ const AddProductModal = ({onConfirm}) => {
     const handleRemovePreview = () => setPreview(false);
 
     const handleConfirmModal = (value) => {
+        if (!value) onConfirm(value);
+
+        if (!productName || !category || !price || !preview) {
+            setFeedback({
+                label: 'Incomplete details',
+                details: "Please don't leave any black fields",
+                type: 'error'
+            })
+            return
+        };
+
         onConfirm(value);
     }
 
@@ -27,10 +47,9 @@ const AddProductModal = ({onConfirm}) => {
 
         setProductName(e.target.value);
     }
-    const handleSetCategory = (e) => {
-        e.preventDefault();
+    const handleSetCategory = (value) => {
 
-        setCategory(e.target.value);
+        setCategory(value);
     }
     const handleSetPrice = (e) => {
         e.preventDefault();
@@ -40,10 +59,8 @@ const AddProductModal = ({onConfirm}) => {
 
     const capitalize = (string) => string[0].toUpperCase() + string.slice(1);
 
-    const listCategories = categories.map((item, index) => <option key={index} className='hover:bg-main-dark' value={item}>{capitalize(item)}</option>)
-
     return (
-        <div className='absolute top-0 left-0 w-full h-screen flex justify-center items-center z-1000'>
+        <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
                 <div className='flex flex-col gap-2'>
                     <div className="flex justify-between items-center w-full">
@@ -86,9 +103,7 @@ const AddProductModal = ({onConfirm}) => {
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Category' />
                             <div className='flex gap-2'>
-                                <select className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' onChange={(e) => handleSetCategory(e)}>
-                                    {listCategories}
-                                </select>
+                                <Dropdown variant='modal' selection="e.g., Drinks" size='full' options={categoryOptions} onSelect={handleSetCategory} />
 
                                 <Button variant='icon' text='' icon={Plus}/>
                             </div>
@@ -100,12 +115,15 @@ const AddProductModal = ({onConfirm}) => {
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={price} placeholder='P 0.00' onChange={(e) => handleSetPrice(e)}/>
                         </div>
                     </div>
-
                 </div>
-                    <div className='flex gap-4 ml-auto'>
-                        <Button variant='modalOutline' size='base' text='Cancel' onClick={() => handleConfirmModal(false)}/>
-                        <Button variant='modalBlock' size='base' text='Add Item' onClick={() => handleConfirmModal(true)}/>
-                    </div>
+
+                {feedback && 
+                    <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
+                }
+                <div className='flex gap-4 ml-auto'>
+                    <Button variant='modalOutline' size='base' text='Cancel' onClick={() => handleConfirmModal(false)}/>
+                    <Button variant='modalBlock' size='base' text='Add Item' onClick={() => handleConfirmModal(true)}/>
+                </div>
             </div>
         </div>
     )

@@ -2,11 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '../atoms';
 import {X, Plus, Minus} from 'lucide-react'
 
-const CheckoutProduct = ({product={id: 0, name: "Product", price: 0, amount: 0}, onChangeAmount, onToggle}) => {
-
-    const handleOnToggle = () => {
-        onToggle(product);
-    }
+const CheckoutProduct = ({product={id: 0, name: "Product", price: 0, amount: 0}, onChangeAmount}) => {
 
     const handleSetAmount = (method) => {
         if (method == "minus") {
@@ -22,9 +18,7 @@ const CheckoutProduct = ({product={id: 0, name: "Product", price: 0, amount: 0},
     }
 
     return (
-        <div className='flex flex-row gap-8 w-full items-center'>
-            <button className='text-main-white bg-gray p-0.5 rounded-full cursor-pointer' onClick={handleOnToggle}><X size={12}/></button>
-
+        <div className='flex flex-row gap-8 w-full items-center px-4'>
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
                 <h5 className='text-accent-text text-sm'>₱ {Number(product.price * product.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>

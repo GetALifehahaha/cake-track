@@ -3,31 +3,33 @@ import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
 import DrinksData from '../data/DrinksData'
+import { Minus } from 'lucide-react'
 
 const Home = () => {
     // use auth context ot get the user
     
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
-    const [discount, setDiscount] = useState(0);
+    const [discount, setDiscount] = useState(null);
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [orderType, setOrderType] = useState("dine-in");
+    const [filter, setFilter] = useState();
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
     const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     
     const discountSelections = {
-        "Senior Citizen": .20,
-        "Valentines": .10,
+        "Senior Citizen 20%": .20,
+        "Valentines 10%": .10,
     }
 
-    const productSelection = [
-        {name: "Drinks", value: "drinks"},
-        {name: "Cakes", value: "cakes"},
-        {name: "Cupcakes", value: "cupcakes"},
-    ]
+    const productSelection = {
+        Drinks: "drinks",
+        Cakes: "cakes",
+        Cupcakes: "cupcakes"
+    }
 
 
     const handleToggleCheckoutProduct = (product) => {
@@ -35,7 +37,7 @@ const Home = () => {
             let prod = [...cp];
 
             if (prod.some(p => p.id == product.id)) {
-                return prod.filter(p => p.id != product.id)
+                return prod
             }
 
             return [...prod, {...product, amount: 1}];
@@ -55,7 +57,13 @@ const Home = () => {
         setShowPaymentModal(false);
     }
 
+    console.log(discount)
+
     // ------------------------- PRODUCTS FUNCTIONS -------------------------------------
+
+    const handleSetDiscount = (value) => {
+        setDiscount(value)
+    }
 
     // ------------------------- CHECKOUT FUNCTIONS ------------------------------------
 
@@ -71,8 +79,7 @@ const Home = () => {
 
     useMemo(() => {
         setNetTotal(grossTotal - grossTotal * discount);
-        console.log(netTotal)
-    }, [grossTotal])
+    }, [grossTotal, discount])
 
     const handleSetOrderType = (value) => setOrderType(value);
 
@@ -136,16 +143,12 @@ const Home = () => {
         onToggle={() => handleToggleCheckoutProduct(product)}/>
     )
 
-    const listDiscounts = Object.entries(discountSelections).map(([key, value], index) => 
-        <option key={index} value={value}>{key}: {value*100}%</option>
-    )
-
     return (
         <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row justify-between'>
-                    <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
+                    <Dropdown selection="Filter Product" options={productSelection}/>
                 </div>
 
             {/* Product Section */}
@@ -180,12 +183,11 @@ const Home = () => {
                                 <Label variant='small' text={`Items (${checkoutProducts.length})`}/>
                                 <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                             </div>
-                            <div className='flex items-center justify-between'>
+                            <div className='flex items-center'>
                                 <Label variant='small' text='Discount'/>
-                                <select className='w-fit p-0.5 rounded-lg border-2 border-border border-dotted text-text font-semibold text-sm text-right' onChange={(e) => setDiscount(e.target.value)}>
-                                    <option className='mr-2' value={0}>No discount</option>
-                                    {listDiscounts}
-                                </select>
+                                <div className='flex-1' />
+                                <Dropdown value={discount} variant='outline' selection="Discount" options={discountSelections} onSelect={handleSetDiscount}  className='bg-main' />
+                                {discount>0 && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetDiscount(0)} />}
                             </div>
                         </div>
                         <hr className='text-border'></hr>

@@ -24,11 +24,11 @@ const Products = () => {
         handleShowAddProductModal();
     }
 
-    const productSelection = [
-        {name: "Drinks", value: "drinks"},
-        {name: "Cakes", value: "cakes"},
-        {name: "Cupcakes", value: "cupcakes"},
-    ]
+    const productSelection = {
+        Drinks: "drinks",
+        Cakes: "cakes",
+        Cupcakes: "cupcakes"
+        }
 
     const listProducts = products.map(product => <ProductCard 
         product={product} 
@@ -40,7 +40,7 @@ const Products = () => {
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center gap-4'>
                     <span className='basis-1/2 '>
-                        <Dropdown selectionName='Filter Product' selections={productSelection} onSelect={(value) => console.log(value)}/>
+                        <Dropdown selection='Filter Product' options={productSelection} size='regular' />
                     </span>
                     <Button variant='block2' text='Archives' icon={Archive} />
                 </div>
