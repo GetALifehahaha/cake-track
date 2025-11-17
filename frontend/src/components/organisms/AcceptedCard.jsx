@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { Button } from '../atoms';
 import { Ellipsis } from 'lucide-react';
+import { Button } from '../atoms';
 
-const QueueCard = ({order, onAccept, onReject}) => {
-
+const AcceptedCard = ({order, onDone}) => {
+    
     const [showOptions, setShowOptions] = useState(false);
 
     return (
         <div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md'>
             {showOptions &&
                 <div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'>
-                    <Button variant='success' text='ACCEPT' onClick={() => {onAccept(order.id); setShowOptions(false);}}/>
-                    <Button variant='error' text='DECLINE' onClick={() => {onReject(order.id); setShowOptions(false)}}/>
-                    <Button variant='outline' text='Close' onClick={() => setShowOptions(false)}/>
+                    <Button variant='success' text='DONE' onClick={() => {onDone(order.id); setShowOptions(false);}}/>
+                    <Button variant='error' text='CANCEL' onClick={() => {setShowOptions(false)}}/>
                 </div>
             }
 			<div className='flex justify-between items-center'>
@@ -20,6 +19,7 @@ const QueueCard = ({order, onAccept, onReject}) => {
                 <Ellipsis onClick={() => setShowOptions(true)} className='cursor-pointer' size={16} />
 			</div>
 			<h5 className='text-accent-text text-xs'>{order.client}</h5>
+			<h5 className='text-error text-xs'>{order.due_date}</h5>
 
 			{/* Cake Details */}
 			<div className='flex mt-4'>
@@ -53,4 +53,4 @@ const QueueCard = ({order, onAccept, onReject}) => {
     )
 }
 
-export default QueueCard;
+export default AcceptedCard;

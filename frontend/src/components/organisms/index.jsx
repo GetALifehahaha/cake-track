@@ -6,4 +6,5 @@ export {default as ClearCheckoutModal} from './ClearCheckoutModal'
 export {default as InventoryAddItem} from './InventoryAddItem'
 export {default as ArchivedModal} from './ArchivedModal'
 export {default as QueueCard} from './QueueCard'
+export {default as AcceptedCard} from './AcceptedCard'
 
