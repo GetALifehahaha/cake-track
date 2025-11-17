@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { Button, Title } from '@/components/atoms';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import AddRecipeModal from '@/components/organisms/AddRecipeModal';
+import { ChevronLeft, ChevronRight, EllipsisVertical, Plus } from 'lucide-react';
+import { AddRecipeModal, EditRecipeModal } from '@/components/organisms';
 
 const Recipe = () => {
 
     const [pageNum, setPageNum] = useState(1);
 
     const [recipes, setRecipes] = useState([
-        {name: "Chocolate Cake", ingredients: [
+        {   id: 1,
+            name: "Chocolate Cake", ingredients: [
             {amount: 1, unit: "cup", name: "Flour"},
             {amount: 1, unit: "cup", name: "Cocoa Powder"},
         ]}
     ]);
 
-    const [showAddRecipe, setShowAddRecipe] = useState(true);
+    const [prepEditRecipe, setPrepEditRecipe] = useState(null);
+
+    const [showAddRecipe, setShowAddRecipe] = useState(false);
+    const [showEditRecipe, setShowEditRecipe] = useState(false);
 
     const handleSetPageNum = (direction) => {
         if (direction == "prev") {
@@ -37,9 +41,34 @@ const Recipe = () => {
         handleSetShowAddRecipe();
     }
 
+    const handlePrepEditRecipe = (recipe) => {
+        setPrepEditRecipe(recipe);
+        handleSetShowEditRecipe();
+    }
+
+    const handleSetShowEditRecipe = () => {
+        setShowEditRecipe(!showEditRecipe);
+    }
+    
+    const handleEditRecipe = (value) => {
+        const updatedRecipe = recipes.map((recipe, index) => recipe.id === value.id ? value : recipe)
+        setRecipes(updatedRecipe);
+        setShowEditRecipe(!showEditRecipe);
+        setPrepEditRecipe(null);
+    }
+    
+    const handleDeleteRecipe = (id) => {
+        setRecipes(recipes => recipes.filter((recipe) => recipe.id != id))
+        setShowEditRecipe(!showEditRecipe);
+        setPrepEditRecipe(null);
+    }
+
     const listRecipes = recipes.map((recipe, index) => 
-        <div className='bg-main-white rounded-lg shadow-sm p-4'>
-            <h5 className='text-text font-semibold'>{recipe.name}</h5>
+        <div className='bg-main-white rounded-lg shadow-sm p-4' key={index}>
+            <div className='flex justify-between items-start'>
+                <h5 className='text-text font-semibold'>{recipe.name}</h5>
+                <EllipsisVertical className='cursor-pointer' onClick={() => handlePrepEditRecipe(recipe)} size={16} />
+            </div>
 
             <div className='flex flex-col gap-1 px-8 py-4 text-text/50 text-sm'>
                 {
@@ -50,6 +79,7 @@ const Recipe = () => {
                     )
                 }
             </div>
+            
         </div>
     )
 
@@ -83,6 +113,8 @@ const Recipe = () => {
             </div>
 
             {showAddRecipe && <AddRecipeModal onConfirm={handleAddRecipe} onClose={handleSetShowAddRecipe}/>}
+
+            {showEditRecipe && <EditRecipeModal recipe={prepEditRecipe} onConfirm={handleEditRecipe} onClose={handleSetShowEditRecipe} onDelete={handleDeleteRecipe}/>}
         </div>
     )
 }

@@ -1,9 +1,11 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { Title, Label, Dropdown, Button } from '../atoms';
 import { ModalFeedbackCard } from '../molecules';
 import { Plus, X } from 'lucide-react';
+import _ from 'lodash'
 
-const AddRecipeModal = ({onConfirm, onClose}) => {
+const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
+
     const units = {
         Pieces: 'pcs',
         Kilograms: "kg",
@@ -12,10 +14,11 @@ const AddRecipeModal = ({onConfirm, onClose}) => {
         Cup: "cup"
     }
 
-    const [name, setName] = useState("");
-    const [ingredients, setIngredients] = useState([
-        {amount: 0, unit: '', name: ''}
-    ])
+    const [oldName, setOldName] = useState(recipe.name);
+    const [oldIngredients, setOldIngredients] = useState(recipe.ingredients);
+
+    const [name, setName] = useState(recipe.name);
+    const [ingredients, setIngredients] = useState(recipe.ingredients);
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -32,15 +35,6 @@ const AddRecipeModal = ({onConfirm, onClose}) => {
         const updatedIngredient = ingredients.map((ingredient, index) => index == id ? {...ingredient, [field]: field == 'amount' ? Number.parseInt(value) || '' : value} : ingredient)
         setIngredients(updatedIngredient)
     }
-
-    const listIngredientInput = ingredients.map((ingredient, index) =>
-        <div className='flex items-center gap-2 p-2'>
-            <input onChange={(e) => updateIngredient(index, 'amount', e.target.value)} type='number' value={ingredient.amount} placeholder='e.g., 1' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
-            <Dropdown size='full' variant='modal' selection="Unit" options={units} value={ingredient.unit} onSelect={(value) => updateIngredient(index, 'unit', value)} />
-            <input onChange={(e) => updateIngredient(index, 'name', e.target.value)} type='text' value={ingredient.name} placeholder='e.g., Eggs' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
-            <X size={40} className='text-text cursor-pointer' onClick={() => removeIngredient(index)} />
-        </div>
-    )
 
     const handleConfirm = () => {
         if (!name || !ingredients || ingredients.length == 0) {
@@ -62,20 +56,30 @@ const AddRecipeModal = ({onConfirm, onClose}) => {
             return;
         }
             
+        if (oldName === name && JSON.stringify(oldIngredients) === JSON.stringify(ingredients)) {
+            onClose();
+            return;
+        }
 
-        onConfirm({name, ingredients});
+        onConfirm({id: recipe.id, name, ingredients})
     }
 
-    const listUnits = Object.entries(units).map(([key, value], index) => <option key={index} value={value}>{`${key} (${value})`}</option>)
+    const listIngredientInput = ingredients.map((ingredient, index) =>
+        <div className='flex items-center gap-2 p-2'>
+            <input onChange={(e) => updateIngredient(index, 'amount', e.target.value)} type='number' value={ingredient.amount} placeholder='e.g., 1' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
+            <Dropdown size='full' variant='modal' selection="Unit" options={units} value={ingredient.unit} onSelect={(value) => updateIngredient(index, 'unit', value)} />
+            <input onChange={(e) => updateIngredient(index, 'name', e.target.value)} type='text' value={ingredient.name} placeholder='e.g., Eggs' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
+            <X size={40} className='text-text cursor-pointer' onClick={() => removeIngredient(index)} />
+        </div>
+    )
 
     return (
         <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] max-h-[80vh] flex flex-col gap-10'>
                 <div className='flex justify-between items-center w-full'>
-                    <Title variant='modal' text='Add New Item' />
+                    <Title variant='modal' text='Edit Item' />
                     <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
                 </div>
-
                 <div className='flex flex-col gap-4'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Recipe Name'/>
@@ -99,8 +103,8 @@ const AddRecipeModal = ({onConfirm, onClose}) => {
                     }
 
                     <div className='flex gap-4 mt-4 ml-auto'>
-                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
-                        <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleConfirm}/>
+                        <Button variant='modalOutline' size='modalSize' text='Delete' onClick={() => onDelete(recipe.id)}/>
+                        <Button variant='modalBlock' size='modalSize' text='Save' onClick={handleConfirm}/>
                     </div>
                 </div>
             </div>
@@ -108,4 +112,4 @@ const AddRecipeModal = ({onConfirm, onClose}) => {
     )
 }
 
-export default AddRecipeModal;
+export default EditRecipeModal;
