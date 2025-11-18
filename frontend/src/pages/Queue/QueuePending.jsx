@@ -111,8 +111,12 @@ const QueuePending = () => {
 		setShowOrderDetails(!showOrderDetails)
 	}
 
+	const handleDeleteOrder = (id) => {
+		setOrderData(items => items.filter((item) => item.id != id))
+	}
+
 	const listOrder = orderData.map((cake, index) => 
-		<QueueCard order={cake} onAccept={acceptOrder} onShowDetails={handleSetOrderDetails} />
+		<QueueCard order={cake} onAccept={acceptOrder} onShowDetails={handleSetOrderDetails} onReject={handleDeleteOrder} />
 	)
 
 	return (

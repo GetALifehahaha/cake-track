@@ -24,7 +24,6 @@ const TransactionDetails = ({transactionDetail, onClose}) => {
                     <div className='flex-1 flex flex-col gap-4'>
                         <h5>Receipt ID: <strong>{transactionDetail.id}</strong></h5>
                         <h5>Total: <strong>P {transactionDetail.total}</strong></h5>
-                        <h5>Status: <strong>{transactionDetail.status}</strong></h5>
                     </div>
                 </div>
             </div>

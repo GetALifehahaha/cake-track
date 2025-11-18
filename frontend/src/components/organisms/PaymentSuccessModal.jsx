@@ -39,8 +39,8 @@ const PaymentSuccessModal = ({totalAmount, amountReceived, onClose}) => {
                 </div>
 
                 <div className='flex gap-4'>
-                    <Button variant='modalOutline' size='modalSize' icon={LucidePrinter} text='Print receipt' onClick={() => console.log("Print hehe")}/>
-                    <Button variant='modalBlock' size='modalSize' text='Finish' onClick={onClose}/>
+                    <Button variant='modalOutline' size='full' icon={LucidePrinter} text='Print receipt' onClick={() => console.log("Print hehe")}/>
+                    <Button variant='modalBlock' size='full' text='Finish' onClick={onClose}/>
                 </div>
             </div>
         </div>

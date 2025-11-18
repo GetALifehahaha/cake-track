@@ -50,7 +50,7 @@ const QueueOverview = () => {
 			<div className='flex-1 p-4 bg-main-white rounded-xl border border-border'>
 				<div className='flex justify-between items-center pb-2 border-b border-b-border'>
 					<Title variant='modal' text='Due Soon' />
-					<button className='flex items-center gap-2 text-accent'><h5>View All</h5><ArrowRight size={16} /></button>
+					<button className='flex items-center gap-2 text-accent cursor-pointer' onClick={() => navigate('/queue/accepted')}><h5>View All</h5><ArrowRight size={16} /></button>
 				</div>
 
 				{/* Due Soon Body */}

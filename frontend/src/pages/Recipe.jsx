@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Title } from '@/components/atoms';
-import { ChevronLeft, ChevronRight, EllipsisVertical, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, EllipsisVertical, Pen, Plus } from 'lucide-react';
 import { AddRecipeModal, EditRecipeModal } from '@/components/organisms';
 
 const Recipe = () => {
@@ -64,10 +64,10 @@ const Recipe = () => {
     }
 
     const listRecipes = recipes.map((recipe, index) => 
-        <div className='bg-main-white rounded-lg shadow-sm p-4' key={index}>
+        <div className='bg-main-white rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md' key={index}>
             <div className='flex justify-between items-start'>
                 <h5 className='text-text font-semibold'>{recipe.name}</h5>
-                <EllipsisVertical className='cursor-pointer' onClick={() => handlePrepEditRecipe(recipe)} size={16} />
+                <Pen className='cursor-pointer' onClick={() => handlePrepEditRecipe(recipe)} size={16} />
             </div>
 
             <div className='flex flex-col gap-1 px-8 py-4 text-text/50 text-sm'>

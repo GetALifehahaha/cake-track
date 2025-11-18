@@ -126,8 +126,8 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
                 }
 
                 <div className='flex gap-4'>
-                    <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => handleConfirmModal(false)}/>
-                    <Button variant='modalBlock' size='modalSize' text='Complete Payment' onClick={() => handleConfirmModal(true)}/>
+                    <Button variant='modalOutline' size='full' text='Cancel' onClick={() => handleConfirmModal(false)}/>
+                    <Button variant='modalBlock' size='full' text='Complete Payment' onClick={() => handleConfirmModal(true)}/>
                 </div>
             </div>
         </div>

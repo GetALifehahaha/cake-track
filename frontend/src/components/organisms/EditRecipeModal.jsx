@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Title, Label, Dropdown, Button } from '../atoms';
 import { ModalFeedbackCard } from '../molecules';
-import { Plus, X } from 'lucide-react';
-import _ from 'lodash'
+import { Minus, Plus, X } from 'lucide-react';
 
 const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
 
@@ -24,7 +23,9 @@ const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
     const [showModalFeedback, setShowModalFeedback] = useState(false);
 
     const addIngredient = () => {
-        setIngredients([...ingredients, {amount: 0, unit: '', name: ''}])
+        setIngredients([...ingredients, {amount: 0, unit: '', name: ''}]);
+        setModalFeedbackContent('');
+        setShowModalFeedback(false);
     }
 
     const removeIngredient = (id) => {
@@ -90,11 +91,23 @@ const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
                     <div className='flex flex-col items-center'>
                         <div className='w-full flex flex-row items-center justify-between'>
                             <Label variant='modal' text='Ingredient'/>
+                            <h5 className='text-xs text-text/50 font-semibold ml-2'>{ingredients.length}</h5>
+                            <span className='ml-auto mr-2'>
+                                {ingredients.length >= 20 &&
+                                    <Button text='Clear' variant='modalOutline' onClick={() => setIngredients([])} />
+                                }
+                            </span>
                             <Button icon={Plus} text='Add Ingredient' variant='modalOutline' onClick={addIngredient} />
                         </div>
 
                         <div className='flex flex-col gap-1 p-4 overflow-auto max-h-80'>
-                            {listIngredientInput}
+                            {ingredients.length > 0 ?
+                                listIngredientInput :
+                                <>
+                                    <div className='mt-6'/>
+                                    <Label text='No ingredients' variant='small' />
+                                </>
+                            }
                         </div>
                     </div>
 

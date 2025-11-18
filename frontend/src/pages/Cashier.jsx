@@ -48,7 +48,7 @@ const Cashier = () => {
     }
 
     const handleEditCashier = (value) => {
-        const updatedCashiers = cashiers.map((item, index) => item.id === value.id ? value : recipe)
+        const updatedCashiers = cashiers.map((item, index) => item.id === value.id ? value : item)
         setCashiers(updatedCashiers);
         handlePrepEditCashier(null);
         handleShowEditCashierModal();

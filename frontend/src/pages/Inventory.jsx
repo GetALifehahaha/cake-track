@@ -49,7 +49,7 @@ const Inventory = () => {
     }
 
     const handleEditItem = (value) => {
-        const updatedItem = inventoryItems.map((item, index) => item.id === value.id ? value : recipe)
+        const updatedItem = inventoryItems.map((item, index) => item.id === value.id ? value : item)
         setInventoryItems(updatedItem);
         handlePrepEditItem(null);
         handleShowEditItemModal();

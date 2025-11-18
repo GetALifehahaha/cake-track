@@ -1,4 +1,4 @@
-import { Title, Label } from '@/components/atoms';
+import { Title, Label, Button } from '@/components/atoms';
 import React, { useState } from 'react';
 
 const Invoice = () => {
@@ -105,7 +105,10 @@ const Invoice = () => {
             {/* Invoice CMS */}
             <div className='flex-1 flex flex-col gap-6'> 
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>
-                    <Title text='Business Details' variant='block' />
+                    <div className='flex items-center justify-between'>
+                        <Title text='Business Details' variant='block' />
+                        <Button text='Save' size='small'/>
+                    </div>
 
                     <div className='mt-4'>
                         <Label variant='small' text='Business Name' />
@@ -118,16 +121,19 @@ const Invoice = () => {
                 </div>
 
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>
-                    <Title text='Business Credentials' variant='block' />
+                    <div className='flex items-center justify-between'>
+                        <Title text='Business Credentials' variant='block' />
+                        <Button text='Save' size='small'/>
+                    </div>
 
                     <div className='mt-4'>
                         <Label variant='small' text='TIN' />
                         <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={invoiceDetails.tin} onChange={(e) => setInvoiceDetails({...invoiceDetails, tin: e.target.value})}/>
                     </div>
-                    <div className='mt-4'>
+                    {/* <div className='mt-4'>
                         <Label variant='small' text='Accreditation Number' />
                         <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={invoiceDetails.accreditionNumber} onChange={(e) => setInvoiceDetails({...invoiceDetails, accreditionNumber: e.target.value})}/>
-                    </div>
+                    </div> */}
                     {/* <div className='mt-4'>
                         <Label variant='small' text='Permit Number' />
                         <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={invoiceDetails.permitNumber} onChange={(e) => setInvoiceDetails({...invoiceDetails, permitNumber: e.target.value})}/>
@@ -135,7 +141,10 @@ const Invoice = () => {
                 </div>
 
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>
-                    <Title text='Contact and Message' variant='block' />
+                    <div className='flex items-center justify-between'>
+                        <Title text='Contact and Message' variant='block' />
+                        <Button text='Save' size='small'/>
+                    </div>
 
                     <div className='mt-4'>
                         <Label variant='small' text='Contact Number' />

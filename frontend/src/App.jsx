@@ -14,7 +14,8 @@ import {
 	QueueCompleted,
 	Recipe,
 	Invoice,
-	Cashier
+	Cashier,
+	Reports
 	} from './pages'
 
 const App = () => {

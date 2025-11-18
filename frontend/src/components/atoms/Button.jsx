@@ -11,6 +11,7 @@ const Button = ({variant="block", size="base",  text="Button", icon: Icon, onCli
         inactive: 'w-fit border border-gray-light bg-gray-light text-text rounded-full px-4 py-1 ',
         base: "w-fit text-base",
         small: "w-fit text-sm ",
+        full: "w-full text-base",
         modalSize: 'w-fit text-sm',
         modalOutline: "font-medium border-border border rounded-lg px-4 py-2 text-text",
         modalBlock: "font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-text",

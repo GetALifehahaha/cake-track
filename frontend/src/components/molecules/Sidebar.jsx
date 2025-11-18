@@ -29,9 +29,9 @@ const Sidebar = () => {
         <div className='bg-main-white border-border border-r-2 px-2 py-2 w-fit flex flex-col'>
             <button onClick={handleSetExpanded} className={navStyle + 'font-extrabold text-md'}>
                 <Menu size={28}/> 
-                <div className={navText}>
-                    <h5 className='text-accent'>Cake</h5>
-                    <h5 className=' text-accent-dark'>Track</h5>
+                <div className={navText + `text-xl`}>
+                    <h5 className='text-accent font-extrabold'>Cake</h5>
+                    <h5 className=' text-accent-dark font-extrabold'>Track</h5>
                 </div>
             </button>
 
