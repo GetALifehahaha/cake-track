@@ -128,10 +128,10 @@ const Invoice = () => {
                         <Label variant='small' text='Accreditation Number' />
                         <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={invoiceDetails.accreditionNumber} onChange={(e) => setInvoiceDetails({...invoiceDetails, accreditionNumber: e.target.value})}/>
                     </div>
-                    <div className='mt-4'>
+                    {/* <div className='mt-4'>
                         <Label variant='small' text='Permit Number' />
                         <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={invoiceDetails.permitNumber} onChange={(e) => setInvoiceDetails({...invoiceDetails, permitNumber: e.target.value})}/>
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>

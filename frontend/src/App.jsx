@@ -13,7 +13,8 @@ import {
 	QueueAccepted, 
 	QueueCompleted,
 	Recipe,
-	Invoice
+	Invoice,
+	Cashier
 	} from './pages'
 
 const App = () => {
@@ -33,6 +34,7 @@ const App = () => {
 					</Route>
 					<Route path='/recipe' element={<Recipe />}/> 
 					<Route path='/invoice' element={<Invoice />}/> 
+					<Route path='/cashier' element={<Cashier />}/> 
 				</Route>
 				<Route path='/login' element={<Login />} />
 				<Route path='*' element={<NotFound />} />

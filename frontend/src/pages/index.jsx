@@ -6,6 +6,7 @@ export {default as Inventory} from './Inventory'
 export {default as Products} from './Products'
 export {default as Recipe} from './Recipe'
 export {default as Invoice} from './Invoice'
+export {default as Cashier} from './Cashier'
 export {default as Login} from './Login'
 
 export {default as QueueLayout} from './Queue/QueueLayout'
