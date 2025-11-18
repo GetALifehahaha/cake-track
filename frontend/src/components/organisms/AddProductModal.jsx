@@ -9,7 +9,6 @@ const AddProductModal = ({onConfirm}) => {
     const [category, setCategory] = useState("");
     const [price, setPrice] = useState(0);
 
-    const [categories] = useState(['drinks', 'cakes', 'cupcakes']);
     const [preview, setPreview] = useState(null);
 
     const [feedback, setFeedback] = useState("");
@@ -39,7 +38,7 @@ const AddProductModal = ({onConfirm}) => {
             return
         };
 
-        onConfirm(value);
+        onConfirm({name: productName, price, imagePath: preview, category});
     }
 
     const handleSetProductName = (e) => {

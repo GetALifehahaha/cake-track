@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
 import DrinksData from '../data/DrinksData'
 import {AddProductModal, ArchivedModal} from '../components/organisms';
+import { set } from 'date-fns';
 
 const Products = () => {
 
@@ -13,13 +14,21 @@ const Products = () => {
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
 
+    useEffect(() => {
+        if (filter) {
+            setProducts([...DrinksData].filter((drink, index) => drink.category === filter))
+        } else {
+            setProducts([...DrinksData])
+        }
+    }, [filter])
+
     const handleShowAddProductModal = () => {
         setShowAddProductModal(!showAddProductModal);
     }
 
     const addProduct = (value) => {
         if (value) {
-            
+            setProducts([...products, value])
         }
         handleShowAddProductModal();
     }

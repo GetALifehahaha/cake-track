@@ -6,11 +6,11 @@ const CheckoutProduct = ({product={id: 0, name: "Product", price: 0, amount: 0},
 
     const handleSetAmount = (method) => {
         if (method == "minus") {
-            onChangeAmount(product.id, product.amount-1);
-            
             if (product.amount-1==0) {
-                onToggle(product.id);
+                return;
             }
+
+            onChangeAmount(product.id, product.amount-1);
         } else if (method == "add") {
             onChangeAmount(product.id, product.amount+1);
         }

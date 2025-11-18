@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
@@ -7,7 +7,8 @@ import { Minus } from 'lucide-react'
 
 const Home = () => {
     // use auth context ot get the user
-    
+
+    const [products, setProducts] = useState([...DrinksData])
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState(null);
@@ -87,6 +88,14 @@ const Home = () => {
         setNetTotal(grossTotal - grossTotal * discount);
     }, [grossTotal, discount])
 
+    useEffect(() => {
+        if (filter) {
+            setProducts([...DrinksData].filter((drink, index) => drink.category === filter))
+        } else {
+            setProducts([...DrinksData])
+        }
+    }, [filter])
+
     const handleSetOrderType = (value) => setOrderType(value);
 
     const removeAllProducts = () => {
@@ -141,7 +150,7 @@ const Home = () => {
         onToggle={handleRemoveProductFromCheckout}/>
     )
 
-    const listProduct = DrinksData.map((product) => 
+    const listProduct = products.map((product) => 
         <ProductCard 
         product={product} 
         key={product.id} 
