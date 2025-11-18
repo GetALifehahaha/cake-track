@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { Button, Title } from '../components/atoms';
 import { InventoryDashboardCard } from '../components/molecules';
-import { InventoryAddItem } from '../components/organisms';
+import { EditInventoryItem, InventoryAddItem } from '../components/organisms';
 import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, CircleQuestionMark, Ellipsis, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Inventory = () => {
 
     const [pageNum, setPageNum] = useState(1);
     const dummyData = [
-        {name: "Flour", amount: 30, unit: "kg", purchaseDate: "January 28, 2025", expirationDate: "January 30, 2025", status: "Good"},
+        {id: 1, name: "Flour", amount: 30, unit: "kg", purchaseDate: "January 28, 2025", expirationDate: "January 30, 2025", status: "Good"},
     ]
 
     const [showAddItemModal, setShowAddItemModal] = useState(false);
+    const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [inventoryItems, setInventoryItems] = useState([...dummyData]);
+    const [prepEditItem, setPrepEditItem] = useState(null)
 
     const handleSetPageNum = (direction) => {
         if (direction == "prev") {
@@ -30,15 +32,34 @@ const Inventory = () => {
         setShowAddItemModal(!showAddItemModal)
     }
 
+    const handleShowEditItemModal = () => {
+        setShowEditItemModal(!showEditItemModal)
+    }
+    console.table(inventoryItems)
     const handleAddItem = (value) => {
         if (value && value.name) {
-            setInventoryItems([...inventoryItems, value])
+            setInventoryItems([...inventoryItems, {id: inventoryItems.length+1, ...value}])
             setShowAddItemModal(false)
         }
     }
 
+    const handlePrepEditItem = (value) => {
+        setPrepEditItem(value);
+        handleShowEditItemModal();
+    }
 
-    
+    const handleEditItem = (value) => {
+        const updatedItem = inventoryItems.map((item, index) => item.id === value.id ? value : recipe)
+        setInventoryItems(updatedItem);
+        handlePrepEditItem(null);
+        handleShowEditItemModal();
+    }
+
+    const handleDeleteItem = (id) => {
+        setInventoryItems(items => items.filter((item) => item.id != id))
+        handlePrepEditItem(null);
+        handleShowEditItemModal();
+    }
 
     const listDummyData = inventoryItems.map((item, index) => 
         <div key={index} className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border border-b'>
@@ -47,7 +68,7 @@ const Inventory = () => {
             <h5 className='basis-1/6'>{item.purchaseDate}</h5>
             <h5 className='basis-1/6'>{item.expirationDate}</h5>
             <h5 className='basis-1/6'>{item.status}</h5>
-            <h5 className='basis-1/6'><Ellipsis size={18} className='mx-auto' /></h5>
+            <h5 className='basis-1/6'><Ellipsis size={18} className='mx-auto cursor-pointer' onClick={() => handlePrepEditItem(item)} /></h5>
         </div>
     )
 
@@ -105,6 +126,10 @@ const Inventory = () => {
 
             {showAddItemModal && 
                 <InventoryAddItem onConfirm={handleAddItem} onClose={handleShowAddItemModal} />
+            }
+
+            {showEditItemModal &&
+                <EditInventoryItem item={prepEditItem} onDelete={handleDeleteItem} onConfirm={handleEditItem} onClose={handleShowEditItemModal} />
             }
         </div>
     )
