@@ -7,8 +7,12 @@ import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, CircleQuestionMark, E
 const Inventory = () => {
 
     const [pageNum, setPageNum] = useState(1);
+    const dummyData = [
+        {name: "Flour", amount: 30, unit: "kg", purchaseDate: "January 28, 2025", expirationDate: "January 30, 2025", status: "Good"},
+    ]
 
     const [showAddItemModal, setShowAddItemModal] = useState(false);
+    const [inventoryItems, setInventoryItems] = useState([...dummyData]);
 
     const handleSetPageNum = (direction) => {
         if (direction == "prev") {
@@ -22,20 +26,26 @@ const Inventory = () => {
         }
     }
 
-    const handleShowAddItemModal = (value) => {
+    const handleShowAddItemModal = () => {
         setShowAddItemModal(!showAddItemModal)
     }
 
-    const dummyData = [
-        {name: "Flour", amount: 30, unit: "kg", purchaseDate: "January 28, 2025", expirationData: "January 30, 2025", status: "Good"},
-    ]
+    const handleAddItem = (value) => {
+        if (value && value.name) {
+            setInventoryItems([...inventoryItems, value])
+            setShowAddItemModal(false)
+        }
+    }
 
-    const listDummyData = dummyData.map((item, index) => 
+
+    
+
+    const listDummyData = inventoryItems.map((item, index) => 
         <div key={index} className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border border-b'>
             <h5 className='basis-1/6'>{item.name}</h5>
             <h5 className='basis-1/6'>{item.amount} {item.unit}</h5>
             <h5 className='basis-1/6'>{item.purchaseDate}</h5>
-            <h5 className='basis-1/6'>{item.expirationData}</h5>
+            <h5 className='basis-1/6'>{item.expirationDate}</h5>
             <h5 className='basis-1/6'>{item.status}</h5>
             <h5 className='basis-1/6'><Ellipsis size={18} className='mx-auto' /></h5>
         </div>
@@ -44,10 +54,10 @@ const Inventory = () => {
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
             <div className='h-fit w-full flex gap-4'>
-                <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success'/>
-                <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error'/>
-                <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning'/>
-                <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none'/>
+                <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success' amount={1}/>
+                <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error' amount={0}/>
+                <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning' amount={1}/>
+                <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none' amount={0}/>
             </div>
             
             <div className='border-accent-mute border rounded-lg p-4'>
@@ -94,7 +104,7 @@ const Inventory = () => {
             {/* Modals */}
 
             {showAddItemModal && 
-                <InventoryAddItem onConfirm={handleShowAddItemModal} />
+                <InventoryAddItem onConfirm={handleAddItem} onClose={handleShowAddItemModal} />
             }
         </div>
     )

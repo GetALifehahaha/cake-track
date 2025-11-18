@@ -3,7 +3,7 @@ import { Title, Label, Button, Dropdown } from '../atoms';
 import { DatePicker, ModalFeedbackCard } from '../molecules';
 import { X } from 'lucide-react';
 
-const InventoryAddItem = ({onConfirm}) => {
+const InventoryAddItem = ({onConfirm, onClose}) => {
 
     const units = {
         Pieces: 'pcs',
@@ -20,22 +20,31 @@ const InventoryAddItem = ({onConfirm}) => {
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
 
-    const handleConfirm = (value) => {
-        if (value) {
-            if (!name || !amount || !unit || !purchaseDate || !expirationDate) {
-                setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
-                return;
-            }
-            
-            if (expirationDate < purchaseDate) {
-                setModalFeedbackContent({type: "error", label: "Invalid Expiration Date", details: 'Expiry date cannot be earlier than the purchase date.'})
-                return;
-            }
-
-            onConfirm({name, amount, unit, purchaseDate, expirationDate});
+    const handleConfirm = () => {
+        if (!name || !amount || !unit || !purchaseDate || !expirationDate) {
+            setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
+            return;
+        }
+        
+        if (expirationDate < purchaseDate) {
+            setModalFeedbackContent({type: "error", label: "Invalid Expiration Date", details: 'Expiry date cannot be earlier than the purchase date.'})
+            return;
         }
 
-        onConfirm(value)
+        const formattedPurchaseDate = purchaseDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
+        const formattedExpirationDate = expirationDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
+        onConfirm({name, amount, unit, purchaseDate: formattedPurchaseDate, expirationDate: formattedExpirationDate, status: "Good"});
+        return;
     }
 
     const handleSetUnit = (value) => {
@@ -50,15 +59,12 @@ const InventoryAddItem = ({onConfirm}) => {
         }
     }, [modalFeedbackContent])
 
-
-    const listUnits = Object.entries(units).map(([key, value], index) => <option key={index} value={value}>{`${key} (${value})`}</option>)
-
     return (
         <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
                 <div className='flex justify-between items-center w-full'>
                     <Title variant='modal' text='Add New Item' />
-                    <X size={16} className='text-text cursor-pointer' onClick={() => onConfirm(false)}/>
+                    <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
                 </div>
 
                 <div className='flex flex-col gap-4'>
@@ -96,8 +102,8 @@ const InventoryAddItem = ({onConfirm}) => {
                     }
 
                     <div className='flex gap-4 mt-4 ml-auto'>
-                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => handleConfirm(false)}/>
-                        <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={() => handleConfirm(true)}/>
+                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
+                        <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleConfirm}/>
                     </div>
                 </div>
             </div>
