@@ -23,7 +23,7 @@ const App = () => {
 	return (
 		<>
 			<Routes>
-				<Route element={<ProtectedRoute><Layout /></ProtectedRoute>}> {/* Change this into protected auth later */}
+				<Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
 					<Route path='/' element={<Home />} />
 					<Route path='/transactions' element={<Transactions />} />
 					<Route path='/inventory' element={<Inventory />} />

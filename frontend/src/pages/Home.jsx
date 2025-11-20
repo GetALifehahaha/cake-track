@@ -1,14 +1,20 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useContext } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
 import DrinksData from '../data/DrinksData'
 import { Minus } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
+import { useSearchParams } from 'react-router-dom'
+import { AuthContext } from '@/context/AuthContext'
+import useTransaction from '@/hooks/useTransaction'
 
 const Home = () => {
+
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const {productData, productLoading, productError} = useProduct();
-    const [products, setProducts] = useState([...DrinksData])
+    const {postTransaction, transactionLoading, transactionError, transactionResponse} = useTransaction();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState(null);
@@ -49,8 +55,22 @@ const Home = () => {
         setShowPaymentModal(true);
     }
 
-    const completePayment = (value) => {
+    const completePayment = async (value) => {
         if (value) {
+            const checkoutProductsPayload = checkoutProducts.map(p => ({
+                product: p.id,                 
+                product_size: p.selectedSizeId, 
+                quantity: p.amount,            
+                price: parseFloat(p.price)     
+            }))
+
+            const res = await postTransaction({
+                is_void: false,
+                payment_method: "cash",
+                transaction_items: checkoutProductsPayload,
+                paid_amount: parseFloat(value)
+            })
+
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
         }
@@ -71,6 +91,14 @@ const Home = () => {
         })
     };
 
+    useEffect(() => {
+        let params = new URLSearchParams();
+        
+        if (filter) params.set('category__name', filter)
+
+        setSearchParams(params)
+    }, [filter])
+
     // ------------------------- CHECKOUT FUNCTIONS ------------------------------------
 
     useMemo(() => {
@@ -87,13 +115,7 @@ const Home = () => {
         setNetTotal(grossTotal - grossTotal * discount);
     }, [grossTotal, discount])
 
-    useEffect(() => {
-        if (filter) {
-            setProducts([...DrinksData].filter((drink, index) => drink.category === filter))
-        } else {
-            setProducts([...DrinksData])
-        }
-    }, [filter])
+
 
     const handleSetOrderType = (value) => setOrderType(value);
 

@@ -15,7 +15,6 @@ const QueuePending = () => {
 				finish: 'Frosting',
 				shape: 'Round',
 				tier: 1,
-				shape: "Round", 
 				inscription: "On-Cake",
 				inscription_message: 'HAPPY BIRTHDAY Melinda!'
 			},
@@ -44,7 +43,6 @@ const QueuePending = () => {
 				finish: 'Frosting',
 				shape: 'Round',
 				tier: 1,
-				shape: "Round", 
 				inscription: "On-Cake",
 				inscription_message: 'HAPPY BIRTHDAY Melinda!'
 			},
@@ -65,7 +63,6 @@ const QueuePending = () => {
 				flavor: "Chocolate",
 				filling: "Custard",
 				finish: 'Frosting',
-				shape: 'Round',
 				tier: 1,
 				shape: "Round", 
 				inscription: "On-Cake",

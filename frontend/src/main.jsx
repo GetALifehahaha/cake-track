@@ -8,12 +8,12 @@ import { AuthProvider } from './context/AuthContext'
 
 createRoot(document.getElementById('root')).render(
 	<BrowserRouter>
-		<GoogleOAuthProvider clientId='324648686529-dp5khi6oclvjc9111hcj385apj812men.apps.googleusercontent.com'>
-			<AuthProvider>
+		<AuthProvider>
+			<GoogleOAuthProvider clientId='324648686529-dp5khi6oclvjc9111hcj385apj812men.apps.googleusercontent.com'>
 				<StrictMode>
 						<App />
 				</StrictMode>
-			</AuthProvider>
-		</GoogleOAuthProvider>
+			</GoogleOAuthProvider>
+		</AuthProvider>
 	</BrowserRouter>
 )

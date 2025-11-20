@@ -4,33 +4,35 @@ import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
 import DrinksData from '../data/DrinksData'
 import {AddProductModal, ArchivedModal} from '../components/organisms';
-import { set } from 'date-fns';
+import useProduct from '@/hooks/useProduct'
 
 const Products = () => {
-
-    const [products, setProducts] = useState(DrinksData); 
+    const {productData, productLoading, productError} = useProduct();
     const [filter, setFilter] = useState(null);
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
 
-    useEffect(() => {
-        if (filter) {
-            setProducts([...DrinksData].filter((drink, index) => drink.category === filter))
-        } else {
-            setProducts([...DrinksData])
-        }
-    }, [filter])
+    if (productLoading) return <h5>Loading product data</h5>
+    if (productError) return <h5>Error loading product data</h5>
+
+    // useEffect(() => {
+    //     if (filter) {
+    //         setProducts([...DrinksData].filter((drink, index) => drink.category === filter))
+    //     } else {
+    //         setProducts([...DrinksData])
+    //     }
+    // }, [filter])
 
     const handleShowAddProductModal = () => {
         setShowAddProductModal(!showAddProductModal);
     }
 
     const addProduct = (value) => {
-        if (value) {
-            setProducts([...products, value])
-        }
-        handleShowAddProductModal();
+        // if (value) {
+        //     setProducts([...products, value])
+        // }
+        // handleShowAddProductModal();
     }
 
     const handleSetFilter = (value) => {
@@ -43,7 +45,7 @@ const Products = () => {
         Cupcakes: "cupcakes"
         }
 
-    const listProducts = products.map(product => <ProductCard 
+    const listProducts = productData.results.map(product => <ProductCard 
         product={product} 
         key={product.id} 
         />)

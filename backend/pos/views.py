@@ -62,7 +62,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
-    filterset_fields = ['category', 'is_archived']
+    filterset_fields = ['category__name', 'is_archived']
     
     search_fields = ['name']
     
@@ -86,8 +86,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     
-    def get_serializer(self, *args, **kwargs):
-        for self.action in ['create', 'update']:
+    def get_serializer_class(self, *args, **kwargs):
+        if self.action in ['create', 'update', 'partial_update']:
             return TransactionCreateSerializer
         return TransactionSerializer
     

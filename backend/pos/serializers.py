@@ -59,13 +59,14 @@ class TransactionSerializer(serializers.ModelSerializer):
     gross_total = serializers.ReadOnlyField()
     discount_amount = serializers.ReadOnlyField()
     net_total = serializers.ReadOnlyField()
+    change = serializers.ReadOnlyField()
     
     class Meta:
         model = Transaction
         fields = [
-            'id', 'cashier', 'discount', 'is_void',
+            'id', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
-            'gross_total', 'discount_amount', 'net_total'
+            'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change'
         ]
    
 
@@ -73,6 +74,9 @@ class TransactionItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransactionItem
         fields = ['product', 'product_size', 'quantity', 'price']
+        extra_kwargs = {
+            'product_size': {'required': False, 'allow_null': True},
+        }
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
@@ -80,7 +84,10 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['cashier', 'discount', 'payment_method', 'transaction_items']
+        fields = ['discount', 'payment_method', 'transaction_items', 'is_void', 'paid_amount']
+        extra_kwargs = {
+            "discount": {"required": False, "allow_null": True},
+        }
         
         
     def create(self, validated_data):

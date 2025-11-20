@@ -35,6 +35,7 @@ export const AuthProvider = ({children}) => {
         const accessToken = localStorage.getItem(ACCESS_TOKEN)
 
         if (!accessToken) {
+            console.log("WHat")
             setUser(null);
             setIsAuthorized(false);
             setLoading(false);
@@ -56,8 +57,6 @@ export const AuthProvider = ({children}) => {
         } catch {
             setUser(null);
             setIsAuthorized(false);
-            localStorage.removeItem(ACCESS_TOKEN);
-            localStorage.removeItem(REFRESH_TOKEN);
             navigate('/login');
         } finally {
             setLoading(false);

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 class Discount(models.Model):
     name = models.CharField(max_length=50)
-    rate = models.DecimalField(decimal_places=2, max_digits=3)
+    rate = models.DecimalField(decimal_places=2, max_digits=5)
     
     def __str__(self):
         return self.name
@@ -58,6 +58,7 @@ class Transaction(models.Model):
     cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="transactions")
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True)
     is_void = models.BooleanField(default=False)
+    paid_amount = models.DecimalField(decimal_places=2, max_digits=11, default=0) #type: ignore
     
     def __str__(self):
         return f"Transaction #{self.pk}"
@@ -85,6 +86,10 @@ class Transaction(models.Model):
     @property
     def net_total(self):
         return self.gross_total - self.discount_amount
+    
+    @property
+    def change(self):
+        return (self.net_total - self.paid_amount) * -1
     
 class TransactionItem(models.Model):
     transaction = models.ForeignKey(
