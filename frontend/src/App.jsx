@@ -17,12 +17,13 @@ import {
 	Cashier,
 	Reports
 	} from './pages'
+import { ProtectedRoute } from './components/organisms'
 
 const App = () => {
 	return (
 		<>
 			<Routes>
-				<Route element={<Layout />}> {/* Change this into protected auth later */}
+				<Route element={<ProtectedRoute><Layout /></ProtectedRoute>}> {/* Change this into protected auth later */}
 					<Route path='/' element={<Home />} />
 					<Route path='/transactions' element={<Transactions />} />
 					<Route path='/inventory' element={<Inventory />} />
@@ -37,6 +38,7 @@ const App = () => {
 					<Route path='/invoice' element={<Invoice />}/> 
 					<Route path='/cashier' element={<Cashier />}/> 
 				</Route>
+				
 				<Route path='/login' element={<Login />} />
 				<Route path='*' element={<NotFound />} />
 			</Routes>

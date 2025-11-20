@@ -32,8 +32,9 @@ const Dropdown = ({selection, value, variant="block", size="fit", options={Optio
             <SelectTrigger className={`${variants[variant]} ${sizes[size]}`}>
                 <SelectValue placeholder={selection} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className='right-0'>
                 {listOptions}
+                <SelectItem value={null} className='text-black/60 font-semibold'>Remove Filter</SelectItem>
             </SelectContent>
         </Select>
     )

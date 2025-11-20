@@ -14,4 +14,5 @@ export {default as TransactionDetails} from './TransactionDetails'
 export {default as EditInventoryItem} from './EditInventoryItem'
 export {default as AddCashierModal} from './AddCashierModal'
 export {default as EditCashierModal} from './EditCashierModal'
+export {default as ProtectedRoute} from './ProtectedRoute'
 
