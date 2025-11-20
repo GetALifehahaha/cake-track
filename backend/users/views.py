@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from rest_framework import status, viewsets, generics
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, DjangoModelPermissions
+from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -15,13 +15,13 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     
     
-class UserViewSets(generics.ModelViewSet):
+class UserViewSets(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [DjangoModelPermissions]
     
     
-class UserProfileView(generics.RetreiveUpdateApiView):
+class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, *args, **kwargs):
