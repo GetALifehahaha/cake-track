@@ -24,8 +24,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('pos/', include('pos.urls')),
     path('me/', UserProfileView.as_view(), name="me"),
-    path('authentication/user/register/', CreateUserView.as_view(), name="register"),
-    path('authentication/token/', TokenObtainPairView.as_view(), name="get_token"),
-    path('authentication/token/refresh/', TokenRefreshView.as_view(), name="refresh_token"),
+    path('users/user/register/', CreateUserView.as_view(), name="register"),
+    path('users/token/', TokenObtainPairView.as_view(), name="get_token"),
+    path('users/token/refresh/', TokenRefreshView.as_view(), name="refresh_token"),
     path('api-auth/', include('rest_framework.urls', namespace="rest_framework")),
 ]
