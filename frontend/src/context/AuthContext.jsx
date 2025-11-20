@@ -37,17 +37,30 @@ export const AuthProvider = ({children}) => {
         if (!accessToken) {
             setUser(null);
             setIsAuthorized(false);
+            setLoading(false);
+            navigate('/login');
             return;
         }
+        try {
 
-        const decodedToken = jwtDecode(accessToken);
-        const tokenExpiration = decodedToken.exp
-        const currentDate = Date.now() / 1000
-
-        if (tokenExpiration < currentDate) {
-            await refresh();
-        } else {
-            await getUserData();
+            const decodedToken = jwtDecode(accessToken);
+            const tokenExpiration = decodedToken.exp
+            const currentDate = Date.now() / 1000
+            
+            if (tokenExpiration < currentDate) {
+                await refresh();
+            } else {
+                await getUserData();
+                setIsAuthorized(true)
+            }
+        } catch {
+            setUser(null);
+            setIsAuthorized(false);
+            localStorage.removeItem(ACCESS_TOKEN);
+            localStorage.removeItem(REFRESH_TOKEN);
+            navigate('/login');
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -68,8 +81,6 @@ export const AuthProvider = ({children}) => {
             localStorage.setItem(ACCESS_TOKEN, response.data.access);
             await getUserData();
         } catch {
-            localStorage.removeItem(ACCESS_TOKEN);
-            localStorage.removeItem(REFRESH_TOKEN);
             setUser(null);
             setIsAuthorized(false);
             navigate('/login');

@@ -74,19 +74,16 @@ class Transaction(models.Model):
     
     @property
     def gross_total(self):
-        """Sum of all transaction items before discount"""
-        return sum(item.price * item.quantity for item in self.transaction_items.all())
+        return sum(item.price * item.quantity for item in self.transaction_items.all()) #type: ignore
     
     @property
     def discount_amount(self):
-        """Amount discounted based on the discount rate"""
         if self.discount:
             return self.gross_total * self.discount.rate
         return 0
     
     @property
     def net_total(self):
-        """Total after discount"""
         return self.gross_total - self.discount_amount
     
 class TransactionItem(models.Model):

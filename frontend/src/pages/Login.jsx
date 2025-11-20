@@ -11,6 +11,7 @@ const Login = () => {
     const {login} = useContext(AuthContext)
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
+    const [rememberMe, setRememberMe] = useState(false);
     const navigate = useNavigate();
 
     const handleSetUsername = (e) => {
@@ -67,7 +68,7 @@ const Login = () => {
                             <input value={password} onChange={(e) => handleSetPassword(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='dummy_dummy'/>
                         </div>
                         <span className='flex flex-row items-center gap-2'>
-                            <input type='checkbox' />
+                            <input type='checkbox' onChange={() => setRememberMe(!rememberMe)} />
                             <label>Remember me</label>
                         </span>
                         

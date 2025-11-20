@@ -4,10 +4,10 @@ import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
 import DrinksData from '../data/DrinksData'
 import { Minus } from 'lucide-react'
+import useProduct from '@/hooks/useProduct'
 
 const Home = () => {
-    // use auth context ot get the user
-
+    const {productData, productLoading, productError} = useProduct();
     const [products, setProducts] = useState([...DrinksData])
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
@@ -31,7 +31,6 @@ const Home = () => {
         Cakes: "cakes",
         Cupcakes: "cupcakes"
     }
-
 
     const handleToggleCheckoutProduct = (product) => {
         setCheckoutProducts(cp => {
@@ -141,6 +140,9 @@ const Home = () => {
     }
 
     // ------------------------------ lISTS ------------------------------------------
+
+    if (productLoading) return <h5>Loading</h5>
+    if (productError) return <h5>Error</h5>
     
     const listCheckoutProducts = checkoutProducts.map((product) => 
         <CheckoutProduct 
@@ -150,7 +152,7 @@ const Home = () => {
         onToggle={handleRemoveProductFromCheckout}/>
     )
 
-    const listProduct = products.map((product) => 
+    const listProduct = productData.results.map((product) => 
         <ProductCard 
         product={product} 
         key={product.id} 
