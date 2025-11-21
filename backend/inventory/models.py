@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 class Ingredient(models.Model):
     name = models.CharField(max_length=20)
-    remaining_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0)
+    total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0)  
 
     UNITS = [
         ('kg', 'Kilogram'),
@@ -19,7 +19,7 @@ class Transaction(models.Model):
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name="transactions")
     
     amount = models.DecimalField(max_digits=11, decimal_places=2)
-    total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0)  
+    remaining_amount = models.DecimalField(max_digits=11, decimal_places=2, default=0)
 
     TYPE = [
         ('in', 'In'),

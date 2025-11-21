@@ -2,15 +2,21 @@ import React, {useState} from 'react';
 import { Title, Label, Dropdown, Button } from '../atoms';
 import { ModalFeedbackCard } from '../molecules';
 import { Plus, X } from 'lucide-react';
+import useCategory from '@/hooks/useCategory';
+
 
 const AddRecipeModal = ({onConfirm, onClose}) => {
-    const units = {
-        Pieces: 'pcs',
-        Kilograms: "kg",
-        Sticks: 'stk',
-        Milliliter: "ml",
-        Cup: "cup"
-    }
+
+    const {categoryData, categoryError, categoryLoading} = useCategory();
+    
+    const units = [
+    { key: 'pcs', value: 'Pieces' },
+    { key: 'kg', value: 'Kilograms' },
+    { key: 'stk', value: 'Sticks' },
+    { key: 'ml', value: 'Milliliter' },
+    { key: 'cup', value: 'Cup' }
+];
+
 
     const [name, setName] = useState("");
     const [ingredients, setIngredients] = useState([

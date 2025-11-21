@@ -18,7 +18,7 @@ const AddCashierModal = ({onConfirm, onClose}) => {
         if (!fullName || !contactNumber || !address || !emailAddress || !password) {
             setFeedback({
                 label: 'Incomplete details',
-                details: "Please don't leave any black fields",
+                details: "Please don't leave any blank fields",
                 type: 'error'
             })
             return;

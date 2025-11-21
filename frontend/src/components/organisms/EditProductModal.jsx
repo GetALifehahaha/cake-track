@@ -11,7 +11,6 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     const [price, setPrice] = useState(product.price);
     const [imagePath, setImagePath] = useState(product.image_path)
 
-
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
     

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import {AddProductModal, ArchivedModal} from '../components/organisms';
+import {AddProductModal, ArchivedModal, DiscountModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
@@ -18,6 +18,7 @@ const Products = () => {
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
+    const [showDiscountModal, setShowDiscountModal] = useState(false);
 
     useEffect(() => {
         if (productResponse) {
@@ -57,6 +58,9 @@ const Products = () => {
     const handleShowArchivedModal = () => {
         setShowArchivedModal(true);
     }
+    
+    const handleShowDiscountModal = () => setShowDiscountModal(true);
+    const handleCloseDiscountModal = () => setShowDiscountModal(false);
 
     const handleSetFilter = (value) => {
         setFilter(value);
@@ -116,6 +120,7 @@ const Products = () => {
                     <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                 </div>
                 <div className='flex items-center gap-4'>
+                    <Button variant='block2' text='Manage Discounts' icon={Settings} onClick={handleShowDiscountModal}/>
                     <Button variant='block2' text='Manage Categories' icon={Settings} />
                     <Button variant='block' text='Add Item' icon={Plus} onClick={handleShowAddProductModal} />
                 </div>
@@ -135,6 +140,10 @@ const Products = () => {
 
             {showEditProductModal &&
             <EditProductModal product={prepEditProduct} categoryOptions={categoryOptions} onConfirm={editProduct} onClose={handleCloseEditProductModal} />
+            }
+
+            {showDiscountModal &&
+            <DiscountModal onClose={handleCloseDiscountModal}/>
             }
         </div>
     )

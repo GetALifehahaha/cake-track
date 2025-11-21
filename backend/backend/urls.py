@@ -25,6 +25,7 @@ from users.views import CreateUserView, UserProfileView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('pos/', include('pos.urls')),
+    path('inventory/', include('inventory.urls')),
     path('me/', UserProfileView.as_view(), name="me"),
     path('users/user/register/', CreateUserView.as_view(), name="register"),
     path('users/token/', TokenObtainPairView.as_view(), name="get_token"),

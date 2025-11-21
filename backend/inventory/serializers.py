@@ -14,6 +14,11 @@ class TransactionSerializer(serializers.ModelSerializer):
             'ingredient': {'read_only': True}
         }
         
+    def validate_amount(self, value):
+        if value <= 0:
+            raise ValidationError("Amount must be greater then zero")
+        return value
+        
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
     transactions = TransactionSerializer(many=True)
@@ -76,7 +81,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                     ingredient.save()
                     created_transactions.append(transaction_object)
                 
-        return created_transactions
+        return TransactionSerializer(created_transactions, many=True).data
         
         
 class IngredientBatchSerializer(serializers.ModelSerializer):
@@ -93,6 +98,6 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'unit', 'total_stock', 'batches']
         
     def get_batches(self, obj):
-        queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date')
+        queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'created_at')
         
         return IngredientBatchSerializer(queryset, many=True).data
