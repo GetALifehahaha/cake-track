@@ -7,6 +7,7 @@ import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
 import useTransaction from '@/hooks/useTransaction'
 import useCategory from '@/hooks/useCategory'
+import useDiscount from '@/hooks/useDiscount'
 
 const Home = () => {
 
@@ -14,9 +15,11 @@ const Home = () => {
     const {productData, productLoading, productError} = useProduct();
     const {postTransaction, transactionLoading, transactionError, transactionResponse} = useTransaction();
     const {categoryData, categoryLoading, categoryError} = useCategory();
+    const {discountData, discountLoading, discountError} = useDiscount();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
-    const [discount, setDiscount] = useState(null);
+    const [discount, setDiscount] = useState();
+    const [discountValue, setDiscountValue] = useState(0);
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [orderType, setOrderType] = useState("dine-in");
@@ -26,16 +29,12 @@ const Home = () => {
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
     const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     
-    const discountSelections = {
-        "Senior Citizen 20%": .20,
-        "Valentines 10%": .10,
-    }
-
-    
     // SET AND TOGGLES
 
     const handleSetDiscount = (value) => {
         setDiscount(value)
+        // console.log(Number.parseFloat(discountData[value].rate))
+        console.log(value)
     }
 
     const handleToggleCheckoutProduct = (product) => {
@@ -104,7 +103,8 @@ const Home = () => {
                 is_void: false,
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
-                paid_amount: parseFloat(value)
+                paid_amount: parseFloat(value),
+                discount: discountData
             })
 
             setReceivedPayment(value);
@@ -135,8 +135,9 @@ const Home = () => {
     }, [checkoutProducts]);
 
     useMemo(() => {
-        setNetTotal(grossTotal - grossTotal * discount);
-    }, [grossTotal, discount])
+        // console.log(discountValue)
+        // setNetTotal(grossTotal - grossTotal * discountValue);
+    }, [grossTotal, discountValue, discount])
     
 
     // GUARDS
@@ -145,6 +146,10 @@ const Home = () => {
     if (productError) return <h5>Error</h5>
     if (categoryLoading) return <h5>Loading</h5>
     if (categoryError) return <h5>Error</h5>
+    if (transactionLoading) return <h5>Loading</h5>
+    if (transactionError) return <h5>Error</h5>
+    if (discountLoading) return <h5>Loading</h5>
+    if (discountError) return <h5>Error</h5>
 
 
     // MAIN FUNCTIONS
@@ -171,7 +176,7 @@ const Home = () => {
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
                 paid_amount: 0,
-                order_type: orderType
+                order_type: orderType,
             })
 
             if (transactionResponse) {
@@ -202,7 +207,8 @@ const Home = () => {
         onToggle={() => handleToggleCheckoutProduct(product)}/>
     )
 
-    const categoryOptions = categoryData.map((cat) => { return {key: cat.name, value: cat.id}})
+    const categoryOptions = categoryData.map((cat) => {return {key: cat.name, value: cat.id}});
+    const discountOptions = discountData.map((dis) => {return {key: dis.name, value: dis.id}});
 
     return (
         <div className='flex gap-4 w-full h-full'>
@@ -247,8 +253,7 @@ const Home = () => {
                             <div className='flex items-center'>
                                 <Label variant='small' text='Discount'/>
                                 <div className='flex-1' />
-                                {/* <Dropdown value={discount} variant='outline' selection="Discount" options={discountSelections} onSelect={handleSetDiscount}  className='bg-main' /> */}
-                                {discount>0 && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetDiscount(0)} />}
+                                <Dropdown value={discount} variant='outline' selection="Discount" size='fit' options={discountOptions} onSelect={handleSetDiscount}  className='bg-main' />
                             </div>
                         </div>
                         <hr className='text-border'></hr>
