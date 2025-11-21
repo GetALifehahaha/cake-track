@@ -1,22 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Label, Title } from '../atoms';
 import { X } from 'lucide-react';
-import DrinksData from '@/data/DrinksData';
 import { ProductCard } from '../molecules';
 import useProduct from '@/hooks/useProduct';
-import { useSearchParams } from 'react-router-dom';
+import ConfirmationModal from './ConfirmationModal';
 
-const ArchivedModal = ({onClose}) => {
+const ArchivedModal = ({onRestore, onClose}) => {
 
     // const [archivedProducts, setArchivedProducts] = useState([...DrinksData, ...DrinksData])
-    const {productData, productLoading, productError, patchProduct} = useProduct({isArchived: true}) 
+    const [selectedId, setSelectedId] = useState(null);
+    const {productData, productLoading, productError} = useProduct({isArchived: true})
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     if (productLoading) return <h5>Loading product data</h5>
     if (productError) return <h5>Error loading product data</h5>
 
+    const handleSetSelectedId = (id) => {
+        if (id == selectedId) {setSelectedId(null)}
+        else {setSelectedId(id)}
+    } 
+
+    const handleShowConfirmation = () => {
+        setShowConfirmation(true);
+    }
+
+    const handleCloseConfirmation = () => {
+        setShowConfirmation(false);
+    }
+
+    const restoreProduct = () => {
+        console.log(selectedId)
+        if (selectedId) onRestore({id: selectedId, is_archived: false});
+    }
+
     
     const listArchivedProducts = productData.results.map((product, index) =>
-        <ProductCard key={index} product={product}/>
+        <ProductCard selected={selectedId} key={index} product={product} isArchived={true} onToggle={handleSetSelectedId}/>
     )
 
     return (
@@ -38,7 +57,12 @@ const ArchivedModal = ({onClose}) => {
 
                 <span className='ml-auto'>
                     <Button variant='modalOutline' text='Close' onClick={() => onClose()} />
+                    <Button variant='modalBlock' text='Restore' onClick={handleShowConfirmation} />
                 </span>
+
+                {showConfirmation &&
+                    <ConfirmationModal title="Unarchive product" content="Are you sure you want to restore this product?" onReject={handleCloseConfirmation} onConfirm={restoreProduct} />
+                }
             </div>
         </div>
     )

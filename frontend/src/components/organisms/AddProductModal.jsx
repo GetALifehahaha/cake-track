@@ -37,7 +37,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
         };
 
-        onConfirm({name: productName, price, image_path: imagePath, category});
+        onConfirm({name: productName, price: price, image_path: imagePath, category_id: category});
     }
 
     const handleSetProductName = (e) => {

@@ -6,7 +6,6 @@ import {AddProductModal, ArchivedModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
-import { EllipsisVertical } from 'lucide-react';
 import EditProductModal from '@/components/organisms/EditProductModal';
 
 const Products = () => {
@@ -23,6 +22,7 @@ const Products = () => {
     useEffect(() => {
         if (productResponse) {
             handleCloseAddProductModal();
+            handleToggleArchivedModal();
             refresh();
         }
     }, [productResponse])
@@ -66,8 +66,12 @@ const Products = () => {
     const editProduct = async (value) => {
         if (value) {
             await patchProduct(prepEditProduct.id, value)
+        }
+    }
 
-            handleCloseEditProductModal();
+    const restoreProduct = async (value) => {
+        if (value) {
+            await patchProduct(value.id, {is_archived: false})
         }
     }
 
@@ -121,8 +125,9 @@ const Products = () => {
             }
 
             {showArchivedModal &&
-            <ArchivedModal onClose={handleToggleArchivedModal} />
+            <ArchivedModal onRestore={restoreProduct} onClose={handleToggleArchivedModal} />
             }
+
             {showEditProductModal &&
             <EditProductModal product={prepEditProduct} categoryOptions={categoryOptions} onConfirm={editProduct} onClose={handleCloseEditProductModal} />
             }

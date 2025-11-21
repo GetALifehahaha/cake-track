@@ -13,7 +13,8 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
-
+    const [archiveConfirmation, setArchiveConfirmation] = useState(false);
+    
     const [preview, setPreview] = useState(product.image_path);
 
     const [feedback, setFeedback] = useState("");
@@ -28,11 +29,10 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const handleConfirmModal = () => {
 
-
         let params = {};
 
         if (productName != product.name) params.name = productName;
-        if (category != product.category) params.category = category;
+        if (category != product.category) params.category_id = category;
         if (price != product.price) params.price = price;
         if (imagePath != product.image_path) params.image_path = imagePath;
 
@@ -69,15 +69,18 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
         setShowConfirmationModal(!showConfirmationModal);
     }
 
+    const handleArchive = () => onConfirm({is_archived: true})
+
+    const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
+
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
                 <div className='flex flex-col gap-2'>
                     <div className="flex justify-between items-center w-full">
-                        <Title variant='modal' text='Add New Item' />
+                        <Title variant='modal' text='Edit product details' />
                         <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
                     </div>
-                    <Label variant='small' text='Create a new product by filling in the details below' />
                 </div>
 
                 <div className='flex gap-8'>
@@ -130,12 +133,16 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                     <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
                 }
                 <div className='flex gap-4 ml-auto'>
+                    <Button variant='modalBlock' size='base' text='Archive Item' onClick={handleSetArchiveConfirmation}/>
                     <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
                     <Button variant='modalBlock' size='base' text='Save' onClick={handleSetShowConfirmationModal}/>
                 </div>
 
                 {showConfirmationModal &&
-                    <ConfirmationModal title="Add Product?" content="Are you sure you want to add this product?" onReject={handleSetShowConfirmationModal} onConfirm={handleConfirmModal} />
+                    <ConfirmationModal title="Edit Product?" content="Are you sure you want to edit this product?" onReject={handleSetShowConfirmationModal} onConfirm={handleConfirmModal} />
+                }
+                {archiveConfirmation &&
+                    <ConfirmationModal title="Archive Product?" content="Are you sure you want to archive this product? You can get it back from the archives" onReject={handleSetArchiveConfirmation} onConfirm={handleArchive} />
                 }
             </div>
         </div>

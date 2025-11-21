@@ -31,13 +31,18 @@ class ProductSizeSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = CategorySerializer()
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset = Category.objects.all(),
+        source='category',
+        write_only=True
+    )
     sizes = ProductSizeSerializer(many=True, read_only=True)
     
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'price', 'category',
+            'id', 'name', 'description', 'price', 'category', 'category_id',
             'image_path', 'is_archived', 'sizes'
         ]
 

@@ -72,12 +72,15 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Product.objects.all()
         
-        is_archived_param = self.request.query_params.get('is_archived'); #type: ignore
-        
-        if (is_archived_param is not None and is_archived_param.lower() == "true"):
-            return queryset.filter(is_archived=True)
+        if self.action == "list":
+            is_archived_param = self.request.query_params.get('is_archived'); #type: ignore
             
-        return queryset.filter(is_archived=False)
+            if (is_archived_param is not None and is_archived_param.lower() == "true"):
+                return queryset.filter(is_archived=True)
+                
+            return queryset.filter(is_archived=False)
+
+        return queryset
     
         
 class TransactionViewSet(viewsets.ModelViewSet):

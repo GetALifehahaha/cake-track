@@ -10,7 +10,7 @@ const ConfirmationModal = ({title, content, onConfirm, onReject}) => {
                     <h5 className='text-text/75 py-4'>{content}</h5>
                     <div className='flex flex-row ml-auto gap-2'>
                         <Button text='Cancel' onClick={onReject} variant='modalOutline' />
-                        <Button text='Add Product' onClick={onConfirm} variant='modalBlock' />
+                        <Button text='Confirm' onClick={onConfirm} variant='modalBlock' />
                     </div>
                 </div>
             </div>

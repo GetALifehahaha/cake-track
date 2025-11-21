@@ -40,6 +40,7 @@ export default function useProduct({isArchived=false} = {}) {
     }
 
     const postProduct = async (params) => {
+
         setProductLoading(true);
         try {
             await ProductApi(params, null, "POST");
