@@ -5,8 +5,10 @@ import { Archive, Plus, Settings, Minus } from 'lucide-react';
 import {AddProductModal, ArchivedModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
+import { useSearchParams } from 'react-router-dom';
 
 const Products = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
     const {postProduct, productData, productLoading, productError, productResponse, refresh} = useProduct();
     const [filter, setFilter] = useState(null);
@@ -32,6 +34,11 @@ const Products = () => {
     
     const handleCloseAddProductModal = () => {
         setShowAddProductModal(false);
+    }
+
+    const handleToggleArchivedModal = () => {
+        setShowArchivedModal(!showArchivedModal);
+        setSearchParams("")
     }
 
     const addProduct = async (value) => {
@@ -79,7 +86,7 @@ const Products = () => {
             }
 
             {showArchivedModal &&
-            <ArchivedModal onClose={setShowArchivedModal} />
+            <ArchivedModal onClose={handleToggleArchivedModal} />
             }
         </div>
     )

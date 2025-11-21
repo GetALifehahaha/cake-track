@@ -69,6 +69,16 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'price', 'created_at']
     ordering = ['name']
     
+    def get_queryset(self):
+        queryset = Product.objects.all()
+        
+        is_archived_param = self.request.query_params.get('is_archived'); #type: ignore
+        
+        if (is_archived_param is not None and is_archived_param.lower() == "true"):
+            return queryset.filter(is_archived=True)
+            
+        return queryset.filter(is_archived=False)
+    
         
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.prefetch_related(

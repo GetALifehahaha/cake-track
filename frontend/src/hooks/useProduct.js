@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import ProductApi from "../api/ProductApi";
 import { useParams, useSearchParams } from "react-router-dom";
 
-export default function useProduct() {
+export default function useProduct({isArchived=false} = {}) {
     const [productResponse, setProductResponse] = useState();
     const [productData, setProductData] = useState([]);
     const [productLoading, setProductLoading] = useState(true);
@@ -22,6 +22,22 @@ export default function useProduct() {
             setProductLoading(false);
         }
     };
+
+    const fetchArchivedProducts = async () => {
+        setProductLoading(true);
+        try {
+            const params = Object.fromEntries(searchParams.entries());
+
+            params.is_archived = true;
+
+            const data = await ProductApi(params, product_id);
+            setProductData(data);
+        } catch (err) {
+            setProductError({ status: "error", detail: "Failed to read product." });
+        } finally {
+            setProductLoading(false);
+        }
+    }
 
     const postProduct = async (params) => {
         setProductLoading(true);
@@ -66,7 +82,11 @@ export default function useProduct() {
     const refresh = () => fetchProducts();
 
     useEffect(() => {
-        fetchProducts();
+        if (isArchived) {
+            fetchArchivedProducts()
+        } else {
+            fetchProducts();
+        }
     }, [searchParams]);
 
     return {
