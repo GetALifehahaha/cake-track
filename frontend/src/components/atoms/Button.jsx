@@ -4,7 +4,7 @@ const Button = ({variant="block", size="base",  text="Button", icon: Icon, onCli
 
     const buttonVariants = {
         main: 'w-full p-2 rounded-full bg-accent justify-center items-center text-sm font-bold text-main-white',
-        block: 'w-fit border border-accent-mute bg-accent-mute text-white rounded-full px-8 py-2 ',
+        block: 'w-fit border border-accent-mute bg-accent text-white rounded-full px-8 py-2 ',
         block2: 'px-8 py-2 w-fit bg-main-white text-accent-text rounded-sm border border-border',
         outline: 'w-fit border border-gray-light text-gray rounded-xl font-semibold px-8 py-1 ',
         active: 'w-fit border border-accent-text bg-accent-text text-white rounded-full px-4 py-1 ',

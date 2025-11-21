@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import permissions, viewsets, generics, filters
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend #type: ignore
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import status
@@ -24,8 +24,6 @@ from .models import (Discount,
                      Product, 
                      Transaction, 
                      TransactionItem) 
-from django.db.models import Count, Q, Case, When, Value, IntegerField
-
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()

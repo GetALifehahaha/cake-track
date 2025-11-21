@@ -52,11 +52,11 @@ const ArchivedModal = ({onRestore, onClose}) => {
                 
                 {/* <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={searchArchived} placeholder='Search products' onChange={(e) => setSearchArchived(e.target.value)}/> */}
 
-                <div className='grid grid-cols-3 gap-2 h-80 overflow-y-auto p-2'>
+                <div className='grid grid-cols-3 gap-4 h-80 overflow-y-auto p-2'>
                     {listArchivedProducts}
                 </div>
 
-                <span className='ml-auto'>
+                <span className='ml-auto flex gap-2'>
                     <Button variant='modalOutline' text='Close' onClick={() => onClose()} />
                     <Button variant='modalBlock' text='Restore' onClick={handleShowConfirmation} />
                 </span>
