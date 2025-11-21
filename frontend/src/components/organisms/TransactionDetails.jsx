@@ -13,17 +13,17 @@ const TransactionDetails = ({transactionDetail, onClose}) => {
                 </div>
 
                 <div className='text-text font-semibold text-sm border-t border-t-border border-b border-b-border py-8'>
-                    {transactionDetail.orderItems.map((item, index) => <h5 key={index}>{item.amount}x {item.name}</h5>)}
+                    {transactionDetail.transaction_items.map((item, index) => <h5 key={index}>{item.quantity}x {item.product.name}</h5>)}
                 </div>
 
                 <div className='flex flex-row'>
                     <div className='flex-1 flex flex-col gap-4'>
-                        <h5>Time Ordered: <strong>{transactionDetail.time}</strong></h5>
-                        <h5>Cashier: <strong>{transactionDetail.cashier}</strong></h5>
+                        <h5>Time Ordered: <strong>{new Date(transactionDetail.created_at).toLocaleTimeString()}</strong></h5>
+                        <h5>Cashier: <strong>{transactionDetail.cashier.first_name} {transactionDetail.cashier.last_name}</strong></h5>
                     </div>
                     <div className='flex-1 flex flex-col gap-4'>
                         <h5>Receipt ID: <strong>{transactionDetail.id}</strong></h5>
-                        <h5>Total: <strong>P {transactionDetail.total}</strong></h5>
+                        <h5>Total: <strong>P {transactionDetail.net_total}</strong></h5>
                     </div>
                 </div>
             </div>

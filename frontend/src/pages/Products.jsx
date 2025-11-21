@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import DrinksData from '../data/DrinksData'
 import {AddProductModal, ArchivedModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
+import useCategory from '@/hooks/useCategory';
 
 const Products = () => {
-    const {productData, productLoading, productError} = useProduct();
+    const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
+    const {postProduct, productData, productLoading, productError, productResponse} = useProduct();
     const [filter, setFilter] = useState(null);
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -15,35 +16,32 @@ const Products = () => {
 
     if (productLoading) return <h5>Loading product data</h5>
     if (productError) return <h5>Error loading product data</h5>
-
-    // useEffect(() => {
-    //     if (filter) {
-    //         setProducts([...DrinksData].filter((drink, index) => drink.category === filter))
-    //     } else {
-    //         setProducts([...DrinksData])
-    //     }
-    // }, [filter])
+    if (categoryLoading) return <h5>Loading category data</h5>
+    if (categoryError) return <h5>Error loading category data</h5>
 
     const handleShowAddProductModal = () => {
         setShowAddProductModal(!showAddProductModal);
     }
+    
+    const handleCloseAddProductModal = () => {
+        setShowAddProductModal(false);
+    }
 
-    const addProduct = (value) => {
-        // if (value) {
-        //     setProducts([...products, value])
-        // }
-        // handleShowAddProductModal();
+    const addProduct = async (value) => {
+        if (value) {
+            await postProduct(value);
+
+            if (productResponse) {
+                handleShowAddProductModal();
+            }
+        }
     }
 
     const handleSetFilter = (value) => {
         setFilter(value);
     }
 
-    const productSelection = {
-        Drinks: "drinks",
-        Cakes: "cakes",
-        Cupcakes: "cupcakes"
-        }
+    const categoryOptions = categoryData.map((cat) => { return {key: cat.name, value: cat.id}})
 
     const listProducts = productData.results.map(product => <ProductCard 
         product={product} 
@@ -54,7 +52,7 @@ const Products = () => {
         <div className='flex flex-col gap-8'>
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center'>
-                    <Dropdown value={filter} selection='Filter Product' onSelect={setFilter} options={productSelection} size='regular' />
+                    <Dropdown value={filter} selection='Filter Product' onSelect={setFilter} options={categoryOptions} size='regular' />
                     {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
                     <div className='mx-4' />
                     <Button variant='block2' text='Archives' icon={Archive} onClick={() => setShowArchivedModal(true)} />
@@ -70,7 +68,7 @@ const Products = () => {
             </div>
 
             {showAddProductModal &&
-            <AddProductModal onConfirm={addProduct} />
+            <AddProductModal categoryOptions={categoryOptions} onConfirm={addProduct} onClose={handleCloseAddProductModal} />
             }
 
             {showArchivedModal &&

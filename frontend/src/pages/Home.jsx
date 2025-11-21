@@ -1,20 +1,19 @@
-import React, { useState, useMemo, useEffect, useContext } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
-import DrinksData from '../data/DrinksData'
 import { Minus } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
-import { AuthContext } from '@/context/AuthContext'
 import useTransaction from '@/hooks/useTransaction'
+import useCategory from '@/hooks/useCategory'
 
 const Home = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
-
     const {productData, productLoading, productError} = useProduct();
     const {postTransaction, transactionLoading, transactionError, transactionResponse} = useTransaction();
+    const {categoryData, categoryLoading, categoryError} = useCategory();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState(null);
@@ -32,10 +31,11 @@ const Home = () => {
         "Valentines 10%": .10,
     }
 
-    const productSelection = {
-        Drinks: "drinks",
-        Cakes: "cakes",
-        Cupcakes: "cupcakes"
+    
+    // SET AND TOGGLES
+
+    const handleSetDiscount = (value) => {
+        setDiscount(value)
     }
 
     const handleToggleCheckoutProduct = (product) => {
@@ -50,39 +50,6 @@ const Home = () => {
         })
     }
 
-    const proceedToCheckout = () => {
-        if (!netTotal) return
-        setShowPaymentModal(true);
-    }
-
-    const completePayment = async (value) => {
-        if (value) {
-            const checkoutProductsPayload = checkoutProducts.map(p => ({
-                product: p.id,                 
-                product_size: p.selectedSizeId, 
-                quantity: p.amount,            
-                price: parseFloat(p.price)     
-            }))
-
-            const res = await postTransaction({
-                is_void: false,
-                payment_method: "cash",
-                transaction_items: checkoutProductsPayload,
-                paid_amount: parseFloat(value)
-            })
-
-            setReceivedPayment(value);
-            setShowPaymentSuccessModal(true);
-        }
-        setShowPaymentModal(false);
-    }
-
-    // ------------------------- PRODUCTS FUNCTIONS -------------------------------------
-
-    const handleSetDiscount = (value) => {
-        setDiscount(value)
-    }
-
     const handleSetFilter = (value) => {
         setFilter(filter => {
             if (filter == value) return null;
@@ -91,49 +58,7 @@ const Home = () => {
         })
     };
 
-    useEffect(() => {
-        let params = new URLSearchParams();
-        
-        if (filter) params.set('category__name', filter)
-
-        setSearchParams(params)
-    }, [filter])
-
-    // ------------------------- CHECKOUT FUNCTIONS ------------------------------------
-
-    useMemo(() => {
-        setGrossTotal(() => {
-            let total = 0;
-
-            checkoutProducts.forEach(prod => total += prod.price * prod.amount);
-
-            return total;
-        })
-    }, [checkoutProducts]);
-
-    useMemo(() => {
-        setNetTotal(grossTotal - grossTotal * discount);
-    }, [grossTotal, discount])
-
-
-
     const handleSetOrderType = (value) => setOrderType(value);
-
-    const removeAllProducts = () => {
-        setCheckoutProducts([]);
-    };
-
-    const confirmRemoveCheckoutItems = () => {
-        if (checkoutProducts.length > 0) setShowClearCheckoutModal(true);
-    }
-
-    const removeCheckoutItems = (value) => {
-        if (value) {
-            setCheckoutProducts([]);
-        }
-
-        setShowClearCheckoutModal(false);
-    }
 
     const handleRemoveProductFromCheckout = (id) => {
         setCheckoutProducts(checkoutProducts => checkoutProducts.filter(product => product.id != id))
@@ -161,11 +86,106 @@ const Home = () => {
         setShowPaymentSuccessModal(!showPaymentSuccessModal);
     }
 
-    // ------------------------------ lISTS ------------------------------------------
+
+    const proceedToCheckout = () => {
+        if (!netTotal) return
+        setShowPaymentModal(true);
+    }
+
+    const completePayment = async (value) => {
+        if (value) {
+            const checkoutProductsPayload = checkoutProducts.map(p => ({
+                product: p.id,                 
+                product_size: p.selectedSizeId, 
+                quantity: p.amount,            
+                price: parseFloat(p.price)     
+            }))
+
+            await postTransaction({
+                is_void: false,
+                payment_method: "cash",
+                transaction_items: checkoutProductsPayload,
+                paid_amount: parseFloat(value)
+            })
+
+            setReceivedPayment(value);
+            setShowPaymentSuccessModal(true);
+        }
+        setShowPaymentModal(false);
+    }
+
+
+    // USE EFFECTS AND MEMOS
+
+    useEffect(() => {
+        let params = new URLSearchParams();
+        
+        if (filter) params.set('category__name', filter)
+
+        setSearchParams(params)
+    }, [filter])
+    
+    useMemo(() => {
+        setGrossTotal(() => {
+            let total = 0;
+
+            checkoutProducts.forEach(prod => total += prod.price * prod.amount);
+
+            return total;
+        })
+    }, [checkoutProducts]);
+
+    useMemo(() => {
+        setNetTotal(grossTotal - grossTotal * discount);
+    }, [grossTotal, discount])
+    
+
+    // GUARDS
 
     if (productLoading) return <h5>Loading</h5>
     if (productError) return <h5>Error</h5>
+    if (categoryLoading) return <h5>Loading</h5>
+    if (categoryError) return <h5>Error</h5>
+
+
+    // MAIN FUNCTIONS
+
+    const removeAllProducts = () => {
+        setCheckoutProducts([]);
+    };
+
+    const confirmVoidPayment = () => {
+        if (checkoutProducts.length > 0) setShowClearCheckoutModal(true);
+    }
+
+    const voidPayment = async (value) => {
+        if (value) {
+            const checkoutProductsPayload = checkoutProducts.map(p => ({
+                product: p.id,                 
+                product_size: p.selectedSizeId, 
+                quantity: p.amount,            
+                price: parseFloat(p.price)     
+            }))
+
+            await postTransaction({
+                is_void: true,
+                payment_method: "cash",
+                transaction_items: checkoutProductsPayload,
+                paid_amount: 0
+            })
+
+            if (transactionResponse) {
+                setReceivedPayment(value);
+                removeAllProducts([]);
+            }
+        }
+
+        setShowClearCheckoutModal(false);
+    }
+
     
+    // LISTS AND OPTIONS
+
     const listCheckoutProducts = checkoutProducts.map((product) => 
         <CheckoutProduct 
         key={product.id} 
@@ -182,13 +202,14 @@ const Home = () => {
         onToggle={() => handleToggleCheckoutProduct(product)}/>
     )
 
+    const categoryOptions = categoryData.map((cat) => { return {key: cat.name, value: cat.id}})
+
     return (
         <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row gap-1 items-center'>
-                    <Dropdown value={filter} selection="Filter Product" size='regular' options={productSelection} onSelect={handleSetFilter}/>
-                    {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
+                    <Dropdown value={filter} selection="Filter Product" size='regular' options={categoryOptions} onSelect={handleSetFilter}/>
                 </div>
 
             {/* Product Section */}
@@ -205,7 +226,7 @@ const Home = () => {
                             <h5 className='font-bold text-xl'>Current Order</h5>
                             <h3 className='font-base'>#1337</h3> {/* Dummy Data:*/}
                         </div>
-                            <Button variant='outline' text='Clear' onClick={confirmRemoveCheckoutItems}/>
+                            <Button variant='outline' text='Clear' onClick={confirmVoidPayment}/>
                         </div>
 
                     <div className='flex flex-row gap-2 px-4'>
@@ -226,7 +247,7 @@ const Home = () => {
                             <div className='flex items-center'>
                                 <Label variant='small' text='Discount'/>
                                 <div className='flex-1' />
-                                <Dropdown value={discount} variant='outline' selection="Discount" options={discountSelections} onSelect={handleSetDiscount}  className='bg-main' />
+                                {/* <Dropdown value={discount} variant='outline' selection="Discount" options={discountSelections} onSelect={handleSetDiscount}  className='bg-main' /> */}
                                 {discount>0 && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetDiscount(0)} />}
                             </div>
                         </div>
@@ -250,7 +271,7 @@ const Home = () => {
             }
 
             {showShowClearCheckoutModal && 
-                <ClearCheckoutModal onConfirm={removeCheckoutItems} />
+                <ClearCheckoutModal onConfirm={voidPayment} />
             }
         </div>
     )

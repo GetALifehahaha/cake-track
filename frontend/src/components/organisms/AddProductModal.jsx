@@ -2,29 +2,26 @@ import React, {useState} from 'react';
 import { Button, Dropdown, Label, Title } from '../atoms';
 import { X, Plus, Upload } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
+import useCategory from '@/hooks/useCategory';
 
-const AddProductModal = ({onConfirm}) => {
+const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const [productName, setProductName] = useState("");
     const [category, setCategory] = useState("");
     const [price, setPrice] = useState(0);
+    const [imagePath, setImagePath] = useState(null)
 
     const [preview, setPreview] = useState(null);
 
     const [feedback, setFeedback] = useState("");
 
-    const categoryOptions = {
-        Drinks: "drinks",
-        Cakes: "cakes",
-        Cupcakes: "cupcakes",
-    }
-
     const handleFileChange = (e) => {
         const file = e.target.files[0];
+        setImagePath(file)
         if (file) setPreview(URL.createObjectURL(file));
     };
 
-    const handleRemovePreview = () => setPreview(false);
+    const handleRemovePreview = () => {setPreview(null)};
 
     const handleConfirmModal = (value) => {
         if (!value) onConfirm(value);
@@ -32,13 +29,14 @@ const AddProductModal = ({onConfirm}) => {
         if (!productName || !category || !price || !preview) {
             setFeedback({
                 label: 'Incomplete details',
-                details: "Please don't leave any black fields",
+                details: "Please don't leave any blank fields",
                 type: 'error'
             })
             return
+
         };
 
-        onConfirm({name: productName, price, imagePath: preview, category});
+        onConfirm({name: productName, price, image_path: imagePath, category});
     }
 
     const handleSetProductName = (e) => {
@@ -56,15 +54,13 @@ const AddProductModal = ({onConfirm}) => {
         setPrice(e.target.value);
     }
 
-    const capitalize = (string) => string[0].toUpperCase() + string.slice(1);
-
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
                 <div className='flex flex-col gap-2'>
                     <div className="flex justify-between items-center w-full">
                         <Title variant='modal' text='Add New Item' />
-                        <X size={16} className='text-text cursor-pointer' onClick={() => handleConfirmModal(false)}/>
+                        <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
                     </div>
                     <Label variant='small' text='Create a new product by filling in the details below' />
                 </div>
@@ -119,7 +115,7 @@ const AddProductModal = ({onConfirm}) => {
                     <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
                 }
                 <div className='flex gap-4 ml-auto'>
-                    <Button variant='modalOutline' size='base' text='Cancel' onClick={() => handleConfirmModal(false)}/>
+                    <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
                     <Button variant='modalBlock' size='base' text='Add Item' onClick={() => handleConfirmModal(true)}/>
                 </div>
             </div>

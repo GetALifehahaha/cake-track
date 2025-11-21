@@ -4,8 +4,6 @@ import React, { useState } from 'react'
 const ProductCard = ({product={name: '', price: 0.00, image_path: null}, onToggle}) => {
     const handleToggleClick = () => onToggle(product);
 
-    console.log(product.image_path)
-
     return (
         <div>
             <div onClick={handleToggleClick} className='cursor-pointer bg-main-white flex flex-col gap-4 px-2 py-4 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25'>

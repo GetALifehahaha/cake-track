@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const Dropdown = ({selection, value, variant="block", size="fit", options={Option: 'option'}, onSelect}) => {
+const Dropdown = ({selection, value, variant="block", size="fit", options=[{Option: 'option'}], onSelect}) => {
 
     const variants = {
         outline: 'bg-main border-main-dark text-text/50',
@@ -21,7 +21,9 @@ const Dropdown = ({selection, value, variant="block", size="fit", options={Optio
         regular: 'w-[140px]'
     }
 
-    const listOptions = Object.entries(options).map(([key, value], index) => <SelectItem key={index} value={value}>{key}</SelectItem>)
+    const capitalize = (str) => str ? str[0].toUpperCase() + str.slice(1) : str;
+
+    const listOptions = options.map(({key, value}, index) => <SelectItem key={index} value={value}>{capitalize(key)}</SelectItem>)
 
     return (
         <Select 
