@@ -171,7 +171,8 @@ const Home = () => {
                 is_void: true,
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
-                paid_amount: 0
+                paid_amount: 0,
+                order_type: orderType
             })
 
             if (transactionResponse) {

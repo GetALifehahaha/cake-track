@@ -6,14 +6,18 @@ import {AddProductModal, ArchivedModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
+import { EllipsisVertical } from 'lucide-react';
+import EditProductModal from '@/components/organisms/EditProductModal';
 
 const Products = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
-    const {postProduct, productData, productLoading, productError, productResponse, refresh} = useProduct();
+    const {postProduct, productData, patchProduct, productLoading, productError, productResponse, refresh} = useProduct();
     const [filter, setFilter] = useState(null);
+    const [prepEditProduct, setPrepEditProduct] = useState(null);
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
+    const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
 
     useEffect(() => {
@@ -41,26 +45,49 @@ const Products = () => {
         setSearchParams("")
     }
 
-    const addProduct = async (value) => {
-        if (value) {
-            await postProduct(value);
-            // if (productResponse) {
-            //     handleCloseAddProductModal();
-            //     refresh();
-            // }
-        }
-    }
-
     const handleSetFilter = (value) => {
         setFilter(value);
     }
 
+    const addProduct = async (value) => {
+        if (value) {
+            await postProduct(value);
+        }
+    }
+
+    const editProduct = async (value) => {
+        if (value) {
+            await patchProduct(prepEditProduct.id, value)
+
+            handleCloseEditProductModal();
+        }
+    }
+
+    const handlePrepEditProduct = (product) => {
+        setPrepEditProduct(product);
+        handleShowEditProductModal();
+    }
+
+    const handleShowEditProductModal = () => {
+        setShowEditProductModal(!showEditProductModal);
+    }
+
+    const handleCloseEditProductModal = () => {
+        setShowEditProductModal(!showEditProductModal);
+        setPrepEditProduct(null);
+    }
+
     const categoryOptions = categoryData.map((cat) => { return {key: cat.name, value: cat.id}})
 
-    const listProducts = productData.results.map(product => <ProductCard 
-        product={product} 
-        key={product.id} 
-        />)
+    const listProducts = productData.results.map(product => 
+    <>
+        <ProductCard 
+            product={product} 
+            key={product.id} 
+            onToggle={handlePrepEditProduct}
+            />
+    </>
+    )
 
     return (
         <div className='flex flex-col gap-8'>
@@ -87,6 +114,9 @@ const Products = () => {
 
             {showArchivedModal &&
             <ArchivedModal onClose={handleToggleArchivedModal} />
+            }
+            {showEditProductModal &&
+            <EditProductModal product={prepEditProduct} categoryOptions={categoryOptions} onConfirm={editProduct} onClose={handleCloseEditProductModal} />
             }
         </div>
     )
