@@ -31,7 +31,7 @@ class ProductSizeSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+    category = CategorySerializer()
     sizes = ProductSizeSerializer(many=True, read_only=True)
     
     class Meta:

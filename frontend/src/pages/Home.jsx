@@ -53,7 +53,6 @@ const Home = () => {
     const handleSetFilter = (value) => {
         setFilter(filter => {
             if (filter == value) return null;
-
             return value
         })
     };
@@ -210,7 +209,7 @@ const Home = () => {
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row gap-1 items-center'>
-                    <Dropdown value={filter} selection="Filter Product" size='regular' options={categoryOptions} onSelect={handleSetFilter}/>
+                    <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter}/>
                 </div>
 
             {/* Product Section */}

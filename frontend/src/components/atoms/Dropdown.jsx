@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const Dropdown = ({selection, value, variant="block", size="fit", options=[{Option: 'option'}], onSelect}) => {
+const Dropdown = ({selection, value, variant="block", size="fit", options=[{Option: 'option'}], forPageFilter=false, onSelect}) => {
 
     const variants = {
         outline: 'bg-main border-main-dark text-text/50',
@@ -23,7 +23,7 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
 
     const capitalize = (str) => str ? str[0].toUpperCase() + str.slice(1) : str;
 
-    const listOptions = options.map(({key, value}, index) => <SelectItem key={index} value={value}>{capitalize(key)}</SelectItem>)
+    const listOptions = options.map(({key, value}, index) => <SelectItem key={index} value={forPageFilter ? key : value}>{capitalize(key)}</SelectItem>)
 
     return (
         <Select 

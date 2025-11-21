@@ -66,7 +66,10 @@ export default function useTransaction() {
     const refresh = () => fetchTransactions();
 
     useEffect(() => {
-        fetchTransactions();
+        const category = searchParams.get("category__name");
+        if (!category) {
+            fetchTransactions();
+        }
     }, [searchParams]);
 
     return {

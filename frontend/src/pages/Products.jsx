@@ -27,6 +27,14 @@ const Products = () => {
         }
     }, [productResponse])
 
+    useEffect(() => {
+        let params = new URLSearchParams();
+        
+        if (filter) params.set('category__name', filter)
+
+        setSearchParams(params)
+    }, [filter])
+
     if (productLoading) return <h5>Loading product data</h5>
     if (productError) return <h5>Error loading product data</h5>
     if (categoryLoading) return <h5>Loading category data</h5>
@@ -93,7 +101,7 @@ const Products = () => {
         <div className='flex flex-col gap-8'>
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center'>
-                    <Dropdown value={filter} selection='Filter Product' onSelect={setFilter} options={categoryOptions} size='regular' />
+                    <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={setFilter} options={categoryOptions} size='regular' />
                     {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
                     <div className='mx-4' />
                     <Button variant='block2' text='Archives' icon={Archive} onClick={() => setShowArchivedModal(true)} />
