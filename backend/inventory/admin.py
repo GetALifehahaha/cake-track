@@ -5,9 +5,9 @@ from .models import Ingredient, Transaction
 class TransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0  # no extra blank rows
-    readonly_fields = ('created_at',)
-    fields = ('transaction_type', 'amount', 'remaining_amount', 'expiration_date', 'created_at')
-    ordering = ('-created_at',)
+    readonly_fields = ('purchase_date',)
+    fields = ('transaction_type', 'amount', 'remaining_amount', 'expiration_date', 'purchase_date')
+    ordering = ('-purchase_date',)
 
 # Ingredient Admin
 @admin.register(Ingredient)
@@ -19,7 +19,7 @@ class IngredientAdmin(admin.ModelAdmin):
 # Transaction Admin
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'ingredient', 'transaction_type', 'amount', 'expiration_date', 'created_at')
+    list_display = ('id', 'ingredient', 'transaction_type', 'amount', 'expiration_date', 'purchase_date')
     list_filter = ('transaction_type',)
     search_fields = ('ingredient__name',)
-    ordering = ('-created_at',)
+    ordering = ('-purchase_date',)

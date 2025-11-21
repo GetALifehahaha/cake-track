@@ -9,7 +9,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['id', 'amount', 'transaction_type', 'expiration_date', 'remaining_amount', 'created_at', 'ingredient_id']
+        fields = ['id', 'amount', 'transaction_type', 'expiration_date', 'remaining_amount', 'purchase_date', 'ingredient_id']
         extra_kwargs = {
             'ingredient': {'read_only': True}
         }
@@ -20,12 +20,15 @@ class TransactionSerializer(serializers.ModelSerializer):
         return value
         
 
-class TransactionCreateSerializer(serializers.ModelSerializer):
-    transactions = TransactionSerializer(many=True)
+class TransactionCreateSerializer(serializers.Serializer):
+    transactions = serializers.ListField(child=serializers.DictField())
+    
+    # class Meta:
+    #     model = Transaction
+    #     fields = ['transactions']
     
     def create(self, validated_data):
         transactions_data = validated_data['transactions']
-        
         created_transactions = []
         
         with transaction.atomic():
@@ -42,7 +45,8 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                         amount=amount,
                         remaining_amount=amount,
                         transaction_type=transaction_type,
-                        expiration_date=item.get("expiration_date")
+                        expiration_date=item.get("expiration_date"),
+                        purchase_date=item.get("purchase_date")
                     )
                     ingredient.total_stock += amount
                     ingredient.save()
@@ -51,7 +55,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 else:
                     # if out, get out_count, then get all the batches which has out
                     out_count = amount
-                    batches = ingredient.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'created_at')
+                    batches = ingredient.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')
                     
                     for batch in batches:
                         if out_count <= 0:
@@ -81,13 +85,19 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                     ingredient.save()
                     created_transactions.append(transaction_object)
                 
-        return TransactionSerializer(created_transactions, many=True).data
+        return {'transactions': created_transactions}
+    
+    def to_representation(self, instance):
+        # Serialize the created transactions using TransactionSerializer
+        return {
+            'transactions': TransactionSerializer(instance['transactions'], many=True).data
+        }
         
         
 class IngredientBatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ['id', 'amount', 'expiration_date', 'created_at', 'remaining_amount']
+        fields = ['id', 'amount', 'expiration_date', 'purchase_date', 'remaining_amount']
         
         
 class IngredientSerializer(serializers.ModelSerializer):
@@ -98,6 +108,6 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'unit', 'total_stock', 'batches']
         
     def get_batches(self, obj):
-        queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'created_at')
+        queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')
         
         return IngredientBatchSerializer(queryset, many=True).data

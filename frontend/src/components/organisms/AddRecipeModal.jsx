@@ -34,7 +34,7 @@ const AddRecipeModal = ({onConfirm, onClose}) => {
         setIngredients(ingredients.filter((_, index) => index != id))
     }
 
-    const updateIngredient = (id, field, value) => {
+    const updateIngredient = (id, field, value) => {    
         const updatedIngredient = ingredients.map((ingredient, index) => index == id ? {...ingredient, [field]: field == 'amount' ? Number.parseInt(value) || '' : value} : ingredient)
         setIngredients(updatedIngredient)
     }

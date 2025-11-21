@@ -6,8 +6,7 @@ from .serializers import (TransactionSerializer, TransactionCreateSerializer, In
 from .models import (Transaction, Ingredient)
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all().order_by('-created_at')
-    serializer_class = TransactionSerializer
+    queryset = Transaction.objects.all().order_by('-purchase_date')
     permission_classes = [permissions.DjangoModelPermissions]
     
     def get_serializer_class(self):
@@ -20,5 +19,10 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions]
-
-# Create your views here.
+    
+    
+class IngredientAllViewSet(viewsets.ModelViewSet):
+    queryset = Ingredient.objects.all().order_by('name')
+    serializer_class = IngredientSerializer
+    permission_classes = [permissions.DjangoModelPermissions]
+    pagination_class = None

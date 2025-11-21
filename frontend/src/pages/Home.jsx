@@ -33,8 +33,9 @@ const Home = () => {
 
     const handleSetDiscount = (value) => {
         setDiscount(value)
-        // console.log(Number.parseFloat(discountData[value].rate))
-        console.log(value)
+
+        const discount = discountData.find(d => d.id === value)
+        setDiscountValue(discount.rate)
     }
 
     const handleToggleCheckoutProduct = (product) => {
@@ -104,7 +105,7 @@ const Home = () => {
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
                 paid_amount: parseFloat(value),
-                discount: discountData
+                discount: discount
             })
 
             setReceivedPayment(value);
@@ -135,8 +136,7 @@ const Home = () => {
     }, [checkoutProducts]);
 
     useMemo(() => {
-        // console.log(discountValue)
-        // setNetTotal(grossTotal - grossTotal * discountValue);
+        setNetTotal(grossTotal - grossTotal * discountValue);
     }, [grossTotal, discountValue, discount])
     
 

@@ -5,12 +5,15 @@ import { X } from 'lucide-react';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
-    const units = {
-        Pieces: 'pcs',
-        Kilograms: "kg",
-        Sticks: 'stk',
-        Milliliter: "ml",
-    }
+
+    const units = [
+        { key: 'Pieces', value: 'pc' },
+        { key: 'Kilograms', value: 'kg' },
+        { key: 'Grams', value: 'g' },
+        { key: 'Sticks', value: 'st' },
+        { key: 'Milliliter', value: 'ml' },
+        { key: 'Cup', value: 'cup' }
+    ];
 
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);

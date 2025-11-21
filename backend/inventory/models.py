@@ -8,6 +8,10 @@ class Ingredient(models.Model):
     UNITS = [
         ('kg', 'Kilogram'),
         ('g', 'Gram'),
+        ('pc', 'Pieces'),
+        ('st', 'Sticks'),
+        ('ml', 'Milliliter'),
+        ('cp', 'Cup'),
     ]
     unit = models.CharField(max_length=2, choices=UNITS)
 
@@ -28,8 +32,8 @@ class Transaction(models.Model):
     transaction_type = models.CharField(max_length=3, choices=TYPE)
 
     # Extra fields needed for inventory logic
+    purchase_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)  # only used for IN
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.ingredient.name} - {self.transaction_type} {self.amount}"
