@@ -22,7 +22,8 @@ const Products = () => {
     useEffect(() => {
         if (productResponse) {
             handleCloseAddProductModal();
-            handleToggleArchivedModal();
+            handleCloseEditProductModal();
+            handleCloseArchivedModal();
             refresh();
         }
     }, [productResponse])
@@ -48,9 +49,13 @@ const Products = () => {
         setShowAddProductModal(false);
     }
 
-    const handleToggleArchivedModal = () => {
-        setShowArchivedModal(!showArchivedModal);
+    const handleCloseArchivedModal = () => {
+        setShowArchivedModal(false);
         setSearchParams("")
+    }
+
+    const handleShowArchivedModal = () => {
+        setShowArchivedModal(true);
     }
 
     const handleSetFilter = (value) => {
@@ -108,7 +113,7 @@ const Products = () => {
                     <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={setFilter} options={categoryOptions} size='regular' />
                     {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
                     <div className='mx-4' />
-                    <Button variant='block2' text='Archives' icon={Archive} onClick={() => setShowArchivedModal(true)} />
+                    <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                 </div>
                 <div className='flex items-center gap-4'>
                     <Button variant='block2' text='Manage Categories' icon={Settings} />
@@ -125,7 +130,7 @@ const Products = () => {
             }
 
             {showArchivedModal &&
-            <ArchivedModal onRestore={restoreProduct} onClose={handleToggleArchivedModal} />
+            <ArchivedModal onRestore={restoreProduct} onClose={handleCloseArchivedModal} />
             }
 
             {showEditProductModal &&

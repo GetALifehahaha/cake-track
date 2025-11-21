@@ -29,8 +29,9 @@ const ArchivedModal = ({onRestore, onClose}) => {
     }
 
     const restoreProduct = () => {
-        console.log(selectedId)
         if (selectedId) onRestore({id: selectedId, is_archived: false});
+
+        handleCloseConfirmation();
     }
 
     
