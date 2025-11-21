@@ -8,11 +8,18 @@ import useCategory from '@/hooks/useCategory';
 
 const Products = () => {
     const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
-    const {postProduct, productData, productLoading, productError, productResponse} = useProduct();
+    const {postProduct, productData, productLoading, productError, productResponse, refresh} = useProduct();
     const [filter, setFilter] = useState(null);
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
+
+    useEffect(() => {
+        if (productResponse) {
+            handleCloseAddProductModal();
+            refresh();
+        }
+    }, [productResponse])
 
     if (productLoading) return <h5>Loading product data</h5>
     if (productError) return <h5>Error loading product data</h5>
@@ -30,10 +37,10 @@ const Products = () => {
     const addProduct = async (value) => {
         if (value) {
             await postProduct(value);
-
-            if (productResponse) {
-                handleShowAddProductModal();
-            }
+            // if (productResponse) {
+            //     handleCloseAddProductModal();
+            //     refresh();
+            // }
         }
     }
 

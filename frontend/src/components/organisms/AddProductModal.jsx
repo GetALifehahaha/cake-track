@@ -3,6 +3,7 @@ import { Button, Dropdown, Label, Title } from '../atoms';
 import { X, Plus, Upload } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
 import useCategory from '@/hooks/useCategory';
+import { ConfirmationModal } from '.';
 
 const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
@@ -10,6 +11,8 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     const [category, setCategory] = useState("");
     const [price, setPrice] = useState(0);
     const [imagePath, setImagePath] = useState(null)
+
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false)
 
     const [preview, setPreview] = useState(null);
 
@@ -23,9 +26,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const handleRemovePreview = () => {setPreview(null)};
 
-    const handleConfirmModal = (value) => {
-        if (!value) onConfirm(value);
-
+    const handleConfirmModal = () => {
         if (!productName || !category || !price || !preview) {
             setFeedback({
                 label: 'Incomplete details',
@@ -52,6 +53,10 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
         e.preventDefault();
 
         setPrice(e.target.value);
+    }
+
+    const handleSetShowConfirmationModal = () => {
+        setShowConfirmationModal(!showConfirmationModal);
     }
 
     return (
@@ -116,8 +121,12 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                 }
                 <div className='flex gap-4 ml-auto'>
                     <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
-                    <Button variant='modalBlock' size='base' text='Add Item' onClick={() => handleConfirmModal(true)}/>
+                    <Button variant='modalBlock' size='base' text='Add Item' onClick={handleSetShowConfirmationModal}/>
                 </div>
+
+                {showConfirmationModal &&
+                    <ConfirmationModal title="Add Product?" content="Are you sure you want to add this product?" onReject={handleSetShowConfirmationModal} onConfirm={handleConfirmModal} />
+                }
             </div>
         </div>
     )
