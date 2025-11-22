@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import transaction, models
 from rest_framework import serializers
 from .models import (Transaction, Ingredient)
 from decimal import Decimal
@@ -111,3 +111,36 @@ class IngredientSerializer(serializers.ModelSerializer):
         queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')
         
         return IngredientBatchSerializer(queryset, many=True).data
+    
+    def create(self, validated_data):
+        """
+        Create Ingredient and automatically create first batch.
+        """
+        # Extract fields passed from frontend
+        request = self.context.get("request")
+        data = request.data
+
+        amount = data.get("amount")
+        purchase_date = data.get("purchaseDate")
+        expiration_date = data.get("expirationDate")
+
+        # 1. Create Ingredient
+        ingredient = Ingredient.objects.create(**validated_data)
+
+        # 2. Create first batch (Transaction)
+        Transaction.objects.create(
+            ingredient=ingredient,
+            amount=amount,
+            remaining_amount=amount,      # First batch: full stock is remaining
+            transaction_type='in',
+            purchase_date=purchase_date,
+            expiration_date=expiration_date,
+        )
+
+        # 3. Update ingredient total_stock
+        ingredient.total_stock = ingredient.transactions.filter(
+            transaction_type='in'
+        ).aggregate(models.Sum('remaining_amount'))['remaining_amount__sum'] or 0
+        ingredient.save()
+
+        return ingredient

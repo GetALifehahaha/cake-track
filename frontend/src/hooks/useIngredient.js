@@ -27,7 +27,7 @@ export default function useIngredient(all = false) {
     const postIngredient = async (params) => {
         setIngredientLoading(true);
         try {
-            await IngredientApi(params, null, "POST");
+            await IngredientApi(params, null, null, "POST");
             setIngredientResponse({ status: "success", detail: "Ingredient created successfully." });
         } catch (err) {
             setIngredientError({ status: "error", detail: "Failed to create ingredient." });
@@ -40,7 +40,7 @@ export default function useIngredient(all = false) {
     const patchIngredient = async (id, params) => {
         setIngredientLoading(true);
         try {
-            await IngredientApi(params, id, "PATCH");
+            await IngredientApi(params, id, null, "PATCH");
             setIngredientResponse({ status: "success", detail: "Ingredient edited successfully." });
             fetchIngredients();
         } catch (err) {
@@ -54,7 +54,7 @@ export default function useIngredient(all = false) {
     const deleteIngredient = async (id) => {
         setIngredientLoading(true);
         try {
-            await IngredientApi(null, id, "DELETE");
+            await IngredientApi(null, id, null, "DELETE");
             setIngredientResponse({ status: "success", detail: "Ingredient deleted successfully." });
         } catch (err) {
             setIngredientError({ status: "error", detail: "Failed to delete ingredient." });

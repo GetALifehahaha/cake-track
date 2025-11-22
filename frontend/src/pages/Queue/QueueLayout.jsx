@@ -24,7 +24,7 @@ const Queue = () => {
 
 	return (
 		<div className='flex flex-col gap-8'>
-			<Title variant='page' text='Custom Order Queue'/>
+			<Title variant='page' text='Cake Orders'/>
 			<div className='flex items-center border-b-2 border-b-border w-fit'>
 				{listTabs}
 			</div>

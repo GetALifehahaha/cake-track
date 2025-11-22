@@ -5,8 +5,8 @@ export const SidebarConfig = [
     {label: "TRANSACTIONS", link:'/transactions', icon: File},
     {label: "REPORTS", link:'/reports', icon: ChartBar},
     {label: "INVENTORY", link:'/inventory', icon: Box},
-    {label: "QUEUE", link:'/queue', icon: Clipboard},
+    {label: "CAKE ORDERS", link:'/queue', icon: Clipboard},
     {label: "RECIPE", link:'/recipe',  icon: ClipboardPenLine},
-    {label: "INVOICE", link:'/invoice', icon: BookmarkCheck},
+    {label: "BUSINESS DETAILS", link:'/details', icon: BookmarkCheck},
     {label: "CASHIERS", link:'/cashier', icon: User2Icon},
 ]

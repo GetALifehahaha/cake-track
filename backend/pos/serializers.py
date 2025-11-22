@@ -71,7 +71,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
-            'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change'
+            'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type'
         ]
    
 

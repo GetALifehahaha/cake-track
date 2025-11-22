@@ -15,14 +15,10 @@ const Invoice = () => {
 
     const [invoiceDetails, setInvoiceDetails] = useState(invoice);
 
-    const date = new Date();
-    const localDateTime = date.toLocaleString()
-    
-
     return (
         <div className='flex flex-row w-full h-full gap-8 mb-4'>
             {/* Invoice Information */}
-            <div className="max-w-sm mx-auto bg-main-white shadow-sm p-6 text-sm basis-1/3 flex flex-col justify-between">
+            {/* <div className="max-w-sm mx-auto bg-main-white shadow-sm p-6 text-sm basis-1/3 flex flex-col justify-between">
                 <h5 className="text-center text-text font-bold text-base mb-2 ">
                     {invoiceDetails.businessName}
                 </h5>
@@ -99,7 +95,7 @@ const Invoice = () => {
                 <h5 className="text-center text-text text-xs italic">
                     This is not an official receipt
                 </h5>
-            </div>
+            </div> */}
 
 
             {/* Invoice CMS */}

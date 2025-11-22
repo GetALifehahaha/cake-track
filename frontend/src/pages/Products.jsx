@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import {AddProductModal, ArchivedModal, DiscountModal} from '../components/organisms';
+import {AddProductModal, ArchivedModal, DiscountModal, CategoryModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
@@ -19,12 +19,14 @@ const Products = () => {
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     useEffect(() => {
         if (productResponse) {
             handleCloseAddProductModal();
             handleCloseEditProductModal();
             handleCloseArchivedModal();
+            setPrepEditProduct(null)
             refresh();
         }
     }, [productResponse])
@@ -61,6 +63,8 @@ const Products = () => {
     
     const handleShowDiscountModal = () => setShowDiscountModal(true);
     const handleCloseDiscountModal = () => setShowDiscountModal(false);
+    const handleShowCategoryModal = () => setShowCategoryModal(true);
+    const handleCloseCategoryModal = () => setShowCategoryModal(false);
 
     const handleSetFilter = (value) => {
         setFilter(value);
@@ -90,12 +94,11 @@ const Products = () => {
     }
 
     const handleShowEditProductModal = () => {
-        setShowEditProductModal(!showEditProductModal);
+        setShowEditProductModal(true);
     }
 
     const handleCloseEditProductModal = () => {
-        setShowEditProductModal(!showEditProductModal);
-        setPrepEditProduct(null);
+        setShowEditProductModal(false);
     }
 
     const categoryOptions = categoryData.map((cat) => { return {key: cat.name, value: cat.id}})
@@ -115,13 +118,12 @@ const Products = () => {
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center'>
                     <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={setFilter} options={categoryOptions} size='regular' />
-                    {filter && <Minus className='text-text/50 ml-2 cursor-pointer' onClick={() => handleSetFilter(null)} />}
-                    <div className='mx-4' />
+                        <div className='mx-1    ' />
                     <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                 </div>
                 <div className='flex items-center gap-4'>
                     <Button variant='block2' text='Manage Discounts' icon={Settings} onClick={handleShowDiscountModal}/>
-                    <Button variant='block2' text='Manage Categories' icon={Settings} />
+                    <Button variant='block2' text='Manage Categories' icon={Settings} onClick={handleShowCategoryModal} />
                     <Button variant='block' text='Add Item' icon={Plus} onClick={handleShowAddProductModal} />
                 </div>
             </div>
@@ -144,6 +146,9 @@ const Products = () => {
 
             {showDiscountModal &&
             <DiscountModal onClose={handleCloseDiscountModal}/>
+            }
+            {showCategoryModal &&
+            <CategoryModal onClose={handleCloseCategoryModal}/>
             }
         </div>
     )

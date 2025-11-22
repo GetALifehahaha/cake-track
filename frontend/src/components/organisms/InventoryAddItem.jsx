@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Title, Label, Button, Dropdown } from '../atoms';
 import { DatePicker, ModalFeedbackCard } from '../molecules';
 import { X } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
@@ -22,8 +23,17 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     const [expirationDate, setExpirationDate] = useState();
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleConfirm = () => {
+        onConfirm({name, amount, unit, purchaseDate: purchaseDate.toLocaleDateString("en-CA"), expirationDate: expirationDate.toLocaleDateString("en-CA")});
+    }
+
+    const handleSetUnit = (value) => {
+        setUnit(value)
+    }
+
+    const handleSetShowConfirm = () => {
         if (!name || !amount || !unit || !purchaseDate || !expirationDate) {
             setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
             return;
@@ -33,26 +43,9 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
             setModalFeedbackContent({type: "error", label: "Invalid Expiration Date", details: 'Expiry date cannot be earlier than the purchase date.'})
             return;
         }
-
-        const formattedPurchaseDate = purchaseDate.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-
-        const formattedExpirationDate = expirationDate.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-
-        onConfirm({name, amount, unit, purchaseDate: formattedPurchaseDate, expirationDate: formattedExpirationDate, status: "Good"});
-        return;
-    }
-
-    const handleSetUnit = (value) => {
-        setUnit(value)
-    }
+        setShowConfirm(true)
+    };
+    const handleSetCloseConfirm = () => setShowConfirm(false);
 
     useEffect(() => {
         if (modalFeedbackContent) {
@@ -106,10 +99,14 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
                     <div className='flex gap-4 mt-4 ml-auto'>
                         <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
-                        <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleConfirm}/>
+                        <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleSetShowConfirm}/>
                     </div>
                 </div>
             </div>
+
+            {showConfirm &&
+                <ConfirmationModal title={"Add Item?"} content={"Are you sure you want to add this item?"} onReject={handleSetCloseConfirm} onConfirm={handleConfirm} />
+            }
         </div>
     )
 }

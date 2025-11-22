@@ -5,7 +5,6 @@ from .models import Ingredient, Transaction
 class TransactionInline(admin.TabularInline):
     model = Transaction
     extra = 0  # no extra blank rows
-    readonly_fields = ('purchase_date',)
     fields = ('transaction_type', 'amount', 'remaining_amount', 'expiration_date', 'purchase_date')
     ordering = ('-purchase_date',)
 

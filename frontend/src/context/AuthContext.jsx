@@ -35,13 +35,12 @@ export const AuthProvider = ({children}) => {
         const accessToken = localStorage.getItem(ACCESS_TOKEN)
 
         if (!accessToken) {
-            console.log("WHat")
             setUser(null);
             setIsAuthorized(false);
             setLoading(false);
-            navigate('/login');
             return;
         }
+
         try {
 
             const decodedToken = jwtDecode(accessToken);
@@ -54,6 +53,7 @@ export const AuthProvider = ({children}) => {
                 await getUserData();
                 setIsAuthorized(true)
             }
+            
         } catch {
             setUser(null);
             setIsAuthorized(false);
@@ -69,7 +69,6 @@ export const AuthProvider = ({children}) => {
         if (!refreshToken) {
             setUser(null);
             setIsAuthorized(false);
-            navigate('/login');
             return;
         }
 

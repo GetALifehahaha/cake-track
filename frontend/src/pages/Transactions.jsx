@@ -56,13 +56,13 @@ const Transactions = () => {
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.id}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.cashier.first_name}</h5>
             <h5 className={`${item.is_void ? 'text-error' : 'text-success'} font-medium text-center py-0.5 ${basis}`}>{item.is_void ? 'Voided' : 'Success'}</h5>
-            <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>P {item.net_total}</h5>
+            <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>P {(item.net_total).toFixed(2)}</h5>
             <Ellipsis className={`text-text ${basis} cursor-pointer`} onClick={() => handleSetTransactionDetails(item)}/>
         </div>
     )
 
     return (
-        <div className='w-[80%] mx-auto flex flex-col gap-8'>
+        <div className='w-[90%] mx-auto flex flex-col gap-8'>
             <Title variant='page' text='Transaction History'/>
 
             <div className='w-full p-4 border-border border-2 rounded-xl'>

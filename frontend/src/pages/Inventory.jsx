@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Title } from '../components/atoms';
 import { InventoryDashboardCard } from '../components/molecules';
 import { EditInventoryItem, InventoryAddItem, InventoryInOut } from '../components/organisms';
@@ -8,12 +8,16 @@ import useIngredient from '@/hooks/useIngredient';
 const Inventory = () => {
 
     const [pageNum, setPageNum] = useState(1);
-    const {ingredientData, ingredientLoading, ingredientError} = useIngredient();
+    const {ingredientData, ingredientLoading, ingredientError, postIngredient, fetchIngredients, ingredientResponse} = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);
     const [activeIndex, setActiveIndex] = useState(null);
     const [showInOut, setShowInOut] = useState(false);
+
+    useEffect(() => {   
+        fetchIngredients();
+    }, [ingredientResponse])
 
     if (ingredientLoading) return <h5>Loading</h5>
     if (ingredientError) return <h5>Error</h5>
@@ -31,17 +35,18 @@ const Inventory = () => {
     }
 
     const handleShowAddItemModal = () => {
-        setShowAddItemModal(!showAddItemModal)
+        setShowAddItemModal(true)
+    }
+    const handleCloseAddItemModal = () => {
+        setShowAddItemModal(false)
     }
 
     const handleShowEditItemModal = () => {
         setShowEditItemModal(!showEditItemModal)
     }
-    const handleAddItem = (value) => {
-        if (value && value.name) {
-            // setInventoryItems([...inventoryItems, {id: inventoryItems.length+1, ...value}])
-            setShowAddItemModal(false)
-        }
+    const handleAddItem = async (value) => {
+        await postIngredient(value);
+        handleCloseAddItemModal();
     }
 
     const handlePrepEditItem = (value) => {
@@ -82,15 +87,15 @@ const Inventory = () => {
                 <h5 className='flex-1'><ChevronDown size={18} className={`mx-auto cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} onClick={() => handleSetActiveIndex(index)} /></h5>
             </div>
             {   index == activeIndex &&
-                <div>
-                    <div className=' p-0.5 flex flex-row items-center text-text font-semibold text-xs text-center border-b-border/50 border-b'>
+                <div className='border-b border-border'>
+                    <div className=' p-0.5 flex flex-row items-center text-text/50 font-semibold text-xs text-center border-b-border/50 border-b'>
                         <h5 className='flex-1'>Remaining Amount</h5>
                         <h5 className='flex-1'>Purchase Date</h5>
                         <h5 className='flex-1'>Expiration Date</h5>
                     </div>
 
                     {item.batches.map((batch, batchIndex) => 
-                    <div key={batchIndex} className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border/50 border-b'>
+                    <div key={batchIndex} className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border/50 border-b bg-main-white'>
                             <h5 className='flex-1'>{(batch.remaining_amount).replace(/\.00$/, ''    )}</h5>
                             <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
                             <h5 className='flex-1'>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
@@ -154,7 +159,7 @@ const Inventory = () => {
             {/* Modals */}
 
             {showAddItemModal && 
-                <InventoryAddItem onConfirm={handleAddItem} onClose={handleShowAddItemModal} />
+                <InventoryAddItem onConfirm={handleAddItem} onClose={handleCloseAddItemModal} />
             }
 
             {showEditItemModal &&

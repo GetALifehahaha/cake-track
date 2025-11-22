@@ -1,17 +1,13 @@
-import React, {useState} from 'react'
+import React, {useContext, useState} from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar, Searchbar, ProfileCard } from '../components/molecules'
 import userImage from '../assets/image/user_image.jpg'
+import { AuthContext } from '@/context/AuthContext'
 
 const Layout = () => {
 
     const [searchText, setSearchText] = useState();
-
-    const user = { //temporary
-        name: "Adrian Agraviador",
-        role: "Cashier",
-        imagePath: userImage
-    }
+    const {user} = useContext(AuthContext);
 
     const handleSetSearchText = (value) => setSearchText(value);
 
