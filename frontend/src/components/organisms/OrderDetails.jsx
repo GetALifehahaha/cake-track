@@ -19,7 +19,8 @@ const OrderDetails = ({orderDetails, onClose}) => {
                     <div>
                         <Title variant='modal' text={'Order ' + orderDetails.id || 'Order Details'} />
                         <h5 className='text-text text-sm'>{orderDetails.client}</h5>
-                        <h5 className='text-text text-sm'>Contact #:{orderDetails.contact}</h5>
+                        <h5 className='text-text text-sm'>Contact #: {orderDetails.contact}</h5>
+                        <h5 className='text-text text-sm'>Date: {orderDetails.due_date}</h5>
                     </div>
                     <div>
                         <X size={16} className='text-text cursor-pointer' onClick={onClose}/>

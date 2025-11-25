@@ -11,6 +11,7 @@ export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [isAuthorized, setIsAuthorized] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         auth().finally(() => setLoading(false));
@@ -86,6 +87,7 @@ export const AuthProvider = ({children}) => {
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
             await getUserData();
+            navigate('/')
             setIsAuthorized(true);
             return { success: true };
         } catch (err) {
