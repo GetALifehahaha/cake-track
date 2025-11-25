@@ -7,6 +7,13 @@ export default function RootLayout() {
       <Stack.Screen
         name="(tabs)"
       />
+      <Stack.Screen
+        name="customOrders"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
     </Stack>
   )
 }
