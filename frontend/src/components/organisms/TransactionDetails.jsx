@@ -45,14 +45,15 @@ const TransactionDetails = ({transactionDetail, onClose}) => {
                             <h5>Permit No: ATP-2025-56789</h5>
                         </div>
 
-                        <div className="text-text/50 text-xs mb-2 space-y-0.5">
+                        <div className="text-text font-medium text-xs mb-2 space-y-0.5">
                             <h5>Cashier: {transactionDetail.cashier.first_name} {transactionDetail.cashier.last_name} </h5>
                             <h5>Serving Mode: {transactionDetail.order_type == "dine-in" ? 'DINE IN' : 'TAKE OUT'}</h5>
                         </div>
 
-                        <div className="flex justify-between text-text text-xs mb-4">
+                        <div className="flex text-text text-xs mb-4">
                             <h5 className='text-text/50'>Date & Time:</h5>
-                            <h5>{new Date(transactionDetail.created_at).toLocaleDateString()}</h5>
+                            <h5 className='ml-auto mr-4'>{new Date(transactionDetail.created_at).toLocaleDateString()}</h5>
+                            <h5>{new Date(transactionDetail.created_at).toLocaleTimeString()}</h5>
                         </div>
 
                         <table className="w-full text-text text-xs mb-4 ">

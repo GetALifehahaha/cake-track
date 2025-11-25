@@ -11,9 +11,15 @@ const ProductCard = ({product={name: '', price: 0.00, image_path: null}, onToggl
 
     return (
         <div onClick={handleToggleClick} className={`cursor-pointer flex flex-col gap-4 px-2 py-4 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25 duration-200 ease-in-out ${selected==product.id ? '-translate-y-2 bg-main-dark' : 'bg-main-white'}`}>
-            {product.image_path && 
-                <img className='object-contain aspect-square h-40' src={product.image_path}/>
-            }
+            <div className='aspect-square h-40 rounded-sm overflow-hidden'>
+                {product.image_path ?
+                    <img className='object-contain rounded-sm aspect-square h-40' src={product.image_path}/>
+                    :
+                    <h5 className='font-semibold text-text/50'>
+                        No Image
+                    </h5>
+                }
+            </div>
 
             <div className='text-center mt-auto'>
                 <h5 className='font-semibold text-md'>{product.name}</h5>

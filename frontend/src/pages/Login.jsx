@@ -25,7 +25,8 @@ const Login = () => {
         setPassword(e.target.value);
     }
     
-    const handleLogin = async () => {
+    const handleLogin = async (e) => {
+        e.preventDefault()
         try {
             await login(username, password);
             navigate('/')
@@ -58,7 +59,7 @@ const Login = () => {
                         <h5 className='text-sm font-semibold'>OR</h5>
                     </div>
 
-                    <div className='flex flex-col gap-8 w-3/5'>   
+                    <form onSubmit={(e) => handleLogin(e)} className='flex flex-col gap-8 w-3/5'>   
                         <div className='flex flex-col gap-4'>
                             <Label variant='login' text='EMAIL' />
                             <input value={username} onChange={(e) => handleSetUsername(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='dummycashier'/>
@@ -75,7 +76,7 @@ const Login = () => {
                         <span className='w-4/5 mx-auto'>
                             <Button text='Login' variant='form' onClick={handleLogin}/>
                         </span>
-                    </div>
+                    </form>
                 </div>
             </div>
 

@@ -71,9 +71,9 @@ const InventoryInOut = ({onConfirm, onClose}) => {
 	}
 
 	const listIngredients = ingredientData.map((ingredient) => 
-		<div key={ingredient.id} className='flex flex-row gap-4 p-2 rounded-sm border border-border text-text font-semibold cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name)}>
-			<h5>{ingredient.name}</h5>
-			<h5 className='text-text/50'>{(ingredient.total_stock).replace(/\.00$/, '')}</h5>
+		<div key={ingredient.id} className='flex flex-row gap-4 px-4 py-2 rounded-sm bg-accent font-semibold cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name)}>
+			<h5 className='text-main-white line-clamp-1'>{ingredient.name}</h5>
+			<h5 className='text-main/50'>{(ingredient.total_stock).replace(/\.00$/, '')}</h5>
 		</div>
 	)
 
@@ -111,7 +111,7 @@ const InventoryInOut = ({onConfirm, onClose}) => {
                 <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
             </div>
 
-			<div className='flex flex-row gap-2'>
+			<div className='flex flex-row gap-2 overflow-x-auto max-w-[90vw]'>
 				{listIngredients}
 			</div>
 			

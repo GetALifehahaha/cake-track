@@ -35,7 +35,7 @@ const PaymentSuccessModal = ({totalAmount, amountReceived, onClose}) => {
 
                 <div className='text-success flex flex-row items-center justify-between'>
                     <h5 className='font-medium text-md'>Change:</h5>
-                    <h5>₱ {Number(totalAmount - amountReceived).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                    <h5>₱ {Number(amountReceived - totalAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                 </div>
 
                 <div className='flex gap-4'>

@@ -230,7 +230,6 @@ const Home = () => {
                     <div className='flex flex-row justify-between items-center text-text px-4 py-8'>
                         <div>
                             <h5 className='font-bold text-xl'>Current Order</h5>
-                            <h3 className='font-base'>#1337</h3> {/* Dummy Data:*/}
                         </div>
                             <Button variant='outline' text='Clear' onClick={confirmVoidPayment}/>
                         </div>

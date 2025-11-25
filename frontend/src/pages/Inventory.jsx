@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Title } from '../components/atoms';
+import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard } from '../components/molecules';
 import { EditInventoryItem, InventoryAddItem, InventoryInOut } from '../components/organisms';
 import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, CircleQuestionMark, Ellipsis, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
@@ -75,15 +75,12 @@ const Inventory = () => {
     const handleSetShowInOut = () => setShowInOut(true);
     const handleSetCloseInOut = () => setShowInOut(false);
 
-    const listDummyData = ingredientData.results.map((item, index) => 
+    const listIngredientData = ingredientData.results.map((item, index) => 
         <div className='flex flex-col gap-2' key={index}>
             <div  className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-main-dark border-b-2'>
                 <h5 className='flex-1'>{item.name}</h5>
                 <h5 className='flex-1'>{(item.total_stock).replace(/\.00$/, '')} {item.unit}</h5>
-                {/* <h5 className='flex-1'>{}</h5> */}
-                {/* <h5 className='basis-1/6'>{item.purchaseDate}</h5> */}
-                {/* <h5 className='basis-1/6'>{item.expirationDate}</h5> */}
-                {/* <h5 className='basis-1/6'>{item.status}</h5> */}
+                <div className='flex-1'><StockLabel amount={item.total_stock} /></div>
                 <h5 className='flex-1'><ChevronDown size={18} className={`mx-auto cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} onClick={() => handleSetActiveIndex(index)} /></h5>
             </div>
             {   index == activeIndex &&
@@ -94,12 +91,15 @@ const Inventory = () => {
                         <h5 className='flex-1'>Expiration Date</h5>
                     </div>
 
+
                     {item.batches.map((batch, batchIndex) => 
                     <div key={batchIndex} className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border/50 border-b bg-main-white'>
+        
                             <h5 className='flex-1'>{(batch.remaining_amount).replace(/\.00$/, ''    )}</h5>
                             <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
                             <h5 className='flex-1'>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
-                    </div>)}
+                    </div>
+                    )}
             </div>
             }
         </div>
@@ -136,7 +136,7 @@ const Inventory = () => {
                         <h5 className='flex-1'>Action</h5>
                     </div>
                     
-                    {listDummyData}
+                    {listIngredientData}
 
                     {/* Pagination */}
                     <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>

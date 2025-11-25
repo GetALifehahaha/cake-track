@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Button, Label, Title } from '../atoms';
 import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../molecules';
 import { X } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 const PaymentModal = ({totalPrice, onConfirm}) => {
 
@@ -9,6 +10,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
     const [isExact, setIsExact] = useState(false);
     const [showModalFeedback, setShowModalFeedback] = useState(false);
     const [modalFeedbackContent, setModalFeedbackContent] = useState({type: "", label: "", details: ""})
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     const [quickSelectAmounts, setQuickSelectAmounts] = useState([
         {value: 50, selected: false},
@@ -52,6 +54,17 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
         handleRenderSelectAmount(0);
         setIsExact(true);
     }
+    
+    const handleSetShowConfirmationModal = () => {
+        if (receivedPayment < totalPrice) {
+            setModalFeedbackContent({type: "error", label: "Insufficient", details: 'Short ₱' + Number(totalPrice - receivedPayment).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})});
+            setShowModalFeedback(true);
+
+            return;
+        }
+        setShowConfirmation(true);
+    }
+    const handleSetCloseConfirmationModal = () => setShowConfirmation(false)
 
     useMemo(() => {
         if (receivedPayment >= totalPrice) {
@@ -80,12 +93,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
 
         if (!value) onConfirm(false);
 
-        if (receivedPayment < totalPrice) {
-            setModalFeedbackContent({type: "error", label: "Insufficient", details: 'Short ₱' + Number(totalPrice - receivedPayment).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})});
-            setShowModalFeedback(true);
-
-            return;
-        }
+        
 
         onConfirm(receivedPayment);
     }
@@ -127,8 +135,12 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
 
                 <div className='flex gap-4'>
                     <Button variant='modalOutline' size='full' text='Cancel' onClick={() => handleConfirmModal(false)}/>
-                    <Button variant='modalBlock' size='full' text='Complete Payment' onClick={() => handleConfirmModal(true)}/>
+                    <Button variant='modalBlock' size='full' text='Complete Payment' onClick={handleSetShowConfirmationModal}/>
                 </div>
+
+                {showConfirmation &&
+                    <ConfirmationModal title="Confirm Payment" content="Finish payment?" onConfirm={() => handleConfirmModal(true)} onReject={handleSetCloseConfirmationModal}/>
+                }
             </div>
         </div>
     )

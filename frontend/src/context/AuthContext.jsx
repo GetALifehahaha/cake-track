@@ -1,4 +1,4 @@
-import React, {createContext, useState, useEffect, useContext} from 'react'
+import React, { createContext, useState, useEffect, useContext} from 'react'
 import {jwtDecode} from 'jwt-decode'
 import api from '@/api/api'
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants'
@@ -9,114 +9,128 @@ export const AuthContext = createContext();
 export const AuthProvider = ({children}) => {
 
     const [user, setUser] = useState(null);
-    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isAuthorized, setIsAuthorized] = useState(null);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
 
     useEffect(() => {
-        setLoading(true);
-        const initApp = async () => {
-            try {
-                await auth();
-            } catch {
-                setIsAuthorized(false);
-                setUser(null);
-                navigate('/login')
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        initApp();
+        auth().finally(() => setLoading(false));
     }, []);
 
     const auth = async () => {
-        setLoading(true);
-        const accessToken = localStorage.getItem(ACCESS_TOKEN)
-
+        const accessToken = localStorage.getItem(ACCESS_TOKEN);
+        
         if (!accessToken) {
             setUser(null);
             setIsAuthorized(false);
-            setLoading(false);
-            return;
+            return;        
         }
 
         try {
-
             const decodedToken = jwtDecode(accessToken);
-            const tokenExpiration = decodedToken.exp
-            const currentDate = Date.now() / 1000
-            
-            if (tokenExpiration < currentDate) {
-                await refresh();
+            const tokenExpiration = decodedToken.exp;
+            const currentDate = Date.now() / 1000;
+
+            if (tokenExpiration < currentDate){
+                await refreshToken();
             } else {
                 await getUserData();
-                setIsAuthorized(true)
+                setIsAuthorized(true);
             }
-            
-        } catch {
+        } catch (err) {
+            console.error('Authentication failed:', err);
             setUser(null);
             setIsAuthorized(false);
-            navigate('/login');
-        } finally {
-            setLoading(false);
         }
     }
 
-    const refresh = async () => {
+    const refreshToken = async () => {
         const refreshToken = localStorage.getItem(REFRESH_TOKEN);
 
         if (!refreshToken) {
             setUser(null);
             setIsAuthorized(false);
-            return;
+            return;    
         }
 
         try {
             const response = await api.post('/users/token/refresh/', {
-                refresh: refreshToken
-            })
+                refresh: refreshToken,
+            });
             localStorage.setItem(ACCESS_TOKEN, response.data.access);
             await getUserData();
-        } catch {
+            setIsAuthorized(true);
+        } catch (err) {
+            // Clear invalid tokens
+            localStorage.removeItem(ACCESS_TOKEN);
+            localStorage.removeItem(REFRESH_TOKEN);
             setUser(null);
             setIsAuthorized(false);
-            navigate('/login');
         }
     }
 
     const getUserData = async () => {
         try {
-            const response = await api.get('/me/')
-            setUser(response.data)
+            const response = await api.get('/me/');
+            const userData = response.data
+            setUser(userData);
         } catch {
-            setUser(null)
-            setIsAuthorized(false);
-            navigate('/login');
+            setUser(null);
         }
     }
 
     const login = async (username, password) => {
-        setLoading(true);
         try {
             const response = await api.post('/users/token/', {username, password});
 
-            localStorage.setItem(ACCESS_TOKEN, response.data.access)
-            localStorage.setItem(REFRESH_TOKEN, response.data.refresh)
+            localStorage.setItem(ACCESS_TOKEN, response.data.access);
+            localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
             await getUserData();
             setIsAuthorized(true);
-        } catch (error) {
-            setIsAuthorized(false);
-            return {status: "error", detail: error.response?.data?.detail || "Login Failed"}
-        } finally {
-            setLoading(false);
+            return { success: true };
+        } catch (err) {
+            console.error('Login failed:', err);
+            return { success: false, error: err.response?.data || err.message };
         }
-        
+    }
+
+    const googleLogin = async (token) => {
+        try {
+            const response = await api.post('/users/google-auth/', {token: token});
+
+            localStorage.setItem(ACCESS_TOKEN, response.data.access);
+            localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+
+            await getUserData();
+            setIsAuthorized(true);
+            return { success: true };
+        } catch (err) {
+            console.error('Google login failed:', err);
+            return { success: false, error: err.response?.data || err.message };
+        }
+    }
+    
+    const logout = () => {
+        localStorage.removeItem(ACCESS_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN);
+        setUser(null);
+        setIsAuthorized(false);
+    };
+
+    const register = async (username, password, first_name, last_name, email) => {
+        try {
+            await api.post('/users/user/register/', {
+                username, password, first_name, last_name, email
+            });
+            return { success: true };
+        } catch (err) {
+            console.error('Registration failed:', err);
+            return { success: false, error: err.response?.data || err.message };
+        }
     }
 
     return (
-        <AuthContext.Provider value={{user, isAuthorized, setUser, login, loading}}>
+        <AuthContext.Provider value={{user, isAuthorized, setUser, login, googleLogin, register, setIsAuthorized, loading, logout}}>
             {children}
         </AuthContext.Provider>
     )
