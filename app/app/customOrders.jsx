@@ -67,7 +67,7 @@ const CustomOrders = () => {
     return (
         <SafeAreaView className='flex-1 bg-[#8B5A3C] items-center justify-center'>
             <View className='h-[40vh] p-8 pt-16'>
-                <View className='aspect-square h-full bg-white rounded-lg justify-center items-center'>
+                <View className='aspect-square h-full bg-main-form rounded-lg justify-center items-center'>
                     {customDisplay ? (
                         <Text className='font-bold text-3xl text-center'>Custom Order: {customDisplay}</Text>
                     ) : (
