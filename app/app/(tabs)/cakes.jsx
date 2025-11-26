@@ -30,7 +30,7 @@ const Cakes = () => {
             <Sparkles style={{color: "white"}} size={28} />
           </View>
           <Text className='text-[#654321] font-semibold text-xl'>Custom</Text>
-          <Text className='text-[#9A8978] text-center'>Make your own or let the Baker surprise you</Text>
+          <Text className='text-[] text-center'>Make your own or let the Baker surprise you</Text>
         </TouchableOpacity>
       </View>
     </View>
