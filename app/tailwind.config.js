@@ -22,5 +22,5 @@ module.exports = {
       }
     },
   },
-  plugins: [],
+  "plugins": ["nativewind/expo-linear-gradient"]
 }

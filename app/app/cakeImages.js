@@ -1,8 +1,7 @@
-export const cakeImages = {
+const cakeImages = {
     round: {
         1: {
-            none: require('@/assets/images/cakes/tier_1.png'),
-            chocolate: {
+            choco: {
                 none: require('@/assets/images/cakes/round_1/choco/choco.png'),
                 choco: require('@/assets/images/cakes/round_1/choco/choco_choco.png'),
                 frosting: require('@/assets/images/cakes/round_1/choco/choco_frosting.png'),
@@ -22,8 +21,7 @@ export const cakeImages = {
             },
         },
         2: {
-            none: require('@/assets/images/cakes/tier_2.png'),
-            chocolate: {
+            choco: {
                 none: require('@/assets/images/cakes/round_2/choco/choco.png'),
                 choco: require('@/assets/images/cakes/round_2/choco/choco_choco.png'),
                 frosting: require('@/assets/images/cakes/round_2/choco/choco_frosting.png'),
@@ -43,8 +41,7 @@ export const cakeImages = {
             },
         },
         3: {
-            none: require('@/assets/images/cakes/tier_3.png'),
-            chocolate: {
+            choco: {
                 none: require('@/assets/images/cakes/round_3/choco/choco.png'),
                 choco: require('@/assets/images/cakes/round_3/choco/choco_choco.png'),
                 frosting: require('@/assets/images/cakes/round_3/choco/choco_frosting.png'),
@@ -67,7 +64,7 @@ export const cakeImages = {
     sheet: {
         1: {
             none: require('@/assets/images/cakes/tier_1.png'),
-            chocolate: {
+            choco: {
                 none: require('@/assets/images/cakes/sheet_1/choco/choco.png'),
                 choco: require('@/assets/images/cakes/sheet_1/choco/choco_choco.png'),
                 frosting: require('@/assets/images/cakes/sheet_1/choco/choco_frosting.png'),
@@ -88,7 +85,7 @@ export const cakeImages = {
         },
         2: {
             none: require('@/assets/images/cakes/tier_2.png'),
-            chocolate: {
+            choco: {
                 none: require('@/assets/images/cakes/sheet_2/choco/choco.png'),
                 choco: require('@/assets/images/cakes/sheet_2/choco/choco_choco.png'),
                 frosting: require('@/assets/images/cakes/sheet_2/choco/choco_frosting.png'),
@@ -109,7 +106,7 @@ export const cakeImages = {
         },
         3: {
             none: require('@/assets/images/cakes/tier_3.png'),
-            chocolate: {
+            choco: {
                 none: require('@/assets/images/cakes/sheet_3/choco/choco.png'),
                 choco: require('@/assets/images/cakes/sheet_3/choco/choco_choco.png'),
                 frosting: require('@/assets/images/cakes/sheet_3/choco/choco_frosting.png'),
@@ -130,3 +127,5 @@ export const cakeImages = {
         }
     }
 }
+
+export default  cakeImages;
