@@ -4,9 +4,10 @@ import { View, Text, TouchableOpacity, TextInput } from 'react-native'
 import React from 'react'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, ArrowLeft, ArrowRight } from 'lucide-react-native';
-import FormLabel from '@/components/atoms/FormLabel';
+import { X, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react-native';
+    import FormLabel from '@/components/atoms/FormLabel';
 import Dropdown from '@/components/atoms/Dropdown';
+import Checkbox from '@/components/atoms/Checkbox';
 
 const CustomOrders = () => {
     const [customDisplay, setCustomDisplay] = useState();
@@ -24,6 +25,34 @@ const CustomOrders = () => {
     const [coatingColor, setCoatingColor] = useState(null);
     const [border, setBorder] = useState(null);
     const [borderColor, setBorderColor] = useState(null);
+    const [toppings, setToppings] = useState(null);
+    const [addOn, setAddOn] = useState(null);
+    const [messageType, setMessageType] = useState(null);
+    const [message, setMessage] = useState('');
+    const [hasCupcakes, setHasCupcakes] = useState(false);
+    const [cupcakesCount, setCupcakesCount] = useState(0);
+    const [cupcakesFrosting, setCupcakesFrosting] = useState(null);
+    const [comments, setComments] = useState('');
+    const [dueDate, setDueDate] = useState(null);
+    const [image, setImage] = useState(null);
+    const [fullName, setFullName] = useState('');
+    const [address, setAddress] = useState('');
+    const [email, setEmail] = useState('');
+    const [contactNumber, setContactNumber] = useState('');
+    const [agreeToTOC, setAgreeToTOC] = useState(false);
+
+    const pageTitles = [
+        'Cake Titles',
+        'Form',
+        'Flavors',
+        'Coating',
+        'Add-ons',
+        'Message',
+        'Cupcakes',
+        'Comments',
+        'Image',
+        'Information',
+    ]
     
 
     const handleChangePage = (direction) => {
@@ -47,21 +76,21 @@ const CustomOrders = () => {
                 </View>
             </View>
 
-            <View className='bg-white w-full flex-1 rounded-t-[3rem]'>
+            <View className='bg-main-form w-full flex-1 rounded-t-[3rem]'>
                 {/* Header */}
-                
+                <View className='w-full flex-row justify-between items-center mt-6 px-6'>
+                    <View>
+                        <Text className='text-2xl font-semibold text-[#8B5A3C]'>{pageTitles[page - 1]}</Text>
+                        <Text className='text-[#9A8978]'>Customize your perfect cake</Text>
+                    </View>
+
+                    <TouchableOpacity onPress={() => router.back()}><X style={{color: '#8B5A3C'}}/></TouchableOpacity>
+                </View>
 
                 {/* Occasion */}
                 { page === 1 &&
                     <>
-                        <View className='w-full flex-row justify-between items-center mt-6 px-6'>
-                            <View>
-                                <Text className='text-2xl font-semibold text-[#8B5A3C]'>Cake Details</Text>
-                                <Text className='text-[#9A8978]'>Customize you perfect cake</Text>
-                            </View>
-
-                            <TouchableOpacity onPress={() => router.back()}><X /></TouchableOpacity>
-                        </View>
+                        
                         <View>
                             {/* Dropdown */}
                             <View className='p-8'>
@@ -78,22 +107,24 @@ const CustomOrders = () => {
                                     onChangeValue={setOccasion}
                                 />
                                 {occasion == 'other' && <TextInput className='py-5 px-2 rounded-md border border-secondary-light mt-4' value={specifyOccasion} onChangeText={(text) => setSpecifyOccasion(text)} placeholder='Specify your occassion'/>
-
                                 }
                             </View>
 
-                            <View>
-                                {/* Checkbox */}
-                                <View>
-                                    <TouchableOpacity className='flex-row gap-2'>
-                                        <Text>Allow the baker to personally design your cake</Text>
-                                    </TouchableOpacity>
+                            <View className='px-8 '>
+                                <View className='p-4 gap-4 border border-secondary-light bg-white rounded-md'>
+                                    {/* Checkbox */}
+                                    <View className='flex-row gap-2'>
+                                        <Checkbox value={personallyDesign} onChange={setPersonallyDesign}/>
+                                        <Text className='font-medium text-secondary-strong'>Allow the baker to personally design your cake</Text>
+                                    </View>
 
-                                </View>
-
-                                {/* Disclaimer */}
-                                <View>
-
+                                    {/* Disclaimer */}
+                                    <View className='bg-main-form flex-row items-center p-4 gap-2 rounded-sm border border-secondary-light'>
+                                        <AlertCircle style={{color: "#8B5A3C"}} />
+                                        <Text className='text-secondary-strong text-sm'>
+                                            Selecting this gives the baker artistic freedom to personalize your cake based on the occassion
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </View>
@@ -101,14 +132,6 @@ const CustomOrders = () => {
                 }
                 { page === 2 &&
                     <>
-                        <View className='w-full flex-row justify-between items-center mt-6 px-6'>
-                            <View>
-                                <Text className='text-2xl font-semibold text-[#8B5A3C]'>Cake Details</Text>
-                                <Text className='text-[#9A8978]'>Customize you perfect cake</Text>
-                            </View>
-
-                            <TouchableOpacity onPress={() => router.back()}><X /></TouchableOpacity>
-                        </View>
                         <View>
                             {/* Dropdown */}
                             <View className='p-8'>
@@ -146,14 +169,6 @@ const CustomOrders = () => {
                 }
                 { page === 3 &&
                     <>
-                        <View className='w-full flex-row justify-between items-center mt-6 px-6'>
-                            <View>
-                                <Text className='text-2xl font-semibold text-[#8B5A3C]'>Cake Details</Text>
-                                <Text className='text-[#9A8978]'>Customize you perfect cake</Text>
-                            </View>
-
-                            <TouchableOpacity onPress={() => router.back()}><X /></TouchableOpacity>
-                        </View>
                         <View>
                             {/* Dropdown */}
                             <View className='p-8'>
@@ -187,14 +202,6 @@ const CustomOrders = () => {
                 }
                 { page === 4 &&
                     <>
-                        <View className='w-full flex-row justify-between items-center mt-6 px-6'>
-                            <View>
-                                <Text className='text-2xl font-semibold text-[#8B5A3C]'>Cake Details</Text>
-                                <Text className='text-[#9A8978]'>Customize you perfect cake</Text>
-                            </View>
-
-                            <TouchableOpacity onPress={() => router.back()}><X /></TouchableOpacity>
-                        </View>
                         <View className='py-6 justify-evenly flex-1'>
                             <View className='px-8'>
                                 <FormLabel text={"Coating Color"}/>
@@ -231,6 +238,107 @@ const CustomOrders = () => {
                                     placeholder={"Select border color"}
                                     onChangeValue={setBorderColor}
                                 />
+                            </View>
+                        </View>
+                    </>
+                }
+                { page === 5 &&
+                    <>
+                        <View>
+                            <View className='p-8'>
+                                <FormLabel text={"Toppings"}/>
+                                <Dropdown 
+                                    items={[
+                                        { label: 'Whipped Cream', value: 'whipped_cream' },
+                                        { label: 'Fresh Fruits', value: 'fresh_fruits' },
+                                        { label: 'Chocolate Ganache', value: 'chocolate_ganache' },
+                                        { label: 'Buttercream Frosting', value: 'buttercream_frosting' },
+                                        { label: 'Sprinkles', value: 'sprinkles' },
+                                    ]}
+                                    placeholder={"Select toppings"}
+                                    onChangeValue={setToppings}
+                                />
+                            </View>
+                            <View className='p-8'>
+                                <FormLabel text={"Add-on"}/>
+                                <Dropdown 
+                                    items={[
+                                        { label: 'Nuts', value: 'nuts' },
+                                        { label: 'Chocolate Chips', value: 'chocolate_chips' },
+                                        { label: 'Caramel Drizzle', value: 'caramel_drizzle' },
+                                    ]}
+                                    placeholder={"Select add-on"}
+                                    onChangeValue={setAddOn}
+                                />
+                            </View>
+                        </View>
+                    </>
+                }
+                { page === 6 &&
+                    <>
+                        <View>
+                            <View className='p-8'>
+                                <FormLabel text={"Message Type"}/>
+                                <Dropdown 
+                                    items={[
+                                        { label: 'On Cake (Icing Writing)', value: 'on_cake' },
+                                        { label: 'On Card (Message Card)', value: 'on_card' },
+                                        { label: 'No Message', value: 'none' },
+                                    ]}
+                                    placeholder={"Select message type"}
+                                    onChangeValue={setMessageType}
+                                />
+                            </View>
+                            <View className='p-8'>
+                                <FormLabel text={"Message"}/>
+                                <TextInput multiline numberOfLines={4} className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={cupcakesCount} onChangeText={(text) => setCupcakesCount(text)} placeholder='What should the message say?'/>
+                            </View>
+                        </View>
+                    </>
+                }
+                { page === 7 &&
+                    <>
+                        <View>
+                            <View className='px-8 mt-4'>
+                                <FormLabel text={"Add cupcakes?"}/>
+                                <View>
+                                    
+                                </View>
+                            </View>
+                            <View className='p-8 '>
+                                <View className='p-6 border border-secondary-light rounded-md gap-2'>
+                                    <View>
+                                        <FormLabel text={"How many cupcakes?"}/>
+                                        <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={cupcakesCount} onChangeText={(text) => setCupcakesCount(text)} placeholder='e.g., 12'/>
+
+                                    </View>
+                                    <View>
+                                        <FormLabel text={"Add-on"}/>
+                                        <Dropdown 
+                                            items={[
+                                                { label: 'Nuts', value: 'nuts' },
+                                                { label: 'Chocolate Chips', value: 'chocolate_chips' },
+                                                { label: 'Caramel Drizzle', value: 'caramel_drizzle' },
+                                            ]}
+                                            placeholder={"Select add-on"}
+                                            onChangeValue={setAddOn}
+                                            />
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    </>
+                }
+                { page === 8 &&
+                    <>
+                        <View>
+                            <View className='p-8'>
+                                <FormLabel text={"Comments"}/>
+                                <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={comments} onChangeText={(text) => setComments(text)} placeholder='Do you have specific additions or changes?'/>
+                            </View>
+                            <View className='px-8 mt-4'>
+                                <FormLabel text={"Due Date"}/>
+                                <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={comments} onChangeText={(text) => setComments(text)} placeholder='Do you have specific additions or changes?'/>
                             </View>
                         </View>
                     </>

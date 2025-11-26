@@ -23,13 +23,14 @@ const Dropdown = ({ items, placeholder, onChangeValue, defaultValue }) => {
     setItems={setDropItems}
     placeholder={placeholder}
     style={{
-        borderColor: "#9A8978",
+        borderColor: "#A67C52",
         backgroundColor: "white",
         borderRadius: 4,
         zIndex: 1000,
+        marginTop: 5
     }}
     dropDownContainerStyle={{
-        borderColor: "#9A8978", 
+        borderColor: "#A67C52", 
     }}
     textStyle={{
         color: "#A67C52"

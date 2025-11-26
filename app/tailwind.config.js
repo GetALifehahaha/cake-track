@@ -15,6 +15,9 @@ module.exports = {
         secondary: {
           "strong": "#A67C52",
           "light": "#BE9B7B"
+        },
+        main: {
+          "form": "#FFFCF8"
         }
       }
     },
