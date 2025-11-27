@@ -2,7 +2,12 @@ import { View, Text, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { Minus, Plus } from 'lucide-react-native'
 
-const CakeOrderCard = ({ id, image, name, description, addedToCart, addToCart, amount, onSetAmount }) => {
+const CakeOrderCard = ({ id, image, name, price, description, addedToCart, addToCart, amount, onSetAmount }) => {
+
+    const handleAddToCart = () => {
+        addToCart({ id, name, price, amount: 1 });
+    }
+
     return (
         <View className='flex-row px-6 py-4 border-b border-b-gray-300 w-full items-center bg-white gap-4'>
             {/* Image Section */}
@@ -16,7 +21,7 @@ const CakeOrderCard = ({ id, image, name, description, addedToCart, addToCart, a
             <View className='flex-1 pl-4 justify-center'>
 
                 {/* Title */}
-                <Text className='font-bold text-lg mb-1'>{name}</Text>
+                <Text className='font-extrabold text-lg mb-1'>{name}</Text>
 
                 {/* Row containing Description and Action Button */}
                 <View className='flex-row items-center justify-between mt-2 '>
@@ -47,7 +52,7 @@ const CakeOrderCard = ({ id, image, name, description, addedToCart, addToCart, a
                             </View>
                         ) : (
                             <TouchableOpacity
-                                onPress={() => addToCart(id)}
+                                onPress={handleAddToCart}
                                 className='w-8 h-8 rounded-full bg-secondary-light justify-center items-center'
                             >
                                 <Plus size={20} style={{ color: 'white' }} />

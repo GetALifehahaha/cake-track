@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { ArrowLeft, Calendar, Search } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import CakeOrderCard from '@/components/molecules/CakeOrderCard'
+import { useCart } from '@/context/CartContext'
 
 const CakeOrders = () => {
 
@@ -20,76 +21,48 @@ const CakeOrders = () => {
             name: "Strawberry Cake",
             description: "Light, fruity, and full of charm",
             price: 700.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+            image: require('@/assets/images/premade-cakes/strawberry.png')
         },
         {
             id: 3,
             name: "Mango Bravo",
             description: "A tropical favorite with a flair",
             price: 750.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+            image: require('@/assets/images/premade-cakes/mango.png')
         },
         {
             id: 4,
             name: "Mocha Cake",
             description: "Bold, smooth, and worth savoring",
             price: 600.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+            image: require('@/assets/images/premade-cakes/mocha.png')
         },
         {
             id: 5,
             name: "Vanilla Cake",
             description: "Simple, soft, and a timeless classic",
             price: 600.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+            image: require('@/assets/images/premade-cakes/vanilla-birthday.png')
         },
         {
             id: 6,
             name: "Red Velvet Cake",
             description: "Classic red sponge, tangy cheese frosting.",
             price: 850.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+            image: require('@/assets/images/premade-cakes/red-velvet.png')
         },
         {
             id: 7,
             name: "Carrot Cake",
             description: "Moist spiced carrots, rich creamy frosting.",
             price: 850.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+            image: require('@/assets/images/premade-cakes/carrot.png')
         },
     ]
 
-    const [input, setInput] = useState("")
-    const [cart, setCart] = useState([{}]);
+    const { cart, addToCart, setAmount } = useCart();
+    const [input, setInput] = useState("");
     const router = useRouter();
-
-    const addToCart = (id, price) => {
-        setCart([...cart, { id: id, price: price, amount: 1 }])
-    }
-
-    const setAmount = (id, method) => {
-        setCart((prevCart) => {
-            if (method === "add") {
-                return prevCart.map(item =>
-                    item.id === id
-                        ? { ...item, amount: item.amount + 1 }
-                        : item
-                );
-            }
-
-            if (method === "minus") {
-                return prevCart
-                    .map(item =>
-                        item.id === id
-                            ? { ...item, amount: item.amount - 1 }
-                            : item
-                    )
-                    .filter(item => item.amount > 0);
-            }
-
-            return prevCart;
-        });
-    }
 
     const listCakes = cakeData.map((cake, index) => <CakeOrderCard key={index} id={cake.id} price={cake.price} image={cake.image} name={cake.name} description={cake.description} addedToCart={cart.some((prod) => prod.id === cake.id)} addToCart={addToCart} amount={cart.find((prod) => prod.id === cake.id)?.amount || 0} onSetAmount={setAmount} />)
 
@@ -108,21 +81,23 @@ const CakeOrders = () => {
                         <TextInput className='text-lg' value={input} onChangeText={setInput} placeholder='Search for cake' />
                     </View>
 
-                    <Text className='text-2xl font-bold px-2 py-4'>Pre-made Cakes</Text>
+                    <Text className='text-2xl font-extrabold px-2 py-4'>Pre-made Cakes</Text>
 
                     <View className='w-full p-2'>
                         {listCakes}
                     </View>
                 </View>
             </ScrollView>
-            <View className='w-full h-40 p-6 bg-white border border-secondary-light'>
-                <TouchableOpacity className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4'>
-                    <View className='bg-white rounded-full h-8 w-8 items-center justify-center'>
-                        <Text className='font-bold text-secondary-strong'>{cart.length}</Text>
-                    </View>
-                    <Text className='font-bold text-lg text-white'>View Order Details</Text>
-                </TouchableOpacity>
-            </View>
+            {cart.length > 0 &&
+                <View className='w-full h-40 p-6 bg-white border border-secondary-light'>
+                    <TouchableOpacity className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4' onPress={() => router.push('/checkout')}>
+                        <View className='bg-white rounded-full h-8 w-8 items-center justify-center'>
+                            <Text className='font-bold text-secondary-strong'>{cart.length}</Text>
+                        </View>
+                        <Text className='font-bold text-lg text-white'>View Order Details</Text>
+                    </TouchableOpacity>
+                </View>
+            }
         </SafeAreaView>
     )
 }
