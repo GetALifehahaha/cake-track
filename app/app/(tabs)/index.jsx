@@ -1,12 +1,47 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native'
+import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackground } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import React, { useState } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
 
 const Index = () => {
 
+	const cakeData = [
+		{
+			name: "Chocolate Moist Cake",
+			image: require('@/assets/images/premade-cakes/chocolate-cake.png')
+		},
+		{
+			name: "Strawberry Cake",
+			image: require('@/assets/images/premade-cakes/strawberry.png')
+		},
+		{
+			name: "Mango Bravo",
+			image: require('@/assets/images/premade-cakes/mango.png')
+		},
+		{
+			name: "Mocha Cake",
+			image: require('@/assets/images/premade-cakes/mocha.png')
+		},
+		{
+			name: "Vanilla Cake",
+			image: require('@/assets/images/premade-cakes/vanilla-birthday.png')
+		},
+		{
+			name: "Red Velvet Cake",
+			image: require('@/assets/images/premade-cakes/red-velvet.png')
+		},
+		{
+			name: "Carrot Cake",
+			image: require('@/assets/images/premade-cakes/carrot.png')
+		},
+	]
+
 	const [carouselDot, setCarouselDot] = useState(0)
 	const { width } = Dimensions.get("window")
+
+	const listCakeCards = cakeData.map((cake, index) =>
+		<CakeCard key={index} image={cake.image} text={cake.name} />
+	)
 
 	return (
 		<ScrollView>
@@ -41,53 +76,67 @@ const Index = () => {
 						>
 							<View className='flex-row gap-2'>
 								<View className='w-[5vw] -mr-2'></View>
-								<LinearGradient colors={['white', '#F5E6D3', '#BE9B7B']} className='w-[90vw] bg-gradient-to-b h-fit flex-row rounded-[2rem] overflow-hidden p-4'>
-									<View className='w-1/2'>
-										<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
+								<ImageBackground
+									source={require('@/assets/images/carousel-backgrounds/carousel-1.png')}
+									resizeMode='cover'>
+									<View className='w-[90vw] flex-row rounded-[2rem] overflow-hidden px-8 py-16'>
+										<View className='w-full'>
+											<Text className='text-primary font-bold text-sm'>Must try!</Text>
 
-										<Text className='text-primary font-bold text-2xl mt-4'>Try our cakes!</Text>
-										<Text className='text-secondary-strong font-bold text-2xl'>Ready to enjoy</Text>
+											<Text className='text-primary font-bold text-2xl mt-4'>Customize your Cake</Text>
+											<Text className='text-secondary-strong font-bold text-2xl'>for any occasion</Text>
 
-										<Text className='text-gray-500 font-bold text-sm'>Delicious Cakes baked fresh and waiting for you</Text>
+											<Text className='text-gray-500 font-bold text-sm w-1/2'>Make every moment special with custom cake designs</Text>
 
-										<TouchableOpacity className='p-4 rounded-full bg-primary mt-1 mb-8'>
-											<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
-										</TouchableOpacity>
+											<TouchableOpacity className='p-4 rounded-full bg-primary my-4 self-start'>
+												<Text className='text-white font-bold text-xl text-center'>Order Now</Text>
+											</TouchableOpacity>
+										</View>
 									</View>
-								</LinearGradient>
-								<LinearGradient colors={['white', '#F5E6D3', '#BE9B7B']} className='w-[90vw] bg-gradient-to-b h-fit flex-row rounded-[2rem] overflow-hidden p-4'>
-									<View className='w-1/2'>
-										<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
+								</ImageBackground>
+								<ImageBackground
+									source={require('@/assets/images/carousel-backgrounds/carousel-2.png')}
+									resizeMode='cover'
+								>
+									<View className='w-[90vw] flex-row rounded-[2rem] overflow-hidden px-8 py-16'>
+										<View className='w-1/2'>
+											<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
 
-										<Text className='text-primary font-bold text-2xl mt-4'>Try our cakes!</Text>
-										<Text className='text-secondary-strong font-bold text-2xl'>Ready to enjoy</Text>
+											<Text className='text-primary font-bold text-2xl mt-4'>Try our cakes!</Text>
+											<Text className='text-secondary-strong font-bold text-2xl'>Ready to enjoy</Text>
 
-										<Text className='text-gray-500 font-bold text-sm'>Delicious Cakes baked fresh and waiting for you</Text>
+											<Text className='text-gray-500 font-bold text-sm'>Delicious Cakes baked fresh and waiting for you</Text>
 
-										<TouchableOpacity className='p-4 rounded-full bg-primary mt-1 mb-8'>
-											<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
-										</TouchableOpacity>
+											<TouchableOpacity className='p-4 rounded-full bg-primary my-4 self-start'>
+												<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
+											</TouchableOpacity>
+										</View>
 									</View>
-								</LinearGradient>
-								<LinearGradient colors={['white', '#F5E6D3', '#BE9B7B']} className='w-[90vw] bg-gradient-to-b h-fit flex-row rounded-[2rem] overflow-hidden p-4'>
-									<View className='w-1/2'>
-										<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
+								</ImageBackground>
+								<ImageBackground
+									source={require('@/assets/images/carousel-backgrounds/carousel-3.png')}
+									resizeMode='cover'
+								>
+									<View className='w-[90vw] flex-row rounded-[2rem] overflow-hidden px-8 py-16'>
+										<View className='w-1/2'>
+											<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
 
-										<Text className='text-primary font-bold text-2xl mt-4'>Try our cakes!</Text>
-										<Text className='text-secondary-strong font-bold text-2xl'>Ready to enjoy</Text>
+											<Text className='text-primary font-bold text-2xl mt-4'>Made For You!</Text>
+											<Text className='text-secondary-strong font-bold text-2xl'>Baked with Love</Text>
 
-										<Text className='text-gray-500 font-bold text-sm'>Delicious Cakes baked fresh and waiting for you</Text>
+											<Text className='text-gray-500 font-bold text-sm'>Make every moment remarkable</Text>
 
-										<TouchableOpacity className='p-4 rounded-full bg-primary mt-1 mb-8'>
-											<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
-										</TouchableOpacity>
+											<TouchableOpacity className='p-4 rounded-full bg-primary my-4 self-start'>
+												<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
+											</TouchableOpacity>
+										</View>
 									</View>
-								</LinearGradient>
+								</ImageBackground>
 								<View className='w-[5vw] -ml-2'></View>
 							</View>
 						</ScrollView>
 
-						<View className="flex-row justify-center mt-2 absolute left-1/2 -translate-x-1/2 bottom-4">
+						<View className="flex-row justify-center mt-2 absolute left-1/2 -translate-x-1/2 bottom-8">
 							{[0, 1, 2].map((i) => (
 								<View
 									key={i}
@@ -107,18 +156,27 @@ const Index = () => {
 						>
 							<View className='flex-row gap-2'>
 								<View className='w-[5vw] -mr-2'></View>
-								<CakeCard image={require('@/assets/images/premade-cakes/chocolate-cake.png')} text={"Chocolate Cake"} />
-								<CakeCard image={require('@/assets/images/premade-cakes/vanilla-birthday.png')} text={"Vanilla Birthday Cake"} />
-								<CakeCard image={require('@/assets/images/premade-cakes/chocolate-cake.png')} text={"Chocolate Cake"} />
-								<CakeCard image={require('@/assets/images/premade-cakes/vanilla-birthday.png')} text={"Vanilla Birthday Cake"} />
+								{listCakeCards}
 								<View className='w-[5vw] -ml-2'></View>
 							</View>
 						</ScrollView>
 					</View>
 
+					{/* More Ads */}
+					<View className='bg-[##FFF3D0] p-8'>
+						<View className='flex-row items-center justify-between'>
+							<Text className='font-bold text-lg'>Best Creations!</Text>
+							<TouchableOpacity>
+								<Text className='text-primary font-semibold'>Customize Now</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+
+					{/* Best Seller */}
+
 				</View>
 			</View >
-		</ScrollView>
+		</ScrollView >
 	)
 }
 
