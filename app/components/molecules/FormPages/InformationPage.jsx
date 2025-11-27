@@ -3,7 +3,7 @@ import Checkbox from '@/components/atoms/Checkbox';
 import FormLabel from '@/components/atoms/FormLabel';
 
 const InformationPage = ({ fullName, setFullName, address, setAddress, email, setEmail, contactNumber, setContactNumber, agreeToTOC, setAgreeToTOC }) => (
-    <View className='px-8 gap-0.5'>
+    <View className='gap-4'>
         <View>
             <FormLabel text={"Full Name"} />
             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={fullName} onChangeText={setFullName} placeholder='Juan Dela Cruz' />

@@ -3,8 +3,8 @@ import Dropdown from '@/components/atoms/Dropdown';
 import FormLabel from '@/components/atoms/FormLabel';
 
 const FormPage = ({ shape, setShape, specifyShape, setSpecifyShape, tier, setTier }) => (
-    <View>
-        <View className='p-8'>
+    <View className='gap-4'>
+        <View className=''>
             <FormLabel text={"Shape"} />
             <Dropdown
                 items={[
@@ -26,7 +26,7 @@ const FormPage = ({ shape, setShape, specifyShape, setSpecifyShape, tier, setTie
             )}
         </View>
 
-        <View className='p-8'>
+        <View className=''>
             <FormLabel text={"Cake Tier"} />
             <Dropdown
                 items={[

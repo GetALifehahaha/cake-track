@@ -3,8 +3,8 @@ import Dropdown from '@/components/atoms/Dropdown';
 import FormLabel from '@/components/atoms/FormLabel';
 
 const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
-    <View>
-        <View className='p-8'>
+    <View className='gap-4'>
+        <View>
             <FormLabel text={"Toppings"} />
             <Dropdown
                 items={[
@@ -19,7 +19,7 @@ const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
             />
         </View>
 
-        <View className='p-8'>
+        <View>
             <FormLabel text={"Add-on"} />
             <Dropdown
                 items={[

@@ -4,8 +4,8 @@ import FormLabel from '@/components/atoms/FormLabel';
 import Checkbox from '@/components/atoms/Checkbox';
 
 const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcakesCount, addOn, setAddOn }) => (
-    <View className='px-8'>
-        <View className='mt-4'>
+    <View className='gap-4'>
+        <View>
             <FormLabel text={"Add cupcakes?"} />
             <View className='flex-row gap-2 items-center'>
                 <Checkbox value={hasCupcakes} onChange={toggleHasCupcakes} />

@@ -5,8 +5,8 @@ import FormLabel from '@/components/atoms/FormLabel';
 import { AlertCircle } from 'lucide-react-native';
 
 const CakeDetailPage = ({ occasion, setOccasion, specifyOccasion, setSpecifyOccasion, personallyDesign, setPersonallyDesign }) => (
-    <View>
-        <View className='p-8'>
+    <View className='gap-4'>
+        <View className=''>
             <FormLabel text={"Occassion"} />
             <Dropdown
                 items={[
@@ -29,7 +29,7 @@ const CakeDetailPage = ({ occasion, setOccasion, specifyOccasion, setSpecifyOcca
             )}
         </View>
 
-        <View className='px-8'>
+        <View className=''>
             <View className='p-4 gap-4 border border-secondary-light bg-white rounded-md'>
                 <View className='flex-row gap-2'>
                     <Checkbox value={personallyDesign} onChange={setPersonallyDesign} />

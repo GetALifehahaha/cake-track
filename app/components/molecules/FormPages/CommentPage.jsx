@@ -3,8 +3,8 @@ import FormLabel from '@/components/atoms/FormLabel';
 import DatePicker from '@/components/atoms/DatePicker';
 
 const CommentPage = ({ comments, setComments, dueDate, setDueDate }) => (
-    <View>
-        <View className='p-8'>
+    <View className='gap-4'>
+        <View >
             <FormLabel text={"Comments"} />
             <TextInput
                 className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white'
@@ -14,7 +14,7 @@ const CommentPage = ({ comments, setComments, dueDate, setDueDate }) => (
             />
         </View>
 
-        <View className='px-8 mt-4'>
+        <View >
             <FormLabel text={"Due Date"} />
             <DatePicker onSelectDate={setDueDate} />
         </View>

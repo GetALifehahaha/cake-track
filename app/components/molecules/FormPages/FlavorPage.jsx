@@ -3,8 +3,8 @@ import Dropdown from '@/components/atoms/Dropdown';
 import FormLabel from '@/components/atoms/FormLabel';
 
 const FlavorPage = ({ baseFlavor, setBaseFlavor, filling, setFilling }) => (
-    <View>
-        <View className='p-8'>
+    <View className='gap-4'>
+        <View >
             <FormLabel text={"Base Flavor"} />
             <Dropdown
                 items={[
@@ -17,7 +17,7 @@ const FlavorPage = ({ baseFlavor, setBaseFlavor, filling, setFilling }) => (
             />
         </View>
 
-        <View className='p-8'>
+        <View >
             <FormLabel text={"Filling"} />
             <Dropdown
                 items={[

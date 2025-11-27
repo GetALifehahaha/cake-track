@@ -15,26 +15,30 @@ const Dropdown = ({ items, placeholder, onChangeValue, defaultValue }) => {
 
   return (
     <DropDownPicker
-    open={open}
-    value={value}
-    items={dropItems}
-    setOpen={setOpen}
-    setValue={handleValueChange}
-    setItems={setDropItems}
-    placeholder={placeholder}
-    style={{
+      listMode="SCROLLVIEW"
+      scrollViewProps={{
+        nestedScrollEnabled: true,
+      }}
+      open={open}
+      value={value}
+      items={dropItems}
+      setOpen={setOpen}
+      setValue={handleValueChange}
+      setItems={setDropItems}
+      placeholder={placeholder}
+      style={{
         borderColor: "#A67C52",
         backgroundColor: "white",
         borderRadius: 4,
         zIndex: 1000,
         marginTop: 5
-    }}
-    dropDownContainerStyle={{
-        borderColor: "#A67C52", 
-    }}
-    textStyle={{
+      }}
+      dropDownContainerStyle={{
+        borderColor: "#A67C52",
+      }}
+      textStyle={{
         color: "#A67C52"
-    }}
+      }}
     />
   );
 };

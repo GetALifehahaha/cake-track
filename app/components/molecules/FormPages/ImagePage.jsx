@@ -3,7 +3,7 @@ import FormLabel from '@/components/atoms/FormLabel';
 import { Upload } from 'lucide-react-native';
 
 const ImagePage = ({ image, pickImage }) => (
-    <View className='px-12 mt-4'>
+    <View className=''>
         <View>
             <FormLabel text={"Reference Image (optional)"} />
             <Text className='text-secondary-light font-medium'>

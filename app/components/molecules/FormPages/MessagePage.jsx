@@ -3,8 +3,8 @@ import Dropdown from '@/components/atoms/Dropdown';
 import FormLabel from '@/components/atoms/FormLabel';
 
 const MessagePage = ({ messageType, setMessageType, message, setMessage }) => (
-    <View>
-        <View className='p-8'>
+    <View className='gap-4'>
+        <View>
             <FormLabel text={"Message Type"} />
             <Dropdown
                 items={[
@@ -17,7 +17,7 @@ const MessagePage = ({ messageType, setMessageType, message, setMessage }) => (
             />
         </View>
 
-        <View className='p-8'>
+        <View pointerEvents={messageType === "none" ? "none" : "auto"} style={{ opacity: messageType === "none" ? 0.5 : 1 }}>
             <FormLabel text={"Message"} />
             <TextInput
                 multiline

@@ -3,8 +3,8 @@ import Dropdown from '@/components/atoms/Dropdown';
 import FormLabel from '@/components/atoms/FormLabel';
 
 const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderColor, setBorderColor }) => (
-    <View className='py-6 justify-evenly flex-1'>
-        <View className='px-8'>
+    <View className='gap-4'>
+        <View>
             <FormLabel text={"Coating Color"} />
             <Dropdown
                 items={[
@@ -16,7 +16,7 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
                 onChangeValue={setCoatingColor}
             />
         </View>
-        <View className='px-8'>
+        <View>
             <FormLabel text={"Border"} />
             <Dropdown
                 items={[
@@ -28,7 +28,7 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
                 onChangeValue={setBorder}
             />
         </View>
-        <View className='px-8'>
+        <View>
             <FormLabel text={"Border Color"} />
             <Dropdown
                 items={[
