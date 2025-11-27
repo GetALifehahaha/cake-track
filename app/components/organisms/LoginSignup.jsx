@@ -4,9 +4,11 @@ import { useRouter } from 'expo-router'
 import React, { useState, useContext } from 'react'
 import { Lock, Mail, Eye, EyeClosed } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
+import { useToast } from '@/context/ToastContext'
 
 const LoginSignup = ({ method }) => {
 
+  const { showToast } = useToast();
   const { login, loading } = useContext(AuthContext)
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +19,7 @@ const LoginSignup = ({ method }) => {
       const res = await login(emailAddress, password)
 
       if (!res.success) {
-        alert(res.error)
+        showToast(res.error, "error")
       }
     }
   }
@@ -62,6 +64,35 @@ const LoginSignup = ({ method }) => {
             </View>
 
             {method === "login" &&
+              <View className='p-6'>
+                <Text className='my-8 text-center text-black font-semibold'>
+                  Welcome back! Please login to continue
+                </Text>
+                <View className='flex-row gap-2 items-center'>
+                  <Mail style={{ color: "#BE9B7B" }} size={16} />
+                  <Text className=''>Email Address</Text>
+                </View>
+                <TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='dummy_user' value={emailAddress} onChangeText={(text) => setEmailAddress(text)} />
+                <View className='flex-row gap-2 items-center'>
+                  <Lock style={{ color: "#BE9B7B" }} size={16} />
+                  <Text className=''>Password</Text>
+                </View>
+
+                <View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
+                  <TextInput className='flex-1' placeholder="password_password" secureTextEntry={showPassword}
+                    value={password} onChangeText={(text) => setPassword(text)} />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />
+                    }
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
+                  <Text className='text-center font-semibold text-white'>LOGIN</Text>
+                </TouchableOpacity>
+              </View>
+            }
+            {method === "signup" &&
               <View className='p-6'>
                 <Text className='my-8 text-center text-black font-semibold'>
                   Welcome back! Please login to continue

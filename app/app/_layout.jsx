@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
 import { View, ActivityIndicator } from "react-native";
 
 const InitialLayout = () => {
@@ -66,7 +67,9 @@ const InitialLayout = () => {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <InitialLayout />
+      <ToastProvider>
+        <InitialLayout />
+      </ToastProvider>
     </AuthProvider>
   );
 }
