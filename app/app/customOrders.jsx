@@ -1,23 +1,30 @@
 import './global.css';
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native'
+import { View, Text, TouchableOpacity, Image } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, ArrowLeft, ArrowRight, AlertCircle, Check, Upload } from 'lucide-react-native';
-import FormLabel from '@/components/atoms/FormLabel';
-import Dropdown from '@/components/atoms/Dropdown';
-import Checkbox from '@/components/atoms/Checkbox';
+import { X, ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
 import cakeImages from './cakeImages';
-import DatePicker from '@/components/atoms/DatePicker';
+import {
+    AddonPage,
+    CakeDetailPage,
+    CoatingPage,
+    CommentPage,
+    CupcakePage,
+    FlavorPage,
+    FormPage,
+    ImagePage,
+    InformationPage,
+} from '@/components/molecules/FormPages';
 
 const CustomOrders = () => {
     const [customDisplay, setCustomDisplay] = useState("");
     const router = useRouter();
-    const [personallyDesign, setPersonallyDesign] = useState(false);
     const [page, setPage] = useState(1);
     const [maxPage, setMaxPage] = useState(10);
+    const [personallyDesign, setPersonallyDesign] = useState(false);
     const [occasion, setOccasion] = useState(null);
     const [specifyOccasion, setSpecifyOccasion] = useState('');
     const [shape, setShape] = useState(null);
@@ -126,323 +133,112 @@ const CustomOrders = () => {
                     <TouchableOpacity onPress={() => router.back()}><X style={{ color: '#8B5A3C' }} /></TouchableOpacity>
                 </View>
 
-                {/* Occasion */}
-                {page === 1 &&
-                    <>
+                {page === 1 && (
+                    <CakeDetails
+                        occasion={occasion}
+                        setOccasion={setOccasion}
+                        specifyOccasion={specifyOccasion}
+                        setSpecifyOccasion={setSpecifyOccasion}
+                        personallyDesign={personallyDesign}
+                        setPersonallyDesign={setPersonallyDesign}
+                    />
+                )}
 
-                        <View>
-                            {/* Dropdown */}
-                            <View className='p-8'>
-                                <FormLabel text={"Occassion"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Birthday', value: 'birthday' },
-                                        { label: 'Anniversary', value: 'anniversary' },
-                                        { label: 'Wedding', value: 'wedding' },
-                                        { label: 'Graduation', value: 'graduation' },
-                                        { label: 'Other', value: 'other' },
-                                    ]}
-                                    placeholder={"Select an occasion"}
-                                    onChangeValue={setOccasion}
-                                />
-                                {occasion == 'other' && <TextInput className='py-5 px-2 rounded-md border border-secondary-light mt-4' value={specifyOccasion} onChangeText={(text) => setSpecifyOccasion(text)} placeholder='Specify your occassion' />
-                                }
-                            </View>
+                {page === 2 && (
+                    <FormPage
+                        shape={shape}
+                        setShape={setShape}
+                        specifyShape={specifyShape}
+                        setSpecifyShape={setSpecifyShape}
+                        tier={tier}
+                        setTier={setTier}
+                    />
+                )}
 
-                            <View className='px-8 '>
-                                <View className='p-4 gap-4 border border-secondary-light bg-white rounded-md'>
-                                    {/* Checkbox */}
-                                    <View className='flex-row gap-2'>
-                                        <Checkbox value={personallyDesign} onChange={setPersonallyDesign} />
-                                        <Text className='font-medium text-secondary-strong'>Allow the baker to personally design your cake</Text>
-                                    </View>
+                {page === 3 && (
+                    <Flavors
+                        baseFlavor={baseFlavor}
+                        setBaseFlavor={setBaseFlavor}
+                        filling={filling}
+                        setFilling={setFilling}
+                    />
+                )}
 
-                                    {/* Disclaimer */}
-                                    <View className='bg-main-form flex-row items-center p-4 gap-2 rounded-sm border border-secondary-light'>
-                                        <AlertCircle style={{ color: "#8B5A3C" }} />
-                                        <Text className='text-secondary-strong text-sm'>
-                                            Selecting this gives the baker artistic freedom to personalize your cake based on the occassion
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 2 &&
-                    <>
-                        <View>
-                            {/* Dropdown */}
-                            <View className='p-8'>
-                                <FormLabel text={"Shape"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Square', value: 'square' },
-                                        { label: 'Round', value: 'round' },
-                                        { label: 'Sheet', value: 'sheet' },
-                                        { label: 'Other', value: 'other' },
-                                    ]}
-                                    placeholder={"Select shape"}
-                                    onChangeValue={setShape}
-                                />
-                                {shape == 'other' && <TextInput className='py-5 px-2 rounded-md border border-secondary-light mt-4' value={specifyShape} onChangeText={(text) => setSpecifyShape(text)} placeholder='Specify your shape' />
+                {page === 4 && (
+                    <Coating
+                        coatingColor={coatingColor}
+                        setCoatingColor={setCoatingColor}
+                        border={border}
+                        setBorder={setBorder}
+                        borderColor={borderColor}
+                        setBorderColor={setBorderColor}
+                    />
+                )}
 
-                                }
-                            </View>
+                {page === 5 && (
+                    <AddOns
+                        toppings={toppings}
+                        setToppings={setToppings}
+                        addOn={addOn}
+                        setAddOn={setAddOn}
+                    />
+                )}
 
-                            {/* Dropdown */}
-                            <View className='p-8'>
-                                <FormLabel text={"Cake Tier"} />
-                                <Dropdown
-                                    items={[
-                                        { label: '1-Tier', value: 1 },
-                                        { label: '2-Tier', value: 2 },
-                                        { label: '3-Tier', value: 3 },
-                                    ]}
-                                    placeholder={"Select tier"}
-                                    onChangeValue={setTier}
-                                />
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 3 &&
-                    <>
-                        <View>
-                            {/* Dropdown */}
-                            <View className='p-8'>
-                                <FormLabel text={"Base Flavor"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Chocolate', value: 'choco' },
-                                        { label: 'Strawberry', value: 'strawberry' },
-                                        { label: 'Vanilla', value: 'vanilla' },
-                                    ]}
-                                    placeholder={"Select base flavor"}
-                                    onChangeValue={setBaseFlavor}
-                                />
-                            </View>
+                {page === 6 && (
+                    <Message
+                        messageType={messageType}
+                        setMessageType={setMessageType}
+                        message={message}
+                        setMessage={setMessage}
+                    />
+                )}
 
-                            {/* Dropdown */}
-                            <View className='p-8'>
-                                <FormLabel text={"Filling"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Chocolate', value: 'choco' },
-                                        { label: 'Strawberry', value: 'strawberry' },
-                                        { label: 'Vanilla', value: 'vanilla' },
-                                    ]}
-                                    placeholder={"Select filling"}
-                                    onChangeValue={setFilling}
-                                />
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 4 &&
-                    <>
-                        <View className='py-6 justify-evenly flex-1'>
-                            <View className='px-8'>
-                                <FormLabel text={"Coating Color"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Chocolate', value: 'choco' },
-                                        { label: 'Strawberry', value: 'strawberry' },
-                                        { label: 'Vanilla', value: 'vanilla' },
-                                    ]}
-                                    placeholder={"Select coating color"}
-                                    onChangeValue={setCoatingColor}
-                                />
-                            </View>
-                            <View className='px-8'>
-                                <FormLabel text={"Border"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Chocolate', value: 'choco' },
-                                        { label: 'Strawberry', value: 'strawberry' },
-                                        { label: 'Vanilla', value: 'vanilla' },
-                                    ]}
-                                    placeholder={"Select border"}
-                                    onChangeValue={setBorder}
-                                />
-                            </View>
-                            <View className='px-8'>
-                                <FormLabel text={"Border Color"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Chocolate', value: 'choco' },
-                                        { label: 'Strawberry', value: 'strawberry' },
-                                        { label: 'Vanilla', value: 'vanilla' },
-                                    ]}
-                                    placeholder={"Select border color"}
-                                    onChangeValue={setBorderColor}
-                                />
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 5 &&
-                    <>
-                        <View>
-                            <View className='p-8'>
-                                <FormLabel text={"Toppings"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Whipped Cream', value: 'whipped_cream' },
-                                        { label: 'Fresh Fruits', value: 'fresh_fruits' },
-                                        { label: 'Chocolate Ganache', value: 'chocolate_ganache' },
-                                        { label: 'Buttercream Frosting', value: 'buttercream_frosting' },
-                                        { label: 'Sprinkles', value: 'sprinkles' },
-                                    ]}
-                                    placeholder={"Select toppings"}
-                                    onChangeValue={setToppings}
-                                />
-                            </View>
-                            <View className='p-8'>
-                                <FormLabel text={"Add-on"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'Nuts', value: 'nuts' },
-                                        { label: 'Chocolate Chips', value: 'chocolate_chips' },
-                                        { label: 'Caramel Drizzle', value: 'caramel_drizzle' },
-                                    ]}
-                                    placeholder={"Select add-on"}
-                                    onChangeValue={setAddOn}
-                                />
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 6 &&
-                    <>
-                        <View>
-                            <View className='p-8'>
-                                <FormLabel text={"Message Type"} />
-                                <Dropdown
-                                    items={[
-                                        { label: 'On Cake (Icing Writing)', value: 'on_cake' },
-                                        { label: 'On Card (Message Card)', value: 'on_card' },
-                                        { label: 'No Message', value: 'none' },
-                                    ]}
-                                    placeholder={"Select message type"}
-                                    onChangeValue={setMessageType}
-                                />
-                            </View>
-                            <View className='p-8'>
-                                <FormLabel text={"Message"} />
-                                <TextInput multiline numberOfLines={4} className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={message} onChangeText={(text) => setMessage(text)} placeholder='What should the message say?' />
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 7 &&
-                    <>
-                        <View className='px-8 '>
-                            <View className='mt-4'>
-                                <FormLabel text={"Add cupcakes?"} />
-                                <View className='flex-row gap-2 items-center'>
-                                    <Checkbox value={hasCupcakes} onChange={toggleHasCupcakes} />
-                                    <Text className='text-primary font-semibold'>Yes</Text>
-                                    <Checkbox value={!hasCupcakes} onChange={toggleHasCupcakes} />
-                                    <Text className='text-primary font-semibold'>No</Text>
-                                </View>
-                            </View>
-                            <View pointerEvents={hasCupcakes ? "auto" : "none"}
-                                style={{ opacity: hasCupcakes ? 1 : 0.5 }} className='mt-2'>
-                                <View className='p-6 border border-secondary-light rounded-md gap-2'>
-                                    <View>
-                                        <FormLabel text={"How many cupcakes?"} />
-                                        <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={cupcakesCount} onChangeText={(text) => setCupcakesCount(text)} placeholder='e.g., 12' />
+                {page === 7 && (
+                    <Cupcakes
+                        hasCupcakes={hasCupcakes}
+                        toggleHasCupcakes={toggleHasCupcakes}
+                        cupcakesCount={cupcakesCount}
+                        setCupcakesCount={setCupcakesCount}
+                        cupcakesFrosting={cupcakesFrosting}
+                        setCupcakesFrosting={setCupcakesFrosting}
+                        addOn={addOn}
+                        setAddOn={setAddOn}
+                    />
+                )}
 
-                                    </View>
-                                    <View>
-                                        <FormLabel text={"Add-on"} />
-                                        <Dropdown
-                                            items={[
-                                                { label: 'Nuts', value: 'nuts' },
-                                                { label: 'Chocolate Chips', value: 'chocolate_chips' },
-                                                { label: 'Caramel Drizzle', value: 'caramel_drizzle' },
-                                            ]}
-                                            placeholder={"Select add-on"}
-                                            onChangeValue={setAddOn}
-                                        />
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 8 &&
-                    <>
-                        <View>
-                            <View className='p-8'>
-                                <FormLabel text={"Comments"} />
-                                <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={comments} onChangeText={(text) => setComments(text)} placeholder='Do you have specific additions or changes?' />
-                            </View>
-                            <View className='px-8 mt-4'>
-                                <FormLabel text={"Due Date"} />
-                                <DatePicker onSelectDate={setDueDate} />
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 9 &&
-                    <>
-                        <View className='px-12 mt-4'>
-                            <View className=''>
-                                <FormLabel text={"Reference Image (optional)"} />
-                                <Text className='text-secondary-light font-medium'>
-                                    Upload a photo if you want to give reference or recreate a specific design
-                                </Text>
+                {page === 8 && (
+                    <Comments
+                        comments={comments}
+                        setComments={setComments}
+                        dueDate={dueDate}
+                        setDueDate={setDueDate}
+                    />
+                )}
 
-                                <TouchableOpacity onPress={pickImage} className='bg-white h-[20vh] w-full rounded-md mt-2 border-secondary-light border justify-center items-center'>
-                                    {image ?
-                                        <Image
-                                            source={{ uri: image }}
-                                            style={{
-                                                height: 150,
-                                                width: 300,
-                                            }}
-                                            resizeMode="contain"
-                                        />
-                                        :
-                                        <>
-                                            <Upload style={{ color: '#A67C52' }} size={38} />
-                                            <Text className="text-secondary-strong font-bold">Click to upload Image</Text>
-                                            <Text className="text-secondary-light font-medium">PNG, JPG up to 10MB</Text>
-                                        </>
-                                    }
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </>
-                }
-                {page === 10 &&
-                    <>
-                        <View className='px-8 gap-0.5'>
-                            <View>
-                                <FormLabel text={"Full Name"} />
-                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={fullName} onChangeText={(text) => setFullName(text)} placeholder='Juan Dela Cruz' />
-                            </View>
-                            <View>
-                                <FormLabel text={"Address"} />
-                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={address} onChangeText={(text) => setAddress(text)} placeholder='123 Main St. City, Province' />
-                            </View>
-                            <View>
-                                <FormLabel text={"Email"} />
-                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={email} onChangeText={(text) => setEmail(text)} placeholder='juan@gmail.com' />
-                            </View>
-                            <View>
-                                <FormLabel text={"Phone Number"} />
-                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={(text) => setContactNumber(text)} placeholder='+63 912 345 6789' />
-                            </View>
-                            <View className='flex-row mt-2 gap-4 px-4 py-4 rounded-lg border border-secondary-light items-center'>
-                                <Checkbox value={personallyDesign} onChange={setPersonallyDesign} />
-                                <Text className='font-medium text-secondary-strong'>I agree to the terms and conditions, including the down payment required</Text>
-                            </View>
-                        </View>
-                    </>
-                }
+                {page === 9 && (
+                    <ImageUpload
+                        image={image}
+                        setImage={setImage}
+                        pickImage={pickImage}
+                    />
+                )}
+
+                {page === 10 && (
+                    <Information
+                        fullName={fullName}
+                        setFullName={setFullName}
+                        address={address}
+                        setAddress={setAddress}
+                        email={email}
+                        setEmail={setEmail}
+                        contactNumber={contactNumber}
+                        setContactNumber={setContactNumber}
+                        agreeToTOC={agreeToTOC}
+                        setAgreeToTOC={setAgreeToTOC}
+                        personallyDesign={personallyDesign}
+                        setPersonallyDesign={setPersonallyDesign}
+                    />
+                )}
 
 
                 {/* Nax Prev */}

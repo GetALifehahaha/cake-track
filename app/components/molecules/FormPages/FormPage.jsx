@@ -1,0 +1,45 @@
+import { View, Text, TextInput } from 'react-native';
+import Dropdown from './Dropdown';
+import FormLabel from './FormLabel';
+import Checkbox from './Checkbox';
+
+const FormPage = ({ shape, setShape, specifyShape, setSpecifyShape, tier, setTier }) => (
+    <View>
+        <View className='p-8'>
+            <FormLabel text={"Shape"} />
+            <Dropdown
+                items={[
+                    { label: 'Square', value: 'square' },
+                    { label: 'Round', value: 'round' },
+                    { label: 'Sheet', value: 'sheet' },
+                    { label: 'Other', value: 'other' },
+                ]}
+                placeholder={"Select shape"}
+                onChangeValue={setShape}
+            />
+            {shape == 'other' && (
+                <TextInput
+                    className='py-5 px-2 rounded-md border border-secondary-light mt-4'
+                    value={specifyShape}
+                    onChangeText={setSpecifyShape}
+                    placeholder='Specify your shape'
+                />
+            )}
+        </View>
+
+        <View className='p-8'>
+            <FormLabel text={"Cake Tier"} />
+            <Dropdown
+                items={[
+                    { label: '1-Tier', value: 1 },
+                    { label: '2-Tier', value: 2 },
+                    { label: '3-Tier', value: 3 },
+                ]}
+                placeholder={"Select tier"}
+                onChangeValue={setTier}
+            />
+        </View>
+    </View>
+);
+
+export default FormPage;
