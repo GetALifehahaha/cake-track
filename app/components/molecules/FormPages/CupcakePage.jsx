@@ -20,6 +20,7 @@ const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcake
                 <View>
                     <FormLabel text={"How many cupcakes?"} />
                     <TextInput
+                        keyboardType='numeric'
                         className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white'
                         value={cupcakesCount}
                         onChangeText={setCupcakesCount}

@@ -7,10 +7,11 @@ import { ArrowLeft, Minus, Plus } from 'lucide-react-native';
 import FormLabel from '@/components/atoms/FormLabel';
 import DatePicker from '@/components/atoms/DatePicker';
 import Checkbox from '@/components/atoms/Checkbox';
+import ConfirmModal from '@/components/organisms/ConfirmModal';
 
 const Checkout = () => {
 
-    const { cart, setAmount } = useCart();
+    const { cart, setAmount, setCart } = useCart();
     const router = useRouter();
     const [fullName, setFullName] = useState("");
     const [address, setAddress] = useState("");
@@ -62,11 +63,11 @@ const Checkout = () => {
                             <FormLabel text={"Full Name"} />
                             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={fullName} onChangeText={setFullName} placeholder='Juan Dela Cruz' />
                             <FormLabel text={"Address"} />
-                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={address} onChangeText={setAddress} placeholder='Juan Dela Cruz' />
+                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={address} onChangeText={setAddress} placeholder='123 Main St. City, Province' />
                             <FormLabel text={"Email"} />
-                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={email} onChangeText={setEmail} placeholder='Juan Dela Cruz' />
+                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={email} onChangeText={setEmail} placeholder='juan@example.com' />
                             <FormLabel text={"Phone Number"} />
-                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={setPhoneNumber} placeholder='Juan Dela Cruz' />
+                            <TextInput keyboardType='numeric' className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={setPhoneNumber} placeholder='+63 912 345 6789' />
                             <FormLabel text={"Due Date"} />
                             <DatePicker onSelectDate={setDueDate} />
                             <View className='mt-4 flex-row gap-2 p-4 rounded-md border border-secondary-light items-center'>
@@ -87,12 +88,20 @@ const Checkout = () => {
                 </View>
             </ScrollView>
             <View className='w-full h-40 p-6 bg-white border-y border-secondary-light'>
-                <TouchableOpacity className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4' onPress={() => router.push('/checkout')}>
-                    <View className='bg-white rounded-full h-8 w-8 items-center justify-center'>
-                        <Text className='font-bold text-secondary-strong'>{cart.length}</Text>
+                <ConfirmModal
+                    details={`You are about to pay ₱ ${(cart.reduce((sum, item) => {
+                        return sum + (item.price * item.amount);
+                    }, 0)).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`}
+                    onConfirm={() => setCart([])}>
+                    <View className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4'>
+                        <View className='bg-white rounded-full h-8 px-4 items-center justify-center'>
+                            <Text className='font-semibold text-secondary-strong'>₱ {(cart.reduce((sum, item) => {
+                                return sum + (item.price * item.amount);
+                            }, 0)).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}</Text>
+                        </View>
+                        <Text className='font-bold text-lg text-white'>Submit Order</Text>
                     </View>
-                    <Text className='font-bold text-lg text-white'>Submit Order</Text>
-                </TouchableOpacity>
+                </ConfirmModal>
             </View>
         </SafeAreaView>
     )
