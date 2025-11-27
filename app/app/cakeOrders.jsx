@@ -115,6 +115,14 @@ const CakeOrders = () => {
                     </View>
                 </View>
             </ScrollView>
+            <View className='w-full h-40 p-6 bg-white border border-secondary-light'>
+                <TouchableOpacity className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4'>
+                    <View className='bg-white rounded-full h-8 w-8 items-center justify-center'>
+                        <Text className='font-bold text-secondary-strong'>{cart.length}</Text>
+                    </View>
+                    <Text className='font-bold text-lg text-white'>View Order Details</Text>
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     )
 }
