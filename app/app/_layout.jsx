@@ -14,6 +14,13 @@ export default function RootLayout() {
           animation: 'slide_from_bottom'
         }}
       />
+      <Stack.Screen
+        name="cakeOrders"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
     </Stack>
   )
 }

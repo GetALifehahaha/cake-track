@@ -18,7 +18,7 @@ module.exports = {
         },
         main: {
           "form": "#FFFCF8"
-        }
+        },
       }
     },
   },

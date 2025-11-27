@@ -18,7 +18,7 @@ const Cakes = () => {
       </View>
 
       <View className='flex-1 items-center justify-evenly pt-12 pb-24 gap-6'>
-        <TouchableOpacity className='border-4 border-[#D4C7B8] aspect-square w-48 rounded-xl items-center justify-center gap-2'>
+        <TouchableOpacity className='border-4 border-[#D4C7B8] aspect-square w-48 rounded-xl items-center justify-center gap-2' onPress={() => router.push('/cakeOrders')}>
           <View className='bg-[#A67C52] rounded-full w-16 h-16 items-center justify-center'>
             <Cake style={{ color: "white" }} size={28} />
           </View>
