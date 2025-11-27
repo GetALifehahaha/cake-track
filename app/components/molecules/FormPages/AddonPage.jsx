@@ -1,6 +1,6 @@
 import { View } from 'react-native';
-import Dropdown from './Dropdown';
-import FormLabel from './FormLabel';
+import Dropdown from '@/components/atoms/Dropdown';
+import FormLabel from '@/components/atoms/FormLabel';
 
 const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
     <View>

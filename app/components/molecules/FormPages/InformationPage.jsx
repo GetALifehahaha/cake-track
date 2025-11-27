@@ -1,8 +1,8 @@
 import { View, Text, TextInput } from 'react-native';
-import Checkbox from './Checkbox';
-import FormLabel from './FormLabel';
+import Checkbox from '@/components/atoms/Checkbox';
+import FormLabel from '@/components/atoms/FormLabel';
 
-const InformationPage = ({ fullName, setFullName, address, setAddress, email, setEmail, contactNumber, setContactNumber, personallyDesign, setPersonallyDesign }) => (
+const InformationPage = ({ fullName, setFullName, address, setAddress, email, setEmail, contactNumber, setContactNumber, agreeToTOC, setAgreeToTOC }) => (
     <View className='px-8 gap-0.5'>
         <View>
             <FormLabel text={"Full Name"} />
@@ -21,7 +21,7 @@ const InformationPage = ({ fullName, setFullName, address, setAddress, email, se
             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={setContactNumber} placeholder='+63 912 345 6789' />
         </View>
         <View className='flex-row mt-2 gap-4 px-4 py-4 rounded-lg border border-secondary-light items-center'>
-            <Checkbox value={personallyDesign} onChange={setPersonallyDesign} />
+            <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />
             <Text className='font-medium text-secondary-strong'>I agree to the terms and conditions, including the down payment required</Text>
         </View>
     </View>

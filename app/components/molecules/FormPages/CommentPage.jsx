@@ -1,6 +1,6 @@
 import { View, TextInput } from 'react-native';
-import FormLabel from './FormLabel';
-import DatePicker from './DatePicker';
+import FormLabel from '@/components/atoms/FormLabel';
+import DatePicker from '@/components/atoms/DatePicker';
 
 const CommentPage = ({ comments, setComments, dueDate, setDueDate }) => (
     <View>

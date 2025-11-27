@@ -16,6 +16,7 @@ import {
     FlavorPage,
     FormPage,
     ImagePage,
+    MessagePage,
     InformationPage,
 } from '@/components/molecules/FormPages';
 
@@ -73,6 +74,11 @@ const CustomOrders = () => {
         //     cakeImages?.[shape]?.[tier]?.[flavor]?.[fill] ??
         setCustomDisplay(img);
     }, [shape, tier, baseFlavor, filling]);
+
+    useEffect(() => {
+        if (personallyDesign) setMaxPage(3)
+        else setMaxPage(10)
+    }, [personallyDesign])
 
     const handleChangePage = (direction) => {
         if (direction === 'next' && page < maxPage) {
@@ -134,7 +140,7 @@ const CustomOrders = () => {
                 </View>
 
                 {page === 1 && (
-                    <CakeDetails
+                    <CakeDetailPage
                         occasion={occasion}
                         setOccasion={setOccasion}
                         specifyOccasion={specifyOccasion}
@@ -143,7 +149,6 @@ const CustomOrders = () => {
                         setPersonallyDesign={setPersonallyDesign}
                     />
                 )}
-
                 {page === 2 && (
                     <FormPage
                         shape={shape}
@@ -154,18 +159,16 @@ const CustomOrders = () => {
                         setTier={setTier}
                     />
                 )}
-
                 {page === 3 && (
-                    <Flavors
+                    <FlavorPage
                         baseFlavor={baseFlavor}
                         setBaseFlavor={setBaseFlavor}
                         filling={filling}
                         setFilling={setFilling}
                     />
                 )}
-
                 {page === 4 && (
-                    <Coating
+                    <CoatingPage
                         coatingColor={coatingColor}
                         setCoatingColor={setCoatingColor}
                         border={border}
@@ -174,27 +177,24 @@ const CustomOrders = () => {
                         setBorderColor={setBorderColor}
                     />
                 )}
-
                 {page === 5 && (
-                    <AddOns
+                    <AddonPage
                         toppings={toppings}
                         setToppings={setToppings}
                         addOn={addOn}
                         setAddOn={setAddOn}
                     />
                 )}
-
                 {page === 6 && (
-                    <Message
+                    <MessagePage
                         messageType={messageType}
                         setMessageType={setMessageType}
                         message={message}
                         setMessage={setMessage}
                     />
                 )}
-
                 {page === 7 && (
-                    <Cupcakes
+                    <CupcakePage
                         hasCupcakes={hasCupcakes}
                         toggleHasCupcakes={toggleHasCupcakes}
                         cupcakesCount={cupcakesCount}
@@ -205,26 +205,23 @@ const CustomOrders = () => {
                         setAddOn={setAddOn}
                     />
                 )}
-
                 {page === 8 && (
-                    <Comments
+                    <CommentPage
                         comments={comments}
                         setComments={setComments}
                         dueDate={dueDate}
                         setDueDate={setDueDate}
                     />
                 )}
-
                 {page === 9 && (
-                    <ImageUpload
+                    <ImagePage
                         image={image}
                         setImage={setImage}
                         pickImage={pickImage}
                     />
                 )}
-
                 {page === 10 && (
-                    <Information
+                    <InformationPage
                         fullName={fullName}
                         setFullName={setFullName}
                         address={address}
@@ -235,11 +232,8 @@ const CustomOrders = () => {
                         setContactNumber={setContactNumber}
                         agreeToTOC={agreeToTOC}
                         setAgreeToTOC={setAgreeToTOC}
-                        personallyDesign={personallyDesign}
-                        setPersonallyDesign={setPersonallyDesign}
                     />
                 )}
-
 
                 {/* Nax Prev */}
                 <View className='flex-row justify-between items-center mt-auto mb-12 px-6'>
@@ -256,7 +250,6 @@ const CustomOrders = () => {
                         <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-secondary-light m-6 p-4 rounded-full items-center'>
                             <ArrowRight style={{ color: 'white' }} />
                         </TouchableOpacity>
-
                     }
                 </View>
             </View>

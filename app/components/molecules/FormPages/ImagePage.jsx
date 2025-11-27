@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import FormLabel from './FormLabel';
+import FormLabel from '@/components/atoms/FormLabel';
 import { Upload } from 'lucide-react-native';
 
 const ImagePage = ({ image, pickImage }) => (

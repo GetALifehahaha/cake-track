@@ -1,7 +1,7 @@
 import { View, Text, TextInput } from 'react-native';
-import Checkbox from './Checkbox';
-import Dropdown from './Dropdown';
-import FormLabel from './FormLabel';
+import Checkbox from '@/components/atoms/Checkbox';
+import Dropdown from '@/components/atoms/Dropdown';
+import FormLabel from '@/components/atoms/FormLabel';
 import { AlertCircle } from 'lucide-react-native';
 
 const CakeDetailPage = ({ occasion, setOccasion, specifyOccasion, setSpecifyOccasion, personallyDesign, setPersonallyDesign }) => (

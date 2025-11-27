@@ -1,7 +1,6 @@
 import { View, Text, TextInput } from 'react-native';
-import Dropdown from './Dropdown';
-import FormLabel from './FormLabel';
-import Checkbox from './Checkbox';
+import Dropdown from '@/components/atoms/Dropdown';
+import FormLabel from '@/components/atoms/FormLabel';
 
 const FormPage = ({ shape, setShape, specifyShape, setSpecifyShape, tier, setTier }) => (
     <View>
