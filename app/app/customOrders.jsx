@@ -380,7 +380,6 @@ const CustomOrders = () => {
                                 <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={comments} onChangeText={(text) => setComments(text)} placeholder='Do you have specific additions or changes?' />
                             </View>
                             <View className='px-8 mt-4'>
-                                {/* TODO: SET CALENDAR */}
                                 <FormLabel text={"Due Date"} />
                                 <DatePicker onSelectDate={setDueDate} />
                             </View>
@@ -414,6 +413,32 @@ const CustomOrders = () => {
                                         </>
                                     }
                                 </TouchableOpacity>
+                            </View>
+                        </View>
+                    </>
+                }
+                {page === 10 &&
+                    <>
+                        <View className='px-8 gap-0.5'>
+                            <View>
+                                <FormLabel text={"Full Name"} />
+                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={fullName} onChangeText={(text) => setFullName(text)} placeholder='Juan Dela Cruz' />
+                            </View>
+                            <View>
+                                <FormLabel text={"Address"} />
+                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={address} onChangeText={(text) => setAddress(text)} placeholder='123 Main St. City, Province' />
+                            </View>
+                            <View>
+                                <FormLabel text={"Email"} />
+                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={email} onChangeText={(text) => setEmail(text)} placeholder='juan@gmail.com' />
+                            </View>
+                            <View>
+                                <FormLabel text={"Phone Number"} />
+                                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={(text) => setContactNumber(text)} placeholder='+63 912 345 6789' />
+                            </View>
+                            <View className='flex-row mt-2 gap-4 px-4 py-4 rounded-lg border border-secondary-light items-center'>
+                                <Checkbox value={personallyDesign} onChange={setPersonallyDesign} />
+                                <Text className='font-medium text-secondary-strong'>I agree to the terms and conditions, including the down payment required</Text>
                             </View>
                         </View>
                     </>
