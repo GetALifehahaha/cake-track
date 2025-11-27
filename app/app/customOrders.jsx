@@ -1,14 +1,16 @@
 import './global.css';
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, Image } from 'react-native'
+import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react-native';
+import { X, ArrowLeft, ArrowRight, AlertCircle, Check, Upload } from 'lucide-react-native';
 import FormLabel from '@/components/atoms/FormLabel';
 import Dropdown from '@/components/atoms/Dropdown';
 import Checkbox from '@/components/atoms/Checkbox';
 import cakeImages from './cakeImages';
+import DatePicker from '@/components/atoms/DatePicker';
 
 const CustomOrders = () => {
     const [customDisplay, setCustomDisplay] = useState("");
@@ -43,7 +45,7 @@ const CustomOrders = () => {
     const [agreeToTOC, setAgreeToTOC] = useState(false);
 
     const pageTitles = [
-        'Cake Titles',
+        'Cake Details',
         'Form',
         'Flavors',
         'Coating',
@@ -62,7 +64,6 @@ const CustomOrders = () => {
             cakeImages?.[shape || "round"]?.[tier || 1]?.[baseFlavor || "vanilla"][filling || "none"]
         // const img = cakeImages["round"][2]["vanilla"]["none"]
         //     cakeImages?.[shape]?.[tier]?.[flavor]?.[fill] ??
-        console.log({ img, shape })
         setCustomDisplay(img);
     }, [shape, tier, baseFlavor, filling]);
 
@@ -73,6 +74,29 @@ const CustomOrders = () => {
             setPage(page - 1);
         }
     }
+
+    const toggleHasCupcakes = () => {
+        setHasCupcakes(!hasCupcakes);
+    }
+
+    const pickImage = async () => {
+        // Ask permission
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            alert("Permission denied!");
+            return;
+        }
+
+        // Pick image
+        const result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: false,
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setImage(result.assets[0].uri);
+        }
+    };
 
 
     return (
@@ -306,21 +330,25 @@ const CustomOrders = () => {
                             </View>
                             <View className='p-8'>
                                 <FormLabel text={"Message"} />
-                                <TextInput multiline numberOfLines={4} className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={cupcakesCount} onChangeText={(text) => setCupcakesCount(text)} placeholder='What should the message say?' />
+                                <TextInput multiline numberOfLines={4} className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={message} onChangeText={(text) => setMessage(text)} placeholder='What should the message say?' />
                             </View>
                         </View>
                     </>
                 }
                 {page === 7 &&
                     <>
-                        <View>
-                            <View className='px-8 mt-4'>
+                        <View className='px-8 '>
+                            <View className='mt-4'>
                                 <FormLabel text={"Add cupcakes?"} />
-                                <View>
-
+                                <View className='flex-row gap-2 items-center'>
+                                    <Checkbox value={hasCupcakes} onChange={toggleHasCupcakes} />
+                                    <Text className='text-primary font-semibold'>Yes</Text>
+                                    <Checkbox value={!hasCupcakes} onChange={toggleHasCupcakes} />
+                                    <Text className='text-primary font-semibold'>No</Text>
                                 </View>
                             </View>
-                            <View className='p-8 '>
+                            <View pointerEvents={hasCupcakes ? "auto" : "none"}
+                                style={{ opacity: hasCupcakes ? 1 : 0.5 }} className='mt-2'>
                                 <View className='p-6 border border-secondary-light rounded-md gap-2'>
                                     <View>
                                         <FormLabel text={"How many cupcakes?"} />
@@ -352,8 +380,40 @@ const CustomOrders = () => {
                                 <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={comments} onChangeText={(text) => setComments(text)} placeholder='Do you have specific additions or changes?' />
                             </View>
                             <View className='px-8 mt-4'>
+                                {/* TODO: SET CALENDAR */}
                                 <FormLabel text={"Due Date"} />
-                                <TextInput className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white' value={comments} onChangeText={(text) => setComments(text)} placeholder='Do you have specific additions or changes?' />
+                                <DatePicker onSelectDate={setDueDate} />
+                            </View>
+                        </View>
+                    </>
+                }
+                {page === 9 &&
+                    <>
+                        <View className='px-12 mt-4'>
+                            <View className=''>
+                                <FormLabel text={"Reference Image (optional)"} />
+                                <Text className='text-secondary-light font-medium'>
+                                    Upload a photo if you want to give reference or recreate a specific design
+                                </Text>
+
+                                <TouchableOpacity onPress={pickImage} className='bg-white h-[20vh] w-full rounded-md mt-2 border-secondary-light border justify-center items-center'>
+                                    {image ?
+                                        <Image
+                                            source={{ uri: image }}
+                                            style={{
+                                                height: 150,
+                                                width: 300,
+                                            }}
+                                            resizeMode="contain"
+                                        />
+                                        :
+                                        <>
+                                            <Upload style={{ color: '#A67C52' }} size={38} />
+                                            <Text className="text-secondary-strong font-bold">Click to upload Image</Text>
+                                            <Text className="text-secondary-light font-medium">PNG, JPG up to 10MB</Text>
+                                        </>
+                                    }
+                                </TouchableOpacity>
                             </View>
                         </View>
                     </>
@@ -366,9 +426,17 @@ const CustomOrders = () => {
                         <ArrowLeft style={{ color: '#9A8978', backgroundColor: 'white' }} />
                     </TouchableOpacity>
                     <Text className='text-secondary-light'>{page}/{maxPage}</Text>
-                    <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-secondary-light m-6 p-4 rounded-full items-center'>
-                        <ArrowRight style={{ color: 'white' }} />
-                    </TouchableOpacity>
+                    {page === maxPage ?
+                        <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-secondary-light m-6 p-4 rounded-2xl items-center flex-row gap-2'>
+                            <Check style={{ color: 'white' }} />
+                            <Text className='text-white'>Submit</Text>
+                        </TouchableOpacity>
+                        :
+                        <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-secondary-light m-6 p-4 rounded-full items-center'>
+                            <ArrowRight style={{ color: 'white' }} />
+                        </TouchableOpacity>
+
+                    }
                 </View>
             </View>
         </SafeAreaView>
