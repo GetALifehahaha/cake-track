@@ -1,6 +1,7 @@
 from django.shortcuts import render
 
 # Create your views here.
+from rest_framework.views import APIView
 from rest_framework import permissions, viewsets, generics, filters
 from django_filters.rest_framework import DjangoFilterBackend #type: ignore
 from rest_framework.exceptions import ValidationError
@@ -16,14 +17,20 @@ from .serializers import (DiscountSerializer,
                           ProductSerializer, 
                           TransactionCreateSerializer, 
                           TransactionSerializer, 
-                          TransactionItemSerializer)
+                          TransactionItemSerializer,
+                          BusinessSettingsSerializer
+                          )
 from .models import (Discount, 
                      Size, 
                      Category, 
                      ProductSize, 
                      Product, 
                      Transaction, 
-                     TransactionItem) 
+                     TransactionItem,
+                     BusinessSettings
+                     ) 
+
+from users.permissions import IsCashier, IsAdmin, IsCustomerOrAdmin
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
@@ -110,9 +117,22 @@ class TransactionItemViewSet(viewsets.ModelViewSet):
     pagination_class = None
     
     
-    
-    
-    
+class BusinessSettingsView(APIView):
+    permission_classes = [IsAdmin] 
+    def get(self, request):
+        """Get current business settings"""
+        settings = BusinessSettings.load()
+        serializer = BusinessSettingsSerializer(settings)
+        return Response(serializer.data)
+
+    def put(self, request):
+        """Update business settings"""
+        settings = BusinessSettings.load()
+        serializer = BusinessSettingsSerializer(settings, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
     

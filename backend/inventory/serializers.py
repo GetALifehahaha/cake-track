@@ -303,3 +303,4 @@ class BulkRecipeCookSerializer(serializers.Serializer):
             'transactions_created': len(created_transactions),
             'orders_processed': len(validated_data['orders'])
         }
+        

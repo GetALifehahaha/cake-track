@@ -2,7 +2,7 @@ from rest_framework import serializers
 from users.serializers import UserSerializer
 from .models import (
     Discount, Size, Category, Product, ProductSize,
-    Transaction, TransactionItem
+    Transaction, TransactionItem, BusinessSettings
 )
 
 class DiscountSerializer(serializers.ModelSerializer):
@@ -104,3 +104,8 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             TransactionItem.objects.create(transaction=transaction, **item)
             
         return transaction
+    
+class BusinessSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessSettings
+        fields = ['business_name', 'address', 'tin', 'contact_number', 'message', 'logo']

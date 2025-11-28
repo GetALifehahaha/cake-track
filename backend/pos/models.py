@@ -120,3 +120,42 @@ class TransactionItem(models.Model):
     def __str__(self):
         size_name = f" - {self.product_size.size.name}" if self.product_size else ""
         return f"{self.quantity} × {self.product.name}{size_name}"
+
+
+class BusinessSettings(models.Model):
+    # --- Business Details ---
+    business_name = models.CharField(max_length=100, default="My Business")
+    address = models.TextField(blank=True, verbose_name="Business Address")
+    
+    # --- Credentials ---
+    tin = models.CharField(max_length=30, blank=True, verbose_name="Tax Identification Number (TIN)")
+    
+    # --- Contact and Message ---
+    contact_number = models.CharField(max_length=20, blank=True)
+    message = models.TextField(blank=True, help_text="Message to appear at the bottom of the receipt (e.g. Thank you!)")
+    
+    # Optional: Add a logo
+    logo = models.ImageField(upload_to='company/', blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Business Settings"
+        verbose_name_plural = "Business Settings"
+
+    def __str__(self):
+        return self.business_name
+
+    def save(self, *args, **kwargs):
+        """
+        Singleton Logic: Ensure there is only ever one ID=1.
+        """
+        self.pk = 1
+        super(BusinessSettings, self).save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        """
+        Helper method to get the settings. 
+        If it doesn't exist, create it.
+        """
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj

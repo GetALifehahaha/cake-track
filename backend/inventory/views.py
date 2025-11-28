@@ -3,13 +3,15 @@ from django.shortcuts import render
 from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.response import Response
 
-from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, IngredientBatchSerializer, RecipeSerializer, BulkRecipeCookSerializer)
+from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, )
 
 from .models import (Transaction, Ingredient, Recipe)
 
+from users.permissions import IsCashier, IsCustomerOrAdmin, IsAdmin
+
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all().order_by('-purchase_date')
-    permission_classes = [permissions.DjangoModelPermissions]
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     
     def get_serializer_class(self):
         if (self.action == "create"):
@@ -20,13 +22,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
-    permission_classes = [permissions.DjangoModelPermissions]
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     
     
 class IngredientAllViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
-    permission_classes = [permissions.DjangoModelPermissions]
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     pagination_class = None
     
     
@@ -36,7 +38,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """
     queryset = Recipe.objects.all().order_by('name')
     serializer_class = RecipeSerializer
-    permission_classes = [permissions.DjangoModelPermissions]
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
 
     # POST /api/recipes/cook/
     @action(detail=False, methods=['post'])
@@ -54,3 +56,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(result, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
