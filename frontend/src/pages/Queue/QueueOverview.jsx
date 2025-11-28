@@ -114,7 +114,7 @@ const QueueOverview = () => {
 			<h5 className='flex-1 text-center'>{parseDate(order.due_date)}</h5>
 		</div>
 	)
-	const listDueSoon = data.results.filter((item) => isDueSoon(item.due_date)).slice(0, 5).map((order, index) =>
+	const listDueSoon = data.results.filter((item) => (item.status.toLowerCase() == "accepted" && isDueSoon(item.due_date))).slice(0, 5).map((order, index) =>
 		<div key={index} className='flex justify-between items-center w-full px-4'>
 			<h5 className='text-center py-1 font-medium'>{order.full_name}</h5>
 			<h5 className='text-center py-1'>{parseDate(order.due_date)}</h5>
@@ -140,6 +140,11 @@ const QueueOverview = () => {
 						<div className='flex flex-col gap-2 p-2 text-xs font-medium'>
 							{listPending}
 						</div>
+						{data.results.filter((item) => item.status.toLowerCase() == "pending").length > 5 &&
+							<h5 className='text-text/50 text-xs font-semibold text-right'>
+								And {data.results.filter((item) => item.status.toLowerCase() == "pending").length - 5} more...
+							</h5>
+						}
 					</div>
 				</div>
 
