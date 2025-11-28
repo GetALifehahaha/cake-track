@@ -22,7 +22,7 @@ export default function useOrder() {
         try {
             // FIX: Removed 'all' argument. 
             // Signature assumed: (params, id, method)
-            const result = await OrderApi(null, null, "GET");
+            const result = await OrderApi();
             setData(result);
         } catch (err) {
             handleError(err, "Failed to read orders.");

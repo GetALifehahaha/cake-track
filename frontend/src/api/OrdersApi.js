@@ -1,6 +1,6 @@
 import api from "./api";
 
-const OrdersApi = async (params, id = null, all = false, method = "GET") => {
+const OrdersApi = async (params, id = null, method = "GET") => {
     try {
         if (method === "GET") {
             // 1. Get specific order details
@@ -9,14 +9,14 @@ const OrdersApi = async (params, id = null, all = false, method = "GET") => {
                 return response.data;
             } 
             // 2. Get all orders (Standard list)
-            else if (all) {
+            else if (params) {
                 // Note: Standard ViewSets use the base URL. 
                 // If you implemented a specific 'orders-all' endpoint, change this URL.
-                const response = await api.get(`/orders/`);
+                const response = await api.get(`/orders/`, { params });
                 return response.data;
             }
             // 3. Get orders with filters/pagination params
-            const response = await api.get(`/orders/`, { params });
+            const response = await api.get(`/orders/`);
             return response.data;
         } 
         
