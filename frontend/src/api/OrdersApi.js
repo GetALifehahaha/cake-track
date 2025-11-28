@@ -1,0 +1,43 @@
+import api from "./api";
+
+const OrdersApi = async (params, id = null, all = false, method = "GET") => {
+    try {
+        if (method === "GET") {
+            // 1. Get specific order details
+            if (id) {
+                const response = await api.get(`/orders/${id}/`);
+                return response.data;
+            } 
+            // 2. Get all orders (Standard list)
+            else if (all) {
+                // Note: Standard ViewSets use the base URL. 
+                // If you implemented a specific 'orders-all' endpoint, change this URL.
+                const response = await api.get(`/orders/`);
+                return response.data;
+            }
+            // 3. Get orders with filters/pagination params
+            const response = await api.get(`/orders/`, { params });
+            return response.data;
+        } 
+        
+        else if (method === "POST") {
+            // This handles the "One Request" creation (Order + Cake + Cupcake)
+            const response = await api.post(`/orders/`, params);
+            return response.data;
+        } 
+        
+        else if (method === "PATCH") {
+            const response = await api.patch(`/orders/${id}/`, params);
+            return response.data;
+        } 
+        
+        else if (method === "DELETE") {
+            const response = await api.delete(`/orders/${id}/`);
+            return response;
+        }
+    } catch (err) {
+        throw err;
+    }
+};
+
+export default OrdersApi;
