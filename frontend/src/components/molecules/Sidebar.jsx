@@ -1,9 +1,17 @@
-import React, {useState} from 'react'
+import React, { useContext, useState } from 'react'
 import { SidebarConfig } from '../../config/SidebarConfig'
 import { NavLink } from 'react-router-dom'
 import { Menu, LogOut } from 'lucide-react'
+import { AuthContext } from '@/context/AuthContext'
 
 const Sidebar = () => {
+
+    const { user } = useContext(AuthContext);
+
+    const role = user.groups[0]
+    const isAdmin = user.is_staff
+
+    const filteredSidebar = SidebarConfig.filter((item) => item.allowedRoles.includes(isAdmin ? 'admin' : role))
 
     const [expanded, setExpanded] = useState(true);
 
@@ -12,12 +20,12 @@ const Sidebar = () => {
     const inactiveNavStyle = 'text-text ';
     const activeNavStyle = 'text-accent hover:text-accent-dark before:content-[""] before:absolute before:w-4 before:h-full before:bg-accent before:right-[100%] before:rounded-sm  ';
 
-    const listSidebar = SidebarConfig.map(({label, link, icon: Icon}) => 
-        <NavLink 
-        key={label}
-        to={link}
-        className={({isActive}) => ((isActive) ? navStyle+activeNavStyle : navStyle+inactiveNavStyle)}>
-            <Icon width={28}/> <h5 className={navText}>{label}</h5>
+    const listSidebar = filteredSidebar.map(({ label, link, icon: Icon }) =>
+        <NavLink
+            key={label}
+            to={link}
+            className={({ isActive }) => ((isActive) ? navStyle + activeNavStyle : navStyle + inactiveNavStyle)}>
+            <Icon width={28} /> <h5 className={navText}>{label}</h5>
         </NavLink>
     );
 
@@ -28,7 +36,7 @@ const Sidebar = () => {
     return (
         <div className='bg-main-white border-border border-r-2 px-2 py-2 w-fit flex flex-col'>
             <button onClick={handleSetExpanded} className={navStyle + 'font-extrabold text-md'}>
-                <Menu size={28}/> 
+                <Menu size={28} />
                 <div className={navText + `text-xl`}>
                     <h5 className='text-accent font-extrabold'>Cake</h5>
                     <h5 className=' text-accent-dark font-extrabold'>Track</h5>
@@ -40,13 +48,13 @@ const Sidebar = () => {
             </div>
 
             <NavLink
-            to={'/login'}
-            className={navStyle + inactiveNavStyle + 'mt-auto'}
+                to={'/login'}
+                className={navStyle + inactiveNavStyle + 'mt-auto'}
             >
                 <LogOut /> <h5 className={navText}>LOG OUT</h5>
             </NavLink>
         </div>
     )
-}   
+}
 
 export default Sidebar
