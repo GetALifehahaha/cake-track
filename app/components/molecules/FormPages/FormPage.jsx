@@ -8,7 +8,6 @@ const FormPage = ({ shape, setShape, specifyShape, setSpecifyShape, tier, setTie
             <FormLabel text={"Shape"} />
             <Dropdown
                 items={[
-                    { label: 'Square', value: 'square' },
                     { label: 'Round', value: 'round' },
                     { label: 'Sheet', value: 'sheet' },
                     { label: 'Other', value: 'other' },

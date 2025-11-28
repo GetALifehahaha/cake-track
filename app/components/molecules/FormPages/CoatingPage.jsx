@@ -20,7 +20,7 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
             <FormLabel text={"Border"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'choco' },
+                    { label: 'Chocolate', value: 'chocolate' },
                     { label: 'Strawberry', value: 'strawberry' },
                     { label: 'Vanilla', value: 'vanilla' },
                 ]}
@@ -32,7 +32,7 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
             <FormLabel text={"Border Color"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'choco' },
+                    { label: 'Chocolate', value: 'chocolate' },
                     { label: 'Strawberry', value: 'strawberry' },
                     { label: 'Vanilla', value: 'vanilla' },
                 ]}

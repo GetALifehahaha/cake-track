@@ -99,7 +99,6 @@ export const AuthProvider = ({ children }) => {
             // Navigate to home/tabs after successful login
             router.replace('/');
 
-            alert("HEH")
             return { success: true };
 
         } catch (err) {

@@ -3,21 +3,48 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class Order(models.Model):
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    comments = models.TextField(null=True, blank=True)
+    image = models.ImageField(null=True)
+    full_name = models.CharField(max_length=255)
+    email = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=12)
+    address = models.CharField(max_length=255)
+    
+    ORDER_STATUS = [
+        ('Pending', 'pending'),
+        ('Accepted', 'accepted'),
+        ('Completed', 'completed'),
+        ('Rejected', 'rejected')
+    ]
+    
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField()
+    status = models.CharField(choices=ORDER_STATUS, max_length=50, default='Pending')
+    
+    reject_reason = models.TextField(null=True, blank=True)
 
 
 class CakeOrder(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="cake_order")
-    flavor = models.CharField(max_length=10)
-    finish = models.CharField(max_length=10)
-    shape = models.CharField(max_length=10)
-    inscription = models.CharField(max_length=10)
-    message = models.CharField(max_length=10)
-    tier = models.IntegerField()
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="cake_orders")
+    
+    occassion = models.CharField(max_length=255)
+    shape = models.CharField(max_length=255)
+    cake_tier = models.PositiveIntegerField()
+    base_flavor = models.CharField(max_length=255)
+    finish = models.CharField(max_length=255)
+    filling = models.CharField(max_length=255)
+    coating_color = models.CharField(max_length=255)
+    border = models.CharField(max_length=255, default='none')
+    border_color = models.CharField(max_length=255, default='none')
+    toppings = models.CharField(max_length=255, default='none')
+    addons = models.CharField(max_length=255, default='none')
+    message_type = models.CharField(max_length=255, default='none')
+    message = models.CharField(max_length=255, null=True, blank=True)
 
 
 class CupcakeOrder(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="cupcake_order")
-    amount = models.IntegerField()
-    flavor = models.CharField(max_length=10)
-    finish = models.CharField(max_length=10)
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="cupcake_orders")
+    amount = models.PositiveIntegerField()
+    frosting = models.CharField(max_length=255)

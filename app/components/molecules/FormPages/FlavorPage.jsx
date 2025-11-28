@@ -8,7 +8,7 @@ const FlavorPage = ({ baseFlavor, setBaseFlavor, filling, setFilling }) => (
             <FormLabel text={"Base Flavor"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'choco' },
+                    { label: 'Chocolate', value: 'chocolate' },
                     { label: 'Strawberry', value: 'strawberry' },
                     { label: 'Vanilla', value: 'vanilla' },
                 ]}
@@ -21,7 +21,7 @@ const FlavorPage = ({ baseFlavor, setBaseFlavor, filling, setFilling }) => (
             <FormLabel text={"Filling"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'choco' },
+                    { label: 'Chocolate', value: 'chocolate' },
                     { label: 'Strawberry', value: 'strawberry' },
                     { label: 'Vanilla', value: 'vanilla' },
                 ]}
