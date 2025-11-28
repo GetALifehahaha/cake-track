@@ -14,7 +14,6 @@ const QueueOverview = () => {
 	const [removeId, setRemoveId] = useState(-1);
 
 	if (loading) return <Loading />
-	console.log(data)
 	if (error) return <h5>Error</h5>
 
 	const acceptedOrdersHeaders = [
@@ -48,11 +47,6 @@ const QueueOverview = () => {
 
 	const capitalize = (str) => str[0].toUpperCase() + str.slice(1)
 
-	/**
- * Checks if the given date is today or up to 3 days in the future.
- * * @param {string} dateString - Date in ISO format (e.g., '2025-11-28T...') or YYYY-MM-DD.
- * @returns {boolean} True if the date is within the next 3 days (inclusive of today).
- */
 	const isDueSoon = (dateString) => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -66,11 +60,8 @@ const QueueOverview = () => {
 		inputDate.setHours(0, 0, 0, 0);
 
 		const diffMs = inputDate.getTime() - today.getTime();
-
 		const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
 		const diffDays = Math.round(diffMs / MS_PER_DAY);
-
 		return diffDays >= 0 && diffDays <= 3;
 	};
 

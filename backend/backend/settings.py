@@ -43,7 +43,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter', 
         'rest_framework.filters.OrderingFilter'
         ],
-    "PAGE_SIZE": 25,
+    "PAGE_SIZE": 100,
 }
 
 SIMPLE_JWT = {

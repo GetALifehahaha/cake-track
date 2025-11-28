@@ -13,6 +13,7 @@ const OrdersApi = async (params, id = null, method = "GET") => {
                 // Note: Standard ViewSets use the base URL. 
                 // If you implemented a specific 'orders-all' endpoint, change this URL.
                 const response = await api.get(`/orders/`, { params });
+                console.log(params)
                 return response.data;
             }
             // 3. Get orders with filters/pagination params

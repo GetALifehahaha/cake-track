@@ -4,19 +4,19 @@ from django.shortcuts import render
 from rest_framework import permissions, viewsets, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.filters import OrderingFilter
 
 from .serializers import (
     CakeOrderSerializer,
     CupcakeOrderSerializer,
-    OrderSerializer
+    OrderSerializer,
 )
 
 from .models import (
     CakeOrder,
     CupcakeOrder,
-    Order
+    Order,
 )
 
 from users.permissions import IsCashier, IsCustomerOrAdmin
@@ -54,15 +54,18 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsCustomerOrAdmin]
     
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields =  ['status']
+    
     def get_queryset(self):
         user = self.request.user
-        
-        if user.is_staff:
-            return Order.objects.all().order_by('-created_at')
-        
-        return Order.objects.filter(customer=user).order_by('-created_at')
+        queryset = Order.objects.all()
+
+        if not user.is_staff:
+            queryset = queryset.filter(customer=user)
+            
+        return queryset.order_by('-created_at')
     
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
-            
             

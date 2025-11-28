@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import OrderApi from "@/api/OrdersApi";
+import { useLocation } from "react-router-dom";
 
 export default function useOrder() {
     // 1. Standardized state names
@@ -7,6 +8,11 @@ export default function useOrder() {
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const location = useLocation();
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const lastPart = pathSegments.pop();
+    const currentFilter = lastPart === 'queue' ? null : lastPart;
 
     // Helper to parse backend errors
     const handleError = (err, defaultMsg) => {
@@ -17,12 +23,14 @@ export default function useOrder() {
 
     // 2. Fetch Orders
     const fetchOrders = useCallback(async () => {
+        
+        
         setLoading(true);
         setError(null); 
         try {
             // FIX: Removed 'all' argument. 
             // Signature assumed: (params, id, method)
-            const result = await OrderApi();
+            const result = await OrderApi(currentFilter ? {status: currentFilter} : null);
             setData(result);
         } catch (err) {
             handleError(err, "Failed to read orders.");
