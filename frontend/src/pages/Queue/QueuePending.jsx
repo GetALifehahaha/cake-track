@@ -10,14 +10,9 @@ const QueuePending = () => {
 
 	const { data, loading, error, patchOrder } = useOrder();
 
-
 	const [dateFilter, setDateFilter] = useState()
 
-	const handleSetDateFilter = (value) => {
-		const filterDateString = new Date(value).toISOString().slice(0, 10);
-		setDateFilter(value)
-	}
-	const removeDateFilter = () => setDateFilter()
+
 
 	const [pageNum, setPageNum] = useState(1);
 	const [orderDetails, setOrderDetails] = useState(null);
@@ -25,7 +20,13 @@ const QueuePending = () => {
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
 
 	if (loading) return <Loading />
-	console.log(data)
+
+
+	const handleSetDateFilter = (value) => {
+		const filterDateString = new Date(value).toISOString().slice(0, 10);
+		setDateFilter(value)
+	}
+	const removeDateFilter = () => setDateFilter()
 
 	const handleSetPageNum = (direction) => {
 		if (direction == "prev") {
@@ -62,15 +63,15 @@ const QueuePending = () => {
 
 	const removeAllOrder = () => setOrderData([])
 
-	// const listOrder = orderData.map((cake, index) =>
-	// 	<QueueCard key={index} order={cake} onAccept={acceptOrder} onShowDetails={handleSetOrderDetails} onReject={handleDeleteOrder} />
-	// )
+	const listOrder = data.results.map((cake, index) =>
+		<QueueCard key={index} order={cake} onAccept={acceptOrder} onShowDetails={handleSetOrderDetails} onReject={handleDeleteOrder} />
+	)
 
 	return (
 		<div className='flex flex-col min-h-140'>
 			<div className='p-2 flex items-center gap-4'>
 				<span className='w-60'>
-					<DatePicker selected={dateFilter} onSelect={handleSetDateFilter} />
+					<DatePicker className='bg-accent' selected={dateFilter} onSelect={handleSetDateFilter} />
 				</span>
 				{dateFilter &&
 					<>

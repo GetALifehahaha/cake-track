@@ -5,23 +5,23 @@ from django.contrib.auth.models import User
 class Order(models.Model):
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
     comments = models.TextField(null=True, blank=True)
-    image = models.ImageField(null=True)
+    image = models.ImageField(null=True, blank=True)
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=12)
     address = models.CharField(max_length=255)
     
     ORDER_STATUS = [
-        ('Pending', 'pending'),
-        ('Accepted', 'accepted'),
-        ('Completed', 'completed'),
-        ('Rejected', 'rejected')
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('completed', 'Completed'),
+        ('rejected', 'Rejected')
     ]
     
     
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField()
-    status = models.CharField(choices=ORDER_STATUS, max_length=50, default='Pending')
+    status = models.CharField(choices=ORDER_STATUS, max_length=50, default='pending')
     
     reject_reason = models.TextField(null=True, blank=True)
 
