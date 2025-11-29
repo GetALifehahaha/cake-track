@@ -1,6 +1,7 @@
 import React from 'react';
 import { Title, Label } from '../atoms';
 import { X } from 'lucide-react';
+import { capitalize } from '@/utils/capitalize';
 
 const OrderDetails = ({ orderDetails, onClose }) => {
 
@@ -48,21 +49,21 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     <Label text='Cake Details' variant='large' />
                     <div className='px-8 py-1 flex flex-row gap-8 justify-center'>
                         <div className='flex-1'>
-                            <h5 className='text-sm'><strong>Flavor: </strong>{capitalize(orderDetails.cake_orders.base_flavor)}</h5>
-                            <h5 className='text-sm'><strong>Finish: </strong>{capitalize(orderDetails.cake_orders.finish)}</h5>
-                            <h5 className='text-sm'><strong>Filling: </strong>{capitalize(orderDetails.cake_orders.filling)}</h5>
-                            <h5 className='text-sm'><strong>Shape: </strong>{capitalize(orderDetails.cake_orders.shape)}</h5>
-                            <h5 className='text-sm'><strong>Tier: </strong>{orderDetails.cake_orders.cake_tier}-tier</h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Flavor: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.base_flavor)}</strong></h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Finish: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.finish)}</strong></h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Filling: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.filling)}</strong></h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Shape: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.shape)}</strong></h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Tier: <strong className='ml-1 text-text'>{orderDetails.cake_orders.cake_tier}-tier</strong></h5>
                         </div>
                         <div className='flex-1'>
-                            <h5 className='text-sm'><strong>Inscription: </strong>{orderDetails.cake_orders.message_tyoe}</h5>
-                            <h5 className='text-sm'><strong>Message: </strong>{orderDetails.cake_orders.message}</h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Inscription: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.message_type)}</strong></h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Message: <strong className='ml-1 text-text'>{orderDetails.cake_orders.message}</strong></h5>
                             {orderDetails.cupcake_orders &&
                                 <>
-                                    <h5 className='text-sm'><strong>Cupcake_orderss: </strong>{orderDetails.cupcake_orders.amount}</h5>
+                                    <h5 className='text-sm text-text/75 font-medium'>Cupcake_orderss: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.amount}</strong></h5>
                                     <div className='px-6 py-1'>
-                                        <h5 className='text-sm'><strong>Flavor: </strong>{orderDetails.cupcake_orders.flavor}</h5>
-                                        <h5 className='text-sm'><strong>Finish: </strong>{orderDetails.cupcake_orders.finish}</h5>
+                                        <h5 className='text-sm text-text/75 font-medium'>Flavor: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.flavor}</strong></h5>
+                                        <h5 className='text-sm text-text/75 font-medium'>Finish: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.finish}</strong></h5>
                                     </div>
                                 </>
                             }
@@ -77,6 +78,14 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                         <h5 className='text-text/25 font-medium text-center'>NO IMAGE</h5>
                     </div>
                 </div>
+                {orderDetails.comments &&
+                    <div className="">
+                        <Label text='Comments' variant='large' />
+                        <div className='min-h-20 flex p-4'>
+                            <h5 className='text-text font-base text-left'>{orderDetails.comments}</h5>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     )

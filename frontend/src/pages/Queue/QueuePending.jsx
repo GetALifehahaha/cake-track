@@ -108,9 +108,15 @@ const QueuePending = () => {
 				}
 
 			</div>
-			<div className='grid grid-cols-5 gap-4 mt-8'>
-				{listOrder}
-			</div>
+			{data.results.length > 0 ?
+				<div className='grid grid-cols-5 gap-4 mt-8'>
+					{listOrder}
+				</div>
+				:
+				<div className='flex w-full h-full justify-center items-center'>
+					<h5 className='text-accent-text/75 font-semibold'>No orders</h5>
+				</div>
+			}
 
 			<div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
 				<button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
