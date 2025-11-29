@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { EllipsisVertical, ChevronLeft, ChevronRight, Minus } from 'lucide-react'
-import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, QueueCard } from '../../components/organisms';
+import { Ellipsis, ChevronLeft, ChevronRight, Minus } from 'lucide-react'
+import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal } from '../../components/organisms';
 import { DatePicker } from '@/components/molecules';
 import { Button } from '@/components/atoms';
 import Loading from '@/components/molecules/Loading';
@@ -8,8 +8,7 @@ import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { useToast } from '@/context/ToastContext';
-import { id } from 'date-fns/locale';
-
+import { capitalize } from '@/utils/capitalize';
 const QueuePending = () => {
 
 	const { addToast } = useToast();
@@ -21,6 +20,9 @@ const QueuePending = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
+	const [showOptions, setShowOptions] = useState(-1);
+	const [prepAcceptId, setPrepAcceptId] = useState(-1);
+	const [prepRejectId, setPrepRejectId] = useState(-1);
 
 	if (loading) return <Loading />
 
@@ -46,12 +48,30 @@ const QueuePending = () => {
 		}
 	}
 
-	const acceptOrder = (id) => {
-		setOrderData(order => {
-			let curr = order.filter(ord => ord.id != id)
+	const acceptOrder = async () => {
+		if (prepAcceptId == -1) return;
 
-			return curr
-		})
+		try {
+			await patchOrder(prepAcceptId, { status: "accepted" });
+
+			addToast("Order accepted successfully");
+			setPrepAcceptId(-1);
+		} catch (err) {
+			addToast("Failed to accept order.", "error")
+		}
+	}
+
+	const rejectOrder = async (reject_reason) => {
+		if (prepRejectId == -1) return;
+
+		try {
+			await patchOrder(prepRejectId, { "status": "rejected", "reject_reason": reject_reason });
+
+			addToast("Order declined successfully");
+			setPrepRejectId(-1);
+		} catch (err) {
+			addToast("Failed to decline order.", "error")
+		}
 	}
 
 	const handleSetOrderDetails = (order) => {
@@ -63,10 +83,6 @@ const QueuePending = () => {
 		if (!orderDetails) setShowOrderDetails(false);
 
 		setShowOrderDetails(!showOrderDetails)
-	}
-
-	const handleDeleteOrder = (id) => {
-		setOrderData(items => items.filter((item) => item.id != id))
 	}
 
 	const acceptAllOrder = async () => {
@@ -85,7 +101,60 @@ const QueuePending = () => {
 	const removeAllOrder = () => setOrderData([])
 
 	const listOrder = data.results.map((cake, index) =>
-		<QueueCard key={index} order={cake} onAccept={acceptOrder} onShowDetails={handleSetOrderDetails} onReject={handleDeleteOrder} />
+		<div
+			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60'
+			onClick={() => setShowOptions(cake.id)}
+			key={index}
+		>
+			{showOptions === cake.id &&
+				<div
+					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
+					onClick={(e) => { e.stopPropagation(); setShowOptions(0) }}
+				>
+					<Button variant='success' text='ACCEPT' onClick={() => setPrepAcceptId(cake.id)} />
+					<Button variant='error' text='DECLINE' onClick={() => setPrepRejectId(cake.id)} />
+				</div>
+			}
+
+			<div className='flex justify-between items-center'>
+				<h5 className='text-accent-text text-sm'>Order {cake.id}</h5>
+				<Ellipsis
+					onClick={(e) => {
+						e.stopPropagation();
+						handleSetOrderDetails(cake);
+					}}
+					className='cursor-pointer'
+					size={16}
+				/>
+			</div>
+			<h5 className='text-accent-text text-xs'>{cake.client}</h5>
+
+			{/* Cake Details */}
+			<div className='flex mt-4'>
+				<div className='flex flex-col gap-0.5'>
+					<h5 className='font-bold text-md'>{capitalize(cake.cake_orders.occassion)}</h5>
+					<h5 className='text-xs text-accent-text'>Flavor: {capitalize(cake.cake_orders.base_flavor)}</h5>
+					<h5 className='text-xs text-accent-text'>Finish: {capitalize(cake.cake_orders.finish)}</h5>
+					<h5 className='text-xs text-accent-text'>Filling: {capitalize(cake.cake_orders.filling)}</h5>
+					<h5 className='text-xs text-accent-text'>Shape: {capitalize(cake.cake_orders.shape)}</h5>
+					<h5 className='text-xs text-accent-text'>Inscription: {capitalize(cake.cake_orders.message_type)}</h5>
+				</div>
+			</div>
+
+			{/* Cupcake if there's any */}
+			{cake.cupcake_orders &&
+				<div className='flex mt-2 mb-4'>
+					<h5 className='basis-1/5 text-center font-bold text-md'>
+						{cake.cupcake_orders.amount}x
+					</h5>
+					<div className='flex flex-col gap-0.5'>
+						<h5 className='font-bold text-md'>Cupcakes</h5>
+						<h5 className='text-xs text-accent-text'>Flavor: {cake.cupcake_orders.flavor}</h5>
+						<h5 className='text-xs text-accent-text'>Finish: {cake.cupcake_orders.finish}</h5>
+					</div>
+				</div>
+			}
+		</div>
 	)
 
 	return (
@@ -134,6 +203,14 @@ const QueuePending = () => {
 
 			{showOrderDetails &&
 				<OrderDetails orderDetails={orderDetails} onClose={handleShowOrderDetails} />
+			}
+
+			{prepAcceptId > 0 &&
+				<ConfirmationModal title={"Accept Order?"} content={"Are you sure you want to accept this order?"} onConfirm={acceptOrder} onReject={() => setPrepAcceptId(-1)} />
+			}
+
+			{prepRejectId > 0 &&
+				<InputRejectModal onConfirm={rejectOrder} onReject={() => setPrepRejectId(-1)} />
 			}
 		</div>
 	)

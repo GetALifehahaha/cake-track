@@ -70,7 +70,7 @@ const QueueOverview = () => {
 	// METHODS
 	const setOrderToAccepted = async (id) => {
 		try {
-			const res = await patchOrder(id, { status: "accepted" });
+			await patchOrder(id, { status: "accepted" });
 
 			addToast("Order accepted successfully")
 		} catch (err) {
@@ -105,7 +105,7 @@ const QueueOverview = () => {
 				<InputRejectModalWrapper onReject={() => setRemoveId(-1)} onConfirm={setOrderToReject}>
 					<X className='text-red-500' onClick={() => setRemoveId(order.id)} size={18} />
 				</InputRejectModalWrapper>
-				<ConfirmationModalWrapper title='Accept order' content={`Confirm acceptance of Order #${order.id}. This action is irreversible and places the order into the active production schedule.`} onReject={() => setRemoveId(-1)} onConfirm={() => setOrderToAccepted(order.id)}>
+				<ConfirmationModalWrapper title='Accept order' content={`Confirm acceptance of Order #${order.id}. This action is irreversible and places the order into the active production schedule.`} onConfirm={() => setOrderToAccepted(order.id)}>
 					<Check className='text-green-500' size={18} />
 				</ConfirmationModalWrapper>
 			</div>

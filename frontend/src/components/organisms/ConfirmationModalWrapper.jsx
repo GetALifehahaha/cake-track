@@ -14,7 +14,7 @@ const ConfirmationModalWrapper = ({ children, onConfirm, onReject, title = "Titl
 
     return (
         <>
-            <button onClick={() => setShow(!show)}>
+            <button onClick={(e) => { e.stopPropagation(); setShow(!show) }}>
                 {children}
             </button>
 

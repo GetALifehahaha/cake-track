@@ -21,4 +21,5 @@ export { default as CategoryModal } from './CategoryModal'
 export { default as InventoryInOut } from './InventoryInOut'
 export { default as ProtectedRoute } from './ProtectedRoute'
 export { default as InputRejectModalWrapper } from './InputRejectModalWrapper'
+export { default as InputRejectModal } from './InputRejectModal'
 

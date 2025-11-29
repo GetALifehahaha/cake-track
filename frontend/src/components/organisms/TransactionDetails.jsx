@@ -9,6 +9,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
         window.print()
     }
 
+    console.log(transactionDetail)
+
     return (
         <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex flex-col justify-center items-center z-10 gap-4'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[40vw] flex flex-col gap-4'>
@@ -80,8 +82,12 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                                 <h5>{(transactionDetail.gross_total).toFixed(2)}</h5>
                             </div>
                             <div className="flex justify-between text-text/50">
+                                <h5>Discount:</h5>
+                                <h5>{transactionDetail.discount.name}: {transactionDetail.discount.rate * 100}%</h5>
+                            </div>
+                            <div className="flex justify-between text-text/50">
                                 <h5>VAT Amount:</h5>
-                                <h5>{transactionDetail.gross_total - (transactionDetail.gross_total * .88).toFixed(2)}</h5>
+                                <h5>{(transactionDetail.gross_total - (transactionDetail.gross_total * .88)).toFixed(2)}</h5>
                             </div>
                             <div className="flex justify-between font-bold text-sm pt-1 text-text">
                                 <h5>Total:</h5>

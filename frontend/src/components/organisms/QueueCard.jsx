@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '../atoms';
 import { Ellipsis } from 'lucide-react';
+import ConfirmationModalWrapper from './ConfirmationModalWrapper';
+import { InputRejectModalWrapper } from '.';
 
 const QueueCard = ({ order, onAccept, onReject, onShowDetails }) => {
 
@@ -18,8 +20,14 @@ const QueueCard = ({ order, onAccept, onReject, onShowDetails }) => {
 					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(!showOptions) }}
 				>
-					<Button variant='success' text='ACCEPT' onClick={() => { onAccept(order.id); setShowOptions(false); }} />
-					<Button variant='error' text='DECLINE' onClick={() => { onReject(order.id); setShowOptions(false) }} />
+					<ConfirmationModalWrapper title='Accept order' content={`Confirm acceptance of Order #${order.id}. This action is irreversible and places the order into the active production schedule.`}>
+						<h5 className='bg-success text-white px-6 py-3 rounded-lg font-semibold w-fit text-base'>
+							ACCEPT
+						</h5>
+					</ConfirmationModalWrapper>
+					<InputRejectModalWrapper>
+						<Button variant='error' text='DECLINE' />
+					</InputRejectModalWrapper>
 				</div>
 			}
 			<div className='flex justify-between items-center'>

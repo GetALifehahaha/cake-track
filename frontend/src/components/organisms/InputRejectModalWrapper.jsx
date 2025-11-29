@@ -11,7 +11,7 @@ const InputRejectModalWrapper = ({ children, onConfirm, onReject }) => {
 
     return (
         <>
-            <span onClick={() => setShow(true)}>
+            <span onClick={(e) => { e.stopPropagation(); setShow(true) }}>
                 {children}
             </span>
 
