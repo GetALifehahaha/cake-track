@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
 
 from .serializers import (DiscountSerializer, 
@@ -88,6 +89,10 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return queryset
     
+
+class MediumPageSize(PageNumberPagination):
+    page_size = 14
+    max_page_size = 100
         
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.prefetch_related(
@@ -96,6 +101,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ).all()
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = MediumPageSize
+    
     
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
