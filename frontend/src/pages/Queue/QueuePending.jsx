@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Ellipsis, ChevronLeft, ChevronRight, Minus } from 'lucide-react'
+import { Ellipsis, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal } from '../../components/organisms';
 import { DatePicker } from '@/components/molecules';
 import { Button } from '@/components/atoms';
@@ -98,8 +98,6 @@ const QueuePending = () => {
 		}
 	}
 
-	const removeAllOrder = () => setOrderData([])
-
 	const listOrder = data.results.map((cake, index) =>
 		<div
 			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60'
@@ -165,7 +163,7 @@ const QueuePending = () => {
 				</span>
 				{selectedDate &&
 					<>
-						<Minus className='text-text/50 cursor-pointer' onClick={() => handleSetDateFilter(false)} />
+						<X size={18} className='text-text/50 cursor-pointer' onClick={() => handleSetDateFilter(false)} />
 						<div className='flex-1' />
 						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
 							<h5 className='px-4 py-1 rounded-sm bg-accent text-white font-semibold cursor-pointer'>Accept All</h5>

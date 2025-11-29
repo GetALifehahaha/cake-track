@@ -1,28 +1,25 @@
 import React from 'react'
 import { Title } from '../../components/atoms'
+import useOrder from '@/hooks/useOrders';
+import { formatDateForAPI } from '@/utils/date';
+import { capitalize } from '@/utils/capitalize';
+import Loading from '@/components/molecules/Loading';
 
 const QueueCompleted = () => {
 
-	const completedTransactions = [
-		{
-			id: '0112',
-			fullName: "Maria Antoniette Clairesse Gurain",
-			cakeFlavor: "Chocolate",
-			occation: "Birthday",
-			placementDate: "October 20, 2025",
-			dueDate: "October 25, 2025",
-		}
-	]
+	const { data, loading, error, patchOrder } = useOrder();
 
-	const listCompletedTransactions = completedTransactions.map((item, index) => 
-		<div className='flex w-full text-sm' key={index}>
-            <h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.id}</h5>
-            <h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.fullName}</h5>
-            <h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.cakeFlavor}</h5>
-            <h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.occation}</h5>
-            <h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.placementDate}</h5>
-            <h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.dueDate}</h5>
-        </div>
+	if (loading) return <Loading />
+
+	const listCompletedTransactions = data.results.map((item, index) =>
+		<div className='flex w-full text-sm py-1 border-b-2 border-b-main-dark' key={index}>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.id}</h5>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.full_name}</h5>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{capitalize(item.cake_orders.base_flavor)}</h5>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{capitalize(item.cake_orders.occassion)}</h5>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.created_at}</h5>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.due_date}</h5>
+		</div>
 	)
 
 	return (
@@ -34,7 +31,7 @@ const QueueCompleted = () => {
 				<h5 className={`text-white font-medium text-center py-2 flex-1`}>ID</h5>
 				<h5 className={`text-white font-medium text-center py-2 flex-1`}>Name</h5>
 				<h5 className={`text-white font-medium text-center py-2 flex-1`}>Cake Flavor</h5>
-				<h5 className={`text-white font-medium text-center py-2 flex-1`}>Cake Occation</h5>
+				<h5 className={`text-white font-medium text-center py-2 flex-1`}>Cake Occasion</h5>
 				<h5 className={`text-white font-medium text-center py-2 flex-1`}>Placement Date</h5>
 				<h5 className={`text-white font-medium text-center py-2 flex-1`}>Due Date</h5>
 			</div>
@@ -42,7 +39,7 @@ const QueueCompleted = () => {
 				{listCompletedTransactions}
 			</div>
 		</div>
-  	)
+	)
 }
 
 export default QueueCompleted
