@@ -7,3 +7,16 @@ export const formatDateForAPI = (date) => {
     
     return `${year}-${month}-${day}`;
 };
+
+export const formatDateForDisplay = (dateTimeString) => {
+    if (!dateTimeString) return null;
+    
+    const date = new Date(dateTimeString);
+
+    if (isNaN(date.getTime())) {
+        console.error("Invalid date string provided:", dateTimeString);
+        return null;
+    }
+
+    return date.toISOString().slice(0, 10);
+};

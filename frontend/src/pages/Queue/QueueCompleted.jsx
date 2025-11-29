@@ -1,7 +1,7 @@
 import React from 'react'
 import { Title } from '../../components/atoms'
 import useOrder from '@/hooks/useOrders';
-import { formatDateForAPI } from '@/utils/date';
+import { formatDateForDisplay } from '@/utils/date';
 import { capitalize } from '@/utils/capitalize';
 import Loading from '@/components/molecules/Loading';
 
@@ -12,12 +12,12 @@ const QueueCompleted = () => {
 	if (loading) return <Loading />
 
 	const listCompletedTransactions = data.results.map((item, index) =>
-		<div className='flex w-full text-sm py-1 border-b-2 border-b-main-dark' key={index}>
+		<div className='flex w-full text-sm py-2 border-b-2 border-b-main-dark items-center' key={index}>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.id}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.full_name}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{capitalize(item.cake_orders.base_flavor)}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{capitalize(item.cake_orders.occassion)}</h5>
-			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.created_at}</h5>
+			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{formatDateForDisplay(item.created_at)}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.due_date}</h5>
 		</div>
 	)
