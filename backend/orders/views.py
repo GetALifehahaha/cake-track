@@ -81,7 +81,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = OrderBatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        ids = serializer.validated_data['ids']
+        ids = serializer.validated_data['order_ids']
         new_status = serializer.validated_data['status']
         reason = serializer.validated_data.get('reject_reason', '')
         

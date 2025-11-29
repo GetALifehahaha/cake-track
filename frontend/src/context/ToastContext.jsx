@@ -38,15 +38,24 @@ export const ToastProvider = ({ children }) => {
                     <div key={toast.id}
                         className={`
                             px-4 py-3 rounded-md text-white transition-all duration-100 translate-y-0 opacity-100 flex flex-row items-center gap-2
-                            ${toast.type === "error" ? 'bg-error' : ''}
-                            ${toast.type === "success" ? 'bg-success' : ''}
-                            ${toast.type === "info" ? 'bg-accent-dark' : ''}
+                            ${toast.type === "error" ? 'bg-error-fill ' : ''}
+                            ${toast.type === "success" ? 'bg-success-fill ' : ''}
+                            ${toast.type === "info" ? 'bg-accent-mute ' : ''}
                         `}>
-                        {toast.type === "error" ? <CircleAlert /> : ''}
-                        {toast.type === "success" ? <CircleCheck /> : ''}
-                        {toast.type === "info" ? <Info /> : ''}
-                        <h5>{toast.message}</h5>
-                        <X className='text-white font-semibold' onClick={() => removeToast(toast.id)} />
+                        {toast.type === "error" ? <CircleAlert className='text-error' /> : ''}
+                        {toast.type === "success" ? <CircleCheck className='text-success' /> : ''}
+                        {toast.type === "info" ? <Info className='text-accent-dark' /> : ''}
+                        <h5
+                            className={`
+                            ${toast.type === "error" ? 'text-error ' : ''}
+                            ${toast.type === "success" ? 'text-success ' : ''}
+                            ${toast.type === "info" ? 'text-accent-dark ' : ''}
+                        `}>{toast.message}</h5>
+                        <X className={`
+                            ${toast.type === "error" ? 'text-error ' : ''}
+                            ${toast.type === "success" ? 'text-success ' : ''}
+                            ${toast.type === "info" ? 'text-accent-dark ' : ''}
+                        `} onClick={() => removeToast(toast.id)} />
                     </div>
                 ))}
             </div>

@@ -5,9 +5,11 @@ import { useNavigate } from 'react-router-dom'
 import { ConfirmationModal, ConfirmationModalWrapper } from '@/components/organisms'
 import useOrder from '@/hooks/useOrders'
 import Loading from '@/components/molecules/Loading'
+import { useToast } from '@/context/ToastContext'
 
 const QueueOverview = () => {
 
+	const { addToast } = useToast();
 	const { data, loading, error, patchOrder } = useOrder();
 	const navigate = useNavigate();
 
@@ -68,8 +70,9 @@ const QueueOverview = () => {
 	// METHODS
 	const setOrderToAccepted = async (id) => {
 		try {
-			const res = await patchOrder(id, { status: "Accepted" });
-			console.log(res)
+			const res = await patchOrder(id, { status: "accepted" });
+
+			addToast("Order accepted successfully")
 		} catch (err) {
 			alert(err)
 		}
@@ -77,11 +80,11 @@ const QueueOverview = () => {
 
 	// LISTS
 	const listPending = data.results.filter((item) => item.status.toLowerCase() == "pending").slice(0, 5).map((order, index) =>
-		<div key={index} className='flex justify-between w-full text-sm items-center'>
-			<h5>{order.full_name}</h5>
-			<h5 className='px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold '>{capitalize(order.cake_orders.occassion)}</h5>
-			<h5>{parseDate(order.due_date)}</h5>
-			<div className='flex items-center gap-4'>
+		<div key={index} className='flex w-full text-sm items-center'>
+			<h5 className='basis-1/4 '>{order.full_name}</h5>
+			<h5 className='basis-1/4 px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold text-center'>{capitalize(order.cake_orders.occassion)}</h5>
+			<h5 className='basis-1/4 text-right'>{parseDate(order.due_date)}</h5>
+			<div className='basis-1/4 flex items-center gap-2 justify-end'>
 				<ConfirmationModalWrapper title='Reject order' content='Please confirm that you wish to reject this order. You will be required to provide a reason for the rejection.' onReject={() => setRemoveId(-1)}>
 					<X className='text-red-500' onClick={() => setRemoveId(item.id)} size={18} />
 				</ConfirmationModalWrapper>
@@ -93,16 +96,16 @@ const QueueOverview = () => {
 	)
 	const listAccepted = data.results.filter((item) => item.status.toLowerCase() == "accepted").slice(0, 5).map((order, index) =>
 		<div key={index} className='flex justify-between items-center py-2 w-full border-b border-b-main-dark'>
-			<h5 className='flex-1 text-center'>{order.id}</h5>
-			<h5 className='flex-1 text-center'>{order.full_name}</h5>
-			<h5 className='flex-1 text-center'>{capitalize(order.cake_orders.base_flavor)}</h5>
-			<span className='flex-1 flex justify-center'>
+			<h5 className='basis-1/6 text-center'>{order.id}</h5>
+			<h5 className='basis-1/6 text-center'>{order.full_name}</h5>
+			<h5 className='basis-1/6 text-center'>{capitalize(order.cake_orders.base_flavor)}</h5>
+			<span className='basis-1/6 flex justify-center'>
 				{order.cupcake_orders
 					? <h5 className='text-center'>Yes</h5>
 					: <h5 className='text-center text-xs font-semibold text-text/50 border border-gray-400 w-fit px-4 rounded-full'>No</h5>}
 			</span>
-			<h5 className='flex-1 text-center'>{parseDate(order.created_at)}</h5>
-			<h5 className='flex-1 text-center'>{parseDate(order.due_date)}</h5>
+			<h5 className='basis-1/6 text-center'>{parseDate(order.created_at)}</h5>
+			<h5 className='basis-1/6 text-center'>{parseDate(order.due_date)}</h5>
 		</div>
 	)
 	const listDueSoon = data.results.filter((item) => (item.status.toLowerCase() == "accepted" && isDueSoon(item.due_date))).slice(0, 5).map((order, index) =>

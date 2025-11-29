@@ -143,6 +143,6 @@ export default function useOrder() {
         patchOrder,
         deleteOrder,
         refresh: fetchOrders,
-        batchUpdate: batchUpdateOrders
+        batchUpdateOrders
     };
 }

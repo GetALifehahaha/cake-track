@@ -7,8 +7,12 @@ import Loading from '@/components/molecules/Loading';
 import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
+import { useToast } from '@/context/ToastContext';
+import { id } from 'date-fns/locale';
 
 const QueuePending = () => {
+
+	const { addToast } = useToast();
 
 	const { data, loading, error, patchOrder, batchUpdateOrders } = useOrder();
 	const [pageNum, setPageNum] = useState(1);
@@ -66,10 +70,15 @@ const QueuePending = () => {
 	}
 
 	const acceptAllOrder = async () => {
+
+		const orderIds = data.results.map(order => order.id);
+
 		try {
-			batchUpdateOrders();
+			await batchUpdateOrders({ order_ids: orderIds, status: "accepted" });
+
+			addToast("Orders accepted successfully", "success")
 		} catch (err) {
-			alert(err);
+			addToast(`Error: ${err}`, "error")
 		}
 	}
 
