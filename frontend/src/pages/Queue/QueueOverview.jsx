@@ -6,28 +6,23 @@ import { ConfirmationModal, ConfirmationModalWrapper, InputRejectModalWrapper } 
 import useOrder from '@/hooks/useOrders'
 import Loading from '@/components/molecules/Loading'
 import { useToast } from '@/context/ToastContext'
+import useIngredient from '@/hooks/useIngredient'
 
 const QueueOverview = () => {
 
 	const { addToast } = useToast();
 	const { data, loading, error, patchOrder } = useOrder();
+	const { ingredientDashboard, ingredientError, ingredientLoading } = useIngredient();
 	const navigate = useNavigate();
 
 	const [removeId, setRemoveId] = useState(-1);
 
-	if (loading) return <Loading />
-	if (error) return <h5>Error</h5>
+	if (loading || ingredientLoading) return <Loading />
+	if (error || ingredientError) return <h5>Error</h5>
 
 	const acceptedOrdersHeaders = [
 		"ID", "Name", "Cake Flavor", "w/ Cupcake", "Placement Order", "Due Date"
 	]
-
-	const inventoryData = {
-		inStock: 0,
-		outOfStock: 0,
-		runningLow: 0,
-		expired: 0
-	}
 
 	// FUNCTIONS
 	const parseDate = (dateString) => {
@@ -183,19 +178,19 @@ const QueueOverview = () => {
 					<div className='grid grid-cols-2'>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>In Stock</h5>
-							<h5 className='text-success font-bold text-2xl'>{inventoryData.inStock}</h5>
+							<h5 className='text-success font-bold text-2xl'>{ingredientDashboard.data.summary.in_stock_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Running Low</h5>
-							<h5 className='text-warning font-bold text-2xl'>{inventoryData.runningLow}</h5>
+							<h5 className='text-warning font-bold text-2xl'>{ingredientDashboard.data.summary.running_low_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Out of Stock</h5>
-							<h5 className='text-error font-bold text-2xl'>{inventoryData.outOfStock}</h5>
+							<h5 className='text-error font-bold text-2xl'>{ingredientDashboard.data.summary.out_of_stock_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Expired</h5>
-							<h5 className='text-none font-bold text-2xl'>{inventoryData.expired}</h5>
+							<h5 className='text-none font-bold text-2xl'>{ingredientDashboard.data.summary.expired_count}</h5>
 						</span>
 					</div>
 				</div>

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Title } from '../components/atoms';
 import { TransactionDetails } from '../components/organisms';
-import { Ellipsis,X } from 'lucide-react';
+import { Ellipsis, X } from 'lucide-react';
 import useTransaction from '@/hooks/useTransaction';
 
 const Transactions = () => {
-    
+
     // add backend later
-    const {transactionData, transactionLoading, transactionError} = useTransaction();
+    const { transactionData, transactionLoading, transactionError } = useTransaction();
 
     const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Status', 'Total'];
     const basis = `basis-1/${tableHeader.length}`
@@ -42,7 +42,7 @@ const Transactions = () => {
 
     const listHeaders = [...tableHeader, ''].map((item, index) => <h5 key={index} className={`text-main-white font-semibold text-center py-1 ${basis}`}>{capitalize(item)}</h5>)
 
-    const listContent = transactionData.results.map((item, index) => 
+    const listContent = transactionData.results.map((item, index) =>
         <div className='flex w-full' key={index}>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{new Date(item.created_at).toLocaleTimeString()}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.id}</h5>
@@ -50,15 +50,15 @@ const Transactions = () => {
             <h5 className={`${item.is_void ? 'text-error' : 'text-success'} font-medium text-center py-0.5 ${basis}`}>{item.is_void ? 'Voided' : 'Success'}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>P {(item.net_total).toFixed(2)}</h5>
             {item.is_void ?
-            <div className={basis} />
-            : <Ellipsis className={`text-text ${basis} cursor-pointer`} onClick={() => handleSetTransactionDetails(item)}/>
+                <div className={basis} />
+                : <Ellipsis className={`text-text ${basis} cursor-pointer`} onClick={() => handleSetTransactionDetails(item)} />
             }
         </div>
     )
 
     return (
         <div className='w-[90%] mx-auto flex flex-col gap-8'>
-            <Title variant='page' text='Transaction History'/>
+            <Title variant='page' text='Transaction History' />
 
             <div className='w-full p-4 border-border border-2 rounded-xl'>
                 <Title variant='block' text={fullDate} />
@@ -71,7 +71,7 @@ const Transactions = () => {
             </div>
 
             {showTransactionDetails &&
-                <TransactionDetails transactionDetail={transactionDetails} onClose={handleCloseTransactionDetails}/>
+                <TransactionDetails transactionDetail={transactionDetails} onClose={handleCloseTransactionDetails} />
             }
         </div>
     )

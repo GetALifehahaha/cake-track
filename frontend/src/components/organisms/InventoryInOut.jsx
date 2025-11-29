@@ -114,26 +114,70 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 	return (
 		<ModalBody>
-			<div className="flex justify-between items-center w-full">
-				<Title variant='modal' text='Inventory' />
-				<X size={16} className='text-text cursor-pointer' onClick={onClose} />
+			{/* Header */}
+			<div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-main-white">
+				<Title text='Inventory Management' />
+				<button
+					className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
+					onClick={onClose}
+				>
+					<X size={20} className='text-gray-500' />
+				</button>
 			</div>
 
-			<div className='flex flex-row gap-2 overflow-x-auto max-w-[90vw]'>
-				{listIngredients}
+			{/* Two Panel Layout */}
+			<div className='flex flex-1 overflow-hidden max-h-[80vh]'>
+				{/* Left Panel - Available Ingredients */}
+				<div className='w-60 border-r border-gray-200 bg-gray-50 flex flex-col'>
+					<div className='px-6 py-4 border-b border-gray-200 bg-white'>
+						<h3 className='font-semibold text-gray-700 text-sm uppercase tracking-wide'>Available Ingredients</h3>
+						<p className='text-xs text-gray-500 mt-1'>Click to add to transaction</p>
+					</div>
+					<div className='flex-1 overflow-y-auto px-6 py-4'>
+						<div className='flex flex-col gap-2'>
+							{listIngredients}
+						</div>
+					</div>
+				</div>
+
+				{/* Right Panel - Transaction Items */}
+				<div className='flex-1 flex flex-col bg-white'>
+					<div className='px-6 py-4 border-b border-gray-200'>
+						<h3 className='font-semibold text-gray-700 text-sm uppercase tracking-wide'>Transaction Items</h3>
+						<p className='text-xs text-gray-500 mt-1'>
+							{ingredientItems.length === 0 ? 'No items added yet' : `${ingredientItems.length} item(s) in transaction`}
+						</p>
+					</div>
+					<div className='flex-1 overflow-y-auto px-6 py-4'>
+						{ingredientItems.length === 0 ? (
+							<div className='flex items-center justify-center h-full text-gray-400'>
+								<div className='text-center'>
+									<p className='text-lg font-medium mb-2'>No items selected</p>
+									<p className='text-sm'>Click ingredients from the left panel to add them</p>
+								</div>
+							</div>
+						) : (
+							<div className='grid gap-4'>
+								{listIngredientItems}
+							</div>
+						)}
+					</div>
+				</div>
 			</div>
 
-			<div className='grid grid-cols-2 gap-4 w-[60vw] h-[40vh] overflow-y-auto'>
-				{listIngredientItems}
-			</div>
-
-			<div className='flex gap-4 mt-4 ml-auto'>
-				<Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose} />
-				<Button variant='modalBlock' size='modalSize' text='Update Stocks' onClick={handleSetShowConfirm} />
+			{/* Footer */}
+			<div className='flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50'>
+				<Button variant='modalOutline' text='Cancel' onClick={onClose} />
+				<Button variant='modalBlock' text='Update Stocks' onClick={() => setShowConfirm(true)} />
 			</div>
 
 			{showConfirm &&
-				<ConfirmationModal title="Update stocks?" content="Are you sure you want to update your stocks?" onConfirm={updateIngredients} onReject={handleSetCloseConfirm} />
+				<ConfirmationModal
+					title="Update stocks?"
+					content="Are you sure you want to update your stocks?"
+					onConfirm={updateIngredients}
+					onReject={() => setShowConfirm(false)}
+				/>
 			}
 		</ModalBody>
 	)

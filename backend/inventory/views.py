@@ -66,13 +66,13 @@ LOW_STOCK_THRESHOLD = 10
 class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def list(self, request, *args, **kwargs):
 
-        in_stock_qs = self.get_queryset().filter(total_stock__gte=LOW_STOCK_THRESHOLD)
+        in_stock_qs = self.get_queryset().filter(total_stock__gt=0)
         
-        out_of_stock_qs = self.get_queryset().filter(total_stock__lte=0, )
+        out_of_stock_qs = self.get_queryset().filter(total_stock__lte=0)
         
         running_low_qs = Ingredient.objects.filter(
             transactions__expiration_date__lt=timezone.now().date(),
