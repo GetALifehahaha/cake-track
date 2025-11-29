@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import OrderApi from "@/api/OrdersApi";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 export default function useOrder() {
     // 1. Standardized state names
@@ -8,6 +8,11 @@ export default function useOrder() {
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchParams] = useSearchParams();
+    
+    const currentParams = useMemo(() => 
+        Object.fromEntries(searchParams.entries()), 
+    [searchParams]);
 
     const location = useLocation();
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -21,23 +26,41 @@ export default function useOrder() {
         setResponse(null);
     };
 
-    // 2. Fetch Orders
+    // 1. Define all possible candidates for parameters
+    const rawParams = {
+        status: currentFilter, // e.g., 'pending' or null
+        created_at: currentParams.due_date, // e.g., '2025-11-29' or 'null'
+        // Easy to add more later:
+        // search: currentParams.search,
+        // page: currentParams.page
+    };
+
+    const params = Object.entries(rawParams).reduce((acc, [key, value]) => {
+    // The "Sanity Check": 
+    // Is it truthy? AND is it not the string "null" or "undefined"?
+    const isValid = value && value !== 'null' && value !== 'undefined';
+
+    if (isValid) {
+        acc[key] = value;
+    }
+    return acc;
+    }, {});
+
     const fetchOrders = useCallback(async () => {
-        
         
         setLoading(true);
         setError(null); 
         try {
-            // FIX: Removed 'all' argument. 
-            // Signature assumed: (params, id, method)
-            const result = await OrderApi(currentFilter ? {status: currentFilter} : null);
+
+
+            const result = await OrderApi(params);
             setData(result);
         } catch (err) {
             handleError(err, "Failed to read orders.");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [currentFilter, currentParams]);
 
     // 3. Create Order
     const postOrder = async (params) => {

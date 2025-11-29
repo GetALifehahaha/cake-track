@@ -14,8 +14,9 @@ class Order(models.Model):
     ORDER_STATUS = [
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
         ('completed', 'Completed'),
-        ('rejected', 'Rejected')
+        ('claimed', 'Claimed'),
     ]
     
     

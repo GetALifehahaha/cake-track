@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.utils import timezone
 
 # Create your views here.
 from rest_framework.views import APIView
@@ -30,7 +31,7 @@ from .models import (Discount,
                      BusinessSettings
                      ) 
 
-from users.permissions import IsCashier, IsAdmin, IsCustomerOrAdmin
+from users.permissions import IsAdmin, IsCashier
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
@@ -108,6 +109,15 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return TransactionCreateSerializer
         return TransactionSerializer
+    
+    def get_queryset(self):
+        queryset = Transaction.objects.all()
+        user = self.request.user
+        
+        if user.groups.filter(name="cashier").exists():
+            queryset = queryset.filter(created_at=timezone.now())
+            
+        return queryset
     
         
 class TransactionItemViewSet(viewsets.ModelViewSet):

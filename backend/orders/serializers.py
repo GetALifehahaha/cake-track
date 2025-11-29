@@ -37,3 +37,30 @@ class OrderSerializer(serializers.ModelSerializer):
             CupcakeOrder.objects.create(order=order, **cupcake_data)
             
         return order
+    
+    
+class OrderBatchUpdateSerializer(serializers.Serializer):
+    
+    # GET all the IDs of the batch PATCH update 
+    order_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
+    
+    # prepare the new statuses
+    status = serializers.ChoiceField(choices=['accepted', 'rejected'])
+    
+    # reason if new status is request
+    reject_reason = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate(self, data):
+        if data['status'] == "rejected":
+            if not data.get('reject_reason'):
+                raise serializers.ValidationError({
+                    'reject_reason': "This field is required when rejecting orders"
+                })
+                
+        if data['status'] == "accepted":
+            data['reject_reason'] = ""
+            
+        return data

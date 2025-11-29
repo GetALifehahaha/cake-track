@@ -1,32 +1,36 @@
 import React, { useState, useEffect } from 'react'
 import { EllipsisVertical, ChevronLeft, ChevronRight, Minus } from 'lucide-react'
-import { OrderDetails, QueueCard } from '../../components/organisms';
+import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, QueueCard } from '../../components/organisms';
 import { DatePicker } from '@/components/molecules';
 import { Button } from '@/components/atoms';
 import Loading from '@/components/molecules/Loading';
 import useOrder from '@/hooks/useOrders';
+import { useSearchParams } from 'react-router-dom';
+import { formatDateForAPI } from '@/utils/date';
 
 const QueuePending = () => {
 
 	const { data, loading, error, patchOrder } = useOrder();
-
-	const [dateFilter, setDateFilter] = useState()
-
-
-
 	const [pageNum, setPageNum] = useState(1);
 	const [orderDetails, setOrderDetails] = useState(null);
-
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
+	const [searchParams, setSearchParams] = useSearchParams();
+	const currentDateParams = searchParams.get('due_date')
+	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
 
 	if (loading) return <Loading />
 
+	const handleSetDateFilter = (date) => {
+		const newParams = Object.fromEntries(searchParams.entries());
 
-	const handleSetDateFilter = (value) => {
-		const filterDateString = new Date(value).toISOString().slice(0, 10);
-		setDateFilter(value)
+		if (date) {
+			newParams.due_date = formatDateForAPI(date)
+		} else {
+			delete newParams.due_date
+		}
+
+		setSearchParams(newParams)
 	}
-	const removeDateFilter = () => setDateFilter()
 
 	const handleSetPageNum = (direction) => {
 		if (direction == "prev") {
@@ -61,6 +65,10 @@ const QueuePending = () => {
 		setOrderData(items => items.filter((item) => item.id != id))
 	}
 
+	const acceptAllOrder = () => {
+		console.log(data)
+	}
+
 	const removeAllOrder = () => setOrderData([])
 
 	const listOrder = data.results.map((cake, index) =>
@@ -69,20 +77,25 @@ const QueuePending = () => {
 
 	return (
 		<div className='flex flex-col min-h-140'>
-			<div className='p-2 flex items-center gap-4'>
+			<div className='p-2 flex items-center gap-4 py-4 border-b border-main-dark'>
 				<span className='w-60'>
-					<DatePicker className='bg-accent' selected={dateFilter} onSelect={handleSetDateFilter} />
+					<DatePicker className='bg-accent' selected={selectedDate} onSelect={handleSetDateFilter} />
 				</span>
-				{dateFilter &&
+				{selectedDate &&
 					<>
-						<Minus className='text-text/50 cursor-pointer' onClick={removeDateFilter} />
-						<Button text='Accept All' onClick={removeAllOrder} />
-						<Button text='Reject All' onClick={removeAllOrder} />
+						<Minus className='text-text/50 cursor-pointer' onClick={() => handleSetDateFilter(false)} />
+						<div className='flex-1' />
+						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
+							<h5 className='px-4 py-1 rounded-sm bg-accent text-white font-semibold cursor-pointer'>Accept All</h5>
+						</ConfirmationModalWrapper>
+						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
+							<h5 className='px-4 py-1 rounded-sm bg-red-500 text-white font-semibold cursor-pointer'>Reject All</h5>
+						</ConfirmationModalWrapper>
 					</>
 				}
 
 			</div>
-			<div className='grid grid-cols-5 gap-4'>
+			<div className='grid grid-cols-5 gap-4 mt-8'>
 				{listOrder}
 			</div>
 
