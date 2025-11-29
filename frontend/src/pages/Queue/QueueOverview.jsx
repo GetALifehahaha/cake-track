@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button, Title } from '../../components/atoms'
 import { ArrowRight, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { ConfirmationModal, ConfirmationModalWrapper } from '@/components/organisms'
+import { ConfirmationModal, ConfirmationModalWrapper, InputRejectModalWrapper } from '@/components/organisms'
 import useOrder from '@/hooks/useOrders'
 import Loading from '@/components/molecules/Loading'
 import { useToast } from '@/context/ToastContext'
@@ -78,6 +78,23 @@ const QueueOverview = () => {
 		}
 	}
 
+	const setOrderToReject = async (reason) => {
+		if (removeId == -1) return;
+
+		try {
+			await patchOrder(removeId, {
+				status: "rejected",
+				'reject_reason': reason
+			})
+
+			addToast("Order declined successfully")
+		} catch (err) {
+			addToast(`Error: ${err}`, "error")
+		} finally {
+			setRemoveId(-1)
+		}
+	}
+
 	// LISTS
 	const listPending = data.results.filter((item) => item.status.toLowerCase() == "pending").slice(0, 5).map((order, index) =>
 		<div key={index} className='flex w-full text-sm items-center'>
@@ -85,9 +102,9 @@ const QueueOverview = () => {
 			<h5 className='basis-1/4 px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold text-center'>{capitalize(order.cake_orders.occassion)}</h5>
 			<h5 className='basis-1/4 text-right'>{parseDate(order.due_date)}</h5>
 			<div className='basis-1/4 flex items-center gap-2 justify-end'>
-				<ConfirmationModalWrapper title='Reject order' content='Please confirm that you wish to reject this order. You will be required to provide a reason for the rejection.' onReject={() => setRemoveId(-1)}>
-					<X className='text-red-500' onClick={() => setRemoveId(item.id)} size={18} />
-				</ConfirmationModalWrapper>
+				<InputRejectModalWrapper onReject={() => setRemoveId(-1)} onConfirm={setOrderToReject}>
+					<X className='text-red-500' onClick={() => setRemoveId(order.id)} size={18} />
+				</InputRejectModalWrapper>
 				<ConfirmationModalWrapper title='Accept order' content={`Confirm acceptance of Order #${order.id}. This action is irreversible and places the order into the active production schedule.`} onReject={() => setRemoveId(-1)} onConfirm={() => setOrderToAccepted(order.id)}>
 					<Check className='text-green-500' size={18} />
 				</ConfirmationModalWrapper>

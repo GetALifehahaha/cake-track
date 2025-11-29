@@ -20,4 +20,5 @@ export { default as DiscountModal } from './DiscountModal'
 export { default as CategoryModal } from './CategoryModal'
 export { default as InventoryInOut } from './InventoryInOut'
 export { default as ProtectedRoute } from './ProtectedRoute'
+export { default as InputRejectModalWrapper } from './InputRejectModalWrapper'
 
