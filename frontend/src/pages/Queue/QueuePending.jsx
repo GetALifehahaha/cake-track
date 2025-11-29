@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Ellipsis, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal } from '../../components/organisms';
-import { DatePicker } from '@/components/molecules';
+import { DatePicker, Pagination } from '@/components/molecules';
 import { Button } from '@/components/atoms';
 import Loading from '@/components/molecules/Loading';
 import useOrder from '@/hooks/useOrders';
@@ -18,7 +18,7 @@ const QueuePending = () => {
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
-	const currentDateParams = searchParams.get('due_date')
+	const currentDateParams = searchParams.get('created_at')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
 	const [showOptions, setShowOptions] = useState(-1);
 	const [prepAcceptId, setPrepAcceptId] = useState(-1);
@@ -30,22 +30,12 @@ const QueuePending = () => {
 		const newParams = Object.fromEntries(searchParams.entries());
 
 		if (date) {
-			newParams.due_date = formatDateForAPI(date)
+			newParams.created_at = formatDateForAPI(date)
 		} else {
-			delete newParams.due_date
+			delete newParams.created_at
 		}
 
 		setSearchParams(newParams)
-	}
-
-	const handleSetPageNum = (direction) => {
-		if (direction == "prev") {
-			if (pageNum - 1 == 0) return;
-
-			setPageNum(pageNum - 1);
-		} else if (direction == "next") {
-			setPageNum(pageNum + 1);
-		}
 	}
 
 	const acceptOrder = async () => {
@@ -173,7 +163,6 @@ const QueuePending = () => {
 						</ConfirmationModalWrapper>
 					</>
 				}
-
 			</div>
 			{data.results.length > 0 ?
 				<div className='grid grid-cols-5 gap-4 mt-8'>
@@ -185,19 +174,7 @@ const QueuePending = () => {
 				</div>
 			}
 
-			<div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
-				<button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-					<ChevronLeft size={18} />
-				</button>
-				<span className='rounded-sm bg-main-dark aspect-square w-6 flex justify-center items-center'>
-					<h5>
-						{pageNum}
-					</h5>
-				</span>
-				<button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-					<ChevronRight size={18} />
-				</button>
-			</div>
+			<Pagination prev={data.previous} next={data.next} />
 
 			{showOrderDetails &&
 				<OrderDetails orderDetails={orderDetails} onClose={handleShowOrderDetails} />

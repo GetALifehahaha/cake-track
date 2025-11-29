@@ -10,7 +10,6 @@ import { useToast } from '@/context/ToastContext';
 const Inventory = () => {
 
     const { addToast } = useToast();
-    const [pageNum, setPageNum] = useState(1);
     const { ingredientData, ingredientLoading, ingredientError, postIngredient, refresh, ingredientDashboard } = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
@@ -20,18 +19,6 @@ const Inventory = () => {
 
     if (ingredientLoading) return <Loading />
     if (ingredientError) return <h5>Error</h5>
-
-    const handleSetPageNum = (direction) => {
-        if (direction == "prev") {
-            if (pageNum - 1 == 0) {
-                return;
-            }
-
-            setPageNum(p => p - 1);
-        } else if (direction == "next") {
-            setPageNum(p => p + 1)
-        }
-    }
 
     const handleShowAddItemModal = () => {
         setShowAddItemModal(true)
@@ -146,19 +133,7 @@ const Inventory = () => {
                     {listIngredientData}
 
                     {/* Pagination */}
-                    <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
-                        <button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                            <ChevronLeft size={18} />
-                        </button>
-                        <span className='rounded-sm bg-main-dark aspect-square w-6 flex justify-center items-center'>
-                            <h5>
-                                {pageNum}
-                            </h5>
-                        </span>
-                        <button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                            <ChevronRight size={18} />
-                        </button>
-                    </div>
+
 
                 </div>
             </div>
