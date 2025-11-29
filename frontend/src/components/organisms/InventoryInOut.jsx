@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from 'react'
-import {Button} from '../atoms';
+import { Button } from '../atoms';
 import { ModalBody, DatePicker } from '../molecules'
 import useIngredient from '@/hooks/useIngredient';
 import { Title } from '../atoms';
 import { X } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 import useInventoryTransaction from '@/hooks/useInventoryTransaction';
+import Loading from '../molecules/Loading';
+import { useToast } from '@/context/ToastContext';
 
-const InventoryInOut = ({onConfirm, onClose}) => {
+const InventoryInOut = ({ onConfirm, onClose }) => {
 
-	const {ingredientData, ingredientLoading, ingredientError} = useIngredient(true);
-	const {postInventoryTransaction, inventoryTransactionLoading, inventoryTransactionError} = useInventoryTransaction();
+	const { addToast } = useToast();
+	const { ingredientData, ingredientLoading, ingredientError } = useIngredient(true);
+	const { postInventoryTransaction, inventoryTransactionLoading, inventoryTransactionError } = useInventoryTransaction();
 	const [ingredientItems, setIngredientItems] = useState([
 	]);
 	const [showConfirm, setShowConfirm] = useState(false);
 
-	if (ingredientLoading) return <h5>Loading</h5>
+	if (ingredientLoading || inventoryTransactionLoading) return <Loading />
 	if (ingredientError) return <h5>Error</h5>
-	if (inventoryTransactionLoading) return <h5>Loading</h5>
 	if (inventoryTransactionError) return <h5>Error</h5>
 
 	const addIngredientItem = (id, name) => {
@@ -35,15 +37,15 @@ const InventoryInOut = ({onConfirm, onClose}) => {
 
 	const updateIngredientItem = (index, field, value) => {
 		const updatedField = ingredientItems.map((item, i) => {
-			return index === i ? {...item, [field]: field === "amount" && value > 0 ? Number.parseFloat(value) : value}
+			return index === i ? { ...item, [field]: field === "amount" && value > 0 ? Number.parseFloat(value) : value }
 				:
 				item
-			}
+		}
 		)
 
 		if (field == "transaction_type" && value == "out") {
 			updatedField[index].expiration_date = '',
-			updatedField[index].purchase_date = '';
+				updatedField[index].purchase_date = '';
 		}
 
 		setIngredientItems(updatedField)
@@ -63,26 +65,32 @@ const InventoryInOut = ({onConfirm, onClose}) => {
 					purchase_date: item.purchase_date.toISOString().split('T')[0]
 				} : {})
 			}))
-			}
+		}
 
-		await postInventoryTransaction(payload)
+		try {
+			await postInventoryTransaction(payload);
+			addToast("Ingredients updated successfully")
+		} catch (err) {
+			addToast("Failed to update ingredients")
+		}
+
 
 		handleSetCloseConfirm()
 	}
 
-	const listIngredients = ingredientData.map((ingredient) => 
+	const listIngredients = ingredientData.map((ingredient) =>
 		<div key={ingredient.id} className='flex flex-row gap-4 px-4 py-2 rounded-sm bg-accent font-semibold cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name)}>
 			<h5 className='text-main-white line-clamp-1'>{ingredient.name}</h5>
 			<h5 className='text-main/50'>{(ingredient.total_stock).replace(/\.00$/, '')}</h5>
 		</div>
 	)
 
-	 const listIngredientItems = ingredientItems.map((ingredient, index) =>
+	const listIngredientItems = ingredientItems.map((ingredient, index) =>
 		<div className='flex flex-col gap-2 w-full p-2 rounded-sm bg-main-white border border-border h-fit' key={index}>
 			<div className='flex items-center gap-2 p-2 w-full ' >
 				<h5 className=''>{ingredient.name}</h5>
-				<input type='number' className='p-2 border-border rounded-sm border ml-auto' value={ingredient.amount} onChange={(e) => updateIngredientItem(index, 'amount', e.target.value)}/>
-				
+				<input type='number' className='p-2 border-border rounded-sm border ml-auto' value={ingredient.amount} onChange={(e) => updateIngredientItem(index, 'amount', e.target.value)} />
+
 				<div className='flex flex-row gap-2 w-36'>
 					<button className={`p-2 rounded-sm border border-border flex-1 ${ingredient.transaction_type == "in" ? 'bg-main-dark' : 'bg-main'}`} onClick={() => updateIngredientItem(index, 'transaction_type', 'in')}>IN</button>
 					<button className={`p-2 rounded-sm border border-border flex-1 ${ingredient.transaction_type == "out" ? 'bg-main-dark' : 'bg-main'}`} onClick={() => updateIngredientItem(index, 'transaction_type', 'out')}>OUT</button>
@@ -90,38 +98,38 @@ const InventoryInOut = ({onConfirm, onClose}) => {
 				<X size={16} className='text-text cursor-pointer' onClick={() => removeIngredientItem(index)} />
 			</div>
 			{ingredient.transaction_type == "in" &&
-			<div className='w-full flex gap-2 flex-row justify-end pb-2'>
-				<div className='flex flex-col w-fit'>
-					<h5 className='text-sm text-center font-medium text-text/50'>Purchase Date</h5>
-					<DatePicker selected={ingredient.purchase_date} onSelect={(value) => updateIngredientItem(index, 'purchase_date', value)}/>
+				<div className='w-full flex gap-2 flex-row justify-end pb-2'>
+					<div className='flex flex-col w-fit'>
+						<h5 className='text-sm text-center font-medium text-text/50'>Purchase Date</h5>
+						<DatePicker selected={ingredient.purchase_date} onSelect={(value) => updateIngredientItem(index, 'purchase_date', value)} />
+					</div>
+					<div className='flex flex-col w-fit mr-8'>
+						<h5 className='text-sm text-center font-medium text-text/50'>Expiration Date</h5>
+						<DatePicker selected={ingredient.expiration_date} onSelect={(value) => updateIngredientItem(index, 'expiration_date', value)} />
+					</div>
 				</div>
-				<div className='flex flex-col w-fit mr-8'>
-					<h5 className='text-sm text-center font-medium text-text/50'>Expiration Date</h5>
-					<DatePicker selected={ingredient.expiration_date} onSelect={(value) => updateIngredientItem(index, 'expiration_date', value)}/>
-				</div>
-			</div>
 			}
 		</div>
-    )
+	)
 
 	return (
-		<ModalBody> 
+		<ModalBody>
 			<div className="flex justify-between items-center w-full">
-                <Title variant='modal' text='Inventory' />
-                <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
-            </div>
+				<Title variant='modal' text='Inventory' />
+				<X size={16} className='text-text cursor-pointer' onClick={onClose} />
+			</div>
 
 			<div className='flex flex-row gap-2 overflow-x-auto max-w-[90vw]'>
 				{listIngredients}
 			</div>
-			
+
 			<div className='grid grid-cols-2 gap-4 w-[60vw] h-[40vh] overflow-y-auto'>
 				{listIngredientItems}
 			</div>
 
 			<div className='flex gap-4 mt-4 ml-auto'>
-				<Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
-				<Button variant='modalBlock' size='modalSize' text='Update Stocks' onClick={handleSetShowConfirm}/>
+				<Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose} />
+				<Button variant='modalBlock' size='modalSize' text='Update Stocks' onClick={handleSetShowConfirm} />
 			</div>
 
 			{showConfirm &&

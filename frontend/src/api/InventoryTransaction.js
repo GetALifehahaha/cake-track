@@ -8,7 +8,7 @@ const InventoryTransactionApi = async (params, id = null, method = "GET") => {
                 return response.data;
             }
             const response = await api.get(`/inventory/transactions/`, { params });
-            return response.data;
+                return response.data;
         } 
         
         else if (method === "POST") {

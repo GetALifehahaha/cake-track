@@ -2,8 +2,11 @@ from rest_framework.decorators import action
 from django.shortcuts import render
 from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.response import Response
+from django.db import models, transaction
+from django.db.models import F
+from django.utils import timezone
 
-from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, )
+from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, DashboardSummarySerializer)
 
 from .models import (Transaction, Ingredient, Recipe)
 
@@ -58,3 +61,41 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+LOW_STOCK_THRESHOLD = 10 
+
+class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+
+        in_stock_qs = self.get_queryset().filter(total_stock__gte=LOW_STOCK_THRESHOLD)
+        
+        out_of_stock_qs = self.get_queryset().filter(total_stock__lte=0, )
+        
+        running_low_qs = Ingredient.objects.filter(
+            transactions__expiration_date__lt=timezone.now().date(),
+            transactions__remaining_amount__lt=LOW_STOCK_THRESHOLD  
+        ).distinct() # Distinct ensures each ingredient is only counted once
+
+        expired_qs = orders_to_update = Ingredient.objects.filter(
+            transactions__expiration_date__lt=timezone.now().date(),
+            transactions__remaining_amount__gt=0
+        ).distinct() # Distinct ensures each ingredient is only counted once
+        
+        summary_data = {
+            'in_stock_count': in_stock_qs.count(),
+            'out_of_stock_count': out_of_stock_qs.count(),
+            'running_low_count': running_low_qs.count(), 
+            'expired_count': expired_qs.count(),
+        }
+
+        summary_serializer = DashboardSummarySerializer(summary_data)
+        
+        running_low_details = self.get_serializer(running_low_qs, many=True).data
+
+        return Response({
+            'summary': summary_serializer.data,
+            'running_low_items': running_low_details,
+        })

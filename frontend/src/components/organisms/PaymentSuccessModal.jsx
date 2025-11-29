@@ -2,9 +2,7 @@ import React from 'react';
 import { Title, Label, Button } from '../atoms';
 import { CheckCircle, X, LucidePrinter } from 'lucide-react';
 
-const PaymentSuccessModal = ({totalAmount, amountReceived, onClose}) => {
-
-    console.log(totalAmount)
+const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose }) => {
 
     return (
         <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-1000'>
@@ -14,7 +12,7 @@ const PaymentSuccessModal = ({totalAmount, amountReceived, onClose}) => {
                         <CheckCircle className='text-success' />
                         <Title variant='modal' text='Payment Successful' />
                     </div>
-                    <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
+                    <X size={16} className='text-text cursor-pointer' onClick={onClose} />
                 </div>
 
                 <div className='text-success flex flex-col gap-2 items-center justify-center'>
@@ -24,23 +22,23 @@ const PaymentSuccessModal = ({totalAmount, amountReceived, onClose}) => {
 
                 <div>
                     <div className='flex flex-row items-center justify-between'>
-                        <Label variant='modal' text='Total Amount:'/>
-                        <h5>₱ {Number(totalAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                        <Label variant='modal' text='Total Amount:' />
+                        <h5>₱ {Number(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                     </div>
                     <div className='flex flex-row items-center justify-between'>
-                        <Label variant='modal' text='Amount Received:'/>
-                        <h5>₱ {Number(amountReceived).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                        <Label variant='modal' text='Amount Received:' />
+                        <h5>₱ {Number(amountReceived).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                     </div>
                 </div>
 
                 <div className='text-success flex flex-row items-center justify-between'>
                     <h5 className='font-medium text-md'>Change:</h5>
-                    <h5>₱ {Number(amountReceived - totalAmount).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                    <h5>₱ {Number(amountReceived - totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                 </div>
 
                 <div className='flex gap-4'>
-                    <Button variant='modalOutline' size='full' icon={LucidePrinter} text='Print receipt' onClick={() => console.log("Print hehe")}/>
-                    <Button variant='modalBlock' size='full' text='Finish' onClick={onClose}/>
+                    <Button variant='modalOutline' size='full' icon={LucidePrinter} text='Print receipt' onClick={() => console.log("Print hehe")} />
+                    <Button variant='modalBlock' size='full' text='Finish' onClick={onClose} />
                 </div>
             </div>
         </div>

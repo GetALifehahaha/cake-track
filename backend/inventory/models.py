@@ -1,4 +1,6 @@
-from django.db import models
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 # Create your models here.
 class Ingredient(models.Model):
@@ -39,16 +41,10 @@ class Transaction(models.Model):
         return f"{self.ingredient.name} - {self.transaction_type} {self.amount}"
     
     
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-
-# ... (Your existing Ingredient and Transaction models remain here) ...
 
 class Recipe(models.Model): 
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    # This creates a link to ingredients through the intermediate model below
     ingredients = models.ManyToManyField(
         Ingredient, 
         through='RecipeIngredient'
@@ -63,29 +59,26 @@ class Recipe(models.Model):
         quantity: How many of this recipe are being made (default 1).
         """
         with transaction.atomic():
-            # 1. Loop through all required ingredients for this recipe
             for recipe_item in self.recipe_ingredients.select_related('ingredient'):
                 ingredient = recipe_item.ingredient
                 amount_needed = recipe_item.amount_needed * quantity
 
-                # 2. Check if enough stock exists
                 if ingredient.total_stock < amount_needed:
                     raise ValidationError(
                         f"Not enough {ingredient.name}. Needed: {amount_needed}, Stock: {ingredient.total_stock}"
                     )
 
-                # 3. Update the Ingredient Stock
                 ingredient.total_stock -= amount_needed
                 ingredient.save()
 
-                # 4. Create the 'OUT' Transaction record (To keep history clean)
                 Transaction.objects.create(
                     ingredient=ingredient,
                     amount=amount_needed,
                     transaction_type='out',
                     remaining_amount=ingredient.total_stock,
-                    purchase_date=timezone.now() # Using now as the "usage" date
+                    purchase_date=timezone.now() 
                 )
+                
 
 class RecipeIngredient(models.Model):
     """

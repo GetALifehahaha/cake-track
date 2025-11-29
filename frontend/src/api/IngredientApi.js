@@ -28,6 +28,10 @@ const Ingredient = async (params, id = null, all=false, method = "GET") => {
             const response = await api.delete(`/inventory/ingredients/${id}/`);
             return response;
         }
+        else if (method === "DASHBOARD") {
+            const response = await api.get('/inventory/dashboard/');
+            return response;
+        }
     } catch (err) {
         throw err;
     }

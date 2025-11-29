@@ -64,3 +64,4 @@ class OrderBatchUpdateSerializer(serializers.Serializer):
             data['reject_reason'] = ""
             
         return data
+    

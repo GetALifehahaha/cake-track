@@ -304,3 +304,9 @@ class BulkRecipeCookSerializer(serializers.Serializer):
             'orders_processed': len(validated_data['orders'])
         }
         
+    
+class DashboardSummarySerializer(serializers.Serializer):
+    in_stock_count = serializers.IntegerField()
+    out_of_stock_count = serializers.IntegerField()
+    running_low_count = serializers.IntegerField()
+    expired_count = serializers.IntegerField()
