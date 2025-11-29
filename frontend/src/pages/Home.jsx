@@ -1,21 +1,24 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal} from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal } from '../components/organisms/'
 import { Minus } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
 import useTransaction from '@/hooks/useTransaction'
 import useCategory from '@/hooks/useCategory'
 import useDiscount from '@/hooks/useDiscount'
+import { useToast } from '@/context/ToastContext'
 
 const Home = () => {
 
+    const { addToast } = useToast();
+
     const [searchParams, setSearchParams] = useSearchParams();
-    const {productData, productLoading, productError} = useProduct();
-    const {postTransaction, transactionLoading, transactionError, transactionResponse} = useTransaction();
-    const {categoryData, categoryLoading, categoryError} = useCategory();
-    const {discountData, discountLoading, discountError} = useDiscount();
+    const { productData, productLoading, productError } = useProduct();
+    const { postTransaction, transactionLoading, transactionError, transactionResponse } = useTransaction();
+    const { categoryData, categoryLoading, categoryError } = useCategory();
+    const { discountData, discountLoading, discountError } = useDiscount();
     const [checkoutProducts, setCheckoutProducts] = useState([]);
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState();
@@ -28,7 +31,7 @@ const Home = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
     const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
-    
+
     // SET AND TOGGLES
 
     const handleSetDiscount = (value) => {
@@ -46,7 +49,7 @@ const Home = () => {
                 return prod
             }
 
-            return [...prod, {...product, amount: 1}];
+            return [...prod, { ...product, amount: 1 }];
         })
     }
 
@@ -66,7 +69,7 @@ const Home = () => {
     const handleSetAmount = (id, value) => {
         setCheckoutProducts(prod => {
             let products = prod;
-            
+
             products = products.map(product => {
                 if (product.id == id) {
                     product.amount = value
@@ -74,7 +77,7 @@ const Home = () => {
 
                 return product;
             })
-            
+
             return products
 
         })
@@ -94,10 +97,10 @@ const Home = () => {
     const completePayment = async (value) => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
-                product: p.id,                 
-                product_size: p.selectedSizeId, 
-                quantity: p.amount,            
-                price: parseFloat(p.price)     
+                product: p.id,
+                product_size: p.selectedSizeId,
+                quantity: p.amount,
+                price: parseFloat(p.price)
             }))
 
             await postTransaction({
@@ -110,6 +113,8 @@ const Home = () => {
 
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
+
+            addToast("Transaction successful")
         }
         setShowPaymentModal(false);
     }
@@ -119,12 +124,12 @@ const Home = () => {
 
     useEffect(() => {
         let params = new URLSearchParams();
-        
+
         if (filter) params.set('category__name', filter)
 
         setSearchParams(params)
     }, [filter])
-    
+
     useMemo(() => {
         setGrossTotal(() => {
             let total = 0;
@@ -138,7 +143,7 @@ const Home = () => {
     useMemo(() => {
         setNetTotal(grossTotal - grossTotal * discountValue);
     }, [grossTotal, discountValue, discount])
-    
+
 
     // GUARDS
 
@@ -165,10 +170,10 @@ const Home = () => {
     const voidPayment = async (value) => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
-                product: p.id,                 
-                product_size: p.selectedSizeId, 
-                quantity: p.amount,            
-                price: parseFloat(p.price)     
+                product: p.id,
+                product_size: p.selectedSizeId,
+                quantity: p.amount,
+                price: parseFloat(p.price)
             }))
 
             await postTransaction({
@@ -183,42 +188,44 @@ const Home = () => {
                 setReceivedPayment(value);
                 removeAllProducts([]);
             }
+
+            addToast("Transction voided successfully")
         }
 
         setShowClearCheckoutModal(false);
     }
 
-    
+
     // LISTS AND OPTIONS
 
-    const listCheckoutProducts = checkoutProducts.map((product) => 
-        <CheckoutProduct 
-        key={product.id} 
-        product={product} 
-        onChangeAmount={handleSetAmount}
-        onToggle={handleRemoveProductFromCheckout}/>
+    const listCheckoutProducts = checkoutProducts.map((product) =>
+        <CheckoutProduct
+            key={product.id}
+            product={product}
+            onChangeAmount={handleSetAmount}
+            onToggle={handleRemoveProductFromCheckout} />
     )
 
-    const listProduct = productData.results.map((product) => 
-        <ProductCard 
-        product={product} 
-        key={product.id} 
-        isSelected={checkoutProducts.some(p => p.id == product.id)}
-        onToggle={() => handleToggleCheckoutProduct(product)}/>
+    const listProduct = productData.results.map((product) =>
+        <ProductCard
+            product={product}
+            key={product.id}
+            isSelected={checkoutProducts.some(p => p.id == product.id)}
+            onToggle={() => handleToggleCheckoutProduct(product)} />
     )
 
-    const categoryOptions = categoryData.map((cat) => {return {key: cat.name, value: cat.id}});
-    const discountOptions = discountData.map((dis) => {return {key: dis.name, value: dis.id}});
+    const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } });
+    const discountOptions = discountData.map((dis) => { return { key: dis.name, value: dis.id } });
 
     return (
         <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row gap-1 items-center'>
-                    <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter}/>
+                    <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter} />
                 </div>
 
-            {/* Product Section */}
+                {/* Product Section */}
                 <div className='grid grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
                     {listProduct}
                 </div>
@@ -231,12 +238,12 @@ const Home = () => {
                         <div>
                             <h5 className='font-bold text-xl'>Current Order</h5>
                         </div>
-                            <Button variant='outline' text='Clear' onClick={confirmVoidPayment}/>
-                        </div>
+                        <Button variant='outline' text='Clear' onClick={confirmVoidPayment} />
+                    </div>
 
                     <div className='flex flex-row gap-2 px-4'>
-                        <Button variant={(orderType == "dine-in") ? 'active' : 'inactive'} size='small' text='Dine In' onClick={() => handleSetOrderType("dine-in")}/>
-                        <Button variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")}/>
+                        <Button variant={(orderType == "dine-in") ? 'active' : 'inactive'} size='small' text='Dine In' onClick={() => handleSetOrderType("dine-in")} />
+                        <Button variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")} />
                     </div>
 
                     <div className='px-4 py-8 flex flex-col gap-4'>
@@ -246,35 +253,35 @@ const Home = () => {
                     <div className='mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4'>
                         <div className='flex flex-col gap-2 '>
                             <div className='flex items-center justify-between'>
-                                <Label variant='small' text={`Items (${checkoutProducts.length})`}/>
-                                <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                                <Label variant='small' text={`Items (${checkoutProducts.length})`} />
+                                <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                             </div>
                             <div className='flex items-center'>
-                                <Label variant='small' text='Discount'/>
+                                <Label variant='small' text='Discount' />
                                 <div className='flex-1' />
-                                <Dropdown value={discount} variant='outline' selection="Discount" size='fit' options={discountOptions} onSelect={handleSetDiscount}  className='bg-main' />
+                                <Dropdown value={discount} variant='outline' selection="Discount" size='fit' options={discountOptions} onSelect={handleSetDiscount} className='bg-main' />
                             </div>
                         </div>
                         <hr className='text-border'></hr>
                         <div className='flex items-center justify-between'>
-                            <Label variant='small' text='Total'/>
-                            <h5 className='text-text font-semibold text-sm'>₱ {Number(netTotal || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                            <Label variant='small' text='Total' />
+                            <h5 className='text-text font-semibold text-sm'>₱ {Number(netTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                         </div>
-                        <Button variant='main' text='Proceed' onClick={proceedToCheckout}/>
+                        <Button variant='main' text='Proceed' onClick={proceedToCheckout} />
                     </div>
                 </div>
             </div>
 
             {/* Modals */}
             {showPaymentModal &&
-                <PaymentModal totalPrice={netTotal} onConfirm={completePayment}/>
+                <PaymentModal totalPrice={netTotal} onConfirm={completePayment} />
             }
 
-            {showPaymentSuccessModal && 
+            {showPaymentSuccessModal &&
                 <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} />
             }
 
-            {showShowClearCheckoutModal && 
+            {showShowClearCheckoutModal &&
                 <ClearCheckoutModal onConfirm={voidPayment} />
             }
         </div>

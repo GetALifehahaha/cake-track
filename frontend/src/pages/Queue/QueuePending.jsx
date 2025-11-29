@@ -10,7 +10,7 @@ import { formatDateForAPI } from '@/utils/date';
 
 const QueuePending = () => {
 
-	const { data, loading, error, patchOrder } = useOrder();
+	const { data, loading, error, patchOrder, batchUpdateOrders } = useOrder();
 	const [pageNum, setPageNum] = useState(1);
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
@@ -65,8 +65,12 @@ const QueuePending = () => {
 		setOrderData(items => items.filter((item) => item.id != id))
 	}
 
-	const acceptAllOrder = () => {
-		console.log(data)
+	const acceptAllOrder = async () => {
+		try {
+			batchUpdateOrders();
+		} catch (err) {
+			alert(err);
+		}
 	}
 
 	const removeAllOrder = () => setOrderData([])
@@ -79,7 +83,7 @@ const QueuePending = () => {
 		<div className='flex flex-col min-h-140'>
 			<div className='p-2 flex items-center gap-4 py-4 border-b border-main-dark'>
 				<span className='w-60'>
-					<DatePicker className='bg-accent' selected={selectedDate} onSelect={handleSetDateFilter} />
+					<DatePicker className='bg-white' selected={selectedDate} onSelect={handleSetDateFilter} />
 				</span>
 				{selectedDate &&
 					<>
@@ -89,7 +93,7 @@ const QueuePending = () => {
 							<h5 className='px-4 py-1 rounded-sm bg-accent text-white font-semibold cursor-pointer'>Accept All</h5>
 						</ConfirmationModalWrapper>
 						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
-							<h5 className='px-4 py-1 rounded-sm bg-red-500 text-white font-semibold cursor-pointer'>Reject All</h5>
+							<h5 className='px-4 py-1 rounded-sm bg-error text-white font-semibold cursor-pointer'>Reject All</h5>
 						</ConfirmationModalWrapper>
 					</>
 				}

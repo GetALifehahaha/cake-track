@@ -78,6 +78,21 @@ export default function useOrder() {
         }
     };
 
+    const batchUpdateOrders = async (params) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            await OrderApi(params, null, "BATCH_UPDATE");
+            setResponse({status: "success", detail: "Orders updated successfully"});
+            await fetchOrders();
+        } catch (err) {
+            handleError(err, "Failed to update orders.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
     // 4. Update Order
     const patchOrder = async (id, params) => {
         setLoading(true);
@@ -127,6 +142,7 @@ export default function useOrder() {
         postOrder,
         patchOrder,
         deleteOrder,
-        refresh: fetchOrders
+        refresh: fetchOrders,
+        batchUpdate: batchUpdateOrders
     };
 }

@@ -36,6 +36,11 @@ const OrdersApi = async (params, id = null, method = "GET") => {
             const response = await api.delete(`/orders/${id}/`);
             return response;
         }
+
+        else if (method === "BATCH_UPDATE") {
+            const response = await api.post('/orders/batch-update/', params)
+            return response.data
+        }
     } catch (err) {
         throw err;
     }
