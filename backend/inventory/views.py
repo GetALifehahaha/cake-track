@@ -74,10 +74,7 @@ class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
         
         out_of_stock_qs = self.get_queryset().filter(total_stock__lte=0)
         
-        running_low_qs = Ingredient.objects.filter(
-            transactions__expiration_date__lt=timezone.now().date(),
-            transactions__remaining_amount__lt=LOW_STOCK_THRESHOLD  
-        ).distinct() # Distinct ensures each ingredient is only counted once
+        running_low_qs = self.get_queryset().filter(total_stock__lt=LOW_STOCK_THRESHOLD)# Distinct ensures each ingredient is only counted once
 
         expired_qs = orders_to_update = Ingredient.objects.filter(
             transactions__expiration_date__lt=timezone.now().date(),
