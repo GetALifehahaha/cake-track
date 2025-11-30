@@ -1,33 +1,48 @@
-import { View, Text } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
 import React from 'react'
 import Checkbox from '../atoms/Checkbox'
 import { Cake } from 'lucide-react-native'
+import {capitalize} from '@/utils/capitalize'
+import { router } from 'expo-router'
 
 const OrderCard = ({ order }) => {
 
     const statusVariants = {
         pending: 'bg-gray-100 border-gray-500 text-gray-800',
+        accepted: 'bg-green-100 border-green-500 text-green-800',
+        rejected: 'bg-red-100 border-red-500 text-red',
         completed: 'bg-green-100 border-green-500 text-green-800',
     }
 
+    const handlePress = () => {
+    router.push({
+      pathname: '/orderDetails',
+      params: { orderData: JSON.stringify(order) } 
+    });
+  }
+
     return (
-        <View className='border border-secondary-light rounded-xl p-6 bg-white flex-row gap-4 w-full items-center'>
-            {order.isAcquired && <Checkbox />}
-            <View className='flex-1'>
-                <View className='flex-row justify-between items-center'>
-                    <Text className='opacity-50 font-medium text-lg'>#{order.id}</Text>
-                    <Text className={`px-2 py-1 border rounded-md ${statusVariants[(order.status).toLowerCase()]}`}>{order.status}</Text>
-                </View>
-                <View className='flex-row justify-between items-center'>
-                    <Text className='font-bold text-lg'>{order.occassion}</Text>
-                    <Text className='opacity-50 font-medium'>{order.date}</Text>
-                </View>
-                <View className='p-2 bg-gray-100 flex-row gap-2 items-center'>
-                    <Cake opacity={.8} />
-                    <Text className='font-medium'>{order.flavor}</Text>
+        <TouchableOpacity onPress={handlePress}
+            activeOpacity={0.7}
+            className='bg-white p-4 rounded-xl border border-gray-200 mb-4 shadow-sm'>
+            <View className='border border-secondary-light rounded-xl p-6 bg-white flex-row gap-4 w-full items-center'>
+                {/* {order.isAcquired && <Checkbox />} */}
+                <View className='flex-1'>
+                    <View className='flex-row justify-between items-center'>
+                        <Text className='opacity-50 font-medium text-lg'>#{order.id}</Text>
+                        <Text className={`px-2 py-1 border rounded-md ${statusVariants[(order.status).toLowerCase()]}`}>{capitalize(order.status)}</Text>
+                    </View>
+                    <View className='flex-row justify-between items-center'>
+                        <Text className='font-bold text-lg'>{capitalize(order.cake_orders.occasion)}</Text>
+                        <Text className='opacity-50 font-medium'>{capitalize(order.due_date)}</Text>
+                    </View>
+                    <View className='p-2 bg-gray-100 flex-row gap-2 items-center'>
+                        <Cake opacity={.8} />
+                        <Text className='font-medium'>{capitalize(order.cake_orders.base_flavor)}</Text>
+                    </View>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     )
 }
 

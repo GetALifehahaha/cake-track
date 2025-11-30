@@ -8,10 +8,6 @@ const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
             <FormLabel text={"Toppings"} />
             <Dropdown
                 items={[
-                    { label: 'Whipped Cream', value: 'whipped_cream' },
-                    { label: 'Fresh Fruits', value: 'fresh_fruits' },
-                    { label: 'Chocolate Ganache', value: 'chocolate_ganache' },
-                    { label: 'Buttercream Frosting', value: 'buttercream_frosting' },
                     { label: 'Sprinkles', value: 'sprinkles' },
                 ]}
                 placeholder={"Select toppings"}
@@ -23,9 +19,7 @@ const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
             <FormLabel text={"Add-on"} />
             <Dropdown
                 items={[
-                    { label: 'Nuts', value: 'nuts' },
-                    { label: 'Chocolate Chips', value: 'chocolate_chips' },
-                    { label: 'Caramel Drizzle', value: 'caramel_drizzle' },
+                    { label: 'Candle', value: 'candle' },
                 ]}
                 placeholder={"Select add-on"}
                 onChangeValue={setAddOn}

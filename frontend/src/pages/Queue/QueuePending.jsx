@@ -14,11 +14,10 @@ const QueuePending = () => {
 	const { addToast } = useToast();
 
 	const { data, loading, error, patchOrder, batchUpdateOrders } = useOrder();
-	const [pageNum, setPageNum] = useState(1);
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
-	const currentDateParams = searchParams.get('created_at')
+	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
 	const [showOptions, setShowOptions] = useState(-1);
 	const [prepAcceptId, setPrepAcceptId] = useState(-1);
@@ -30,9 +29,9 @@ const QueuePending = () => {
 		const newParams = Object.fromEntries(searchParams.entries());
 
 		if (date) {
-			newParams.created_at = formatDateForAPI(date)
+			newParams.due_date = formatDateForAPI(date)
 		} else {
-			delete newParams.created_at
+			delete newParams.due_date
 		}
 
 		setSearchParams(newParams)

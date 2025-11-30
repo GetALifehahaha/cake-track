@@ -8,9 +8,12 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
             <FormLabel text={"Coating Color"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'chocolate' },
-                    { label: 'Strawberry', value: 'strawberry' },
-                    { label: 'Vanilla', value: 'vanilla' },
+                    { label: 'White', value: 'white' },
+                    { label: 'Black', value: 'black' },
+                    { label: 'Red', value: 'red' },
+                    { label: 'Blue', value: 'blue' },
+                    { label: 'Yellow', value: 'yellow' },
+                    { label: 'Purple', value: 'purple' },
                 ]}
                 placeholder={"Select coating color"}
                 onChangeValue={setCoatingColor}
@@ -20,9 +23,8 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
             <FormLabel text={"Border"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'chocolate' },
-                    { label: 'Strawberry', value: 'strawberry' },
-                    { label: 'Vanilla', value: 'vanilla' },
+                    { label: 'Drip', value: 'drip' },
+                    { label: 'Frosting Pipe', value: 'frosting_pipe' },
                 ]}
                 placeholder={"Select border"}
                 onChangeValue={setBorder}
@@ -32,9 +34,12 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
             <FormLabel text={"Border Color"} />
             <Dropdown
                 items={[
-                    { label: 'Chocolate', value: 'chocolate' },
-                    { label: 'Strawberry', value: 'strawberry' },
-                    { label: 'Vanilla', value: 'vanilla' },
+                    { label: 'White', value: 'white' },
+                    { label: 'Black', value: 'black' },
+                    { label: 'Red', value: 'red' },
+                    { label: 'Blue', value: 'blue' },
+                    { label: 'Yellow', value: 'yellow' },
+                    { label: 'Purple', value: 'purple' },
                 ]}
                 placeholder={"Select border color"}
                 onChangeValue={setBorderColor}

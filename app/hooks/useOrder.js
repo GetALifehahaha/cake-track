@@ -9,36 +9,38 @@ export default function useOrder() {
     // CHANGED: Expo equivalent of useSearchParams
     const params = useLocalSearchParams(); 
     // CHANGED: Expo equivalent of useLocation
-    const pathname = usePathname(); 
+    // const pathname = usePathname(); 
 
     // --- 1. Derive Filters ---
-    const currentParams = useMemo(() => {
-        // useLocalSearchParams returns an object directly, no need for entries()
-        return params;
-    }, [params]);
+    // const currentParams = useMemo(() => {
+    //     // useLocalSearchParams returns an object directly, no need for entries()
+    //     return params;
+    // }, [params]);
 
     // Parse URL for "queue" filter (similar logic to your web version)
-    const pathSegments = pathname.split('/').filter(Boolean);
-    const lastPart = pathSegments.pop();
-    const currentFilter = lastPart === 'queue' ? null : lastPart;
+    // const pathSegments = pathname.split('/').filter(Boolean);
+    // const lastPart = pathSegments.pop();
+    // const currentFilter = lastPart === 'queue' ? null : lastPart;
 
-    // Construct API Params
-    const rawParams = {
-        status: currentFilter,
-        created_at: currentParams.due_date,
-    };
+    // // Construct API Params
+    // const rawParams = {
+    //     status: currentFilter,
+    //     created_at: currentParams.due_date,
+    // };
 
     // Clean params
-    const apiParams = Object.entries(rawParams).reduce((acc, [key, value]) => {
-        const isValid = value && value !== 'null' && value !== 'undefined';
-        if (isValid) acc[key] = value;
-        return acc;
-    }, {});
+    // const apiParams = Object.entries(rawParams).reduce((acc, [key, value]) => {
+    //     const isValid = value && value !== 'null' && value !== 'undefined';
+    //     if (isValid) acc[key] = value;
+    //     return acc;
+    // }, {});
 
     // --- 2. GET: Fetch Orders ---
     const ordersQuery = useQuery({
-        queryKey: ['orders', apiParams], 
-        queryFn: () => OrderApi(apiParams),
+        // queryKey: ['orders', apiParams], 
+        // queryFn: () => OrderApi(apiParams),
+        queryKey: ['orders'], 
+        queryFn: () => OrderApi(),
         placeholderData: (previousData) => previousData, 
     });
 

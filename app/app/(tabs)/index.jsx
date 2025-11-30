@@ -1,5 +1,4 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackground } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import React, { useState, useContext } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'

@@ -68,6 +68,20 @@ const InitialLayout = () => {
           animation: 'slide_from_bottom'
         }}
       />
+      <Stack.Screen
+        name="orderSuccess"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="orderDetails"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
     </Stack>
   )
 }

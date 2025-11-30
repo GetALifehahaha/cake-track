@@ -36,19 +36,19 @@ const CustomOrders = () => {
     const [page, setPage] = useState(1);
     const [maxPage, setMaxPage] = useState(11);
     const [personallyDesign, setPersonallyDesign] = useState(false);
-    const [occasion, setOccasion] = useState("birthday");
+    const [occasion, setOccasion] = useState("");
     const [specifyOccasion, setSpecifyOccasion] = useState('');
-    const [shape, setShape] = useState("round");
+    const [shape, setShape] = useState("");
     const [specifyShape, setSpecifyShape] = useState('');
     const [tier, setTier] = useState(1);
-    const [baseFlavor, setBaseFlavor] = useState("chocolate");
-    const [filling, setFilling] = useState("chocolate");
-    const [coatingColor, setCoatingColor] = useState("chocolate");
-    const [border, setBorder] = useState("chocolate");
-    const [borderColor, setBorderColor] = useState("chocolate");
-    const [toppings, setToppings] = useState("chocolate");
-    const [addOn, setAddOn] = useState("chocolate");
-    const [messageType, setMessageType] = useState("none");
+    const [baseFlavor, setBaseFlavor] = useState("");
+    const [filling, setFilling] = useState("");
+    const [coatingColor, setCoatingColor] = useState("");
+    const [border, setBorder] = useState("");
+    const [borderColor, setBorderColor] = useState("");
+    const [toppings, setToppings] = useState("");
+    const [addOn, setAddOn] = useState("");
+    const [messageType, setMessageType] = useState("");
     const [message, setMessage] = useState('');
     const [hasCupcakes, setHasCupcakes] = useState(false);
     const [cupcakesCount, setCupcakesCount] = useState(0);
@@ -107,7 +107,7 @@ const CustomOrders = () => {
 
             // --- Nested Cake Specifications ---
             cake_orders: {
-                occassion: occasion === "other" ? specifyOccasion : occasion,
+                occasion: occasion === "other" ? specifyOccasion : occasion,
                 shape: shape === "other" ? specifyShape : shape,
                 cake_tier: tier, // Mapped to 'cake_tier'
                 base_flavor: baseFlavor,
@@ -124,11 +124,11 @@ const CustomOrders = () => {
                 message_type: messageType,
                 message: messageType === "none" ? "" : message,
             },
-            cupcake_orders: hasCupcakes ?
-                {
-                    amount: cupcakesCount,
-                    frosting: 'choco'
-                } : null,
+            // cupcake_orders: hasCupcakes ?
+            //     {
+            //         amount: cupcakesCount,
+            //         frosting: 'choco'
+            //     } : null,
 
             // --- Other Fields (Root Level or Nested based on your backend model) ---
             // Assuming these stay at the root 'Order' level:

@@ -3,7 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import api from '@/api/api';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 
 // Polyfill for jwt-decode in React Native environment
 import "core-js/stable/atob";
@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthorized, setIsAuthorized] = useState(false); // Default to false
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
 
     useEffect(() => {
         auth().finally(() => setLoading(false));

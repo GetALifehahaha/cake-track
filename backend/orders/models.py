@@ -8,7 +8,7 @@ class Order(models.Model):
     image = models.ImageField(null=True, blank=True)
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=12)
+    phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=255)
     
     ORDER_STATUS = [
