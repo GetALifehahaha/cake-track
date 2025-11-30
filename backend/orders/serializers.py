@@ -5,7 +5,7 @@ from .models import (Order, CakeOrder, CupcakeOrder)
 class CakeOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = CakeOrder
-        fields = ['id','occassion', 'shape', 'cake_tier', 'base_flavor', 'finish', 'filling', 'coating_color', 'border', 'border_color', 'toppings', 'addons', 'message_type', 'message']
+        fields = ['id','occasion', 'shape', 'cake_tier', 'base_flavor', 'filling', 'coating_color', 'border', 'border_color', 'toppings', 'addons', 'message_type', 'message']
         
 
 class CupcakeOrderSerializer(serializers.ModelSerializer):

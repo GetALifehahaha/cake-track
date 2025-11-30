@@ -67,7 +67,7 @@ const Inventory = () => {
     }
 
     const handleSetShowInOut = () => setShowInOut(true);
-    const handleSetCloseInOut = () => setShowInOut(false);
+    const handleSetCloseInOut = () => { setShowInOut(false); refresh() }
 
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>

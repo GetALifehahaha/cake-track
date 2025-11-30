@@ -76,8 +76,9 @@ const QueuePending = () => {
 	}
 
 	const acceptAllOrder = async () => {
+		const orderIds = data?.results?.map(order => order.id) || [];
 
-		const orderIds = data.results.map(order => order.id);
+		if (order.length === 0) return;
 
 		try {
 			await batchUpdateOrders({ order_ids: orderIds, status: "accepted" });
@@ -120,12 +121,11 @@ const QueuePending = () => {
 			{/* Cake Details */}
 			<div className='flex mt-4'>
 				<div className='flex flex-col gap-0.5'>
-					<h5 className='font-bold text-md'>{capitalize(cake.cake_orders.occassion)}</h5>
-					<h5 className='text-xs text-accent-text'>Flavor: {capitalize(cake.cake_orders.base_flavor)}</h5>
-					<h5 className='text-xs text-accent-text'>Finish: {capitalize(cake.cake_orders.finish)}</h5>
-					<h5 className='text-xs text-accent-text'>Filling: {capitalize(cake.cake_orders.filling)}</h5>
-					<h5 className='text-xs text-accent-text'>Shape: {capitalize(cake.cake_orders.shape)}</h5>
-					<h5 className='text-xs text-accent-text'>Inscription: {capitalize(cake.cake_orders.message_type)}</h5>
+					<h5 className='font-bold text-md'>{capitalize(cake.cake_orders.occasion)}</h5>
+					<h5 className='text-xs text-accent-text'>Flavor: <strong>{capitalize(cake.cake_orders.base_flavor)}</strong></h5>
+					<h5 className='text-xs text-accent-text'>Filling: <strong>{capitalize(cake.cake_orders.filling)}</strong></h5>
+					<h5 className='text-xs text-accent-text'>Shape: <strong>{capitalize(cake.cake_orders.shape)}</strong></h5>
+					<h5 className='text-xs text-accent-text'>Inscription: <strong>{capitalize(cake.cake_orders.message_type)}</strong></h5>
 				</div>
 			</div>
 

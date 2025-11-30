@@ -2,30 +2,19 @@ import React, { useState } from 'react';
 import { Button, Title } from '../components/atoms';
 import { AddCashierModal, EditCashierModal } from '../components/organisms';
 import { Plus, Ellipsis, ChevronLeft, ChevronRight } from 'lucide-react';
+import useCashier from '@/hooks/useCashier';
+import Loading from '@/components/molecules/Loading';
 
 const Cashier = () => {
 
-    const [pageNum, setPageNum] = useState(1);
-    const dummyData = [
-        {id: 1, fullName: "Adrian Agraviador", contactNumber: "09789129840", address: "Nether Portal", emailAddress: "agraviador@gmail.com"}
-    ]
+    const { cashierData, cashierLoading, cashierError, refresh, postCashier, patchCashier } = useCashier();
 
     const [showAddCashierModal, setShowAddCashierModal] = useState(false);
     const [showEditCashierModal, setShowEditCashierModal] = useState(false);
-    const [cashiers, setCashiers] = useState([...dummyData]);
     const [prepCashier, setPrepCashier] = useState(null)
 
-    const handleSetPageNum = (direction) => {
-        if (direction == "prev") {
-            if (pageNum - 1 == 0) {
-                return;
-            }
-
-            setPageNum(p => p-1);
-        } else if (direction == "next") {
-            setPageNum(p => p+1)
-        }
-    }
+    if (cashierLoading) return <Loading />
+    if (cashierError) return <h5>Error</h5>
 
     const handleShowAddCashierModal = () => {
         setShowAddCashierModal(!showAddCashierModal)
@@ -47,25 +36,25 @@ const Cashier = () => {
         handleShowEditCashierModal();
     }
 
-    const handleEditCashier = (value) => {
-        const updatedCashiers = cashiers.map((item, index) => item.id === value.id ? value : item)
-        setCashiers(updatedCashiers);
-        handlePrepEditCashier(null);
-        handleShowEditCashierModal();
-    }
+    // const handleEditCashier = (value) => {
+    //     const updatedCashiers = cashierData.result.map((item, index) => item.id === value.id ? value : item)
+    //     setCashiers(updatedCashiers);
+    //     handlePrepEditCashier(null);
+    //     handleShowEditCashierModal();
+    // }
 
-    const handleDeleteCashiers = (id) => {
-        setCashiers(items => items.filter((item) => item.id != id))
-        handlePrepEditCashier(null);
-        handleShowEditCashierModal();
-    }
+    // const handleDeleteCashiers = (id) => {
+    //     setCashiers(items => items.filter((item) => item.id != id))
+    //     handlePrepEditCashier(null);
+    //     handleShowEditCashierModal();
+    // }
 
-    const listCashiers = cashiers.map((cashier, index) => 
+    const listCashiers = cashierData.results.map((cashier, index) =>
         <div key={index} className='p-2 flex flex-row cashiers-center text-text font-medium text-md text-center border-b-border border-b'>
-            <h5 className='basis-1/5'>{cashier.fullName}</h5>
+            <h5 className='basis-1/5'>{cashier.first_name} {cashier.last_name}</h5>
             <h5 className='basis-1/5'>{cashier.contactNumber}</h5>
             <h5 className='basis-1/5'>{cashier.address}</h5>
-            <h5 className='basis-1/5'>{cashier.emailAddress}</h5>
+            <h5 className='basis-1/5'>{cashier.email}</h5>
             <h5 className='basis-1/5'><Ellipsis size={18} className='mx-auto cursor-pointer' onClick={() => handlePrepEditCashier(cashier)} /></h5>
         </div>
     )
@@ -75,13 +64,13 @@ const Cashier = () => {
             <div className='border-accent-mute border rounded-lg p-4'>
                 {/* Header */}
                 <div className="flex flex-row justify-between items-center">
-                    <Title variant='block' text='Cashiers'/>
+                    <Title variant='block' text='Cashiers' />
 
                     <div className='flex flex-row items-center gap-2'>
                         <Button variant='block' size='small' text='Add Cashier' icon={Plus} onClick={handleShowAddCashierModal} />
                     </div>
                 </div>
-                
+
                 {/* Table */}
                 <div className='mt-2 flex flex-col min-h-120'>
                     <div className='p-2 bg-accent-mute rounded-lg flex flex-row items-center text-white text-sm text-center'>
@@ -91,13 +80,13 @@ const Cashier = () => {
                         <h5 className='basis-1/5'>Email Address</h5>
                         <h5 className='basis-1/5'>Action</h5>
                     </div>
-                    
+
                     {listCashiers}
 
                     {/* Pagination */}
-                    <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
+                    {/* <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
                         <button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                            <ChevronLeft size={18}/>
+                            <ChevronLeft size={18} />
                         </button>
                         <span className='rounded-sm bg-main-dark aspect-square w-6 flex justify-center items-center'>
                             <h5>
@@ -105,16 +94,16 @@ const Cashier = () => {
                             </h5>
                         </span>
                         <button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                            <ChevronRight size={18}/>
+                            <ChevronRight size={18} />
                         </button>
-                    </div>
+                    </div> */}
 
                 </div>
             </div>
 
             {/* Modals */}
 
-            {showAddCashierModal && 
+            {showAddCashierModal &&
                 <AddCashierModal onConfirm={handleAddCashier} onClose={handleShowAddCashierModal} />
             }
 

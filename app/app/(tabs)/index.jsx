@@ -5,7 +5,7 @@ import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'
 
 const Index = () => {
-	const { user } = useContext(AuthContext)
+	const { user, loading } = useContext(AuthContext)
 
 	const cakeData = [
 		{
@@ -45,10 +45,16 @@ const Index = () => {
 		<CakeCard key={index} image={cake.image} text={cake.name} />
 	)
 
+	if (loading) return (
+		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+			<ActivityIndicator size="large" color="#8B5A3C" />
+		</View>
+	)
+
 	return (
 		<ScrollView>
 			<View className='bg-[#8B5A3C] flex-1'>
-				<Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>Greetings, {user.first_name} {user.last_name}</Text>
+				<Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>Greetings, {user?.first_name || ''} {user?.last_name || ''}</Text>
 				<View className='bg-white w-full mt-auto rounded-t-[2rem] h-full'>
 					{/* Header */}
 					<View className='p-6 w-full flex-row gap-2 items-center'>

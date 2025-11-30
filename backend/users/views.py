@@ -8,6 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import UserSerializer, UserProfileSerializer
 
+from .permissions import IsAdmin
+
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -15,10 +17,16 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     
     
-class UserViewSets(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [DjangoModelPermissions]
+    permission_classes = [DjangoModelPermissions, IsAdmin]
+    
+    def get_queryset(self):
+        queryset = User.objects.filter(groups__name="cashier")
+        
+        return queryset
+    
     
     
 class UserProfileView(generics.RetrieveUpdateAPIView):

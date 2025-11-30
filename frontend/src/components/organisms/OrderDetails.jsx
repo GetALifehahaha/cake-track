@@ -12,8 +12,6 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     //         </h5>
     //     )
     //     : null
-    const capitalize = (str) => str[0].toUpperCase() + str.slice(1)
-
     return (
         <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[40vw] flex flex-col gap-10'>
@@ -49,8 +47,8 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     <Label text='Cake Details' variant='large' />
                     <div className='px-8 py-1 flex flex-row gap-8 justify-center'>
                         <div className='flex-1'>
+                            <h5 className='text-sm text-text/75 font-medium'>Occasion: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.occasion)}</strong></h5>
                             <h5 className='text-sm text-text/75 font-medium'>Flavor: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.base_flavor)}</strong></h5>
-                            <h5 className='text-sm text-text/75 font-medium'>Finish: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.finish)}</strong></h5>
                             <h5 className='text-sm text-text/75 font-medium'>Filling: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.filling)}</strong></h5>
                             <h5 className='text-sm text-text/75 font-medium'>Shape: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.shape)}</strong></h5>
                             <h5 className='text-sm text-text/75 font-medium'>Tier: <strong className='ml-1 text-text'>{orderDetails.cake_orders.cake_tier}-tier</strong></h5>

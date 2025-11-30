@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-
+from .filters import TransactionFilter
 
 from .serializers import (DiscountSerializer, 
                           SizeSerializer, 
@@ -33,6 +33,11 @@ from .models import (Discount,
                      ) 
 
 from users.permissions import IsAdmin, IsCashier
+
+class MediumPageSize(PageNumberPagination):
+    page_size = 14
+    max_page_size = 100
+    
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
@@ -66,6 +71,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = MediumPageSize
     
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
@@ -90,23 +96,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         return queryset
     
 
-class MediumPageSize(PageNumberPagination):
-    page_size = 14
-    max_page_size = 100
-        
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.prefetch_related(
         'transaction_items__product',
         'transaction_items__product_size__size'
     ).all()
+    
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = MediumPageSize
     
-    
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_class = TransactionFilter
     
-    filterset_fields = ['cashier', 'is_void']
     search_fields = ['cashier__username', 'payment_method']
     ordering_fields = ['id', 'created_at', 'payment_method']
     ordering = ['-created_at']
@@ -118,7 +120,11 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return TransactionSerializer
     
     def get_queryset(self):
-        queryset = Transaction.objects.all()
+        queryset = Transaction.objects.prefetch_related(
+            'transaction_items__product',
+            'transaction_items__product_size__size'
+        ).all()
+        
         user = self.request.user
         
         if user.groups.filter(name="cashier").exists():

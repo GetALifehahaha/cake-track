@@ -30,11 +30,10 @@ class Order(models.Model):
 class CakeOrder(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="cake_orders")
     
-    occassion = models.CharField(max_length=255)
+    occasion = models.CharField(max_length=255)
     shape = models.CharField(max_length=255)
     cake_tier = models.PositiveIntegerField()
     base_flavor = models.CharField(max_length=255)
-    finish = models.CharField(max_length=255)
     filling = models.CharField(max_length=255)
     coating_color = models.CharField(max_length=255)
     border = models.CharField(max_length=255, default='none')

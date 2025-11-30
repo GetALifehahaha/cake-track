@@ -6,6 +6,13 @@ import { CartProvider } from "@/context/CartContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { View, ActivityIndicator } from "react-native";
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+// Add this near your 
+configureReanimatedLogger({
+  strict: false, // Disables the "Reading from `value` during component render" warning
+  level: ReanimatedLogLevel.warn,
+});
 
 const queryClient = new QueryClient();
 

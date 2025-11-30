@@ -1,148 +1,115 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrderApi from "@/api/OrdersApi";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { useMemo } from "react";
 
 export default function useOrder() {
-    // 1. Standardized state names
-    const [data, setData] = useState([]);
-    const [response, setResponse] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
-    
+    const location = useLocation();
+
+    // --- 1. Derive Filters (Same logic as before) ---
     const currentParams = useMemo(() => 
         Object.fromEntries(searchParams.entries()), 
     [searchParams]);
 
-    const location = useLocation();
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const lastPart = pathSegments.pop();
     const currentFilter = lastPart === 'queue' ? null : lastPart;
 
-    // Helper to parse backend errors
-    const handleError = (err, defaultMsg) => {
-        const msg = err.response?.data?.detail || err.response?.data || defaultMsg;
-        setError({ status: "error", detail: msg });
-        setResponse(null);
-    };
-
-    // 1. Define all possible candidates for parameters
+    // Construct API Params
     const rawParams = {
-        status: currentFilter, // e.g., 'pending' or null
-        created_at: currentParams.due_date, // e.g., '2025-11-29' or 'null'
-        // Easy to add more later:
-        // search: currentParams.search,
-        // page: currentParams.page
+        status: currentFilter,
+        created_at: currentParams.due_date,
     };
 
-    const params = Object.entries(rawParams).reduce((acc, [key, value]) => {
-    // The "Sanity Check": 
-    // Is it truthy? AND is it not the string "null" or "undefined"?
-    const isValid = value && value !== 'null' && value !== 'undefined';
-
-    if (isValid) {
-        acc[key] = value;
-    }
-    return acc;
+    // Clean params (remove null/undefined strings)
+    const apiParams = Object.entries(rawParams).reduce((acc, [key, value]) => {
+        const isValid = value && value !== 'null' && value !== 'undefined';
+        if (isValid) acc[key] = value;
+        return acc;
     }, {});
 
-    const fetchOrders = useCallback(async () => {
-        
-        setLoading(true);
-        setError(null); 
-        try {
+    // --- 2. GET: Fetch Orders (useQuery) ---
+    const ordersQuery = useQuery({
+        // Unique key: whenever 'apiParams' changes, this query re-runs automatically
+        queryKey: ['orders', apiParams], 
+        queryFn: () => OrderApi(apiParams),
+        // Optional: Keep previous data while fetching new filter (prevents UI flashing)
+        placeholderData: (previousData) => previousData, 
+        // Optional: Error handling logic if needed globally, usually handled in UI
+    });
 
+    // --- 3. Mutations (POST, PATCH, DELETE) ---
 
-            const result = await OrderApi(params);
-            setData(result);
-        } catch (err) {
-            handleError(err, "Failed to read orders.");
-        } finally {
-            setLoading(false);
-        }
-    }, [currentFilter, currentParams]);
-
-    // 3. Create Order
-    const postOrder = async (params) => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Removed 'all' argument
-            await OrderApi(params, null, "POST");
-            setResponse({ status: "success", detail: "Order created successfully." });
-            await fetchOrders(); // Refresh list automatically
-        } catch (err) {
-            handleError(err, "Failed to create order.");
-        } finally {
-            setLoading(false);
-        }
+    // Generic helper to invalidate cache after success
+    const onSuccessInvalidate = () => {
+        // This triggers a refetch of the 'orders' query above
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
     };
 
-    const batchUpdateOrders = async (params) => {
-        setLoading(true);
-        setError(null);
+    // CREATE (POST)
+    const createMutation = useMutation({
+        mutationFn: (newOrderParams) => OrderApi(newOrderParams, null, "POST"),
+        onSuccess: onSuccessInvalidate,
+    });
 
-        try {
-            await OrderApi(params, null, "BATCH_UPDATE");
-            setResponse({status: "success", detail: "Orders updated successfully"});
-            await fetchOrders();
-        } catch (err) {
-            handleError(err, "Failed to update orders.");
-        } finally {
-            setLoading(false);
-        }
-    }
+    // UPDATE (PATCH)
+    const updateMutation = useMutation({
+        mutationFn: ({ id, params }) => OrderApi(params, id, "PATCH"),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    // 4. Update Order
-    const patchOrder = async (id, params) => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Removed 'all' argument
-            await OrderApi(params, id, "PATCH");
-            setResponse({ status: "success", detail: "Order updated successfully." });
-            await fetchOrders();
-        } catch (err) {
-            handleError(err, "Failed to update order.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    // BATCH UPDATE
+    const batchUpdateMutation = useMutation({
+        mutationFn: (params) => OrderApi(params, null, "BATCH_UPDATE"),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    // 5. Delete Order
-    const deleteOrder = async (id) => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Removed 'all' argument
-            await OrderApi(null, id, "DELETE");
-            setResponse({ status: "success", detail: "Order deleted successfully." });
-            await fetchOrders();
-        } catch (err) {
-            handleError(err, "Failed to delete order.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    // DELETE
+    const deleteMutation = useMutation({
+        mutationFn: (id) => OrderApi(null, id, "DELETE"),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    // Initial fetch
-    useEffect(() => {
-        fetchOrders();
-    }, [fetchOrders]);
+    // --- 4. Return Interface ---
+    // We map React Query's internal state to match your previous hook's API
+    // so you don't have to rewrite your UI components too much.
 
     return {
-        // Data States
-        data,
-        response,
-        loading,
-        error,
+        // Data
+        data: ordersQuery.data || [], // Default to empty array if loading/undefined
         
+        // Combined Loading State (Fetching OR Mutating)
+        loading: ordersQuery.isLoading || 
+                 createMutation.isPending || 
+                 updateMutation.isPending || 
+                 deleteMutation.isPending ||
+                 batchUpdateMutation.isPending,
+
+        // Errors (You can pick specific errors or general ones)
+        error: ordersQuery.error || createMutation.error || updateMutation.error,
+
         // Actions
-        fetchOrders,
-        postOrder,
-        patchOrder,
-        deleteOrder,
-        refresh: fetchOrders,
-        batchUpdateOrders
+        // We wrap these to match your old signature (except fetchOrders is removed as it's automatic now)
+        
+        postOrder: async (params) => {
+            return createMutation.mutateAsync(params);
+        },
+        
+        patchOrder: async (id, params) => {
+            return updateMutation.mutateAsync({ id, params });
+        },
+
+        batchUpdateOrders: async (params) => {
+            return batchUpdateMutation.mutateAsync(params);
+        },
+        
+        deleteOrder: async (id) => {
+            return deleteMutation.mutateAsync(id);
+        },
+
+        // Manual refresh (rarely needed, but available)
+        refresh: () => ordersQuery.refetch(),
     };
 }

@@ -76,6 +76,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 
 		handleSetCloseConfirm()
+		onClose()
 	}
 
 	const listIngredients = ingredientData.map((ingredient) =>
@@ -88,8 +89,23 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	const listIngredientItems = ingredientItems.map((ingredient, index) =>
 		<div className='flex flex-col gap-2 w-full p-2 rounded-sm bg-main-white border border-border h-fit' key={index}>
 			<div className='flex items-center gap-2 p-2 w-full ' >
-				<h5 className=''>{ingredient.name}</h5>
-				<input type='number' className='p-2 border-border rounded-sm border ml-auto' value={ingredient.amount} onChange={(e) => updateIngredientItem(index, 'amount', e.target.value)} />
+				<h5 className='mr-auto'>{ingredient.name}</h5>
+
+
+				{ingredient.transaction_type == "in" &&
+					<div className='flex gap-2 flex-row justify-end pb-2 ml-auto'>
+						<div className='flex flex-col w-fit'>
+							<h5 className='text-sm text-center font-medium text-text/50'>Purchase Date</h5>
+							<DatePicker selected={ingredient.purchase_date} onSelect={(value) => updateIngredientItem(index, 'purchase_date', value)} />
+						</div>
+						<div className='flex flex-col w-fit'>
+							<h5 className='text-sm text-center font-medium text-text/50'>Expiration Date</h5>
+							<DatePicker selected={ingredient.expiration_date} onSelect={(value) => updateIngredientItem(index, 'expiration_date', value)} />
+						</div>
+					</div>
+				}
+
+				<input type='number' className='p-2 border-border rounded-sm border' value={ingredient.amount} onChange={(e) => updateIngredientItem(index, 'amount', e.target.value)} />
 
 				<div className='flex flex-row gap-2 w-36'>
 					<button className={`p-2 rounded-sm border border-border flex-1 ${ingredient.transaction_type == "in" ? 'bg-main-dark' : 'bg-main'}`} onClick={() => updateIngredientItem(index, 'transaction_type', 'in')}>IN</button>
@@ -97,32 +113,17 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				</div>
 				<X size={16} className='text-text cursor-pointer' onClick={() => removeIngredientItem(index)} />
 			</div>
-			{ingredient.transaction_type == "in" &&
-				<div className='w-full flex gap-2 flex-row justify-end pb-2'>
-					<div className='flex flex-col w-fit'>
-						<h5 className='text-sm text-center font-medium text-text/50'>Purchase Date</h5>
-						<DatePicker selected={ingredient.purchase_date} onSelect={(value) => updateIngredientItem(index, 'purchase_date', value)} />
-					</div>
-					<div className='flex flex-col w-fit mr-8'>
-						<h5 className='text-sm text-center font-medium text-text/50'>Expiration Date</h5>
-						<DatePicker selected={ingredient.expiration_date} onSelect={(value) => updateIngredientItem(index, 'expiration_date', value)} />
-					</div>
-				</div>
-			}
+
 		</div>
 	)
 
 	return (
 		<ModalBody>
 			{/* Header */}
-			<div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-main-white">
-				<Title text='Inventory Management' />
-				<button
-					className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
-					onClick={onClose}
-				>
-					<X size={20} className='text-gray-500' />
-				</button>
+			<div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-main-white w-[80vw]">
+				<Title text='Inventory Management' variant='modal' />
+
+				<X size={20} className='text-text' onClick={onClose} />
 			</div>
 
 			{/* Two Panel Layout */}

@@ -63,10 +63,12 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                                     <h5>Subtotal:</h5>
                                     <h5>{(transactionDetail.gross_total).toFixed(2)}</h5>
                                 </div>
-                                <div className="flex justify-between text-text/50">
-                                    <h5>Discount:</h5>
-                                    <h5>{transactionDetail.discount.name}: {transactionDetail.discount.rate * 100}%</h5>
-                                </div>
+                                {transactionDetail.discount_id &&
+                                    <div className="flex justify-between text-text/50">
+                                        <h5>Discount:</h5>
+                                        <h5>{transactionDetail.discount.name}: {transactionDetail.discount.rate * 100}%</h5>
+                                    </div>
+                                }
                                 <div className="flex justify-between text-text/50">
                                     <h5>VAT Amount:</h5>
                                     <h5>{(transactionDetail.gross_total - (transactionDetail.gross_total * .88)).toFixed(2)}</h5>

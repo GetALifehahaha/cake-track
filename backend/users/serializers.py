@@ -11,7 +11,14 @@ class UserSerializer(serializers.ModelSerializer):
         
         def create(self, validated_data):
             user = User.objects.create_user(**validated_data)
-            cashier, _ = Group.objects.get_or_create(name="cashier")
+            request = self.context.get('request')
+            
+            if request and request.user and request.user.is_staff:
+                group_name = "cashier"
+            else:
+                group_name = "customer"
+                
+            cashier, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(cashier)
             
             return user

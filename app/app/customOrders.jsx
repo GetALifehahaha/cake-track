@@ -1,6 +1,6 @@
 import './global.css';
-import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, Keyboard, Alert } from 'react-native'
+import { useContext, useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, Keyboard, Alert, ActivityIndicator } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { useRouter } from 'expo-router'
@@ -22,11 +22,13 @@ import {
 import { useToast } from '@/context/ToastContext';
 import ConfirmModal from '@/components/organisms/ConfirmModal';
 import useOrder from '@/hooks/useOrder';
+import { AuthContext } from '@/context/AuthContext';
 
 // Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CustomOrders = () => {
+    const { user, loading: userLoading } = useContext(AuthContext);
     const { showToast } = useToast();
     const { loading, error, postOrder } = useOrder();
     const [customDisplay, setCustomDisplay] = useState("");
@@ -34,19 +36,19 @@ const CustomOrders = () => {
     const [page, setPage] = useState(1);
     const [maxPage, setMaxPage] = useState(11);
     const [personallyDesign, setPersonallyDesign] = useState(false);
-    const [occasion, setOccasion] = useState(null);
+    const [occasion, setOccasion] = useState("birthday");
     const [specifyOccasion, setSpecifyOccasion] = useState('');
-    const [shape, setShape] = useState(null);
+    const [shape, setShape] = useState("round");
     const [specifyShape, setSpecifyShape] = useState('');
-    const [tier, setTier] = useState(null);
-    const [baseFlavor, setBaseFlavor] = useState(null);
-    const [filling, setFilling] = useState(null);
-    const [coatingColor, setCoatingColor] = useState(null);
-    const [border, setBorder] = useState(null);
-    const [borderColor, setBorderColor] = useState(null);
-    const [toppings, setToppings] = useState(null);
-    const [addOn, setAddOn] = useState(null);
-    const [messageType, setMessageType] = useState(null);
+    const [tier, setTier] = useState(1);
+    const [baseFlavor, setBaseFlavor] = useState("chocolate");
+    const [filling, setFilling] = useState("chocolate");
+    const [coatingColor, setCoatingColor] = useState("chocolate");
+    const [border, setBorder] = useState("chocolate");
+    const [borderColor, setBorderColor] = useState("chocolate");
+    const [toppings, setToppings] = useState("chocolate");
+    const [addOn, setAddOn] = useState("chocolate");
+    const [messageType, setMessageType] = useState("none");
     const [message, setMessage] = useState('');
     const [hasCupcakes, setHasCupcakes] = useState(false);
     const [cupcakesCount, setCupcakesCount] = useState(0);
@@ -54,9 +56,9 @@ const CustomOrders = () => {
     const [comments, setComments] = useState('');
     const [dueDate, setDueDate] = useState(null);
     const [image, setImage] = useState(null);
-    const [fullName, setFullName] = useState('');
+    const [fullName, setFullName] = useState(`${user?.first_name} ${user?.last_name || ''}`);
     const [address, setAddress] = useState('');
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(user?.email || '');
     const [contactNumber, setContactNumber] = useState('');
     const [agreeToTOC, setAgreeToTOC] = useState(false);
 
@@ -89,52 +91,75 @@ const CustomOrders = () => {
         else setMaxPage(11)
     }, [personallyDesign])
 
+    if (loading || userLoading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#8B5A3C" />
+    </View>
+
     const orderCake = async () => {
         const payload = {
-            // --- Cake Specifications ---
-            occasion: occasion === "other" ? specifyOccasion : occasion,
-            shape: shape === "other" ? specifyShape : shape,
-            tier: tier,
-            base_flavor: baseFlavor,
-            filling: filling,
-            coating_color: coatingColor,
-            border_design: border,
-            border_color: borderColor,
-
-            // --- Extras ---
-            toppings: toppings,
-            add_ons: addOn,
-
-            // --- Message ---
-            // If type is 'none', ensure we send an empty string for the message
-            message_type: messageType,
-            message: messageType === "none" ? "" : message,
-
-            // --- Cupcakes ---
-            // If hasCupcakes is false, reset count to 0 and frosting to null
-            has_cupcakes: hasCupcakes,
-            cupcake_count: hasCupcakes ? cupcakesCount : 0,
-            cupcake_frosting: hasCupcakes ? cupcakesFrosting : null,
-
-            // --- Order Details ---
-            comments: comments,
-            due_date: dueDate,
-            reference_image: image, // Note: If uploading, this might need to be FormData instead of JSON
-
-            // --- Customer Information ---
+            // --- Customer Information (Root Level) ---
             full_name: fullName,
-            address: address,
             email: email,
-            contact_number: contactNumber
+            phone_number: contactNumber, // Mapped to 'phone_number'
+            address: address,
+            due_date: dueDate,
+            status: "pending",
+
+            // --- Nested Cake Specifications ---
+            cake_orders: {
+                occassion: occasion === "other" ? specifyOccasion : occasion,
+                shape: shape === "other" ? specifyShape : shape,
+                cake_tier: tier, // Mapped to 'cake_tier'
+                base_flavor: baseFlavor,
+                finish: "smooth", // You might want to create a state variable for this if it's dynamic
+                filling: filling,
+                coating_color: coatingColor,
+
+                // Included these in the nested object as they belong to the cake
+                // (You can move them to root if your backend expects them there)
+                border: border,
+                border_color: borderColor,
+                toppings: toppings,
+                addons: addOn,
+                message_type: messageType,
+                message: messageType === "none" ? "" : message,
+            },
+            cupcake_orders: hasCupcakes ?
+                {
+                    amount: cupcakesCount,
+                    frosting: 'choco'
+                } : null,
+
+            // --- Other Fields (Root Level or Nested based on your backend model) ---
+            // Assuming these stay at the root 'Order' level:
+
+            // Message
+
+
+            // Cupcakes
+            // has_cupcakes: hasCupcakes,
+            // cupcake_count: hasCupcakes ? cupcakesCount : 0,
+            // cupcake_frosting: hasCupcakes ? cupcakesFrosting : null,
+
+            // Extras
+
+
+            // Meta
+            comments: comments,
+            image: image,
         };
 
+        // Log to verify
+        console.log(payload);
         // Log it to check
         try {
-            await postOrder({ payload });
+            console.log(payload);
+            await postOrder(payload);
 
             showToast("Order proceeded succcesfully")
         } catch (err) {
-            showToast(`Failed to proceed order. Error: ${err}`)
+            console.log(err)
+            showToast(`Failed to proceed order. Error: ${err}`, "error")
         }
 
     }

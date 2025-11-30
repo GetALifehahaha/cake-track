@@ -51,7 +51,7 @@ const QueueAccepted = () => {
 		try {
 			await patchOrder(completeId, { status: "completed" });
 
-			addToast("Order accepted successfully");
+			addToast("Order completed successfully");
 			setCompleteId(-1);
 		} catch (err) {
 			addToast("Failed to accept order.", "error")
