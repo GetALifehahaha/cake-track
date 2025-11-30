@@ -20,9 +20,10 @@ const MessagePage = ({ messageType, setMessageType, message, setMessage }) => (
         <View pointerEvents={messageType === "none" ? "none" : "auto"} style={{ opacity: messageType === "none" ? 0.5 : 1 }}>
             <FormLabel text={"Message"} />
             <TextInput
-                multiline
+                multiline={true}
                 numberOfLines={4}
-                className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white'
+                style={{ textAlignVertical: 'top' }}
+                className='h-32 py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white'
                 value={message}
                 onChangeText={setMessage}
                 placeholder='What should the message say?'

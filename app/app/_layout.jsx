@@ -1,10 +1,13 @@
 import "./global.css";
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { View, ActivityIndicator } from "react-native";
+
+const queryClient = new QueryClient();
 
 const InitialLayout = () => {
   const { isAuthorized, loading } = useAuth();
@@ -32,44 +35,46 @@ const InitialLayout = () => {
   )
 
   return (
-    <CartProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen
-          name="(tabs)"
-        />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="customOrders"
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_bottom'
-          }}
-        />
-        <Stack.Screen
-          name="cakeOrders"
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_bottom'
-          }}
-        />
-        <Stack.Screen
-          name="checkout"
-          options={{
-            presentation: 'fullScreenModal',
-            animation: 'slide_from_bottom'
-          }}
-        />
-      </Stack>
-    </CartProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen
+        name="(tabs)"
+      />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="customOrders"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="cakeOrders"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="checkout"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+    </Stack>
   )
 }
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <InitialLayout />
-      </ToastProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ToastProvider>
+          <CartProvider>
+            <InitialLayout />
+          </CartProvider>
+        </ToastProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

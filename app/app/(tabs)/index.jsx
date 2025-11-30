@@ -1,9 +1,11 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackground } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
+import { AuthContext } from '@/context/AuthContext'
 
 const Index = () => {
+	const { user } = useContext(AuthContext)
 
 	const cakeData = [
 		{
@@ -46,7 +48,7 @@ const Index = () => {
 	return (
 		<ScrollView>
 			<View className='bg-[#8B5A3C] flex-1'>
-				<Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>Greetings, Mathew Angeles!</Text>
+				<Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>Greetings, {user.first_name} {user.last_name}</Text>
 				<View className='bg-white w-full mt-auto rounded-t-[2rem] h-full'>
 					{/* Header */}
 					<View className='p-6 w-full flex-row gap-2 items-center'>

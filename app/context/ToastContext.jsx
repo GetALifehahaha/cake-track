@@ -51,9 +51,9 @@ export const ToastProvider = ({ children }) => {
 
     const getIcon = () => {
         switch (type) {
-            case 'success': return <CheckCircle color="white" size={24} />;
-            case 'error': return <XCircle color="white" size={24} />;
-            default: return <Info color="white" size={24} />;
+            case 'success': return <CheckCircle color="green" size={24} />;
+            case 'error': return <XCircle color="red" size={24} />;
+            default: return <Info color="gray" size={24} />;
         }
     };
 
@@ -79,13 +79,13 @@ export const ToastProvider = ({ children }) => {
                         }]
                     }}
                 >
-                    <View className={`flex-row items-center p-4 rounded-lg shadow-lg ${getBackgroundColor()}`}>
+                    <View className={`flex-row items-center p-4 rounded-lg shadow-lg bg-white gap-2`}>
                         {getIcon()}
-                        <Text className="ml-3 text-white font-semibold flex-1">
+                        <Text className="ml-3 text-secondary-strong font-semibold flex-1">
                             {message}
                         </Text>
                         <TouchableOpacity onPress={hideToast}>
-                            <Text className="text-white font-bold text-xs ml-2">DISMISS</Text>
+                            <Text className="text-secondary-light font-bold text-xs ml-2">DISMISS</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>

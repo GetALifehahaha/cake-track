@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { Calendar1, X } from 'lucide-react-native';
+import { Calendar1, X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { Modal } from "react-native";
 import { Calendar } from 'react-native-calendars';
 
@@ -43,6 +43,36 @@ const DatePicker = ({ onSelectDate }) => {
                             }}
                             markedDates={{
                                 [date]: { selected: true, selectedColor: '#BE9B7B' },
+                            }}
+                            // 1. Custom arrow rendering to add the border
+                            renderArrow={(direction) => (
+                                <View style={{
+                                    borderWidth: 1,
+                                    borderColor: '#BE9B7B',
+                                    borderRadius: 8,
+                                    padding: 4,
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                                }}>
+                                    {direction === 'left' ?
+                                        <ChevronLeft size={18} color="#BE9B7B" /> :
+                                        <ChevronRight size={18} color="#BE9B7B" />
+                                    }
+                                </View>
+                            )}
+                            // 2. Theme customization for colors and fonts
+                            theme={{
+                                // Current Day text color
+                                todayTextColor: '#BE9B7B',
+
+                                // Month Title Styling (font-semibold)
+                                textMonthFontWeight: '800',
+                                monthTextColor: '#8B5A3C', // Optional: Fits your app theme better than black
+
+                                // General text styling
+                                textDayFontFamily: 'System',
+                                textMonthFontFamily: 'System',
+                                textDayHeaderFontFamily: 'System',
                             }}
                         />
                     </View>

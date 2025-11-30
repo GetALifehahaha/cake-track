@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native'
 import { Cake, Sparkles } from 'lucide-react-native'
-import React from 'react'
+import React, { } from 'react'
 import { useRouter } from 'expo-router'
 
 const Cakes = () => {

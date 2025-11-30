@@ -21,7 +21,7 @@ const CakeDetailPage = ({ occasion, setOccasion, specifyOccasion, setSpecifyOcca
             />
             {occasion == 'other' && (
                 <TextInput
-                    className='py-5 px-2 rounded-md border border-secondary-light mt-4'
+                    className='py-5 px-3 rounded-md border border-secondary-light mt-4 bg-white'
                     value={specifyOccasion}
                     onChangeText={setSpecifyOccasion}
                     placeholder='Specify your occassion'

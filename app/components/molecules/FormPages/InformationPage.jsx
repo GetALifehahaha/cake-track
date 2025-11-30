@@ -22,7 +22,7 @@ const InformationPage = ({ fullName, setFullName, address, setAddress, email, se
         </View>
         <View className='flex-row mt-2 gap-4 px-4 py-4 rounded-lg border border-secondary-light items-center'>
             <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />
-            <Text className='font-medium text-secondary-strong'>I agree to the terms and conditions, including the down payment required</Text>
+            <Text className='font-medium text-secondary-strong w-4/5'>I agree to the terms and conditions, including the down payment required</Text>
         </View>
     </View>
 );
