@@ -26,8 +26,8 @@ export default function useTransaction() {
     const postTransaction = async (params) => {
         setTransactionLoading(true);
         try {
-            await TransactionApi(params, null, "POST");
-            setTransactionResponse({ status: "success", detail: "Transaction created successfully." });
+            const res = await TransactionApi(params, null, "POST");
+            setTransactionResponse({ status: "success", detail: "Transaction created successfully.", data: res});
         } catch (err) {
             setTransactionError({ status: "error", detail: "Failed to create transaction." });
             setTransactionResponse(null);

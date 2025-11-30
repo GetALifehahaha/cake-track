@@ -4,7 +4,7 @@ import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../molecu
 import { X } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 
-const PaymentModal = ({totalPrice, onConfirm}) => {
+const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
 
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [isExact, setIsExact] = useState(false);
@@ -92,9 +92,6 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
     const handleConfirmModal = (value) => {
 
         if (!value) onConfirm(false);
-
-        
-
         onConfirm(receivedPayment);
     }
 
@@ -108,7 +105,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
             {/* Header */}
                 <div className='flex justify-between items-center w-full'>
                     <Title variant='modal' text='Cash Payment' />
-                    <X size={16} className='text-text cursor-pointer' onClick={() => handleConfirmModal(false)}/>
+                    <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
                 </div>
 
                 <div className='w-full flex gap-1'>
@@ -134,7 +131,7 @@ const PaymentModal = ({totalPrice, onConfirm}) => {
                 }
 
                 <div className='flex gap-4'>
-                    <Button variant='modalOutline' size='full' text='Cancel' onClick={() => handleConfirmModal(false)}/>
+                    <Button variant='modalOutline' size='full' text='Cancel' onClick={onClose}/>
                     <Button variant='modalBlock' size='full' text='Complete Payment' onClick={handleSetShowConfirmationModal}/>
                 </div>
 

@@ -19,7 +19,10 @@ const Home = () => {
     const { postTransaction, transactionLoading, transactionError, transactionResponse } = useTransaction();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
-    const [checkoutProducts, setCheckoutProducts] = useState([]);
+    const [checkoutProducts, setCheckoutProducts] = useState(() => {
+        const saved = localStorage.getItem('cart');
+        return saved ? JSON.parse(saved) : [];
+    });
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState();
     const [discountValue, setDiscountValue] = useState(0);
@@ -113,6 +116,7 @@ const Home = () => {
 
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
+            localStorage.removeItem('cart');
 
             addToast("Transaction successful")
         }
@@ -143,6 +147,10 @@ const Home = () => {
     useMemo(() => {
         setNetTotal(grossTotal - grossTotal * discountValue);
     }, [grossTotal, discountValue, discount])
+
+    useEffect(() => {
+        localStorage.setItem('cart', JSON.stringify(checkoutProducts));
+    }, [checkoutProducts]);
 
 
     // GUARDS
@@ -186,10 +194,11 @@ const Home = () => {
 
             if (transactionResponse) {
                 setReceivedPayment(value);
-                removeAllProducts([]);
             }
-
+            
+            removeAllProducts([]);
             addToast("Transction voided successfully")
+            localStorage.removeItem('cart');
         }
 
         setShowClearCheckoutModal(false);
@@ -274,11 +283,13 @@ const Home = () => {
 
             {/* Modals */}
             {showPaymentModal &&
-                <PaymentModal totalPrice={netTotal} onConfirm={completePayment} />
+                <PaymentModal totalPrice={netTotal} onConfirm={completePayment} onClose={() => setShowPaymentModal(false)}/>
             }
 
-            {showPaymentSuccessModal &&
-                <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} />
+            {showPaymentSuccessModal && transactionResponse &&
+                <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} 
+                    transactionData={transactionResponse.data}
+                />
             }
 
             {showShowClearCheckoutModal &&

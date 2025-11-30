@@ -1,15 +1,12 @@
 import React from 'react';
 import { Title, Button } from '../atoms';
 import { Download, Printer, X } from 'lucide-react';
-import jsPDF from 'jspdf';
 
 const TransactionDetails = ({ transactionDetail, onClose }) => {
 
     const downloadPdf = async () => {
         window.print()
     }
-
-    console.log(transactionDetail)
 
     return (
         <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex flex-col justify-center items-center z-10 gap-4'>
@@ -96,7 +93,6 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                             <Button text='' variant='modalBlock' size='fit' icon={Download} onClick={downloadPdf} />
                         </div>
                     </div>
-
                 </>
             }
         </div>

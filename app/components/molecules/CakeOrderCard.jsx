@@ -27,8 +27,8 @@ const CakeOrderCard = ({ id, image, name, price, description, addedToCart, addTo
                 <View className='flex-row items-center justify-between mt-2 '>
 
                     {/* Description (flex-1 to allow text wrapping) */}
-                    <Text className='text-sm font-medium text-gray-500 w-1/2 pr-4 leading-5'>
-                        {description}
+                    <Text className='text-2xl font-semibold text-gray-400 w-1/2 pr-4 leading-5'>
+                        ₱ {(price).toFixed(2)}
                     </Text>
 
                     {/* Button Logic */}
