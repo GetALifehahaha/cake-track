@@ -23,7 +23,7 @@ const FlavorPage = ({ baseFlavor, setBaseFlavor, filling, setFilling }) => (
                 items={[
                     { label: 'Chocolate', value: 'chocolate' },
                     { label: 'Strawberry', value: 'strawberry' },
-                    { label: 'Vanilla', value: 'vanilla' },
+                    { label: 'Frosting', value: 'frosting' },
                 ]}
                 placeholder={"Select filling"}
                 onChangeValue={setFilling}

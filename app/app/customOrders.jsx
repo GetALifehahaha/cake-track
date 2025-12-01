@@ -36,22 +36,22 @@ const CustomOrders = () => {
     const [page, setPage] = useState(1);
     const [maxPage, setMaxPage] = useState(11);
     const [personallyDesign, setPersonallyDesign] = useState(false);
-    const [occasion, setOccasion] = useState("");
-    const [specifyOccasion, setSpecifyOccasion] = useState('');
-    const [shape, setShape] = useState("");
-    const [specifyShape, setSpecifyShape] = useState('');
-    const [tier, setTier] = useState(1);
-    const [baseFlavor, setBaseFlavor] = useState("");
-    const [filling, setFilling] = useState("");
-    const [coatingColor, setCoatingColor] = useState("");
-    const [border, setBorder] = useState("");
-    const [borderColor, setBorderColor] = useState("");
-    const [toppings, setToppings] = useState("");
-    const [addOn, setAddOn] = useState("");
-    const [messageType, setMessageType] = useState("");
-    const [message, setMessage] = useState('');
+    const [occasion, setOccasion] = useState();
+    const [specifyOccasion, setSpecifyOccasion] = useState();
+    const [shape, setShape] = useState();
+    const [specifyShape, setSpecifyShape] = useState();
+    const [tier, setTier] = useState();
+    const [baseFlavor, setBaseFlavor] = useState();
+    const [filling, setFilling] = useState();
+    const [coatingColor, setCoatingColor] = useState();
+    const [border, setBorder] = useState();
+    const [borderColor, setBorderColor] = useState();
+    const [toppings, setToppings] = useState();
+    const [addOn, setAddOn] = useState();
+    const [messageType, setMessageType] = useState();
+    const [message, setMessage] = useState();
     const [hasCupcakes, setHasCupcakes] = useState(false);
-    const [cupcakesCount, setCupcakesCount] = useState(0);
+    const [cupcakesCount, setCupcakesCount] = useState();
     const [cupcakesFrosting, setCupcakesFrosting] = useState(null);
     const [comments, setComments] = useState('');
     const [dueDate, setDueDate] = useState(null);
@@ -79,12 +79,36 @@ const CustomOrders = () => {
     useEffect(() => {
         if (!shape && !tier) return;
 
-        const img =
-            cakeImages?.[shape || "round"]?.[tier || 1]?.[baseFlavor || "vanilla"][filling || "none"]
-        // const img = cakeImages["round"][2]["vanilla"]["none"]
-        //     cakeImages?.[shape]?.[tier]?.[flavor]?.[fill] ??
+        // 1. Grab the specific Tier object (e.g., Round -> 1)
+        const tierObj = cakeImages?.[shape || "round"]?.[tier || 1];
+
+        // 2. Determine if we have a coating and a decoration
+        const hasCoating = coatingColor && coatingColor !== "none";
+        const hasDecoration = border && border !== "none";
+
+        let img;
+
+        if (!hasCoating) {
+            // CASE A: No Coating -> Show Base Flavor + Filling
+            // Path: round.1.chocolate.frosting
+            img = tierObj?.[baseFlavor || "vanilla"]?.[filling || "none"];
+        } else {
+            // CASE B: Coating is Active
+            if (hasDecoration) {
+                // CASE B-1: Coating + Decoration (Drip/Piping)
+                // Path: round.1.coating.black.drip.red
+                img = tierObj?.coating?.[coatingColor]?.[border]?.[borderColor || "white"];
+            } else {
+                // CASE B-2: Coating Only (No Decoration)
+                // Path: round.1.coating.black.none
+                img = tierObj?.coating?.[coatingColor]?.none;
+            }
+        }
+
+        // 3. Pass 'img' to your Image component
+
         setCustomDisplay(img);
-    }, [shape, tier, baseFlavor, filling]);
+    }, [shape, tier, baseFlavor, filling, coatingColor, border, borderColor]);
 
     useEffect(() => {
         if (personallyDesign) setMaxPage(3)
@@ -111,12 +135,8 @@ const CustomOrders = () => {
                 shape: shape === "other" ? specifyShape : shape,
                 cake_tier: tier, // Mapped to 'cake_tier'
                 base_flavor: baseFlavor,
-                finish: "smooth", // You might want to create a state variable for this if it's dynamic
                 filling: filling,
                 coating_color: coatingColor,
-
-                // Included these in the nested object as they belong to the cake
-                // (You can move them to root if your backend expects them there)
                 border: border,
                 border_color: borderColor,
                 toppings: toppings,
@@ -124,27 +144,7 @@ const CustomOrders = () => {
                 message_type: messageType,
                 message: messageType === "none" ? "" : message,
             },
-            // cupcake_orders: hasCupcakes ?
-            //     {
-            //         amount: cupcakesCount,
-            //         frosting: 'choco'
-            //     } : null,
 
-            // --- Other Fields (Root Level or Nested based on your backend model) ---
-            // Assuming these stay at the root 'Order' level:
-
-            // Message
-
-
-            // Cupcakes
-            // has_cupcakes: hasCupcakes,
-            // cupcake_count: hasCupcakes ? cupcakesCount : 0,
-            // cupcake_frosting: hasCupcakes ? cupcakesFrosting : null,
-
-            // Extras
-
-
-            // Meta
             comments: comments,
             image: image,
         };
@@ -355,7 +355,10 @@ const CustomOrders = () => {
                     */}
                     <View style={{ height: SCREEN_HEIGHT * 0.35 }} className="w-full items-center justify-center p-4">
                         <View className='aspect-square h-[90%] bg-main-form rounded-lg justify-center items-center shadow-sm'>
-                            {customDisplay ? (
+                            {shape === "other" ?
+                                <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
+                            :
+                            customDisplay ? (
                                 <Image
                                     source={customDisplay}
                                     style={{ width: 200, height: 200 }}

@@ -24,7 +24,7 @@ const CoatingPage = ({ coatingColor, setCoatingColor, border, setBorder, borderC
             <Dropdown
                 items={[
                     { label: 'Drip', value: 'drip' },
-                    { label: 'Frosting Pipe', value: 'frosting_pipe' },
+                    { label: 'Frosting Pipe', value: 'piping' },
                 ]}
                 placeholder={"Select border"}
                 onChangeValue={setBorder}
