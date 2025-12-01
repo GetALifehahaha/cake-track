@@ -26,14 +26,6 @@ const InitialLayout = () => {
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    // 1. DELETE THE STRICT GUARD
-    // We removed: if (!isAuthorized && !inAuthGroup) { router.replace(...) }
-    // Now, if a user is not authorized, the app simply renders the Stack below,
-    // which defaults to "(tabs)", allowing them to browse.
-
-    // 2. KEEP THE REDIRECT FOR LOGGED IN USERS
-    // If the user IS logged in, but is somehow looking at the Login/Register screens,
-    // redirect them back to the main app.
     if (isAuthorized && inAuthGroup) {
       router.replace('/(tabs)');
     }

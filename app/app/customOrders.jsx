@@ -110,11 +110,6 @@ const CustomOrders = () => {
         setCustomDisplay(img);
     }, [shape, tier, baseFlavor, filling, coatingColor, border, borderColor]);
 
-    useEffect(() => {
-        if (personallyDesign) setMaxPage(3)
-        else setMaxPage(11)
-    }, [personallyDesign])
-
 
     if (!user) {
         router.replace('/(auth)/login');
@@ -142,9 +137,9 @@ const CustomOrders = () => {
                 cake_tier: tier,
                 base_flavor: baseFlavor,
                 filling: filling,
-                coating_color: coatingColor,
-                border: border,
-                border_color: borderColor,
+                coating_color: coatingColor ? coatingColor : "None",
+                border: border ? border : "None",
+                border_color: borderColor ? borderColor : "None",
                 toppings: toppings,
                 addons: addOn,
                 message_type: messageType,
@@ -161,7 +156,7 @@ const CustomOrders = () => {
                     // Add whatever specific cupcake fields your backend expects
                 }
             }),
-
+            
             comments: comments,
             image: image,
         };
@@ -304,14 +299,25 @@ const CustomOrders = () => {
         }
     };
 
+    // --- FIX 2: Updated Logic to Skip Pages 4 and 5 if personallyDesign is true ---
     const handleChangePage = (direction) => {
         if (direction === 'next' && page < maxPage) {
             // Run validation before moving forward
             if (validateCurrentPage()) {
-                setPage(page + 1);
+                if (personallyDesign && page === 3) {
+                    // Skip Coating (4) and Add-ons (5) -> Go to Message (6)
+                    setPage(6);
+                } else {
+                    setPage(page + 1);
+                }
             }
         } else if (direction === 'prev' && page > 1) {
-            setPage(page - 1);
+            if (personallyDesign && page === 6) {
+                // Go back from Message (6) -> To Flavors (3)
+                setPage(3);
+            } else {
+                setPage(page - 1);
+            }
         }
     }
 
@@ -494,13 +500,13 @@ const CustomOrders = () => {
                                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                                 <Text className='text-gray-400 text-xs mb-1'>Size</Text>
                                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                                    {tier ? `${tier} Tier` : '-'}
+                                                    {tier ? `${tier} Tier` : 'None'}
                                                 </Text>
                                             </View>
                                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                                 <Text className='text-gray-400 text-xs mb-1'>Flavor</Text>
                                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                                    {baseFlavor || '-'}
+                                                    {baseFlavor || 'None'}
                                                 </Text>
                                             </View>
                                             <View className='w-[48%] p-4 bg-white rounded-lg'>
@@ -512,7 +518,7 @@ const CustomOrders = () => {
                                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                                 <Text className='text-gray-400 text-xs mb-1'>Coating Color</Text>
                                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                                    {coatingColor || '-'}
+                                                    {coatingColor || 'None'}
                                                 </Text>
                                             </View>
                                             <View className='w-[48%] p-4 bg-white rounded-lg'>
