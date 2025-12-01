@@ -59,12 +59,12 @@ const Login = () => {
 
                     <form onSubmit={(e) => handleLogin(e)} className='flex flex-col gap-8 w-3/5'>   
                         <div className='flex flex-col gap-4'>
-                            <Label variant='login' text='EMAIL' />
-                            <input type='text' value={username} onChange={(e) => handleSetUsername(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Username for now'/>
+                            <Label variant='login' text='USERNAME' />
+                            <input type='text' value={username} onChange={(e) => handleSetUsername(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your username'/>
                         </div>
                         <div className='flex flex-col gap-4'>
                             <Label variant='login' text='PASSWORD' />
-                            <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder=''/>
+                            <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
                         </div>
                         <span className='flex flex-row items-center gap-2'>
                             <input type='checkbox' onChange={() => setRememberMe(!rememberMe)} />

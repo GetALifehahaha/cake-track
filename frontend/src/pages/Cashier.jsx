@@ -4,9 +4,13 @@ import { AddCashierModal, EditCashierModal } from '../components/organisms';
 import { Plus, Ellipsis, ChevronLeft, ChevronRight } from 'lucide-react';
 import useCashier from '@/hooks/useCashier';
 import Loading from '@/components/molecules/Loading';
+import { Pagination } from '@/components/molecules';
+import { useToast } from '@/context/ToastContext';
+import { add } from 'date-fns';
 
 const Cashier = () => {
 
+    const { addToast } = useToast();
     const { cashierData, cashierLoading, cashierError, refresh, postCashier, patchCashier } = useCashier();
 
     const [showAddCashierModal, setShowAddCashierModal] = useState(false);
@@ -26,7 +30,6 @@ const Cashier = () => {
 
     const handleAddCashier = (value) => {
         if (value) {
-            setCashiers([...cashiers, value])
             setShowAddCashierModal(false)
         }
     }
@@ -36,26 +39,33 @@ const Cashier = () => {
         handleShowEditCashierModal();
     }
 
-    // const handleEditCashier = (value) => {
-    //     const updatedCashiers = cashierData.result.map((item, index) => item.id === value.id ? value : item)
-    //     setCashiers(updatedCashiers);
-    //     handlePrepEditCashier(null);
-    //     handleShowEditCashierModal();
-    // }
+    const editCashier = async (value) => {
+        try {
+            await patchCashier(prepCashier.id, value);
+            addToast('Cashier updated successfully', 'success');
+            refresh();
+        } catch (err) {
+            addToast('Failed to update cashier', 'error');
+            console.log(err);
+        } finally {
+            handlePrepEditCashier(null);
+            handleShowEditCashierModal();
+        }
+    }
 
-    // const handleDeleteCashiers = (id) => {
-    //     setCashiers(items => items.filter((item) => item.id != id))
-    //     handlePrepEditCashier(null);
-    //     handleShowEditCashierModal();
-    // }
+    const handleDeleteCashiers = (id) => {
+        handlePrepEditCashier(null);
+        handleShowEditCashierModal();
+    }
 
     const listCashiers = cashierData.results.map((cashier, index) =>
         <div key={index} className='p-2 flex flex-row cashiers-center text-text font-medium text-md text-center border-b-border border-b'>
-            <h5 className='basis-1/5'>{cashier.first_name} {cashier.last_name}</h5>
-            <h5 className='basis-1/5'>{cashier.contactNumber}</h5>
-            <h5 className='basis-1/5'>{cashier.address}</h5>
-            <h5 className='basis-1/5'>{cashier.email}</h5>
-            <h5 className='basis-1/5'><Ellipsis size={18} className='mx-auto cursor-pointer' onClick={() => handlePrepEditCashier(cashier)} /></h5>
+            <h5 className='flex-1'>{cashier.first_name} {cashier.last_name}</h5>
+            {/* <h5 className='flex-1'>{cashier.contactNumber}</h5> */}
+            {/* <h5 className='flex-1'>{cashier.address}</h5> */}
+            <h5 className='flex-1'>{cashier.username}</h5>
+            <h5 className='flex-1'>{cashier.email}</h5>
+            <h5 className='flex-1'><Ellipsis size={18} className='mx-auto cursor-pointer' onClick={() => handlePrepEditCashier(cashier)} /></h5>
         </div>
     )
 
@@ -74,30 +84,19 @@ const Cashier = () => {
                 {/* Table */}
                 <div className='mt-2 flex flex-col min-h-120'>
                     <div className='p-2 bg-accent-mute rounded-lg flex flex-row items-center text-white text-sm text-center'>
-                        <h5 className='basis-1/5'>Full Name</h5>
-                        <h5 className='basis-1/5'>Contact Number</h5>
-                        <h5 className='basis-1/5'>Address</h5>
-                        <h5 className='basis-1/5'>Email Address</h5>
-                        <h5 className='basis-1/5'>Action</h5>
+                        <h5 className='flex-1'>Full Name</h5>
+                        {/* <h5 className='basis-1/5'>Contact Number</h5>
+                        <h5 className='basis-1/5'>Address</h5> */}
+                        <h5 className='flex-1'>Username</h5>
+                        <h5 className='flex-1'>Email Address</h5>
+                        <h5 className='flex-1'>Action</h5>
                     </div>
 
                     {listCashiers}
-
-                    {/* Pagination */}
-                    {/* <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
-                        <button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                            <ChevronLeft size={18} />
-                        </button>
-                        <span className='rounded-sm bg-main-dark aspect-square w-6 flex justify-center items-center'>
-                            <h5>
-                                {pageNum}
-                            </h5>
-                        </span>
-                        <button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                            <ChevronRight size={18} />
-                        </button>
-                    </div> */}
-
+                    
+                    <div className='mt-auto mx-auto'>
+                        <Pagination prev={cashierData.previous} next={cashierData.next} />
+                    </div>
                 </div>
             </div>
 
@@ -108,7 +107,7 @@ const Cashier = () => {
             }
 
             {showEditCashierModal &&
-                <EditCashierModal cashier={prepCashier} onDelete={handleDeleteCashiers} onConfirm={handleEditCashier} onClose={handleShowEditCashierModal} />
+                <EditCashierModal cashier={prepCashier} onDelete={handleDeleteCashiers} onConfirm={editCashier} onClose={handleShowEditCashierModal} />
             }
         </div>
     )
