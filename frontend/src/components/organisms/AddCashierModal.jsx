@@ -5,17 +5,17 @@ import { X, EyeClosed, Eye } from 'lucide-react';
 
 const AddCashierModal = ({onConfirm, onClose}) => {
 
-    const [fullName, setFullName] = useState("");
-    const [contactNumber, setContactNumber] = useState("");
-    const [address, setAddress] = useState("");
-    const [emailAddress, setEmailAddress] = useState("");
-    const [password, setPassword] = useState("");
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [emailAddress, setEmailAddress] = useState('');
     
     const [feedback, setFeedback] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
     const handleAddCashier = () => {
-        if (!fullName || !contactNumber || !address || !emailAddress || !password) {
+        if (!firstName || !lastName  || !username || !password) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -23,8 +23,16 @@ const AddCashierModal = ({onConfirm, onClose}) => {
             })
             return;
         }
+        // if (password !== confirmPassword) {
+        //     setFeedback({
+        //         label: 'Password Mismatch',
+        //         details: "The password and confirm password fields do not match",
+        //         type: 'error'
+        //     })
+        //     return;
+        // }
 
-        onConfirm({fullName, contactNumber, address, emailAddress, password});
+        onConfirm({first_name: firstName, last_name: lastName, username, email: emailAddress, password});
     }
 
 
@@ -39,16 +47,16 @@ const AddCashierModal = ({onConfirm, onClose}) => {
                 <div className='flex gap-8'>
                     <div className='flex flex-col gap-8 w-120'>
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Full Name' />
-                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={fullName} placeholder='e.g., Adrian Agraviador' onChange={(e) => setFullName(e.target.value)}/>
+                            <Label variant='modal' text='First Name' />
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} placeholder='e.g., Adrian' onChange={(e) => setFirstName(e.target.value)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Contact Number' />
-                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={contactNumber} placeholder='09876543210' onChange={(e) => setContactNumber(e.target.value)}/>
+                            <Label variant='modal' text='Last Name' />
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => setLastName(e.target.value)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Address' />
-                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={address} placeholder='e.g., Boalan, Z.C.' onChange={(e) => setAddress(e.target.value)}/>
+                            <Label variant='modal' text='Username' />
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={username} placeholder='e.g., adrianagraviador' onChange={(e) => setUsername(e.target.value)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Email Address' />
@@ -59,11 +67,11 @@ const AddCashierModal = ({onConfirm, onClose}) => {
                             <span className='px-4 py-2 rounded-sm bg-main-dark/50 flex flex-row gap-2 items-center'>
                                 {showPassword ?
                                     <>
-                                        <input type='text' className=' focus:outline-none w-full' value={password} onChange={(e) => setPassword(e.target.value)}/>
+                                        <input type='text' className=' focus:outline-none w-full' placeholder="Enter the cashier's password" value={password} onChange={(e) => setPassword(e.target.value)}/>
                                         <EyeClosed className='text-text/50 cursor-pointer' onClick={() => setShowPassword(false)} />
                                     </> :
                                     <>
-                                        <input type='password' className=' focus:outline-none w-full' value={password} onChange={(e) => setPassword(e.target.value)}/>
+                                        <input type='password' className=' focus:outline-none w-full' placeholder="Enter the cashier's password" value={password} onChange={(e) => setPassword(e.target.value)}/>
                                         <Eye className='text-text/50 cursor-pointer' onClick={() => setShowPassword(true)} />
                                     </>
                                 }

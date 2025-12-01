@@ -28,9 +28,16 @@ const Cashier = () => {
         setShowEditCashierModal(!showEditCashierModal)
     }
 
-    const handleAddCashier = (value) => {
-        if (value) {
-            setShowAddCashierModal(false)
+    const addCashier = async (value) => {
+        try {
+            await postCashier(value);
+            addToast('Cashier registered successfully', 'success');
+            refresh();
+        } catch (err) {
+            addToast('Failed to register cashier', 'error');
+            console.log(err);
+        } finally {
+            handleShowAddCashierModal();
         }
     }
 
@@ -103,7 +110,7 @@ const Cashier = () => {
             {/* Modals */}
 
             {showAddCashierModal &&
-                <AddCashierModal onConfirm={handleAddCashier} onClose={handleShowAddCashierModal} />
+                <AddCashierModal onConfirm={addCashier} onClose={handleShowAddCashierModal} />
             }
 
             {showEditCashierModal &&
