@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Label, Title } from '../atoms';
-import { EllipsisVertical, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ProductCard } from '../molecules';
 import useProduct from '@/hooks/useProduct';
 import ConfirmationModal from './ConfirmationModal';
 import Loading from '../molecules/Loading';
-import ConfirmationModalWrapper from './ConfirmationModalWrapper';
 
 const ArchivedModal = ({onRestore, onClose}) => {
 
@@ -37,17 +36,7 @@ const ArchivedModal = ({onRestore, onClose}) => {
 
     
     const listArchivedProducts = productData.results.map((product, index) =>
-        <div className='relative'>
-        <ProductCard  selected={selectedId} key={index} product={product} isArchived={true} onToggle={handleSetSelectedId}/>
-        <div className='absolute top-2 right-2 cursor-pointer bg-white rounded-md'>
-            <EllipsisVertical className='text-text/50 ' onClick={() => setSelectedId(product.id ? product.id : null)}/>
-            {selectedId === product.id &&
-            <ConfirmationModalWrapper title='Restore product?' content='This will bring it back to the POS' onConfirm={restoreProduct}>
-                <h5>Restore</h5>
-            </ConfirmationModalWrapper>
-            }
-        </div>
-        </div>
+        <ProductCard selected={selectedId} key={index} product={product} isArchived={true} onToggle={handleSetSelectedId}/>
     )
 
     return (

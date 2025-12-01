@@ -3,37 +3,96 @@ import { Button, Dropdown, Label, Title } from '../atoms';
 import { X, Plus, Upload } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
 import { ConfirmationModal } from '.';
+import {
+    CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_UPLOAD_PRESET,
+} from "@/api/constants";
 
 const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const [productName, setProductName] = useState(product.name);
     const [category, setCategory] = useState(product.category.id);
     const [price, setPrice] = useState(product.price);
-    const [imagePath, setImagePath] = useState(product.image_path)
+    const [image, setImage] = useState(product.image_path)
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
     
-    const [preview, setPreview] = useState(product.image_path);
+    const [imagePreview, setImagePreview] = useState(product.image_path);
 
     const [feedback, setFeedback] = useState("");
 
-    const handleFileChange = (e) => {
+    const handleImageChange = (e) => {
         const file = e.target.files[0];
-        setImagePath(file)
-        if (file) setPreview(URL.createObjectURL(file));
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith("image/")) {
+                setErrorMessages((prev) => [
+                    ...prev,
+                    "Please upload a valid image file",
+                ]);
+                return;
+            }
+
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                setErrorMessages((prev) => [
+                    ...prev,
+                    "Image size should be less than 5MB",
+                ]);
+                return;
+            }
+
+            setImage(file);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
-    const handleRemovePreview = () => {setPreview(null)};
+    const handleRemoveImage = () => {
+        setImage(null);
+        setImagePreview(null);
+    };
 
-    const handleConfirmModal = () => {
+    const uploadToCloudinary = async (imageFile) => {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        try {
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to upload image");
+            }
+
+            const data = await response.json();
+            return data.secure_url; // Returns the Cloudinary URL
+        } catch (error) {
+            console.error("Cloudinary upload error:", error);
+            throw error;
+        }
+    };
+
+    const handleConfirmModal = async () => {
 
         let params = {};
 
         if (productName != product.name) params.name = productName;
         if (category != product.category) params.category_id = category;
         if (price != product.price) params.price = price;
-        if (imagePath != product.image_path) params.image_path = imagePath;
+        if (image != product.image_path) params.image = await uploadToCloudinary(image) || null;
 
         if (Object.keys(params).length === 0) onClose();
 
@@ -56,7 +115,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     }
 
     const handleSetShowConfirmationModal = () => {
-        if (!productName || !category || !price || !preview) {
+        if (!productName || !category || !price || !imagePreview) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -86,8 +145,8 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Product Image' />
                         <label className='h-60 flex flex-col items-center justify-center gap-2 rounded-xl border-border border aspect-square'>
-                            {(preview) ? 
-                            <img src={preview} className='object-cover h-full w-full rounded-xl'/>
+                            {(imagePreview) ? 
+                            <img src={imagePreview} className='object-cover h-full w-full rounded-xl'/>
                             :
                             <>
                                 <Upload size={48} className='text-text/50'/>
@@ -101,10 +160,10 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                                 type="file"
                                 accept="image/png, image/jpeg"
                                 className="hidden"
-                                onChange={handleFileChange}
+                                onChange={handleImageChange}
                             />
                         </label>
-                        {preview && <Button variant='icon' text='' icon={X} onClick={handleRemovePreview}/>}
+                        {imagePreview && <Button variant='icon' text='' icon={X} onClick={handleRemoveImage}/>}
                     </div>
 
                     <div className='flex flex-col gap-8 w-120'>

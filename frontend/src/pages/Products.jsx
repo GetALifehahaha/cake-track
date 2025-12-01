@@ -66,9 +66,6 @@ const Products = () => {
     const handleShowCategoryModal = () => setShowCategoryModal(true);
     const handleCloseCategoryModal = () => setShowCategoryModal(false);
 
-    const handleSetFilter = (value) => {
-        setFilter(value);
-    }
 
     const addProduct = async (value) => {
         if (value) {
