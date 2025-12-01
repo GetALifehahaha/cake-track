@@ -80,9 +80,9 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	}
 
 	const listIngredients = ingredientData.map((ingredient) =>
-		<div key={ingredient.id} className='flex flex-row gap-4 px-4 py-2 rounded-sm bg-accent font-semibold cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name)}>
-			<h5 className='text-main-white line-clamp-1'>{ingredient.name}</h5>
-			<h5 className='text-main/50'>{(ingredient.total_stock).replace(/\.00$/, '')}</h5>
+		<div key={ingredient.id} className='flex flex-row gap-4 px-4 py-2 rounded-sm bg-accent hover:bg-accent-dark transition-all font-semibold cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name)}>
+			<h5 className='text-main-white line-clamp-2'>{ingredient.name}</h5>
+			<h5 className='text-main/50 ml-auto'>{(ingredient.total_stock).replace(/\.00$/, '')}</h5>
 		</div>
 	)
 
@@ -90,7 +90,6 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 		<div className='flex flex-col gap-2 w-full p-2 rounded-sm bg-main-white border border-border h-fit' key={index}>
 			<div className='flex items-center gap-2 p-2 w-full ' >
 				<h5 className='mr-auto'>{ingredient.name}</h5>
-
 
 				{ingredient.transaction_type == "in" &&
 					<div className='flex gap-2 flex-row justify-end pb-2 ml-auto'>
@@ -120,7 +119,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	return (
 		<ModalBody>
 			{/* Header */}
-			<div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-main-white w-[80vw]">
+			<div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-main-white w-[90vw]">
 				<Title text='Inventory Management' variant='modal' />
 
 				<X size={20} className='text-text' onClick={onClose} />
@@ -132,7 +131,6 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				<div className='w-60 border-r border-gray-200 bg-gray-50 flex flex-col'>
 					<div className='px-6 py-4 border-b border-gray-200 bg-white'>
 						<h3 className='font-semibold text-gray-700 text-sm uppercase tracking-wide'>Available Ingredients</h3>
-						<p className='text-xs text-gray-500 mt-1'>Click to add to transaction</p>
 					</div>
 					<div className='flex-1 overflow-y-auto px-6 py-4'>
 						<div className='flex flex-col gap-2'>
@@ -145,9 +143,6 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				<div className='flex-1 flex flex-col bg-white'>
 					<div className='px-6 py-4 border-b border-gray-200'>
 						<h3 className='font-semibold text-gray-700 text-sm uppercase tracking-wide'>Transaction Items</h3>
-						<p className='text-xs text-gray-500 mt-1'>
-							{ingredientItems.length === 0 ? 'No items added yet' : `${ingredientItems.length} item(s) in transaction`}
-						</p>
 					</div>
 					<div className='flex-1 overflow-y-auto px-6 py-4'>
 						{ingredientItems.length === 0 ? (

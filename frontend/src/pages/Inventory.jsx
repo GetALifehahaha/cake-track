@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
-import { InventoryDashboardCard } from '../components/molecules';
+import { InventoryDashboardCard, Pagination } from '../components/molecules';
 import { EditInventoryItem, InventoryAddItem, InventoryInOut } from '../components/organisms';
 import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
+import clsx from 'clsx';
 
 const Inventory = () => {
 
@@ -87,7 +88,7 @@ const Inventory = () => {
 
 
                     {item.batches.map((batch, batchIndex) =>
-                        <div key={batchIndex} className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border/50 border-b bg-main-white'>
+                        <div key={batchIndex} className={clsx('p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border/50 border-b bg-main-white', { 'opacity-50': new Date(batch.expiration_date) < new Date() })}>
 
                             <h5 className='flex-1'>{(batch.remaining_amount).replace(/\.00$/, '')}</h5>
                             <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
@@ -133,8 +134,9 @@ const Inventory = () => {
                     {listIngredientData}
 
                     {/* Pagination */}
-
-
+                    <div className='mt-4 mx-auto'>
+                        <Pagination next={ingredientData.next} prev={ingredientData.previous} />
+                    </div>
                 </div>
             </div>
 

@@ -49,9 +49,16 @@ class Recipe(models.Model):
         Ingredient, 
         through='RecipeIngredient'
     )
+    image = models.CharField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return self.name
+    
+    def is_available(self):
+        for ing in self.recipe_ingredients.all(): #type: ignore
+            if ing.ingredient.total_stock < ing.amount_needed:
+                return False
+        return True
 
     def cook(self, quantity=1):
         """

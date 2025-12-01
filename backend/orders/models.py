@@ -1,11 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+from inventory.models import Recipe
 
 # Create your models here.
 class Order(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
     comments = models.TextField(null=True, blank=True)
-    image = models.ImageField(null=True, blank=True)
+    image = models.CharField(max_length=500, blank=True, null=True)
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)

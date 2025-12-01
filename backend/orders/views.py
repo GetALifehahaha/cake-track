@@ -76,24 +76,57 @@ class OrderViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
         
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        old_status = instance.status
+        new_status = self.request.data.get("status", old_status) #type: ignore
+        
+        if old_status == "pending" and new_status == "accepted":
+            if instance.recipe:
+                instance.recipe.cook()
+                
+        serializer.save()
+        
     @action(detail=False, methods=['post'], url_path='batch-update')
     def batch_update(self, request):
+        updated_count = 0
+        errors = []
+        
         serializer = OrderBatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        ids = serializer.validated_data['order_ids']
-        new_status = serializer.validated_data['status']
-        reason = serializer.validated_data.get('reject_reason', '')
+        ids = serializer.validated_data['order_ids'] #type: ignore
+        new_status = serializer.validated_data['status'] #type: ignore
+        reason = serializer.validated_data.get('reject_reason', '') #type: ignore
         
         orders_to_update = self.get_queryset().filter(id__in=ids)
         
-        updated_count = orders_to_update.update(
-            status=new_status,
-            reject_reason=reason
-        )
+        for order in orders_to_update:
+            
+            if order.status != "pending":
+                errors.append(f"Order {order.id} is not pending.") #type: ignore
+                continue
+            
+            if new_status == "accepted":
+                if order.recipe:
+                    try:
+                        order.recipe.cook()
+                    except ValidationError as e:
+                        errors.append(f"Order {order.id}: {str(e)}") #type: ignore
+                        continue
+                    
+
+            order.status = new_status
+            if new_status == "rejected":
+                order.reject_reason = reason
+            else:
+                order.reject_reason = ''
+            
+            order.save()
+            updated_count += 1
         
         return Response({
-            "message": f"Succesfully updated {updated_count} orders.",
+            "message": f"Succesfully updated {updated_count} orders.", "errors": errors
         }, status=status.HTTP_200_OK
         )
         

@@ -1,6 +1,5 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-// 1. FIX: Import 'router' directly (works better in async functions)
 import { router } from 'expo-router' 
 import React, { useState, useContext } from 'react'
 import { Lock, Mail, Eye, EyeClosed, User2Icon } from 'lucide-react-native'
@@ -32,8 +31,10 @@ const LoginSignup = ({ method }) => {
       if (!res.success) {
         showToast(res.error || "Login failed", "error")
       } else if (res.success) {
+
+        console.log("Login successful");
         showToast("Logged in successfully!", "success");
-        router.replace('(tabs)/home'); // Ensure this route exists
+        router.replace('/(tabs)/'); // Ensure this route exists
       }
     } else if (method === "signup") {
       if (password !== confirmPassword) {

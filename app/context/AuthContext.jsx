@@ -96,8 +96,6 @@ export const AuthProvider = ({ children }) => {
             setIsAuthorized(true);
 
             // Navigate to home/tabs after successful login
-            router.replace('/');
-
             return { success: true };
 
         } catch (err) {
@@ -115,8 +113,6 @@ export const AuthProvider = ({ children }) => {
 
             await getUserData();
             setIsAuthorized(true);
-
-            router.replace('/');
 
             return { success: true };
         } catch (err) {

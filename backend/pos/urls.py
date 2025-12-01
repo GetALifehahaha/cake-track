@@ -20,4 +20,5 @@ router.register(r'products', ProductViewSet)
 router.register(r'transactions', TransactionViewSet)
 router.register(r'transaction-items', TransactionItemViewSet)
 
-urlpatterns = [path('', include(router.urls))] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns = [path('', include(router.urls))]
+# + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

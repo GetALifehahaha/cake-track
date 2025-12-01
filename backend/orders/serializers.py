@@ -21,15 +21,16 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'customer', 'comments', 'image', 'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 'due_date',
-                  'full_name', 'email', 'phone_number', 'address']
+                  'full_name', 'email', 'phone_number', 'address', 'recipe']
         read_only_fields = ['id', 'created_at', 'customer']
         
         
     def create(self, validated_data):
         cake_data = validated_data.pop('cake_orders')
         cupcake_data = validated_data.pop('cupcake_orders', None)
+        recipe = validated_data.pop('recipe', None)
         
-        order = Order.objects.create(**validated_data)
+        order = Order.objects.create(**validated_data, recipe=recipe)
         
         CakeOrder.objects.create(order=order, **cake_data)
             

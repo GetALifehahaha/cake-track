@@ -85,7 +85,6 @@ api.interceptors.response.use(
                 if (router.canGoBack() || router.canDismiss()) {
                     router.dismissAll();
                 }
-                router.replace('/(auth)/login');
                 
                 return Promise.reject(refreshError);
             }
