@@ -1,13 +1,27 @@
 import { View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { ArrowLeft, Calendar, Search } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import CakeOrderCard from '@/components/molecules/CakeOrderCard'
 import { useCart } from '@/context/CartContext'
+import { AuthContext } from '@/context/AuthContext'
 import useOrder from '@/hooks/useOrder'
+import { router } from 'expo-router'
 
 const CakeOrders = () => {
+
+    const { user, loading: userLoading } = useContext(AuthContext);
+
+    if (userLoading) return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#8B5A3C" />
+        </View>
+    )
+
+    if (!user) {
+        router.replace('/(auth)/login');
+    }
 
     const cakeData = [
         {
@@ -63,7 +77,6 @@ const CakeOrders = () => {
 
     const { cart, addToCart, setAmount } = useCart();
     const [input, setInput] = useState("");
-    const router = useRouter();
 
     const listCakes = cakeData.map((cake, index) => <CakeOrderCard key={index} id={cake.id} price={cake.price} image={cake.image} name={cake.name} description={cake.description} addedToCart={cart.some((prod) => prod.id === cake.id)} addToCart={addToCart} amount={cart.find((prod) => prod.id === cake.id)?.amount || 0} onSetAmount={setAmount} />)
 

@@ -3,7 +3,7 @@ import Dropdown from '@/components/atoms/Dropdown';
 import FormLabel from '@/components/atoms/FormLabel';
 import Checkbox from '@/components/atoms/Checkbox';
 
-const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcakesCount, addOn, setAddOn }) => (
+const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcakesCount, cupcakesFrosting, setCupcakesFrosting }) => (
     <View className='gap-4'>
         <View>
             <FormLabel text={"Add cupcakes?"} />
@@ -28,15 +28,17 @@ const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcake
                     />
                 </View>
                 <View>
-                    <FormLabel text={"Add-on"} />
+                    <FormLabel text={"Frosting"} />
                     <Dropdown
                         items={[
-                            { label: 'Nuts', value: 'nuts' },
-                            { label: 'Chocolate Chips', value: 'chocolate_chips' },
-                            { label: 'Caramel Drizzle', value: 'caramel_drizzle' },
+                            { label: 'White', value: 'white' },
+                            { label: 'Black', value: 'black' },
+                            { label: 'Red', value: 'red' },
+                            { label: 'Blue', value: 'blue' },
+                            { label: 'Yellow', value: 'yellow' },
                         ]}
-                        placeholder={"Select add-on"}
-                        onChangeValue={setAddOn}
+                        placeholder={"Select frosting color"}
+                        onChangeValue={setCupcakesFrosting}
                     />
                 </View>
             </View>

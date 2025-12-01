@@ -1,24 +1,26 @@
 import React, {useState, useEffect} from 'react';
 import { Button, Dropdown, Label, Title } from '../atoms';
-import { X, Plus, Upload } from 'lucide-react'
+import { X, Plus, Upload, Loader2 } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
 import { ConfirmationModal } from '.';
 import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
 } from "@/api/constants";
+import { se } from 'date-fns/locale';
 
 const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const [productName, setProductName] = useState(product.name);
     const [category, setCategory] = useState(product.category.id);
     const [price, setPrice] = useState(product.price);
-    const [image, setImage] = useState(product.image_path)
+    const [image, setImage] = useState(product.image)
+    const [loading, setLoading] = useState(false);
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
     
-    const [imagePreview, setImagePreview] = useState(product.image_path);
+    const [imagePreview, setImagePreview] = useState(product.image);
 
     const [feedback, setFeedback] = useState("");
 
@@ -86,6 +88,8 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     };
 
     const handleConfirmModal = async () => {
+        setShowConfirmationModal(false);
+        setLoading(true);
 
         let params = {};
 
@@ -97,6 +101,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
         if (Object.keys(params).length === 0) onClose();
 
         onConfirm(params);
+        setLoading(false);
     }
 
     const handleSetProductName = (e) => {
@@ -191,9 +196,18 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                     <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
                 }
                 <div className='flex gap-4 ml-auto'>
-                    <Button variant='modalBlock' size='base' text='Archive Item' onClick={handleSetArchiveConfirmation}/>
-                    <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
-                    <Button variant='modalBlock' size='base' text='Save' onClick={handleSetShowConfirmationModal}/>
+                    {loading ?
+                    <div className='flex flex-row items-center gap-2'>
+                        <Loader2 size={18} className='animate-spin text-accent' />
+                        <h5 className='text-accent-mute font-medium text-md'>Loading</h5>
+                    </div>
+                    :
+                    <>
+                        <Button variant='modalBlock' size='base' text='Archive Item' onClick={handleSetArchiveConfirmation}/>
+                        <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
+                        <Button variant='modalBlock' size='base' text='Save' onClick={handleSetShowConfirmationModal}/>
+                    </>
+                    }
                 </div>
 
                 {showConfirmationModal &&

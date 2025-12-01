@@ -4,6 +4,7 @@ import api from '@/api/api';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { Alert } from 'react-native'; // Added for guest interaction
 
 // Polyfill for jwt-decode in React Native environment
 import "core-js/stable/atob";
@@ -12,65 +13,68 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [isAuthorized, setIsAuthorized] = useState(false); // Default to false
+    const [isAuthorized, setIsAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         auth().finally(() => setLoading(false));
     }, []);
 
+    // Helper: Validates token expiration
+    const isTokenValid = (token) => {
+        try {
+            const decoded = jwtDecode(token);
+            return decoded.exp > Date.now() / 1000;
+        } catch (e) {
+            return false;
+        }
+    };
+
     const auth = async () => {
         try {
-            // AsyncStorage is asynchronous!
             const accessToken = await AsyncStorage.getItem(ACCESS_TOKEN);
 
+            // GUEST MODE: If no token, we simply finish loading. 
+            // We do NOT treat this as an error, just an unauthorized state.
             if (!accessToken) {
-                setUser(null);
-                setIsAuthorized(false);
+                handleGuestState();
                 return;
             }
 
-            const decodedToken = jwtDecode(accessToken);
-            const tokenExpiration = decodedToken.exp;
-            const currentDate = Date.now() / 1000;
-
-            if (tokenExpiration < currentDate) {
+            if (!isTokenValid(accessToken)) {
                 await refreshToken();
             } else {
                 await getUserData();
                 setIsAuthorized(true);
             }
         } catch (err) {
-            console.error('Authentication failed:', err);
-            setUser(null);
-            setIsAuthorized(false);
+            console.error('Authentication check failed:', err);
+            handleGuestState();
         }
+    };
+
+    const handleGuestState = () => {
+        setUser(null);
+        setIsAuthorized(false);
+        // Note: We do NOT redirect to login here. We let the user browse as a guest.
     };
 
     const refreshToken = async () => {
         try {
             const token = await AsyncStorage.getItem(REFRESH_TOKEN);
-
             if (!token) {
-                setUser(null);
-                setIsAuthorized(false);
+                handleGuestState();
                 return;
             }
 
-            const response = await api.post('/users/token/refresh/', {
-                refresh: token,
-            });
+            const response = await api.post('/users/token/refresh/', { refresh: token });
 
             await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
             await getUserData();
             setIsAuthorized(true);
         } catch (err) {
             console.error("Refresh failed", err);
-            // Clear invalid tokens
-            await AsyncStorage.removeItem(ACCESS_TOKEN);
-            await AsyncStorage.removeItem(REFRESH_TOKEN);
-            setUser(null);
-            setIsAuthorized(false);
+            await logout(); // Clean up if refresh fails
         }
     };
 
@@ -87,17 +91,12 @@ export const AuthProvider = ({ children }) => {
     const login = async (username, password) => {
         try {
             const response = await api.post('/users/token/', { username, password });
-
-            // Store tokens asynchronously
             await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
             await AsyncStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
             await getUserData();
             setIsAuthorized(true);
-
-            // Navigate to home/tabs after successful login
             return { success: true };
-
         } catch (err) {
             console.error('Login failed:', err);
             return { success: false, error: "Login unsuccessful" };
@@ -107,13 +106,11 @@ export const AuthProvider = ({ children }) => {
     const googleLogin = async (token) => {
         try {
             const response = await api.post('/users/google-auth/', { token: token });
-
             await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
             await AsyncStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
             await getUserData();
             setIsAuthorized(true);
-
             return { success: true };
         } catch (err) {
             console.error('Google login failed:', err);
@@ -124,9 +121,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         await AsyncStorage.removeItem(ACCESS_TOKEN);
         await AsyncStorage.removeItem(REFRESH_TOKEN);
-        setUser(null);
-        setIsAuthorized(false);
-        // Optional: Route back to login
+        handleGuestState();
         router.replace('/(auth)/login');
     };
 
@@ -137,8 +132,37 @@ export const AuthProvider = ({ children }) => {
             });
             return { success: true };
         } catch (err) {
-            console.error('Registration failed:', err);
             return { success: false, error: err.response?.data || err.message };
+        }
+    };
+
+    /**
+     * NEW FEATURE: Action Guard
+     * Usage: ensureAuthenticated(() => addToCart(item), { redirectTo: '/cart' });
+     */
+    const ensureAuthenticated = (actionCallback, redirectParams = {}) => {
+        if (isAuthorized && user) {
+            // User is logged in, run the action (e.g., Order, Like, Add to Cart)
+            actionCallback();
+        } else {
+            // User is Guest, prompt them or redirect
+            Alert.alert(
+                "Login Required",
+                "You need to log in to perform this action.",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    { 
+                        text: "Login", 
+                        onPress: () => {
+                            // Navigate to login, passing the params so Login screen knows where to go back to
+                            router.push({
+                                pathname: '/(auth)/login',
+                                params: redirectParams 
+                            });
+                        } 
+                    }
+                ]
+            );
         }
     };
 
@@ -146,13 +170,12 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             user,
             isAuthorized,
-            setUser,
+            loading,
             login,
             googleLogin,
             register,
-            setIsAuthorized,
-            loading,
-            logout
+            logout,
+            ensureAuthenticated // <--- Exporting the new helper
         }}>
             {children}
         </AuthContext.Provider>

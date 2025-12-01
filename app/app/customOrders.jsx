@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, Keyboard, Alert, ActivityIndicator } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
-import { useRouter } from 'expo-router'
+import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
 import cakeImages from './cakeImages';
@@ -29,10 +29,10 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CustomOrders = () => {
     const { user, loading: userLoading } = useContext(AuthContext);
+
     const { showToast } = useToast();
     const { loading, error, postOrder } = useOrder();
     const [customDisplay, setCustomDisplay] = useState("");
-    const router = useRouter();
     const [page, setPage] = useState(1);
     const [maxPage, setMaxPage] = useState(11);
     const [personallyDesign, setPersonallyDesign] = useState(false);
@@ -56,7 +56,7 @@ const CustomOrders = () => {
     const [comments, setComments] = useState('');
     const [dueDate, setDueDate] = useState(null);
     const [image, setImage] = useState(null);
-    const [fullName, setFullName] = useState(`${user?.first_name} ${user?.last_name || ''}`);
+    const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`);
     const [address, setAddress] = useState('');
     const [email, setEmail] = useState(user?.email || '');
     const [contactNumber, setContactNumber] = useState('');
@@ -115,6 +115,11 @@ const CustomOrders = () => {
         else setMaxPage(11)
     }, [personallyDesign])
 
+
+    if (!user) {
+        router.replace('/(auth)/login');
+    }
+
     if (loading || userLoading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#8B5A3C" />
     </View>
@@ -124,16 +129,17 @@ const CustomOrders = () => {
             // --- Customer Information (Root Level) ---
             full_name: fullName,
             email: email,
-            phone_number: contactNumber, // Mapped to 'phone_number'
+            phone_number: contactNumber,
             address: address,
             due_date: dueDate,
             status: "pending",
 
-            // --- Nested Cake Specifications ---
+            // --- Nested Cake Specifications (Always included?) ---
+            // If Cake is also optional, you can wrap this in the same logic as cupcakes
             cake_orders: {
                 occasion: occasion === "other" ? specifyOccasion : occasion,
                 shape: shape === "other" ? specifyShape : shape,
-                cake_tier: tier, // Mapped to 'cake_tier'
+                cake_tier: tier,
                 base_flavor: baseFlavor,
                 filling: filling,
                 coating_color: coatingColor,
@@ -145,23 +151,29 @@ const CustomOrders = () => {
                 message: messageType === "none" ? "" : message,
             },
 
+            // --- Nested Cupcake Specifications (OPTIONAL) ---
+            // The syntax below means: If 'hasCupcakes' is true, add this object. 
+            // If false, do nothing.
+            ...(hasCupcakes && {
+                cupcake_orders: {
+                    amount: cupcakesCount,
+                    frosting: cupcakesFrosting,
+                    // Add whatever specific cupcake fields your backend expects
+                }
+            }),
+
             comments: comments,
             image: image,
         };
 
-        // Log to verify
-        console.log(payload);
-        // Log it to check
         try {
-            console.log(payload);
             await postOrder(payload);
 
             showToast("Order proceeded succcesfully")
+            router.push('/orderSuccess');
         } catch (err) {
-            console.log(err)
             showToast(`Failed to proceed order. Error: ${err}`, "error")
         }
-
     }
 
     // --- Validation Logic ---
@@ -357,16 +369,16 @@ const CustomOrders = () => {
                         <View className='aspect-square h-[90%] bg-main-form rounded-lg justify-center items-center shadow-sm'>
                             {shape === "other" ?
                                 <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
-                            :
-                            customDisplay ? (
-                                <Image
-                                    source={customDisplay}
-                                    style={{ width: 200, height: 200 }}
-                                    resizeMode="contain"
-                                />
-                            ) : (
-                                <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
-                            )}
+                                :
+                                customDisplay ? (
+                                    <Image
+                                        source={customDisplay}
+                                        style={{ width: 200, height: 200 }}
+                                        resizeMode="contain"
+                                    />
+                                ) : (
+                                    <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
+                                )}
                         </View>
                     </View>
 
@@ -431,7 +443,6 @@ const CustomOrders = () => {
                                     hasCupcakes={hasCupcakes} toggleHasCupcakes={toggleHasCupcakes}
                                     cupcakesCount={cupcakesCount} setCupcakesCount={setCupcakesCount}
                                     cupcakesFrosting={cupcakesFrosting} setCupcakesFrosting={setCupcakesFrosting}
-                                    addOn={addOn} setAddOn={setAddOn}
                                 />
                             )}
                             {page === 8 && (
@@ -578,7 +589,7 @@ const CustomOrders = () => {
                                                     </View>
                                                     <View className='w-[48%] p-4 bg-white rounded-lg'>
                                                         <Text className='text-gray-400 text-xs mb-1'>Frosting</Text>
-                                                        <Text className='text-primary text-lg font-semibold'>
+                                                        <Text className='text-primary text-lg font-semibold capitalize'>
                                                             {cupcakesFrosting || 'None'}
                                                         </Text>
                                                     </View>

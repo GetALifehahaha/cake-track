@@ -1,4 +1,4 @@
-import { View, Text, Image, TextInput, ScrollView, ActivityIndicator, RefreshControl } from 'react-native'
+import { View, Text, Image, TextInput, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useContext, useState } from 'react'
 import { Search } from 'lucide-react-native'
@@ -9,8 +9,22 @@ import { AuthContext } from '@/context/AuthContext'
 const Orders = () => {
   
   const {user} = useContext(AuthContext)
-  const {data, loading, error, refresh} = useOrder();
   const [search, setSearch] = useState("");
+  
+  if (!user) {
+    return (
+      <SafeAreaView className='flex-1 bg-white items-center justify-center p-6'>
+        <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='w-32 h-32 rounded-full mb-8' />
+        <Text className='text-center text-lg font-bold mb-4'>Please log in to view your orders.</Text>
+        <TouchableOpacity className='mt-4 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('(auth)/login')}>
+          <Text className='text-lg font-bold text-white'>
+            Login
+          </Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    )
+  }
+  const {data, loading, error, refresh} = useOrder();
 
   const [refreshing, setRefreshing] = useState(false);
 

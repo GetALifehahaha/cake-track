@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { Button, Dropdown, Label, Title } from '../atoms';
-import { X, Plus, Upload } from 'lucide-react'
+import { X, Plus, Upload, Loader2 } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
 import useCategory from '@/hooks/useCategory';
 import { ConfirmationModal } from '.';
@@ -15,6 +15,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     const [category, setCategory] = useState("");
     const [price, setPrice] = useState(0);
     const [image, setImage] = useState(null)
+    const [loading, setLoading] = useState(false);
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
 
@@ -23,6 +24,8 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     const [feedback, setFeedback] = useState("");
 
     const handleConfirmModal = async () => {
+        setShowConfirmationModal(false);
+        setLoading(true);
         if (!productName || !category || !price || !imagePreview) {
             setFeedback({
                 label: 'Incomplete details',
@@ -39,6 +42,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
             category_id: category
         }
         onConfirm(payload);
+        setLoading(false);
     }
 
     const handleImageChange = (e) => {
@@ -181,12 +185,21 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                     </div>
                 </div>
 
-                {feedback && 
-                    <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
+                {feedback &&
+                    <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
                 }
                 <div className='flex gap-4 ml-auto'>
-                    <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
-                    <Button variant='modalBlock' size='base' text='Add Item' onClick={handleSetShowConfirmationModal}/>
+                    {loading ?
+                        <div className='flex flex-row items-center gap-2'>
+                            <Loader2 size={18} className='animate-spin text-accent' />
+                            <h5 className='text-accent-mute font-medium text-md'>Loading</h5>
+                        </div>
+                        :
+                        <>
+                            <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose} />
+                            <Button variant='modalBlock' size='base' text='Add Item' onClick={handleSetShowConfirmationModal} />
+                        </>
+                    }
                 </div>
 
                 {showConfirmationModal &&

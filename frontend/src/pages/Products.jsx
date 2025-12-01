@@ -7,8 +7,10 @@ import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
 import EditProductModal from '@/components/organisms/EditProductModal';
+import { useToast } from '@/context/ToastContext';
 
 const Products = () => {
+    const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
     const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
     const {postProduct, productData, patchProduct, productLoading, productError, productResponse, refresh} = useProduct();
@@ -70,18 +72,21 @@ const Products = () => {
     const addProduct = async (value) => {
         if (value) {
             await postProduct(value);
+            addToast('Product added successfully', 'success');
         }
     }
-
+    
     const editProduct = async (value) => {
         if (value) {
             await patchProduct(prepEditProduct.id, value)
+            addToast('Product edited successfully', 'success');
         }
     }
-
+    
     const restoreProduct = async (value) => {
         if (value) {
             await patchProduct(value.id, {is_archived: false})
+            addToast('Product restored successfully', 'success');
         }
     }
 

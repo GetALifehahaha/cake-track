@@ -11,7 +11,6 @@ const Reports = () => {
     if (dashboardLoading) return <Loading />
     if (dashboardError) return <h5>Error...</h5>
 
-    console.log(dashboardData)
     const topSellingProducts = dashboardData.top_selling_products.map((item, index) => (
                     <div className='flex w-80 gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
                         <div className='w-8 h-8 font-semibold rounded-full aspect-square flex justify-center items-center bg-accent-mute text-white '><h5>{index + 1}</h5></div>
@@ -24,7 +23,6 @@ const Reports = () => {
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
-
             <div className='flex items-center gap-4'>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
@@ -68,13 +66,12 @@ const Reports = () => {
                 <div className='flex-1'>
                     <DashboardChart chartData={dashboardData.sales_trend}/>
                 </div>
-                <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm mt-4 h-full min-h-120'>
+                <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full min-h-120'>
                     <h5 className='font-semibold'>Top Selling Products</h5>
                     {topSellingProducts}
                 </div>
-
             </div>
-            
+            <div className='h-20'/>
         </div>
     )
 };

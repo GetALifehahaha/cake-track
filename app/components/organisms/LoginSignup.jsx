@@ -7,8 +7,6 @@ import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 
 const LoginSignup = ({ method }) => {
-  // Removed: const router = useRouter(); (This causes issues in some contexts)
-  
   const { showToast } = useToast();
   const { login, loading, register } = useContext(AuthContext)
   
@@ -24,26 +22,19 @@ const LoginSignup = ({ method }) => {
 
   const submitForm = async () => {
     if (method === "login") {
-      // 2. FIX: Ensure we are sending the correct variable. 
-      // If your UI asks for Username, use the 'username' state, not 'emailAddress'.
       const res = await login(username, password) 
-
       if (!res.success) {
         showToast(res.error || "Login failed", "error")
       } else if (res.success) {
-
-        console.log("Login successful");
         showToast("Logged in successfully!", "success");
-        router.replace('/(tabs)/'); // Ensure this route exists
+        router.replace('/(tabs)/'); 
       }
     } else if (method === "signup") {
       if (password !== confirmPassword) {
         showToast("Passwords do not match", "error");
         return;
       } 
-
       const res = await register(username, password, firstName, lastName, emailAddress);
-
       if (!res.success) {
         showToast(res.error || "Signup failed", "error")
       } else if (res.success) {
@@ -60,20 +51,30 @@ const LoginSignup = ({ method }) => {
   )
 
   return (
-    // 3. FIX: KeyboardAvoidingView is now the top-level wrapper
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0} // Adjust if header interferes
-      className="flex-1"
-    >
-    <SafeAreaView className='flex-1 bg-[#F5F5F5]'>
+    // 1. SAFE AREA: Keep as top level
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+      
+      {/* 2. KEYBOARD AVOIDING VIEW */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        // iOS needs 'padding', Android usually works better with 'height' or undefined
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        // 3. CRITICAL FIX: Increase offset to clear status bars/headers
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      >
+        
+        {/* 4. SCROLLVIEW: Must have flex: 1 to shrink correctly */}
         <ScrollView 
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+            style={{ flex: 1 }} 
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }} 
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
         >
           <View className='w-full items-center my-8 gap-4'>
-            <Image className='w-20 h-20 rounded-full' source={require('@/assets/images/logo.jpg')} />
+              <Image className='w-20 h-20 rounded-full' source={require('@/assets/images/logo.jpg')} />
+              <TouchableOpacity className='absolute top-4 right-4 p-4 rounded-m w-fit mx-auto mb-4' onPress={() => router.replace('(tabs)/')}>
+                <Text className='text-center font-semibold text-secondary-light'>BACK</Text>
+              </TouchableOpacity>
             <Text className='text-xl font-bold text-primary'>
               Michelle's Cakes & Cafe
             </Text>
@@ -82,7 +83,7 @@ const LoginSignup = ({ method }) => {
             </Text>
           </View>
 
-          <View className='bg-white border border-gray-300 w-[90vw] self-center rounded-2xl'>
+          <View className='bg-white border border-gray-300 w-[90vw] self-center rounded-2xl mb-10'>
             {/* Tabs */}
             <View className='flex-row border-b border-gray-500'>
                <TouchableOpacity className={`flex-1 p-6 ${method === "login" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('(auth)/login')}>
@@ -104,12 +105,10 @@ const LoginSignup = ({ method }) => {
                   Welcome back! Please login to continue
                 </Text>
                 
-                {/* Username Input */}
                 <View className='flex-row gap-2 items-center'>
                   <User2Icon style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Username</Text>
                 </View>
-                {/* FIX: Bind to setUsername, NOT setEmailAddress */}
                 <TextInput 
                     className='px-2 py-4 mb-4 border border-secondary-light rounded-md' 
                     placeholder='Enter your username' 
@@ -144,35 +143,30 @@ const LoginSignup = ({ method }) => {
                   Create an account to start ordering!
                 </Text>
 
-                {/* First Name */}
                 <View className='flex-row gap-2 items-center'>
                   <Mail style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>First Name</Text>
                 </View>
                 <TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your first name' value={firstName} onChangeText={setFirstName} />
 
-                {/* Last Name */}
                 <View className='flex-row gap-2 items-center'>
                   <Mail style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Last Name</Text>
                 </View>
                 <TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your last name' value={lastName} onChangeText={setLastName} />
 
-                {/* Email Address */}
                 <View className='flex-row gap-2 items-center'>
                   <Mail style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Email Address</Text>
                 </View>
                 <TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your email address' value={emailAddress} onChangeText={setEmailAddress} autoCapitalize="none"/>
 
-                {/* Username (FIXED LABEL) */}
                 <View className='flex-row gap-2 items-center'>
                   <User2Icon style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Username</Text>
                 </View>
                 <TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your username' value={username} onChangeText={setUsername} autoCapitalize="none"/>
 
-                {/* Password */}
                 <View className='flex-row gap-2 items-center'>
                   <Lock style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Password</Text>
@@ -185,7 +179,6 @@ const LoginSignup = ({ method }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Confirm Password */}
                 <View className='flex-row gap-2 items-center'>
                   <Lock style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Confirm Password</Text>
@@ -194,11 +187,10 @@ const LoginSignup = ({ method }) => {
                   <TextInput className='flex-1' placeholder="Re-enter your password" secureTextEntry={!showPassword}
                     value={confirmPassword} onChangeText={setConfirmPassword} />
                   <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                     {showPassword ?  <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} /> }
+                      {showPassword ?  <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} /> }
                   </TouchableOpacity>
                 </View>
 
-                {/* FIX: Button text changed to SIGN UP */}
                 <TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
                   <Text className='text-center font-semibold text-white'>SIGN UP</Text>
                 </TouchableOpacity>
@@ -206,8 +198,8 @@ const LoginSignup = ({ method }) => {
             }
           </View>
         </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
-    </KeyboardAvoidingView>
   )
 }
 
