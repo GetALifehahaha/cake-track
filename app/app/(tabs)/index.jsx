@@ -2,6 +2,10 @@ import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackg
 import React, { useState, useContext } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'
+import Carousel from 'react-native-reanimated-carousel';
+import { Easing } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 const Index = () => {
 	const { user, loading } = useContext(AuthContext)
@@ -44,6 +48,36 @@ const Index = () => {
 		<CakeCard key={index} image={cake.image} text={cake.name} />
 	)
 
+	const carouselItems = [
+        {
+            id: 1,
+            bg: require('@/assets/images/carousel-backgrounds/carousel-1.png'),
+            tag: "Must try!",
+            title1: "Customize your Cake",
+            title2: "for any occasion",
+            desc: "Make every moment special with custom cake designs",
+            btnText: "Order Now"
+        },
+        {
+            id: 2,
+            bg: require('@/assets/images/carousel-backgrounds/carousel-2.png'),
+            tag: "Don't miss!",
+            title1: "Try our cakes!",
+            title2: "Ready to enjoy",
+            desc: "Delicious Cakes baked fresh and waiting for you",
+            btnText: "Shop Now"
+        },
+        {
+            id: 3,
+            bg: require('@/assets/images/carousel-backgrounds/carousel-3.png'),
+            tag: "Made For You!",
+            title1: "Made For You!",
+            title2: "Baked with Love",
+            desc: "Make every moment remarkable",
+            btnText: "Shop Now"
+        }
+    ];
+
 	if (loading) return (
 		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
 			<ActivityIndicator size="large" color="#8B5A3C" />
@@ -69,105 +103,111 @@ const Index = () => {
 
 
 					{/* Carousel */}
-					<View className='relative'>
-						<Text className='font-extrabold text-lg px-8 py-4'>What's up!</Text>
-						<ScrollView
-							horizontal
-							showsHorizontalScrollIndicator={false}
-							onScroll={e => {
-								const x = e.nativeEvent.contentOffset.x;
-								const current = Math.round(x / (width * 0.9));
-								setCarouselDot(current);
-							}}
-							scrollEventThrottle={16}
-						>
-							<View className='flex-row gap-2'>
-								<View className='w-[5vw] -mr-2'></View>
-								<ImageBackground
-									source={require('@/assets/images/carousel-backgrounds/carousel-1.png')}
-									resizeMode='cover'>
-									<View className='w-[90vw] flex-row rounded-[2rem] overflow-hidden px-8 py-16'>
-										<View className='w-full'>
-											<Text className='text-primary font-bold text-sm'>Must try!</Text>
+					<View className="items-center justify-center mt-4">
+            <Carousel
+                loop={true}
+                width={width}
+                height={width * 0.6} // Adjust height ratio as needed
+                autoPlay={true}
+                autoPlayInterval={3000} // 5 Seconds
+                data={carouselItems}
+                scrollAnimationDuration={1000}
+                
+                // 2. This creates the "Center Big, Sides Small" effect
+                mode="parallax"
+                modeConfig={{
+                    parallaxScrollingScale: 0.85, // Scale down side items to 85%
+                    parallaxScrollingOffset: 100,  // Spacing between items
+                }}
+                
+                // 3. Render the Card
+                renderItem={({ item }) => (
+                    <View className="flex-1 justify-center items-center">
+                        <ImageBackground
+                            source={item.bg}
+                            imageStyle={{ borderRadius: 30 }} // Round the actual image
+                            className="w-full h-full justify-center overflow-hidden rounded-[2rem] shadow-lg"
+                            resizeMode='cover'
+                        >
+                            <View className="px-6 py-8 h-full justify-center">
+                                <View className="w-2/3">
+                                    <Text className='text-primary font-bold text-sm bg-white/80 self-start px-2 py-1 rounded-md overflow-hidden'>
+                                        {item.tag}
+                                    </Text>
 
-											<Text className='text-primary font-bold text-2xl mt-4'>Customize your Cake</Text>
-											<Text className='text-secondary-strong font-bold text-2xl'>for any occasion</Text>
+                                    <Text className='text-primary font-bold text-2xl mt-3 leading-tight'>
+                                        {item.title1}
+                                    </Text>
+                                    <Text className='text-secondary-strong font-bold text-2xl leading-tight'>
+                                        {item.title2}
+                                    </Text>
 
-											<Text className='text-gray-500 font-bold text-sm w-1/2'>Make every moment special with custom cake designs</Text>
+                                    <Text className='text-gray-600 font-bold text-xs mt-2'>
+                                        {item.desc}
+                                    </Text>
 
-											<TouchableOpacity className='p-4 rounded-full bg-primary my-4 self-start'>
-												<Text className='text-white font-bold text-xl text-center'>Order Now</Text>
-											</TouchableOpacity>
-										</View>
-									</View>
-								</ImageBackground>
-								<ImageBackground
-									source={require('@/assets/images/carousel-backgrounds/carousel-2.png')}
-									resizeMode='cover'
-								>
-									<View className='w-[90vw] flex-row rounded-[2rem] overflow-hidden px-8 py-16'>
-										<View className='w-1/2'>
-											<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
-
-											<Text className='text-primary font-bold text-2xl mt-4'>Try our cakes!</Text>
-											<Text className='text-secondary-strong font-bold text-2xl'>Ready to enjoy</Text>
-
-											<Text className='text-gray-500 font-bold text-sm'>Delicious Cakes baked fresh and waiting for you</Text>
-
-											<TouchableOpacity className='p-4 rounded-full bg-primary my-4 self-start'>
-												<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
-											</TouchableOpacity>
-										</View>
-									</View>
-								</ImageBackground>
-								<ImageBackground
-									source={require('@/assets/images/carousel-backgrounds/carousel-3.png')}
-									resizeMode='cover'
-								>
-									<View className='w-[90vw] flex-row rounded-[2rem] overflow-hidden px-8 py-16'>
-										<View className='w-1/2'>
-											<Text className='text-primary font-bold text-sm'>Don't miss!</Text>
-
-											<Text className='text-primary font-bold text-2xl mt-4'>Made For You!</Text>
-											<Text className='text-secondary-strong font-bold text-2xl'>Baked with Love</Text>
-
-											<Text className='text-gray-500 font-bold text-sm'>Make every moment remarkable</Text>
-
-											<TouchableOpacity className='p-4 rounded-full bg-primary my-4 self-start'>
-												<Text className='text-white font-bold text-xl text-center'>Shop Now</Text>
-											</TouchableOpacity>
-										</View>
-									</View>
-								</ImageBackground>
-								<View className='w-[5vw] -ml-2'></View>
-							</View>
-						</ScrollView>
-
-						<View className="flex-row justify-center mt-2 absolute left-1/2 -translate-x-1/2 bottom-8">
-							{[0, 1, 2].map((i) => (
-								<View
-									key={i}
-									className={`w-2 h-2 mx-1 rounded-full ${carouselDot === i ? 'bg-primary' : 'bg-gray-300'
-										}`}
-								/>
-							))}
-						</View>
-					</View>
+                                    <TouchableOpacity className='px-6 py-3 rounded-full bg-primary mt-4 self-start shadow-sm'>
+                                        <Text className='text-white font-bold text-xs text-center '>
+                                            {item.btnText}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </ImageBackground>
+                    </View>
+                )}
+            />
+        </View>
 
 					{/* Premade Cakes */}
-					<View className='relative'>
-						<Text className='font-extrabold text-lg px-8 py-4'>Pre-made Cakes</Text>
-						<ScrollView
-							horizontal
-							showsHorizontalScrollIndicator={false}
-						>
-							<View className='flex-row gap-2'>
-								<View className='w-[5vw] -mr-2'></View>
-								{listCakeCards}
-								<View className='w-[5vw] -ml-2'></View>
-							</View>
-						</ScrollView>
-					</View>
+					<View className='relative mb-8'>
+    <Text className='font-extrabold text-lg px-6 py-4 text-[#8B5A3C]'>
+        Pre-made Cakes
+    </Text>
+    
+    <Carousel
+        loop={true} // Set to true if you want infinite scrolling here too
+        width={width / 2} // Show 2 items at once (50% screen width each)
+        height={200} // Adjust height to fit image + text
+        style={{ width: width }}
+        data={cakeData}
+		autoPlay={true}
+		autoPlayInterval={1}
+		scrollAnimationDuration={5000}	
+		withAnimation={{
+			type: 'timing',
+			config: {
+				duration: 5000,
+				easing: Easing.linear
+			}
+		}}
+        renderItem={({ item }) => (
+            <View className="flex-1 px-2 py-2">
+                <TouchableOpacity 
+                    className="flex-1 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 justify-between items-center"
+                    activeOpacity={0.9}
+                >
+                    {/* Image Container */}
+                    <View className="w-full h-32 items-center justify-center mb-2">
+                        <Image
+                            source={item.image}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="contain"
+                        />
+                    </View>
+
+                    {/* Text Details */}
+                    <View className="w-full items-center">
+                        <Text className="text-primary font-bold text-center text-sm" numberOfLines={1}>
+                            {item.name}
+                        </Text>
+
+                    </View>
+                </TouchableOpacity>
+            </View>
+        )}
+    />
+</View>
 
 					{/* More Ads */}
 					<View className='bg-[##FFF3D0] p-8'>
