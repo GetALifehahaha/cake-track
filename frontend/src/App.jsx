@@ -40,6 +40,7 @@ const App = () => {
 							<Route path='completed' element={<QueueCompleted />} />
 						</Route>
 						<Route path='/recipe' element={<Recipe />} />
+						<Route path='/reports' element={<Reports />} />
 						<Route path='/details' element={<BusinessDetails />} />
 						<Route path='/cashier' element={<Cashier />} />
 					</Route>

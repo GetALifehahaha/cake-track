@@ -8,7 +8,8 @@ from .views import (DiscountViewSet,
                     ProductSizeViewSet,
                     ProductViewSet,
                     TransactionViewSet,
-                    TransactionItemViewSet)
+                    TransactionItemViewSet,
+                    DashboardAnalyticsView)
 
 
 router = DefaultRouter()
@@ -20,5 +21,8 @@ router.register(r'products', ProductViewSet)
 router.register(r'transactions', TransactionViewSet)
 router.register(r'transaction-items', TransactionItemViewSet)
 
-urlpatterns = [path('', include(router.urls))]
+urlpatterns = [
+    path('', include(router.urls)), 
+    path('analytics/', DashboardAnalyticsView.as_view(), name="dashboard-analytics")
+]
 # + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

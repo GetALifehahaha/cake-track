@@ -2,6 +2,14 @@ from django.shortcuts import render
 from django.utils import timezone
 
 # Create your views here.
+from django.db.models import Sum, Count, F, DateTimeField
+from django.db.models.functions import TruncDate
+from django.utils import timezone
+from datetime import timedelta
+
+# Import your models and serializer
+from .models import Transaction, TransactionItem
+from .serializers import DashboardMetricsSerializer
 from rest_framework.views import APIView
 from rest_framework import permissions, viewsets, generics, filters
 from django_filters.rest_framework import DjangoFilterBackend #type: ignore
@@ -174,5 +182,71 @@ class BusinessSettingsView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
-    
+
+class DashboardAnalyticsView(APIView):
+    def get(self, request):
+        # 1. Base Querysets
+        all_transactions = Transaction.objects.all()
+        valid_transactions = all_transactions.filter(is_void=False).prefetch_related('transaction_items', 'discount')
+        void_transactions = all_transactions.filter(is_void=True).prefetch_related('transaction_items', 'discount')
+
+        # 2. Total Amount of Voided Transactions
+        void_total = void_transactions.count()
+
+        # 3. Total Successful Transactions (Count)
+        successful_count = valid_transactions.count()
+
+        # 4. Total Products Sold (Quantity)
+        products_sold_data = TransactionItem.objects.filter(
+            transaction__is_void=False
+        ).aggregate(total_qty=Sum('quantity'))
+        total_products_sold = products_sold_data['total_qty'] or 0
+
+        # 5. Average Daily Transactions
+        first_transaction = all_transactions.order_by('created_at').first()
+        if first_transaction:
+            days_active = (timezone.now() - first_transaction.created_at).days
+            days_active = days_active if days_active > 0 else 1
+            avg_daily = successful_count / days_active
+        else:
+            avg_daily = 0
+
+        # 6. Top 8 Selling Products
+        top_products = (
+            TransactionItem.objects
+            .filter(transaction__is_void=False)
+            .values('product__name')
+            .annotate(total_sold=Sum('quantity'))
+            .order_by('-total_sold')[:8]
+        )
+
+        # 7. Chart Data: Selling Trend Each Day (Based on COUNT/QUANTITY)
+        trend_data = (
+            TransactionItem.objects
+            .filter(transaction__is_void=False)
+            .annotate(date=TruncDate('transaction__created_at'))
+            .values('date')
+            .annotate(daily_count=Sum('quantity')) # <--- Corrected to Sum of Quantity
+            .order_by('date')
+        )
+        
+        formatted_trend = [
+            {
+                "date": item['date'].strftime('%Y-%m-%d'), 
+                "amount": item['daily_count'] 
+            } 
+            for item in trend_data
+        ]
+
+        # 8. Prepare Data
+        data = {
+            "total_void_amount": void_total,
+            "total_successful_transactions": successful_count,
+            "total_products_sold": total_products_sold,
+            "avg_daily_transactions": round(avg_daily, 2),
+            "top_selling_products": list(top_products),
+            "sales_trend": formatted_trend
+        }
+
+        serializer = DashboardMetricsSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

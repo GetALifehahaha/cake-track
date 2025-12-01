@@ -109,3 +109,16 @@ class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
         fields = ['business_name', 'address', 'tin', 'contact_number', 'message', 'logo']
+        
+        
+class DashboardMetricsSerializer(serializers.Serializer):
+    total_void_amount = serializers.IntegerField()
+    total_successful_transactions = serializers.IntegerField()
+    total_products_sold = serializers.IntegerField()
+    avg_daily_transactions = serializers.FloatField()
+    top_selling_products = serializers.ListField(
+        child=serializers.DictField()
+    )
+    sales_trend = serializers.ListField(
+        child=serializers.DictField()
+    )
