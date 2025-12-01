@@ -6,7 +6,7 @@ import useCashier from '@/hooks/useCashier';
 import Loading from '@/components/molecules/Loading';
 import { Pagination } from '@/components/molecules';
 import { useToast } from '@/context/ToastContext';
-import { add } from 'date-fns';
+import clsx from 'clsx';
 
 const Cashier = () => {
 
@@ -66,7 +66,9 @@ const Cashier = () => {
     }
 
     const listCashiers = cashierData.results.map((cashier, index) =>
-        <div key={index} className='p-2 flex flex-row cashiers-center text-text font-medium text-md text-center border-b-border border-b'>
+        <div key={index} 
+            className={clsx('p-2 flex flex-row cashiers-center text-text font-medium text-md text-center border-b-border border-b', 
+            {'opacity-50': !cashier.is_active})}>
             <h5 className='flex-1'>{cashier.first_name} {cashier.last_name}</h5>
             {/* <h5 className='flex-1'>{cashier.contactNumber}</h5> */}
             {/* <h5 className='flex-1'>{cashier.address}</h5> */}

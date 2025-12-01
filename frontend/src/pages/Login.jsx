@@ -5,10 +5,12 @@ import loginImage1 from '../assets/image/login-image-1.webp'
 import loginImage2 from '../assets/image/login-image-2.png'
 import loginImage3 from '../assets/image/login-image-3.png'
 import { AuthContext } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 const Login = () => {
 
-    const {login} = useContext(AuthContext)
+    const { login } = useContext(AuthContext)
+    const { addToast } = useToast();
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
     const [rememberMe, setRememberMe] = useState(false);
@@ -27,9 +29,13 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault()
         try {
-            await login(username, password);
+            const res = await login(username, password);
+
+            if (!res.success) {
+                addToast('Invalid username or password', 'error');
+            }
         } catch (err) {
-            alert(err)
+            addToast('Something went wrong. Please try again later.', 'error');
         }
     }
 

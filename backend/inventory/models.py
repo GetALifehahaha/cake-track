@@ -5,7 +5,7 @@ from django.utils import timezone
 # Create your models here.
 class Ingredient(models.Model):
     name = models.CharField(max_length=20)
-    total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0)  
+    total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0) #type: ignore
 
     UNITS = [
         ('kg', 'Kilogram'),
@@ -25,7 +25,7 @@ class Transaction(models.Model):
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name="transactions")
     
     amount = models.DecimalField(max_digits=11, decimal_places=2)
-    remaining_amount = models.DecimalField(max_digits=11, decimal_places=2, default=0)
+    remaining_amount = models.DecimalField(max_digits=11, decimal_places=2, default=0) #type: ignore
 
     TYPE = [
         ('in', 'In'),
@@ -59,7 +59,7 @@ class Recipe(models.Model):
         quantity: How many of this recipe are being made (default 1).
         """
         with transaction.atomic():
-            for recipe_item in self.recipe_ingredients.select_related('ingredient'):
+            for recipe_item in self.recipe_ingredients.select_related('ingredient'): # type: ignore
                 ingredient = recipe_item.ingredient
                 amount_needed = recipe_item.amount_needed * quantity
 

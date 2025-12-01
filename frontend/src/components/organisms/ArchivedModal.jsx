@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Label, Title } from '../atoms';
-import { X } from 'lucide-react';
+import { EllipsisVertical, X } from 'lucide-react';
 import { ProductCard } from '../molecules';
 import useProduct from '@/hooks/useProduct';
 import ConfirmationModal from './ConfirmationModal';
+import Loading from '../molecules/Loading';
+import ConfirmationModalWrapper from './ConfirmationModalWrapper';
 
 const ArchivedModal = ({onRestore, onClose}) => {
 
-    // const [archivedProducts, setArchivedProducts] = useState([...DrinksData, ...DrinksData])
     const [selectedId, setSelectedId] = useState(null);
     const {productData, productLoading, productError} = useProduct({isArchived: true})
     const [showConfirmation, setShowConfirmation] = useState(false);
 
-    if (productLoading) return <h5>Loading product data</h5>
+    if (productLoading) return <Loading />
     if (productError) return <h5>Error loading product data</h5>
 
     const handleSetSelectedId = (id) => {
@@ -36,7 +37,17 @@ const ArchivedModal = ({onRestore, onClose}) => {
 
     
     const listArchivedProducts = productData.results.map((product, index) =>
-        <ProductCard selected={selectedId} key={index} product={product} isArchived={true} onToggle={handleSetSelectedId}/>
+        <div className='relative'>
+        <ProductCard  selected={selectedId} key={index} product={product} isArchived={true} onToggle={handleSetSelectedId}/>
+        <div className='absolute top-2 right-2 cursor-pointer bg-white rounded-md'>
+            <EllipsisVertical className='text-text/50 ' onClick={() => setSelectedId(product.id ? product.id : null)}/>
+            {selectedId === product.id &&
+            <ConfirmationModalWrapper title='Restore product?' content='This will bring it back to the POS' onConfirm={restoreProduct}>
+                <h5>Restore</h5>
+            </ConfirmationModalWrapper>
+            }
+        </div>
+        </div>
     )
 
     return (

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Title, Label, Button } from '../atoms';
 import { ModalFeedbackCard } from '../molecules';
 import { X, EyeClosed, Eye } from 'lucide-react';
+import ConfirmationModalWrapper from './ConfirmationModalWrapper';
 
 const AddCashierModal = ({onConfirm, onClose}) => {
 
@@ -85,7 +86,10 @@ const AddCashierModal = ({onConfirm, onClose}) => {
                 }
                 <div className='flex gap-4 ml-auto'>
                     <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
-                    <Button variant='modalBlock' size='base' text='Add Item' onClick={handleAddCashier}/>
+                    <ConfirmationModalWrapper title='Add cashier' content='Are you sure you want to add this cashier?' onConfirm={handleAddCashier}>
+                        <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-text w-fit text-base flex gap-4 items-center justify-center cursor-pointer'>Register</h5>
+                    </ConfirmationModalWrapper>
+                    {/* <Button variant='modalBlock' size='base' text='Add Item' onClick={handleAddCashier}/> */}
                 </div>
             </div>
         </div>

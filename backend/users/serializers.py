@@ -4,7 +4,7 @@ from django.contrib.auth.models import User, Group
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'password']
+        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'password', 'is_active']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -29,5 +29,5 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff']
+        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active']
         read_only_fields = ['id', 'username', 'groups', 'is_staff']
