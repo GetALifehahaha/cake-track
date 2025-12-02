@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Title } from '../components/atoms';
 import { TransactionDetails } from '../components/organisms';
 import { Ellipsis, X } from 'lucide-react';
@@ -8,11 +8,13 @@ import Loading from '@/components/molecules/Loading';
 import { DatePicker } from '@/components/molecules';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
+import { AuthContext } from '@/context/AuthContext';
 
 const Transactions = () => {
 
     // add backend later
     const { transactionData, transactionLoading, transactionError } = useTransaction();
+    const { user } = useContext(AuthContext);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const currentDateParams = searchParams.get('due_date')
@@ -30,6 +32,7 @@ const Transactions = () => {
 
     if (transactionLoading) return <Loading />
     if (transactionError) return <h5>Error loading transactions</h5>
+
 
     const handleSetDateFilter = (date) => {
         const newParams = Object.fromEntries(searchParams.entries());
@@ -95,20 +98,24 @@ const Transactions = () => {
         <div key={dateIndex} className="w-full flex flex-col mb-6">
 
             {/* --- The Date Header --- */}
-            <div className="w-full py-2 px-4 bg-accent-mute/10 rounded-md mb-2 flex items-center justify-between">
-                <h5 className="text-text font-bold text-sm opacity-70 uppercase tracking-wider">
-                    {date}
-                </h5>
-            </div>
+            {user.is_staff && new Date(date).toDateString() !== new Date().toDateString() &&
+                <div className="w-full py-2 px-4 bg-accent-mute/10 rounded-md mb-2 flex items-center justify-between">
+                    <h5 className="text-text font-bold text-sm opacity-70 uppercase tracking-wider">
+                        {date}
+                    </h5>
+                </div>
+            }
 
             {/* --- The Items for this Date --- */}
             <div className="flex flex-col gap-2">
                 {groupedTransactions[date].map((item, index) => (
                     <div className='flex w-full hover:bg-black/5 p-1 rounded transition-colors' key={item.id}>
                         {/* Time only, since date is in header */}
-                        <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
-                            {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </h5>
+                        {
+                            <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
+                                {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </h5>
+                        }
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
                             {item.id}
@@ -123,7 +130,7 @@ const Transactions = () => {
                         </h5>
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
-                            P {(item.net_total).toFixed(2)}
+                            ₱ {(item.net_total).toFixed(2)}
                         </h5>
 
                         {item.is_void ?

@@ -11,6 +11,17 @@ const Orders = () => {
   const {user} = useContext(AuthContext)
   const [search, setSearch] = useState("");
   
+  
+  const {data, loading, error, refresh} = useOrder();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);  // Start animation
+    await refresh();      // Wait for new data from backend
+    setRefreshing(false); // Stop animation
+  };
+
   if (!user) {
     return (
       <SafeAreaView className='flex-1 bg-white items-center justify-center p-6'>
@@ -24,15 +35,6 @@ const Orders = () => {
       </SafeAreaView>
     )
   }
-  const {data, loading, error, refresh} = useOrder();
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = async () => {
-    setRefreshing(true);  // Start animation
-    await refresh();      // Wait for new data from backend
-    setRefreshing(false); // Stop animation
-  };
 
   if (loading && !refreshing) return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -48,8 +50,10 @@ const Orders = () => {
 
   // Calculate stats based on actual data
   const totalOrders = data.count;
-  const readyOrders = data.results.filter(o => o.status === 'complete').length;
+  const readyOrders = data.results.filter(o => o.status === 'completed').length;
   const pendingOrders = data.results.filter(o => o.status === 'pending').length;
+
+  console.log(data.results)
 
   return (
     <SafeAreaView className='flex-1 bg-[#F5F5F5]'> {/* Fixed bg color */}

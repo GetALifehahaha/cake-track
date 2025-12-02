@@ -72,11 +72,11 @@ const Inventory = () => {
 
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
-            <div className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-main-dark border-b-2'>
+            <div className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-main-dark border-b-2 cursor-pointer' onClick={() => handleSetActiveIndex(index)}>
                 <h5 className='flex-1'>{item.name}</h5>
                 <h5 className='flex-1'>{(item.total_stock).replace(/\.00$/, '')} {item.unit}</h5>
                 <div className='flex-1'><StockLabel amount={item.total_stock} /></div>
-                <h5 className='flex-1'><ChevronDown size={18} className={`mx-auto cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} onClick={() => handleSetActiveIndex(index)} /></h5>
+                <h5 className='flex-1'><ChevronDown size={18} className={`mx-auto cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`}  /></h5>
             </div>
             {index == activeIndex &&
                 <div className='border-b border-border'>

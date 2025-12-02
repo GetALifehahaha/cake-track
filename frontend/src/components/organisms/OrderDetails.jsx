@@ -58,10 +58,9 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             <h5 className='text-sm text-text/75 font-medium'>Message: <strong className='ml-1 text-text'>{orderDetails.cake_orders.message}</strong></h5>
                             {orderDetails.cupcake_orders &&
                                 <>
-                                    <h5 className='text-sm text-text/75 font-medium'>Cupcake_orderss: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.amount}</strong></h5>
+                                    <h5 className='text-sm text-text/75 font-medium'>Cupcakes: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.amount}</strong></h5>
                                     <div className='px-6 py-1'>
-                                        <h5 className='text-sm text-text/75 font-medium'>Flavor: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.flavor}</strong></h5>
-                                        <h5 className='text-sm text-text/75 font-medium'>Finish: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.finish}</strong></h5>
+                                        <h5 className='text-sm text-text/75 font-medium'>Frosting Color: <strong className='ml-1 text-text capitalize'>{orderDetails.cupcake_orders.frosting}</strong></h5>
                                     </div>
                                 </>
                             }

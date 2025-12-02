@@ -56,23 +56,23 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                             </table>
 
                             <div className="text-sm space-y-1 mb-4">
-                                <div className="flex justify-between text-text/50">
+                                {/* <div className="flex justify-between text-text/50">
                                     <h5>Subtotal:</h5>
                                     <h5>{(transactionDetail.gross_total).toFixed(2)}</h5>
-                                </div>
-                                {transactionDetail.discount_id &&
+                                </div> */}
+                                {transactionDetail.discount &&
                                     <div className="flex justify-between text-text/50">
                                         <h5>Discount:</h5>
                                         <h5>{transactionDetail.discount.name}: {transactionDetail.discount.rate * 100}%</h5>
                                     </div>
                                 }
-                                <div className="flex justify-between text-text/50">
+                                {/* <div className="flex justify-between text-text/50">
                                     <h5>VAT Amount:</h5>
                                     <h5>{(transactionDetail.gross_total - (transactionDetail.gross_total * .88)).toFixed(2)}</h5>
-                                </div>
+                                </div> */}
                                 <div className="flex justify-between font-bold text-base pt-1 text-text">
                                     <h5>Total:</h5>
-                                    <h5>{(transactionDetail.net_total).toFixed(2)}</h5>
+                                    <h5>₱ {(transactionDetail.net_total).toFixed(2)}</h5>
                                 </div>
                             </div>
 

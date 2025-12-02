@@ -61,9 +61,9 @@ const Index = () => {
     ]
 
     const bestSellers = [
-        { name: "Dark Choco Dream", price: "₱850", rating: 4.9, image: require('@/assets/images/premade-cakes/chocolate-cake.png') },
-        { name: "Strawberry Supreme", price: "₱950", rating: 4.8, image: require('@/assets/images/premade-cakes/strawberry.png') },
-        { name: "Caramel Macchiato", price: "₱780", rating: 4.7, image: require('@/assets/images/premade-cakes/mocha.png') },
+        { name: "Chocolate Moist Cake", price: "₱800", rating: 4.9, image: require('@/assets/images/premade-cakes/chocolate-cake.png') },
+        { name: "Strawberry Cake", price: "₱700", rating: 4.8, image: require('@/assets/images/premade-cakes/strawberry.png') },
+        { name: "Mocha Cake", price: "₱750", rating: 4.7, image: require('@/assets/images/premade-cakes/mocha.png') },
     ]
 
 

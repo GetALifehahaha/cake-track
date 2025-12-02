@@ -24,7 +24,7 @@ const InputRejectModal = ({ onConfirm, onReject }) => {
                     <Button variant='modalOutline' onClick={onReject} text='Cancel' />
                     <ConfirmationModalWrapper
                         title='Decline order'
-                        content='Are you sure you want to decline this order?'
+                        content='Are you sure you want to decline?'
                         onConfirm={() => onConfirm(reason)}
                     >
                         <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-text w-fit text-base cursor-pointer'>Reject</h5>

@@ -22,6 +22,7 @@ const QueuePending = () => {
 	const [showOptions, setShowOptions] = useState(-1);
 	const [prepAcceptId, setPrepAcceptId] = useState(-1);
 	const [prepRejectId, setPrepRejectId] = useState(-1);
+	const [prepRejectAll, setPrepRejectAll] = useState(false);
 
 	if (loading) return <Loading />
 
@@ -50,18 +51,7 @@ const QueuePending = () => {
 		}
 	}
 
-	const rejectOrder = async (reject_reason) => {
-		if (prepRejectId == -1) return;
-
-		try {
-			await patchOrder(prepRejectId, { "status": "rejected", "reject_reason": reject_reason });
-
-			addToast("Order declined successfully");
-			setPrepRejectId(-1);
-		} catch (err) {
-			addToast("Failed to decline order.", "error")
-		}
-	}
+	
 
 	const handleSetOrderDetails = (order) => {
 		setOrderDetails(order);
@@ -77,12 +67,39 @@ const QueuePending = () => {
 	const acceptAllOrder = async () => {
 		const orderIds = data?.results?.map(order => order.id) || [];
 
-		if (order.length === 0) return;
+		if (orderIds.length === 0) return;
 
 		try {
 			await batchUpdateOrders({ order_ids: orderIds, status: "accepted" });
 
 			addToast("Orders accepted successfully", "success")
+		} catch (err) {
+			addToast(`Error: ${err}`, "error")
+		}
+	}
+
+	const rejectOrder = async (rejectReason) => {
+		if (prepRejectId == -1) return;
+
+		try {
+			await patchOrder(prepRejectId, { "status": "rejected", "reject_reason": rejectReason });
+
+			addToast("Order declined successfully");
+			setPrepRejectId(-1);
+		} catch (err) {
+			addToast("Failed to decline order.", "error")
+		}
+	}
+
+	const rejectAllOrder = async (rejectReason) => {
+		const orderIds = data?.results?.map(order => order.id) || [];
+
+		if (orderIds.length === 0) return;
+
+		try {
+			await batchUpdateOrders({ order_ids: orderIds, status: "rejected", "reject_reason": rejectReason });
+
+			addToast("Orders rejected successfully", "success")
 		} catch (err) {
 			addToast(`Error: ${err}`, "error")
 		}
@@ -105,7 +122,7 @@ const QueuePending = () => {
 			}
 
 			<div className='flex justify-between items-center'>
-				<h5 className='text-accent-text text-sm'>Order {cake.id}</h5>
+				<h5 className='text-black text-sm font-semibold'>Order {cake.id}</h5>
 				<Ellipsis
 					onClick={(e) => {
 						e.stopPropagation();
@@ -136,8 +153,7 @@ const QueuePending = () => {
 					</h5>
 					<div className='flex flex-col gap-0.5'>
 						<h5 className='font-bold text-md'>Cupcakes</h5>
-						<h5 className='text-xs text-accent-text'>Flavor: {cake.cupcake_orders.flavor}</h5>
-						<h5 className='text-xs text-accent-text'>Finish: {cake.cupcake_orders.finish}</h5>
+						<h5 className='text-xs text-accent-text capitalize'>Frosting Color: <strong>{cake.cupcake_orders.frosting}</strong></h5>
 					</div>
 				</div>
 			}
@@ -157,7 +173,7 @@ const QueuePending = () => {
 						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
 							<h5 className='px-4 py-1 rounded-sm bg-accent text-white font-semibold cursor-pointer'>Accept All</h5>
 						</ConfirmationModalWrapper>
-						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
+						<ConfirmationModalWrapper title={'Reject ALL orders'} content={"Are you sure you want to reject ALL orders?"} onConfirm={() => setPrepRejectAll(true)}>
 							<h5 className='px-4 py-1 rounded-sm bg-error text-white font-semibold cursor-pointer'>Reject All</h5>
 						</ConfirmationModalWrapper>
 					</>
@@ -185,6 +201,10 @@ const QueuePending = () => {
 
 			{prepRejectId > 0 &&
 				<InputRejectModal onConfirm={rejectOrder} onReject={() => setPrepRejectId(-1)} />
+			}
+
+			{prepRejectAll &&
+				<InputRejectModal onConfirm={rejectAllOrder} onReject={() => setPrepRejectAll(false)} />
 			}
 		</div>
 	)

@@ -6,6 +6,7 @@ import loginImage2 from '../assets/image/login-image-2.png'
 import loginImage3 from '../assets/image/login-image-3.png'
 import { AuthContext } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
 
@@ -14,6 +15,7 @@ const Login = () => {
     const [username, setUsername] = useState();
     const [password, setPassword] = useState();
     const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleSetUsername = (e) => {
         e.preventDefault()
@@ -28,6 +30,8 @@ const Login = () => {
     
     const handleLogin = async (e) => {
         e.preventDefault()
+
+        setLoading(true)
         try {
             const res = await login(username, password);
 
@@ -36,6 +40,8 @@ const Login = () => {
             }
         } catch (err) {
             addToast('Something went wrong. Please try again later.', 'error');
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -77,8 +83,15 @@ const Login = () => {
                             <label>Remember me</label>
                         </span>
                         
-                        <span className='w-4/5 mx-auto'>
-                            <Button text='Login' variant='form' onClick={handleLogin}/>
+                        <span className='w-4/5 mx-auto flex gap-2 items-center justify-center'>
+                            {loading ?
+                                <>
+                                    <h5 className='text-accent font-semibold'>Logging In</h5>
+                                    <Loader2 size={14} className='text-accent animate-spin' />
+                                </>
+                                :
+                                <Button text='Login' variant='form' onClick={handleLogin}/>
+                            }
                         </span>
                     </form>
                 </div>

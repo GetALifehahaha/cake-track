@@ -67,10 +67,13 @@ const OrderDetails = () => {
                     
                     {/* --- YOUR PASTED CODE STARTS HERE --- */}
                     
-                    <View className='flex-row gap-2 p-4 bg-white rounded-xl border justify-center border-secondary-light w-full'>
+                    <View className='flex-col gap-2 p-4 bg-white rounded-xl border justify-center border-secondary-light w-full'>
                         <View>
-                            <Text className='text-secondary-strong text-xl font-bold'>{(order.status).toUpperCase()}</Text>
+                            <Text className={`${order.status === "rejected" ? 'text-red-400' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(order.status).toUpperCase()}</Text>
                         </View>
+                        {order.reject_reason &&
+                            <Text className='text-secondary-strong text-md font-bold'>{order.reject_reason}</Text>
+                        }
                     </View>
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>

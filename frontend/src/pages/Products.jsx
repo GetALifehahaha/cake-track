@@ -8,6 +8,7 @@ import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
 import EditProductModal from '@/components/organisms/EditProductModal';
 import { useToast } from '@/context/ToastContext';
+import Loading from '@/components/molecules/Loading';
 
 const Products = () => {
     const { addToast } = useToast();
@@ -41,9 +42,8 @@ const Products = () => {
         setSearchParams(params)
     }, [filter])
 
-    if (productLoading) return <h5>Loading product data</h5>
+    if (productLoading || categoryLoading) return <Loading />
     if (productError) return <h5>Error loading product data</h5>
-    if (categoryLoading) return <h5>Loading category data</h5>
     if (categoryError) return <h5>Error loading category data</h5>
 
     const handleShowAddProductModal = () => {

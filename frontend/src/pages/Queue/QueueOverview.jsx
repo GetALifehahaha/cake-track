@@ -112,7 +112,7 @@ const QueueOverview = () => {
 			<h5 className='basis-1/6 text-center'>{capitalize(order.cake_orders.base_flavor)}</h5>
 			<span className='basis-1/6 flex justify-center'>
 				{order.cupcake_orders
-					? <h5 className='text-center'>Yes</h5>
+					? <h5 className='text-center text-xs font-semibold text-text/50 border border-gray-400 w-fit px-4 rounded-full'>Yes</h5>
 					: <h5 className='text-center text-xs font-semibold text-text/50 border border-gray-400 w-fit px-4 rounded-full'>No</h5>}
 			</span>
 			<h5 className='basis-1/6 text-center'>{parseDate(order.created_at)}</h5>

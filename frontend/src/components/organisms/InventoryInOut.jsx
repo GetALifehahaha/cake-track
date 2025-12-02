@@ -17,6 +17,8 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	const [ingredientItems, setIngredientItems] = useState([
 	]);
 	const [showConfirm, setShowConfirm] = useState(false);
+	const [search, setSearch] = useState("");
+	
 
 	if (ingredientLoading || inventoryTransactionLoading) return <Loading />
 	if (ingredientError) return <h5>Error</h5>
@@ -79,7 +81,11 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 		onClose()
 	}
 
-	const listIngredients = ingredientData.map((ingredient) =>
+	const filteredIngredients = ingredientData.filter(ing => 
+        ing.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+	const listIngredients = filteredIngredients.map((ingredient) =>
 		<div key={ingredient.id} className='flex flex-row gap-4 px-4 py-2 rounded-sm bg-accent hover:bg-accent-dark transition-all font-semibold cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name)}>
 			<h5 className='text-main-white line-clamp-2'>{ingredient.name}</h5>
 			<h5 className='text-main/50 ml-auto'>{(ingredient.total_stock).replace(/\.00$/, '')}</h5>
@@ -124,6 +130,8 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 				<X size={20} className='text-text' onClick={onClose} />
 			</div>
+
+			<input type='text' className='ml-2 p-2 border-border rounded-sm border w-120' value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search available ingredients' />
 
 			{/* Two Panel Layout */}
 			<div className='flex flex-1 overflow-hidden max-h-[80vh]'>

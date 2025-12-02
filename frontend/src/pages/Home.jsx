@@ -9,6 +9,7 @@ import useTransaction from '@/hooks/useTransaction'
 import useCategory from '@/hooks/useCategory'
 import useDiscount from '@/hooks/useDiscount'
 import { useToast } from '@/context/ToastContext'
+import Loading from '@/components/molecules/Loading'
 
 const Home = () => {
 
@@ -155,13 +156,10 @@ const Home = () => {
 
     // GUARDS
 
-    if (productLoading) return <h5>Loading</h5>
+    if (productLoading || categoryLoading || transactionLoading || discountLoading ) return <Loading />
     if (productError) return <h5>Error</h5>
-    if (categoryLoading) return <h5>Loading</h5>
     if (categoryError) return <h5>Error</h5>
-    if (transactionLoading) return <h5>Loading</h5>
     if (transactionError) return <h5>Error</h5>
-    if (discountLoading) return <h5>Loading</h5>
     if (discountError) return <h5>Error</h5>
 
 
