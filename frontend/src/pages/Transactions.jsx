@@ -17,7 +17,7 @@ const Transactions = () => {
     const { user } = useContext(AuthContext);
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const currentDateParams = searchParams.get('due_date')
+    const currentDateParams = searchParams.get('created_at')
     const selectedDate = currentDateParams ? new Date(currentDateParams) : null
 
     const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Status', 'Total'];
@@ -38,9 +38,9 @@ const Transactions = () => {
         const newParams = Object.fromEntries(searchParams.entries());
 
         if (date) {
-            newParams.due_date = formatDateForAPI(date)
+            newParams.created_at = formatDateForAPI(date)
         } else {
-            delete newParams.due_date
+            delete newParams.created_at
         }
 
         setSearchParams(newParams)

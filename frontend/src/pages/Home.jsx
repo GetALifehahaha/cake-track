@@ -197,12 +197,12 @@ const Home = () => {
     };
 
     const confirmVoidPayment = () => {
-        if (checkoutProducts.length > 0) setShowClearCheckoutModal(true);
+        if (voidProducts.length > 0) setShowClearCheckoutModal(true);
     }
 
     const voidPayment = async (value) => {
         if (value) {
-            const checkoutProductsPayload = checkoutProducts.map(p => ({
+            const voidProductsPayload = voidProducts.map(p => ({
                 product: p.id,
                 product_size: p.selectedSizeId,
                 quantity: p.amount,
@@ -212,7 +212,7 @@ const Home = () => {
             await postTransaction({
                 is_void: true,
                 payment_method: "cash",
-                transaction_items: checkoutProductsPayload,
+                transaction_items: voidProductsPayload,
                 paid_amount: 0,
                 order_type: orderType,
             })
@@ -221,7 +221,8 @@ const Home = () => {
                 setReceivedPayment(value);
             }
             
-            removeAllProducts([]);
+            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
+            setVoidProducts([]);
             addToast("Transction voided successfully")
             localStorage.removeItem('cart');
         }
@@ -314,7 +315,7 @@ const Home = () => {
                                 <Button variant='outline' text={checkoutProducts.length === voidProducts.length ? 'Unselect All' : 'Select All'} size='small' onClick={toggleAllVoidItems} />
                             </div>
                             <hr className='text-border'></hr>
-                            <Button variant='main' text='Void Items' onClick={proceedToCheckout} />
+                            <Button variant='main' text='Void Items' onClick={confirmVoidPayment} />
                         </div>
                         :
                         <div className={cn('mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4',

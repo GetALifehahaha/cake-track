@@ -114,8 +114,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = MediumPageSize
     
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filter_class = TransactionFilter
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = TransactionFilter
     
     search_fields = ['cashier__username', 'payment_method']
     ordering_fields = ['id', 'created_at', 'payment_method']
