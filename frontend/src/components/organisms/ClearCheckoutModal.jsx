@@ -34,7 +34,7 @@ const ClearCheckoutModal = ({onConfirm}) => {
                         <Lock size={36}/>
                     </div>
                     <h5 className='font-bold text-xl'>Access Code Required</h5>
-                    <h5 className='text-text/75 font-medium'>Enter the 4-digit access code to void this order</h5>
+                    <h5 className='text-text/75 font-medium'>Enter the 4-digit access code to void items</h5>
                 </div>
 
                 <input value={accessCode} onChange={(e) => setAccessCode(e.target.value)} type='password' maxLength={4} className='mx-auto bg-accent-mute/20 p-4 rounded-xl border-4 border-border font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute' placeholder='ENTER CODE'/>

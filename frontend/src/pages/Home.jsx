@@ -10,6 +10,8 @@ import useCategory from '@/hooks/useCategory'
 import useDiscount from '@/hooks/useDiscount'
 import { useToast } from '@/context/ToastContext'
 import Loading from '@/components/molecules/Loading'
+import { cn } from '@/utils/cn'
+import { add } from 'date-fns'
 
 const Home = () => {
 
@@ -24,6 +26,8 @@ const Home = () => {
         const saved = localStorage.getItem('cart');
         return saved ? JSON.parse(saved) : [];
     });
+    const [voidProducts, setVoidProducts] = useState([]);
+
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState();
     const [discountValue, setDiscountValue] = useState(0);
@@ -35,6 +39,7 @@ const Home = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
     const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
+    const [showVoid, setShowVoid] = useState(false);
 
     // SET AND TOGGLES
 
@@ -93,37 +98,9 @@ const Home = () => {
     }
 
 
-    const proceedToCheckout = () => {
-        if (!netTotal) return
-        setShowPaymentModal(true);
+    const itemInVoid = (id) => {
+        return voidProducts.some(prod => prod.id == id);
     }
-
-    const completePayment = async (value) => {
-        if (value) {
-            const checkoutProductsPayload = checkoutProducts.map(p => ({
-                product: p.id,
-                product_size: p.selectedSizeId,
-                quantity: p.amount,
-                price: parseFloat(p.price)
-            }))
-
-            await postTransaction({
-                is_void: false,
-                payment_method: "cash",
-                transaction_items: checkoutProductsPayload,
-                paid_amount: parseFloat(value),
-                discount: discount
-            })
-
-            setReceivedPayment(value);
-            setShowPaymentSuccessModal(true);
-            localStorage.removeItem('cart');
-
-            addToast("Transaction successful")
-        }
-        setShowPaymentModal(false);
-    }
-
 
     // USE EFFECTS AND MEMOS
 
@@ -165,15 +142,31 @@ const Home = () => {
 
     // MAIN FUNCTIONS
 
-    const removeAllProducts = () => {
-        setCheckoutProducts([]);
-    };
+    const toggleAllVoidItems = () => {
+        if (checkoutProducts.length === voidProducts.length) {
+            setVoidProducts([]);        
+        } else {
+            setVoidProducts(checkoutProducts);
+        }
+    }
+    const addToVoid = (product) => {
+        setVoidProducts(vp => {
+            let prod = [...vp];
 
-    const confirmVoidPayment = () => {
-        if (checkoutProducts.length > 0) setShowClearCheckoutModal(true);
+            if (prod.some(p => p.id == product.id)) {
+                return prod.filter(p => p.id != product.id);
+            }
+            
+            return [...prod, product];
+        })
     }
 
-    const voidPayment = async (value) => {
+    const proceedToCheckout = () => {
+        if (!netTotal) return
+        setShowPaymentModal(true);
+    }
+
+    const completePayment = async (value) => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
                 product: p.id,
@@ -183,9 +176,43 @@ const Home = () => {
             }))
 
             await postTransaction({
-                is_void: true,
+                is_void: false,
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
+                paid_amount: parseFloat(value),
+                discount: discount
+            })
+
+            setReceivedPayment(value);
+            setShowPaymentSuccessModal(true);
+            localStorage.removeItem('cart');
+
+            addToast("Transaction successful")
+        }
+        setShowPaymentModal(false);
+    }
+
+    const removeAllProducts = () => {
+        setCheckoutProducts([]);
+    };
+
+    const confirmVoidPayment = () => {
+        if (voidProducts.length > 0) setShowClearCheckoutModal(true);
+    }
+
+    const voidPayment = async (value) => {
+        if (value) {
+            const voidProductsPayload = voidProducts.map(p => ({
+                product: p.id,
+                product_size: p.selectedSizeId,
+                quantity: p.amount,
+                price: parseFloat(p.price)
+            }))
+
+            await postTransaction({
+                is_void: true,
+                payment_method: "cash",
+                transaction_items: voidProductsPayload,
                 paid_amount: 0,
                 order_type: orderType,
             })
@@ -194,7 +221,8 @@ const Home = () => {
                 setReceivedPayment(value);
             }
             
-            removeAllProducts([]);
+            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
+            setVoidProducts([]);
             addToast("Transction voided successfully")
             localStorage.removeItem('cart');
         }
@@ -221,6 +249,22 @@ const Home = () => {
             onToggle={() => handleToggleCheckoutProduct(product)} />
     )
 
+    const listVoidProducts = checkoutProducts.map((product) => 
+        <div 
+        key={product.id} 
+        className={cn('relative flex flex-row gap-8 w-full items-center px-4 cursor-pointer hover:bg-border/50 rounded-sm active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.id)})}
+        onClick = {() => addToVoid(product)}
+        >
+            {itemInVoid(product.id) &&
+                <div className='bg-error w-2 h-2 aspect-square rounded-sm absolute -translate-x-5' />
+            }
+            <div>
+                <h5 className='font-medium text-sm'>{product.name}</h5>
+                <h5 className='text-accent-text text-sm'>₱ {Number(product.price * product.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+            </div>
+        </div>
+    )
+
     const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } });
     const discountOptions = discountData.map((dis) => { return { key: dis.name, value: dis.id } });
 
@@ -245,7 +289,8 @@ const Home = () => {
                         <div>
                             <h5 className='font-bold text-xl'>Current Order</h5>
                         </div>
-                        <Button variant='outline' text='Clear' onClick={confirmVoidPayment} />
+                        {/* <Button variant='outline' text='Clear' onClick={confirmVoidPayment} /> */}
+                        <Button variant='outline' text={showVoid ? 'Cancel' : 'Clear'} onClick={() => setShowVoid(!showVoid)} />
                     </div>
 
                     <div className='flex flex-row gap-2 px-4'>
@@ -254,28 +299,47 @@ const Home = () => {
                     </div>
 
                     <div className='px-4 py-8 flex flex-col gap-4'>
-                        {listCheckoutProducts}
+                        {showVoid ?
+                            listVoidProducts
+                            :
+                            listCheckoutProducts
+                        }
                     </div>
-
-                    <div className='mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4'>
-                        <div className='flex flex-col gap-2 '>
+                    
+                    {showVoid ?
+                        <div className='mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4'>
+                            <div className='flex flex-row items-center justify-between w-full mb-2'>
+                                <h5 className='font-semibold text-sm text-text/50'>
+                                    {voidProducts.length} item(s) selected
+                                </h5>
+                                <Button variant='outline' text={checkoutProducts.length === voidProducts.length ? 'Unselect All' : 'Select All'} size='small' onClick={toggleAllVoidItems} />
+                            </div>
+                            <hr className='text-border'></hr>
+                            <Button variant='main' text='Void Items' onClick={confirmVoidPayment} />
+                        </div>
+                        :
+                        <div className={cn('mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4',
+                            {'opacity-50 pointer-events-none': showVoid}
+                        )}>
+                            <div className='flex flex-col gap-2 '>
+                                <div className='flex items-center justify-between'>
+                                    <Label variant='small' text={`Items (${checkoutProducts.length})`} />
+                                    <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
+                                </div>
+                                <div className='flex items-center'>
+                                    <Label variant='small' text='Discount' />
+                                    <div className='flex-1' />
+                                    <Dropdown value={discount} variant='outline' selection="Discount" size='fit' options={discountOptions} onSelect={handleSetDiscount} className='bg-main' />
+                                </div>
+                            </div>
+                            <hr className='text-border'></hr>
                             <div className='flex items-center justify-between'>
-                                <Label variant='small' text={`Items (${checkoutProducts.length})`} />
-                                <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
+                                <Label variant='small' text='Total' />
+                                <h5 className='text-text font-semibold text-sm'>₱ {Number(netTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                             </div>
-                            <div className='flex items-center'>
-                                <Label variant='small' text='Discount' />
-                                <div className='flex-1' />
-                                <Dropdown value={discount} variant='outline' selection="Discount" size='fit' options={discountOptions} onSelect={handleSetDiscount} className='bg-main' />
-                            </div>
+                            <Button variant='main' text='Proceed' onClick={proceedToCheckout} />
                         </div>
-                        <hr className='text-border'></hr>
-                        <div className='flex items-center justify-between'>
-                            <Label variant='small' text='Total' />
-                            <h5 className='text-text font-semibold text-sm'>₱ {Number(netTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
-                        </div>
-                        <Button variant='main' text='Proceed' onClick={proceedToCheckout} />
-                    </div>
+                    }
                 </div>
             </div>
 
