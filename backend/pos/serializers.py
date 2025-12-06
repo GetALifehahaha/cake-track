@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from users.serializers import UserSerializer
 from .models import (
-    Discount, Size, Category, Product, ProductSize,
+    Discount, Category, Product, ProductSize,
     Transaction, TransactionItem, BusinessSettings
 )
 
@@ -9,11 +9,6 @@ class DiscountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discount
         fields = ['id', 'name', 'rate']
-
-class SizeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Size
-        fields = ['id', 'name', 'short']
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -23,8 +18,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSizeSerializer(serializers.ModelSerializer):
-    size = SizeSerializer(read_only=True)
-    
     class Meta:
         model = ProductSize
         fields = ['id', 'size', 'price']
@@ -49,6 +42,7 @@ class ProductSerializer(serializers.ModelSerializer):
         
     # add create function for bulk creation
     def create(self, validated_data):
+        print(validated_data)
         # get data from api call. expects ex: sizes: [{size: 'XL', price: '150'},...]
         sizes_data = validated_data.pop('sizes', [])
         # create new product if data is validated, destructure keyword arguments

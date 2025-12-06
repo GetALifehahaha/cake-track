@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Discount, Size, Category, Product, ProductSize,
+    Discount, Category, Product, ProductSize,
     Transaction, TransactionItem
 )
 
@@ -11,12 +11,6 @@ from .models import (
 class DiscountAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'rate']
     search_fields = ['name']
-
-
-@admin.register(Size)
-class SizeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'short']
-    search_fields = ['name', 'short']
 
 
 @admin.register(Category)
@@ -37,7 +31,6 @@ class ProductSizeInline(admin.TabularInline):
     model = ProductSize
     extra = 1  # how many blank product sizes to show
     readonly_fields = []
-    autocomplete_fields = ['size']
 
 
 @admin.register(Product)
