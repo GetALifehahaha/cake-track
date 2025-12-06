@@ -10,14 +10,6 @@ class Discount(models.Model):
         return self.name
 
 
-class Size(models.Model):
-    name = models.CharField(max_length=50)
-    short = models.CharField(max_length=5, blank=True)
-
-    def __str__(self):
-        return self.name
-
-
 class Category(models.Model):
     name = models.CharField(max_length=100)
     
@@ -32,7 +24,6 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=255, blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
     image = models.CharField(max_length=500, blank=True, null=True)
     
@@ -47,11 +38,11 @@ class Product(models.Model):
 
 class ProductSize(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sizes")
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
+    size = models.CharField(max_length=5)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.product.name} - {self.size.name}"
+        return f"{self.product.name} - {self.size} : {self.price}"
     
 
 class Transaction(models.Model):
@@ -118,7 +109,7 @@ class TransactionItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)  # store price at sale
 
     def __str__(self):
-        size_name = f" - {self.product_size.size.name}" if self.product_size else ""
+        size_name = f" - {self.product_size.size}" if self.product_size else ""
         return f"{self.quantity} × {self.product.name}{size_name}"
 
 

@@ -7,13 +7,28 @@ import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
 } from "@/api/constants";
-import { se } from 'date-fns/locale';
+import { cn } from '@/utils/cn';
 
 const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
+    const ALL_SIZES = ["XS", "S", "M", "L", "XL"];
+
     const [productName, setProductName] = useState(product.name);
     const [category, setCategory] = useState(product.category.id);
-    const [price, setPrice] = useState(product.price);
+    const [sizes, setSizes] = useState(() => {
+    const productSizes = product.sizes || [];
+
+    return ALL_SIZES.map(size => {
+        const matchSize = productSizes.find((ps) => ps.size === size);
+
+        return {
+            id: matchSize?.id || null,
+            size: size,
+            price: matchSize?.price || "",
+            active: !!matchSize
+        }
+    });
+    });
     const [image, setImage] = useState(product.image)
     const [loading, setLoading] = useState(false);
 
@@ -91,19 +106,24 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
         setShowConfirmationModal(false);
         setLoading(true);
 
-        let params = {};
+        if (!productName || !category) {
+            setFeedback({
+                label: 'Incomplete details',
+                details: "Please don't leave any blank fields",
+                type: 'error'
+            })
+            return
 
-        if (productName != product.name) params.name = productName;
-        if (category != product.category) params.category_id = category;
-        if (price != product.price) params.price = price;
-        if (image != product.image_path) params.image = await uploadToCloudinary(image) || null;
-
-        if (Object.keys(params).length === 0) onClose();
-
-        onConfirm(params);
+        };
+        const payload ={
+            name: productName,
+            image: image == product.image ? image : image ? await uploadToCloudinary(image) : null,
+            category_id: category,
+            sizes: sizes.filter(item => item.active).map(item => ({size: item.size, price:item.price}))
+        }
+        onConfirm(payload);
         setLoading(false);
     }
-
     const handleSetProductName = (e) => {
         e.preventDefault();
 
@@ -113,14 +133,9 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
         setCategory(value);
     }
-    const handleSetPrice = (e) => {
-        e.preventDefault();
-
-        setPrice(e.target.value);
-    }
 
     const handleSetShowConfirmationModal = () => {
-        if (!productName || !category || !price || !imagePreview) {
+        if (!productName || !category || !imagePreview) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -136,6 +151,14 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
+    const toggleSize = (size) => {
+        setSizes(prev => prev.map(item => item.size === size ? {...item, active: !item.active} : item));
+    }
+
+    const updatePrice = (size, value) => {
+        setSizes(prev => prev.map(item => item.size === size ? {...item, price: value} : item));
+    }
+
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
@@ -148,7 +171,12 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
                 <div className='flex gap-8'>
                     <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Product Image' />
+                        <div className='flex justify-between items-center w-full mb-2'>
+                            <Label variant='modal' text='Product Image' />
+                            {imagePreview && 
+                            <Button variant='icon' text='' icon={X} onClick={handleRemoveImage}/>
+                            }
+                        </div>
                         <label className='h-60 flex flex-col items-center justify-center gap-2 rounded-xl border-border border aspect-square'>
                             {(imagePreview) ? 
                             <img src={imagePreview} className='object-cover h-full w-full rounded-xl'/>
@@ -168,7 +196,6 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                                 onChange={handleImageChange}
                             />
                         </label>
-                        {imagePreview && <Button variant='icon' text='' icon={X} onClick={handleRemoveImage}/>}
                     </div>
 
                     <div className='flex flex-col gap-8 w-120'>
@@ -185,9 +212,35 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Product Price' />
-                            <input 
-                            type='number' 
-                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={price} placeholder='P 0.00' onChange={(e) => handleSetPrice(e)}/>
+                            <div className="grid grid-cols-2 gap-4 w-full">
+                                {sizes.map(item => (
+                                    <div key={item.size} className="flex items-center gap-2">
+                                        
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleSize(item.size)}
+                                            className={cn(
+                                                "aspect-square w-12 rounded border-2 border-border hover:border-text/50 text-text font-bold cursor-pointer",
+                                                !item.active && 'opacity-50'
+                                            )}
+                                        >
+                                            {item.size}
+                                        </button>
+
+                                        {/* INPUT */}
+                                        <input
+                                            type="number"
+                                            value={item.price}
+                                            disabled={!item.active}
+                                            onChange={(e) => updatePrice(item.size, e.target.value)}
+                                            className={cn(
+                                                "p-2 rounded w-full bg-main-dark/50",
+                                                !item.active && "opacity-50 pointer-events-none"
+                                            )}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

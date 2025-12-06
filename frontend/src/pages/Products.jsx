@@ -70,6 +70,7 @@ const Products = () => {
 
 
     const addProduct = async (value) => {
+        console.log(value)
         if (value) {
             await postProduct(value);
             addToast('Product added successfully', 'success');

@@ -43,6 +43,7 @@
 
             setProductLoading(true);
             try {
+                console.log(params)
                 await ProductApi(params, null, "POST");
                 setProductResponse({ status: "success", detail: "Product created successfully." });
             } catch (err) {
