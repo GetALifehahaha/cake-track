@@ -48,7 +48,6 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
             category_id: category,
             sizes: sizes.filter(item => item.active).map(item => ({size: item.size, price:item.price}))
         }
-        console.log(payload)
         onConfirm(payload);
         setLoading(false);
     }

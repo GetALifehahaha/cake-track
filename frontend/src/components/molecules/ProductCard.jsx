@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-const ProductCard = ({ product = { name: '', price: 0.00, image: null }, onToggle, isArchived, selected = null }) => {
+const ProductCard = ({ product = { name: '', sizes: ["XS", "S"], image: null }, onToggle, isArchived, selected = null }) => {
     const handleToggleClick = () => {
         if (isArchived) {
             onToggle(product.id)
@@ -10,7 +10,7 @@ const ProductCard = ({ product = { name: '', price: 0.00, image: null }, onToggl
     };
 
     return (
-        <div onClick={handleToggleClick} className={`cursor-pointer flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25 duration-200 ease-in-out ${selected == product.id ? '-translate-y-2 bg-main-dark' : 'bg-main-white'}`}>
+        <div onClick={handleToggleClick} className={`cursor-pointer flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25 duration-200 ease-in-out min-h-60 ${selected == product.id ? '-translate-y-2 bg-main-dark' : 'bg-main-white'}`}>
             <div className='flex aspect-square h-40 rounded-3xl overflow-hidden justify-center items-center'>
                 {product.image ?
                     <img className='object-contain rounded-3xl aspect-square h-40' src={product.image} />
@@ -22,8 +22,17 @@ const ProductCard = ({ product = { name: '', price: 0.00, image: null }, onToggl
             </div>
 
             <div className='text-center mt-auto'>
-                <h5 className='font-semibold text-md'>{product.name}</h5>
-                <h5 className='text-md font-semibold text-accent-text'>₱ {Number(product.price || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
+                <h5 className='font-semibold text-sm'>{product.name}</h5>
+                {/* <h5 className='text-md font-semibold text-accent-text'>₱ {Number(product.price || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5> */}
+                {/* <div className="flex w-full justify-center mt-2">
+                    {
+                        product.sizes.map(size => 
+                            <h5 className='w-6 aspect-square font-bold text-xs text-accent flex justify-center items-center rounded-sm' key={size.id}>
+                                {size.size}
+                            </h5>
+                        )
+                    }
+                </div> */}
             </div>
         </div>
     )
