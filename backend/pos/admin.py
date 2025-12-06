@@ -42,7 +42,7 @@ class ProductSizeInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'category', 'price', 'is_archived']
+    list_display = ['id', 'name', 'category', 'is_archived']
     search_fields = ['name', 'description']
     list_filter = ['category', 'is_archived']
     inlines = [ProductSizeInline]
