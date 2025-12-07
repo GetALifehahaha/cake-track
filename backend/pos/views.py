@@ -98,7 +98,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.prefetch_related(
         'transaction_items__product',
-        'transaction_items__product_size__size'
     ).all()
     
     serializer_class = TransactionSerializer
@@ -138,7 +137,6 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Transaction.objects.prefetch_related(
             'transaction_items__product',
-            'transaction_items__product_size__size'
         ).all()
         
         user = self.request.user

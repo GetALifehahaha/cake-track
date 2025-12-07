@@ -2,7 +2,6 @@ import React from 'react';
 import image from '../../assets/image/user_image.jpg';
 
 const ProfileCard = ({user={name: "User", role: "User", imagePath: null}}) => {
-    console.log(user)
     return (
         <div className='flex flex-rol gap-4 items-center ml-auto'>
             <div className='flex flex-col justify-center text-right text-sm'>

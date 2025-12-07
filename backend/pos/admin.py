@@ -47,7 +47,6 @@ class ProductAdmin(admin.ModelAdmin):
 class TransactionItemInline(admin.TabularInline):
     model = TransactionItem
     extra = 1
-    readonly_fields = ['price']
     autocomplete_fields = ['product', 'product_size']
 
 
@@ -62,6 +61,6 @@ class TransactionAdmin(admin.ModelAdmin):
 # Optional: Register TransactionItem separately if needed
 @admin.register(TransactionItem)
 class TransactionItemAdmin(admin.ModelAdmin):
-    list_display = ['id', 'transaction', 'product', 'product_size', 'quantity', 'price']
+    list_display = ['id', 'transaction', 'product', 'product_size', 'quantity']
     search_fields = ['product__name', 'transaction__id']
     list_filter = ['product']

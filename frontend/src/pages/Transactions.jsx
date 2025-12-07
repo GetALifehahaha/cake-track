@@ -130,7 +130,7 @@ const Transactions = () => {
                         </h5>
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
-                            ₱ {(item.net_total).toFixed(2)}
+                            ₱ {(item?.net_total || 0).toFixed(2)}
                         </h5>
 
                         {item.is_void ?
@@ -168,6 +168,11 @@ const Transactions = () => {
                     {listHeaders}
                 </div>
                 <div className='flex flex-col items-center gap-2 py-2 min-h-[40vh]'>
+                    {transactionData.results.length == 0 &&
+                        <h5 className='font-medium text-text/50 my-auto'>
+                            No transactions found
+                        </h5>
+                    }
                     {listContent}
                 </div>
             </div>

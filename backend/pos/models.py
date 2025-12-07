@@ -72,7 +72,7 @@ class Transaction(models.Model):
     
     @property
     def gross_total(self):
-        return sum(item.price * item.quantity for item in self.transaction_items.all()) #type: ignore
+        return sum(item.product_size.price * item.quantity for item in self.transaction_items.all()) #type: ignore
     
     @property
     def discount_amount(self):
@@ -106,7 +106,6 @@ class TransactionItem(models.Model):
         blank=True
     )
     quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)  # store price at sale
 
     def __str__(self):
         size_name = f" - {self.product_size.size}" if self.product_size else ""

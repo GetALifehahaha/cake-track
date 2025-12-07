@@ -36,7 +36,7 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
             </SelectTrigger>
             <SelectContent className='right-0'>
                 {listOptions}
-                <SelectItem value={null} className='text-black/60 font-semibold'>Remove Filter</SelectItem>
+                <SelectItem value={null} className='text-black/60 font-medium'>Remove Filter</SelectItem>
             </SelectContent>
         </Select>
     )
