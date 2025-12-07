@@ -7,6 +7,7 @@ import loginImage3 from '../assets/image/login-image-3.png'
 import { AuthContext } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { Loader2 } from 'lucide-react';
+import GoogleLoginApi from '@/api/GoogleLoginApi';
 
 const Login = () => {
 
@@ -56,7 +57,7 @@ const Login = () => {
                     </div>
 
                     <div className='flex flex-col gap-6 items-center w-4/5'>
-                        <button className='flex justify-between items-center rounded-2xl px-4 py-2 border-accent-mute border-4 w-1/2'>
+                        {/* <button className='flex justify-between items-center rounded-2xl px-4 py-2 border-accent-mute border-4 w-1/2'>
                             <img
                                 src="https://developers.google.com/identity/images/g-logo.png"
                                 alt="Google logo"
@@ -64,7 +65,8 @@ const Login = () => {
                             />
                             <span className="text-gray-700 font-medium">Continue with Google</span>
                             <div></div>
-                        </button>
+                        </button> */}
+                        <GoogleLoginApi />
 
                         <h5 className='text-sm font-semibold'>OR</h5>
                     </div>

@@ -3,12 +3,14 @@ import {jwtDecode} from 'jwt-decode'
 import api from '@/api/api'
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from './ToastContext'
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
 
     const [user, setUser] = useState(null);
+    const {addToast} = useToast();
     const [isAuthorized, setIsAuthorized] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -107,6 +109,7 @@ export const AuthProvider = ({children}) => {
             setIsAuthorized(true);
             return { success: true };
         } catch (err) {
+            addToast("Login failed.", "error")
             console.error('Google login failed:', err);
             return { success: false, error: err.response?.data || err.message };
         }
