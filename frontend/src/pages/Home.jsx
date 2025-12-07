@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
 import { Minus } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -11,7 +11,6 @@ import useDiscount from '@/hooks/useDiscount'
 import { useToast } from '@/context/ToastContext'
 import Loading from '@/components/molecules/Loading'
 import { cn } from '@/utils/cn'
-import { add } from 'date-fns'
 
 const Home = () => {
 
@@ -40,6 +39,7 @@ const Home = () => {
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
     const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
+    const [prepProduct, setPrepProduct] = useState(false);
 
     // SET AND TOGGLES
 
@@ -47,20 +47,20 @@ const Home = () => {
         setDiscount(value)
 
         const discount = discountData.find(d => d.id === value)
-        setDiscountValue(discount.rate)
+        setDiscountValue(value ? discount.rate : null)
     }
 
-    const handleToggleCheckoutProduct = (product) => {
-        setCheckoutProducts(cp => {
-            let prod = [...cp];
+    // const handleToggleCheckoutProduct = (product) => {
+    //     setCheckoutProducts(cp => {
+    //         let prod = [...cp];
 
-            if (prod.some(p => p.id == product.id)) {
-                return prod
-            }
+    //         if (prod.some(p => p.id == product.id)) {
+    //             return prod
+    //         }
 
-            return [...prod, { ...product, amount: 1 }];
-        })
-    }
+    //         return [...prod, { ...product, amount: 1 }];
+    //     })
+    // }
 
     const handleSetFilter = (value) => {
         setFilter(filter => {
@@ -80,7 +80,7 @@ const Home = () => {
             let products = prod;
 
             products = products.map(product => {
-                if (product.id == id) {
+                if (product.size_id == id) {
                     product.amount = value
                 }
 
@@ -142,6 +142,14 @@ const Home = () => {
 
     // MAIN FUNCTIONS
 
+    const addToCheckout = (product) => {
+        setCheckoutProducts(() => {
+            if (checkoutProducts.some(prod => prod.size_id === product.size_id)) return checkoutProducts
+
+            return [...checkoutProducts, product]
+        })
+    }
+
     const toggleAllVoidItems = () => {
         if (checkoutProducts.length === voidProducts.length) {
             setVoidProducts([]);        
@@ -170,9 +178,8 @@ const Home = () => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
                 product: p.id,
-                product_size: p.selectedSizeId,
+                product_size: p.size_id,
                 quantity: p.amount,
-                price: parseFloat(p.price)
             }))
 
             await postTransaction({
@@ -204,9 +211,8 @@ const Home = () => {
         if (value) {
             const voidProductsPayload = voidProducts.map(p => ({
                 product: p.id,
-                product_size: p.selectedSizeId,
+                product_size: p.size_id,
                 quantity: p.amount,
-                price: parseFloat(p.price)
             }))
 
             await postTransaction({
@@ -233,9 +239,9 @@ const Home = () => {
 
     // LISTS AND OPTIONS
 
-    const listCheckoutProducts = checkoutProducts.map((product) =>
+    const listCheckoutProducts = checkoutProducts.map((product, index) =>
         <CheckoutProduct
-            key={product.id}
+            key={index}
             product={product}
             onChangeAmount={handleSetAmount}
             onToggle={handleRemoveProductFromCheckout} />
@@ -246,7 +252,7 @@ const Home = () => {
             product={product}
             key={product.id}
             isSelected={checkoutProducts.some(p => p.id == product.id)}
-            onToggle={() => handleToggleCheckoutProduct(product)} />
+            onToggle={() => setPrepProduct(product)} />
     )
 
     const listVoidProducts = checkoutProducts.map((product) => 
@@ -356,6 +362,10 @@ const Home = () => {
 
             {showShowClearCheckoutModal &&
                 <ClearCheckoutModal onConfirm={voidPayment} />
+            }
+
+            {prepProduct &&
+                <SizeModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
             }
         </div>
     )

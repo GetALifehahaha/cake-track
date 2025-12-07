@@ -103,7 +103,7 @@ class TransactionItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TransactionItem
-        fields = ['id', 'product', 'product_size', 'quantity', 'price']
+        fields = ['id', 'product', 'product_size', 'quantity']
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -128,10 +128,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class TransactionItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransactionItem
-        fields = ['product', 'product_size', 'quantity', 'price']
-        extra_kwargs = {
-            'product_size': {'required': False, 'allow_null': True},
-        }
+        fields = ['product', 'product_size', 'quantity']
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
