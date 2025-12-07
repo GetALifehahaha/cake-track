@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 
-from users.views import CreateUserView, UserProfileView, UserViewSet
+from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView
 
 router = DefaultRouter()
 router.register('users', UserViewSet, basename="cashiers")
@@ -32,6 +32,7 @@ urlpatterns = [
     path('inventory/', include('inventory.urls')),
     path('orders/', include('orders.urls')),
     path('me/', UserProfileView.as_view(), name="me"),
+    path('users/google-auth/', GoogleAuthView.as_view(), name="google-auth"),
     path('users/user/register/', CreateUserView.as_view(), name="register"),
     path('users/token/', TokenObtainPairView.as_view(), name="get_token"),
     path('users/token/refresh/', TokenRefreshView.as_view(), name="refresh_token"),

@@ -6,7 +6,7 @@ import { AuthContext } from '@/context/AuthContext'
 
 const Sidebar = () => {
 
-    const { user } = useContext(AuthContext);
+    const { user, logout } = useContext(AuthContext);
 
     const role = user.groups[0]
     const isAdmin = user.is_staff
@@ -47,12 +47,12 @@ const Sidebar = () => {
                 {listSidebar}
             </div>
 
-            <NavLink
-                to={'/login'}
+            <div
                 className={navStyle + inactiveNavStyle + 'mt-auto'}
+                onClick={logout}
             >
                 <LogOut /> <h5 className={navText}>LOG OUT</h5>
-            </NavLink>
+            </div>
         </div>
     )
 }
