@@ -4,16 +4,21 @@ import './index.css'
 import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { ToastProvider } from './context/ToastContext'
 import { AuthProvider } from './context/AuthContext'
+
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 createRoot(document.getElementById('root')).render(
 	<BrowserRouter>
-		<AuthProvider>
-			<GoogleOAuthProvider clientId='324648686529-dp5khi6oclvjc9111hcj385apj812men.apps.googleusercontent.com'>
-				<StrictMode>
-						<App />
-				</StrictMode>
-			</GoogleOAuthProvider>
-		</AuthProvider>
+		<ToastProvider>
+			<AuthProvider>
+				<GoogleOAuthProvider clientId={clientId}>
+					<StrictMode>
+							<App />
+					</StrictMode>
+				</GoogleOAuthProvider>
+			</AuthProvider>
+		</ToastProvider>
 	</BrowserRouter>
 )
