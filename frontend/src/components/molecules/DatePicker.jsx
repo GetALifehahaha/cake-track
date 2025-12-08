@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-const DatePicker = ({ selected, onSelect }) => {
+const DatePicker = ({ selected, onSelect, className }) => {
 
   return (
     <Popover>
@@ -19,7 +19,7 @@ const DatePicker = ({ selected, onSelect }) => {
         <Button
           variant="outline"
           data-empty={!selected}
-          className="data-[empty=true]:text-muted-foreground justify-start text-left font-normal hover:bg-main-dark border-none bg-main-dark/50 rounded-sm w-full"
+          className={cn("data-[empty=true]:text-muted-foreground justify-start text-left font-normal hover:bg-main-dark border-none bg-main-dark/50 rounded-sm w-full", className)}
         >
           {selected ? format(selected, "PPP") : <span>Select Date</span>}
           <CalendarIcon className="ml-auto" />

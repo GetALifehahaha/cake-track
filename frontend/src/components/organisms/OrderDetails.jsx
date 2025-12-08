@@ -2,6 +2,7 @@ import React from 'react';
 import { Title, Label } from '../atoms';
 import { X } from 'lucide-react';
 import { capitalize } from '@/utils/capitalize';
+import { formatCasing } from '@/utils/formatCasing';
 
 const OrderDetails = ({ orderDetails, onClose }) => {
 
@@ -54,7 +55,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             <h5 className='text-sm text-text/75 font-medium'>Tier: <strong className='ml-1 text-text'>{orderDetails.cake_orders.cake_tier}-tier</strong></h5>
                         </div>
                         <div className='flex-1'>
-                            <h5 className='text-sm text-text/75 font-medium'>Inscription: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.message_type)}</strong></h5>
+                            <h5 className='text-sm text-text/75 font-medium'>Inscription: <strong className='ml-1 text-text'>{formatCasing(orderDetails.cake_orders.message_type)}</strong></h5>
                             <h5 className='text-sm text-text/75 font-medium'>Message: <strong className='ml-1 text-text'>{orderDetails.cake_orders.message}</strong></h5>
                             {orderDetails.cupcake_orders &&
                                 <>

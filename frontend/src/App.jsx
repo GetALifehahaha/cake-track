@@ -16,7 +16,9 @@ import {
 	Recipe,
 	BusinessDetails,
 	Cashier,
-	Reports
+	Reports,
+	QueueReady,
+	QueueRejected
 } from './pages'
 import { ProtectedRoute } from './components/organisms'
 
@@ -35,7 +37,9 @@ const App = () => {
 						<Route index element={<QueueOverview />} />
 						<Route path='pending' element={<QueuePending />} />
 						<Route path='accepted' element={<QueueAccepted />} />
+						<Route path='ready' element={<QueueReady />} />
 						<Route path='completed' element={<QueueCompleted />} />
+						<Route path='rejected' element={<QueueRejected />} />
 					</Route>
 					<Route path='/recipe' element={<Recipe />} />
 					<Route path='/reports' element={<Reports />} />

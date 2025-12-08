@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DatePicker, Pagination } from '@/components/molecules';
-import { AcceptedCard, OrderDetails, ConfirmationModal } from '../../components/organisms';
+import { ReadyCard, OrderDetails, ConfirmationModal } from '../../components/organisms';
 import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import Loading from '@/components/molecules/Loading';
@@ -48,7 +48,7 @@ const QueueAccepted = () => {
 		if (completeId == -1) return;
 
 		try {
-			await patchOrder(completeId, { status: "ready" });
+			await patchOrder(completeId, { status: "completed" });
 
 			addToast("Order completed successfully");
 			setCompleteId(-1);
@@ -58,7 +58,7 @@ const QueueAccepted = () => {
 	}
 
 	const listOrder = data.results?.map((cake, index) =>
-		(<AcceptedCard key={index} order={cake} onComplete={() => setCompleteId(cake.id)} onShowDetails={setOrderDetails} />) || null
+		(<ReadyCard key={index} order={cake} onComplete={() => setCompleteId(cake.id)} onShowDetails={setOrderDetails} />) || null
 	)
 
 
@@ -75,14 +75,14 @@ const QueueAccepted = () => {
 			{data.results?.length > 0 ?
 				<div className='grid grid-cols-5 gap-4 mt-8'>
 					{listOrder}
-
 				</div>
 				:
 				<div className='flex w-full h-full justify-center items-center'>
 					<h5 className='text-accent-text/75 font-semibold'>No accepted orders</h5>
 				</div>
 			}
-					<Pagination prev={data.previous} next={data.next} />
+
+			<Pagination prev={data.previous} next={data.next} />
 
 
 			{orderDetails &&

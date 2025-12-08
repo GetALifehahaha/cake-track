@@ -9,6 +9,7 @@ import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { useToast } from '@/context/ToastContext';
 import { capitalize } from '@/utils/capitalize';
+import {formatCasing} from  '@/utils/formatCasing'
 const QueuePending = () => {
 
 	const { addToast } = useToast();
@@ -141,7 +142,7 @@ const QueuePending = () => {
 					<h5 className='text-xs text-accent-text'>Flavor: <strong>{capitalize(cake.cake_orders.base_flavor)}</strong></h5>
 					<h5 className='text-xs text-accent-text'>Filling: <strong>{capitalize(cake.cake_orders.filling)}</strong></h5>
 					<h5 className='text-xs text-accent-text'>Shape: <strong>{capitalize(cake.cake_orders.shape)}</strong></h5>
-					<h5 className='text-xs text-accent-text'>Inscription: <strong>{capitalize(cake.cake_orders.message_type)}</strong></h5>
+					<h5 className='text-xs text-accent-text'>Inscription: <strong>{formatCasing(cake.cake_orders.message_type)}</strong></h5>
 				</div>
 			</div>
 
@@ -164,7 +165,7 @@ const QueuePending = () => {
 		<div className='flex flex-col min-h-140'>
 			<div className='p-2 flex items-center gap-4 py-4 border-b border-main-dark'>
 				<span className='w-60'>
-					<DatePicker className='bg-white' selected={selectedDate} onSelect={handleSetDateFilter} />
+					<DatePicker className='bg-main-white cursor-pointer' selected={selectedDate} onSelect={handleSetDateFilter} />
 				</span>
 				{selectedDate &&
 					<>

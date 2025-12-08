@@ -24,4 +24,5 @@ export { default as InputRejectModalWrapper } from './InputRejectModalWrapper'
 export { default as InputRejectModal } from './InputRejectModal'
 export { default as SizeModal } from './SizeModal'
 export { default as DashboardChart } from './DashboardChart'
+export { default as ReadyCard } from './ReadyCard'
 

@@ -6,7 +6,7 @@ import { capitalize } from '@/utils/capitalize';
 import Loading from '@/components/molecules/Loading';
 import { Pagination } from '@/components/molecules';
 
-const QueueReady = () => {
+const QueueRejected = () => {
 
 	const { data, loading, error, patchOrder } = useOrder();
 
@@ -47,4 +47,4 @@ const QueueReady = () => {
 	)
 }
 
-export default QueueReady
+export default QueueRejected
