@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.utils import timezone
+import pytz
 
 # Create your views here.
 from django.db.models import Sum, Count, F, DateTimeField
@@ -134,6 +135,25 @@ class TransactionViewSet(viewsets.ModelViewSet):
         # 4. Return the full data (nested items, totals, etc.)
         return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        
+        # 1. Get the queryset (Today + Current Cashier)
+        queryset = self.get_queryset()
+        
+        # 2. FIX: Calculate sum in Python loop
+        # Check 'is_void' to ensure we don't count voided transactions
+        daily_revenue = sum(
+            t.net_total for t in queryset 
+            if not t.is_void
+        )
+        
+        # 3. Inject into response
+        if isinstance(response.data, dict):
+            response.data['daily_total_revenue'] = daily_revenue
+            
+        return response
+    
     def get_queryset(self):
         queryset = Transaction.objects.prefetch_related(
             'transaction_items__product',
@@ -142,7 +162,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         if user.groups.filter(name="cashier").exists():
-            queryset = queryset.filter(created_at__date=timezone.now().date())
+            manila_tz = pytz.timezone('Asia/Manila')
+            now_in_manila = timezone.now().astimezone(manila_tz)
+            
+            # 2. Calculate today's query range
+            queryset = queryset.filter(
+                created_at__date=now_in_manila.date(), 
+                cashier=user
+            )
             
         return queryset
     
