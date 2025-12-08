@@ -72,7 +72,12 @@ class Transaction(models.Model):
     
     @property
     def gross_total(self):
-        return sum(item.product_size.price * item.quantity for item in self.transaction_items.all()) #type: ignore
+        # We add "if item.product_size" to check if the size still exists
+        return sum(
+            (item.product_size.price * item.quantity) 
+            for item in self.transaction_items.all() #type:ignore
+            if item.product_size 
+        )
     
     @property
     def discount_amount(self):

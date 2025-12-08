@@ -146,9 +146,13 @@ const Transactions = () => {
         </div>
     ));
 
+
     return (
         <div className='w-[90%] mx-auto flex flex-col gap-8'>
             <Title variant='page' text='Transaction History' />
+            <div className='px-4 py-2.5 rounded-md border border-border'>
+                <h5 className='text-accent-text font-medium text-md'>Today's Revenue: <strong className='ml-4 text-accent-dark'>₱ {(transactionData.daily_total_revenue).toFixed(2)}</strong></h5>
+            </div>
 
             <div className='w-full p-4 border-border border-2 rounded-xl'>
 
