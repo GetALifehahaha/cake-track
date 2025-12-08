@@ -1,7 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.conf import settings
-from resend import Request
 from rest_framework import status, viewsets, generics
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
@@ -46,6 +45,7 @@ class GoogleAuthView(APIView):
     
     def post(self, request):
         token = request.data.get('token')
+        source = request.data.get('source', 'web')
         
         if not token:
             return Response({"error": "Login Token Missing"}, status=status.HTTP_400_BAD_REQUEST)
@@ -63,18 +63,37 @@ class GoogleAuthView(APIView):
                 return Response({"error": "Invalid Token Audience"}, status=status.HTTP_400_BAD_REQUEST)
             
             email = idinfo.get('email')
+            first_name = idinfo.get('given_name', '')
+            last_name = idinfo.get('family_name', '')
             
             if not email:
                 print(f"✗ No email in token")
                 return Response({"error": "Email not found"}, status=status.HTTP_400_BAD_REQUEST)
             
-            user = User.objects.get(
-                email=email
-            )
-            
-            if not user:
-                print(f"✗ Email is not registered")
-                return Response({"error": "No user found with these credentials"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                user = User.objects.get(
+                    email=email
+                )
+            except User.DoesNotExist:
+                if source == 'app':
+                    # Source is APP: Create the account (Customer)
+                    username = f"{first_name.lower()}{last_name.lower()}_{uuid.uuid4().hex[:4]}"
+                    user = User.objects.create(
+                        username=username,
+                        email=email,
+                        first_name=first_name,
+                        last_name=last_name,
+                        # is_staff=False by default, assuming User model defaults
+                    )
+                    user.set_unusable_password() # They use Google to login
+                    user.save()
+                
+                else:
+                    # Source is WEB (or unspecified): Deny access
+                    return Response(
+                        {'detail': 'Account does not exist. Please contact the owner to create your account.'}, 
+                        status=status.HTTP_403_FORBIDDEN
+                    )
             
             refresh = RefreshToken.for_user(user)
             

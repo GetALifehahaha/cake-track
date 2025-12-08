@@ -103,9 +103,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const googleLogin = async (token) => {
+    const googleLogin = async (token, source = 'app') => {
         try {
-            const response = await api.post('/users/google-auth/', { token: token });
+            // Send 'source' to backend
+            const response = await api.post('/users/google-auth/', { 
+                token: token,
+                source: source 
+            });
             await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
             await AsyncStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
@@ -114,7 +118,7 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (err) {
             console.error('Google login failed:', err);
-            return { success: false, error: err.response?.data || err.message };
+            return { success: false, error: err.response?.data?.detail || err.message };
         }
     };
 
