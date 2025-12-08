@@ -17,7 +17,7 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
-        ('pickup', 'Pickup'),
+        ('ready', 'Ready'),
         ('completed', 'Completed'),
     ]
     

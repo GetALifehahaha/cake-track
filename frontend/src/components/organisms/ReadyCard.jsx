@@ -3,7 +3,7 @@ import { Ellipsis } from 'lucide-react';
 import { Button } from '../atoms';
 import { capitalize } from '@/utils/capitalize';
 
-const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
+const ReadyCard = ({ order, onComplete, onShowDetails }) => {
 
 	const [showOptions, setShowOptions] = useState(false);
 
@@ -13,7 +13,7 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 			{showOptions &&
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(false) }}>
-					<Button variant='success' text='READY FOR PICKUP' onClick={() => { onComplete(order.id); setShowOptions(false); }} />
+					<Button variant='success' text='COMPLETE' onClick={() => { onComplete(order.id); setShowOptions(false); }} />
 					<Button variant='error' text='CANCEL' onClick={() => { setShowOptions(false) }} />
 				</div>
 			}
@@ -56,4 +56,4 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 	)
 }
 
-export default AcceptedCard;
+export default ReadyCard;
