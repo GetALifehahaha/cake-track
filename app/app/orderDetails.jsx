@@ -1,5 +1,4 @@
-// app/order-details.jsx
-import { View, Text, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft } from 'lucide-react-native';
@@ -8,6 +7,8 @@ import { capitalize } from '@/utils/capitalize'; // Ensure this path is correct
 const OrderDetails = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { width } = Dimensions.get('window');
+    const imageSize = (width - 32 - 16) / 3;
 
     // 1. We receive the data as a JSON string stringified in the Card
     // We need to parse it back to an object
@@ -20,16 +21,21 @@ const OrderDetails = () => {
 
     // 2. Destructure the API data to match the variable names in your JSX
     // We handle potential null values safely here
-    const { 
-        cake_orders = {}, 
-        full_name: fullName, 
-        phone_number: contactNumber, 
-        email, 
-        address, 
-        due_date: dueDate, 
-        comments = "", 
-        image 
+    const {
+        cake_orders = {},
+        full_name: fullName,
+        phone_number: contactNumber,
+        email,
+        address,
+        due_date: dueDate,
+        comments = "",
+        image,
+        order_images = []
     } = order;
+
+    const displayImages = order_images.length > 0
+        ? order_images.map(img => img.image_url)
+        : (image ? [image] : []);
 
     // 3. Extract cake specifics (handling if cake_orders is null)
     const {
@@ -52,6 +58,14 @@ const OrderDetails = () => {
     const cupcakesCount = order.cupcake_orders?.count || 0;
     const cupcakesFrosting = order.cupcake_orders?.frosting || "";
 
+    const handleImagePress = (imgUri) => {
+        // Navigate to the new preview stack/page
+        router.push({
+            pathname: '/imagePreview',
+            params: { uri: imgUri }
+        });
+    };
+
     return (
         <SafeAreaView className='flex-1 bg-[#F5F5F5]'>
             {/* Header with Back Button */}
@@ -64,9 +78,9 @@ const OrderDetails = () => {
 
             <ScrollView contentContainerStyle={{ padding: 16 }}>
                 <View className='flex-1 justify-start items-start gap-4'>
-                    
+
                     {/* --- YOUR PASTED CODE STARTS HERE --- */}
-                    
+
                     <View className='flex-col gap-2 p-4 bg-white rounded-xl border justify-center border-secondary-light w-full'>
                         <View>
                             <Text className={`${order.status === "rejected" ? 'text-red-400' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(order.status).toUpperCase()}</Text>
@@ -205,16 +219,38 @@ const OrderDetails = () => {
                                 <Text className='text-primary text-lg font-semibold capitalize'>{comments}</Text>
                             }
                         </View>
-                        <View className='w-full p-4 bg-white rounded-lg'>
-                            <Text className='text-gray-400 text-xs mb-1'>Reference</Text>
-                            {image ? (
-                                <Image source={{ uri: image }} style={{ width: 200, height: 200 }} resizeMode="contain" />
-                            ) : (
-                                <View className='w-full p-4 bg-white rounded-lg justify-center items-center'>
-                                    <Text className='text-secondary-light text-lg font-semibold capitalize'>No images</Text>
+
+                        <View className='flex-col gap-2 bg-white w-full'>
+                            <View className='flex-row gap-2 items-center mb-2'>
+                                <View className='bg-gray-100 w-12 h-12 rounded-full items-center justify-center'>
+                                    <NotepadText style={{ color: '#A67C52' }} />
                                 </View>
-                            )}
+                                <Text className='text-primary text-lg font-semibold'>Reference Images</Text>
+                            </View>
+
+                            <View className='flex-row flex-wrap gap-2'>
+                                {displayImages.length > 0 ? (
+                                    displayImages.map((uri, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            onPress={() => handleImagePress(uri)}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Image
+                                                source={{ uri: uri }}
+                                                style={{ width: imageSize, height: imageSize, borderRadius: 8 }}
+                                                resizeMode="cover"
+                                            />
+                                        </TouchableOpacity>
+                                    ))
+                                ) : (
+                                    <View className='w-full p-4 bg-gray-50 rounded-lg justify-center items-center'>
+                                        <Text className='text-gray-400 text-lg font-semibold capitalize'>No images provided</Text>
+                                    </View>
+                                )}
+                            </View>
                         </View>
+
                         <View className='w-[48%] p-4 bg-white rounded-lg'>
                             <Text className='text-gray-400 text-xs mb-1'>Due Date</Text>
                             <Text className='text-primary text-lg font-semibold capitalize'>

@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'pos',
     'inventory',
     'orders',
+    'payment',
     
     'rest_framework',
     'corsheaders',
@@ -161,3 +162,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
+PAYMONGO_SECRET_KEY = config('PAYMONGO_SECRET_KEY')
+PAYMONGO_PUBLIC_KEY = config('PAYMONGO_PUBLIC_KEY')
+PAYMONGO_BASE_URL = config('PAYMONGO_BASE_URL')
+NGROK_URL = config('NGROK_URL')

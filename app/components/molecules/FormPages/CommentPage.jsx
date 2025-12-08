@@ -18,7 +18,7 @@ const CommentPage = ({ comments, setComments, dueDate, setDueDate }) => (
         </View>
 
         <View >
-            <FormLabel text={"Due Date"} />
+            <FormLabel text={"Pickup Date"} />
             <DatePicker onSelectDate={setDueDate} />
         </View>
     </View>

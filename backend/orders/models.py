@@ -14,6 +14,7 @@ class Order(models.Model):
     address = models.CharField(max_length=255)
     
     ORDER_STATUS = [
+        ('unpaid', 'Unpaid'),
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
@@ -21,12 +22,20 @@ class Order(models.Model):
         ('completed', 'Completed'),
     ]
     
-    
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField()
-    status = models.CharField(choices=ORDER_STATUS, max_length=50, default='pending')
+    status = models.CharField(choices=ORDER_STATUS, max_length=50, default='unpaid')
     
     reject_reason = models.TextField(null=True, blank=True)
+    payment_source_id = models.CharField(max_length=255, blank=True, null=True)
+    
+
+class OrderImage(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_images')
+    image_url = models.CharField(max_length=500)
+
+    def __str__(self):
+        return f"Image for Order {self.order}"
 
 
 class CakeOrder(models.Model):
