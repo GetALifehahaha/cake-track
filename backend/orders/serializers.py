@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import (Order, CakeOrder, CupcakeOrder)
+from .models import (Order, CakeOrder, CupcakeOrder, OrderImage)
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -14,14 +14,33 @@ class CupcakeOrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'amount', 'frosting']
         
         
+class OrderImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderImage
+        fields = ['id', 'image_url']
+        
+        
 class OrderSerializer(serializers.ModelSerializer):
     cake_orders = CakeOrderSerializer()
     cupcake_orders = CupcakeOrderSerializer(required=False)
     
+    # This field will read the related images for GET requests
+    order_images = OrderImageSerializer(many=True, read_only=True)
+    
+    # This field accepts a list of strings (URLs) for POST requests
+    uploaded_images = serializers.ListField(
+        child=serializers.CharField(max_length=500),
+        write_only=True,
+        required=False
+    )
+    
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'comments', 'image', 'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 'due_date',
-                  'full_name', 'email', 'phone_number', 'address', 'recipe']
+        fields = [
+            'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
+            'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
+            'due_date', 'full_name', 'email', 'phone_number', 'address', 'recipe'
+        ]
         read_only_fields = ['id', 'created_at', 'customer']
         
         
@@ -29,6 +48,8 @@ class OrderSerializer(serializers.ModelSerializer):
         cake_data = validated_data.pop('cake_orders')
         cupcake_data = validated_data.pop('cupcake_orders', None)
         recipe = validated_data.pop('recipe', None)
+        # Extract the list of image URLs
+        uploaded_images = validated_data.pop('uploaded_images', [])
         
         order = Order.objects.create(**validated_data, recipe=recipe)
         
@@ -37,11 +58,13 @@ class OrderSerializer(serializers.ModelSerializer):
         if cupcake_data:
             CupcakeOrder.objects.create(order=order, **cupcake_data)
             
+        for url in uploaded_images:
+            OrderImage.objects.create(order=order, image_url=url)
+            
         return order
     
     
 class OrderBatchUpdateSerializer(serializers.Serializer):
-    
     # GET all the IDs of the batch PATCH update 
     order_ids = serializers.ListField(
         child=serializers.IntegerField(),

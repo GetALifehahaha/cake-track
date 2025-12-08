@@ -50,13 +50,11 @@ const Orders = () => {
 
   // Calculate stats based on actual data
   const totalOrders = data.count;
-  const readyOrders = data.results.filter(o => o.status === 'completed').length;
+  const readyOrders = data.results.filter(o => o.status === 'ready').length;
   const pendingOrders = data.results.filter(o => o.status === 'pending').length;
 
-  console.log(data.results)
-
   return (
-    <SafeAreaView className='flex-1 bg-[#F5F5F5]'> {/* Fixed bg color */}
+    <SafeAreaView className='flex-1 bg-[#F5F5F5]'> 
       <View className='flex-row p-6 gap-2'>
         <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 rounded-full' />
 

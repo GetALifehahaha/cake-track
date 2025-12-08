@@ -79,6 +79,27 @@ const InitialLayout = () => {
           animation: 'slide_from_bottom'
         }}
       />
+      <Stack.Screen
+        name="payment"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="paymentScreen"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="imagePreview"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
     </Stack>
   )
 }
