@@ -1,14 +1,17 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router' 
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import { Lock, Mail, Eye, EyeClosed, User2Icon } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
+// 1. Import Google Sign-In
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 const LoginSignup = ({ method }) => {
   const { showToast } = useToast();
-  const { login, loading, register } = useContext(AuthContext)
+  // 2. Destructure googleLogin from context
+  const { login, loading, register, googleLogin } = useContext(AuthContext)
   
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
@@ -19,6 +22,46 @@ const LoginSignup = ({ method }) => {
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // 3. Configure Google Sign-In on mount
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: 'YOUR_WEB_CLIENT_ID_FROM_GOOGLE_CONSOLE', // <--- REPLACE THIS
+      offlineAccess: true,
+    });
+  }, []);
+
+  // 4. Handle Google Login
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      // Get the ID token to send to backend
+      const { idToken } = userInfo;
+      
+      if (idToken) {
+        // Pass 'app' source to backend to allow account creation
+        const res = await googleLogin(idToken, 'app'); 
+        
+        if (res.success) {
+          showToast("Logged in with Google!", "success");
+          router.replace('/(tabs)/');
+        } else {
+          showToast(res.error || "Google Auth failed", "error");
+        }
+      }
+    } catch (error) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        showToast("Sign in is in progress", "info");
+      } else {
+        console.error(error);
+        showToast("Google Sign-In Error", "error");
+      }
+    }
+  };
 
   const submitForm = async () => {
     if (method === "login") {
@@ -51,19 +94,12 @@ const LoginSignup = ({ method }) => {
   )
 
   return (
-    // 1. SAFE AREA: Keep as top level
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
-      
-      {/* 2. KEYBOARD AVOIDING VIEW */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        // iOS needs 'padding', Android usually works better with 'height' or undefined
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        // 3. CRITICAL FIX: Increase offset to clear status bars/headers
         keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
-        
-        {/* 4. SCROLLVIEW: Must have flex: 1 to shrink correctly */}
         <ScrollView 
             style={{ flex: 1 }} 
             contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }} 
@@ -101,9 +137,23 @@ const LoginSignup = ({ method }) => {
             {/* LOGIN FORM */}
             {method === "login" &&
               <View className='p-6 gap-2'>
-                <Text className='my-8 text-center text-black font-semibold'>
+                <Text className='text-center text-black font-semibold'>
                   Welcome back! Please login to continue
                 </Text>
+
+                {/* 5. GOOGLE LOGIN BUTTON */}
+                <TouchableOpacity 
+                  onPress={handleGoogleSignIn}
+                  className="bg-white border border-gray-300 flex-row items-center justify-center p-3 rounded-md mt-4 shadow-sm"
+                >
+                  <Image 
+                    source={{ uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" }} 
+                    style={{ width: 20, height: 20, marginRight: 10 }} 
+                  />
+                  <Text className="text-gray-700 font-semibold">Continue with Google</Text>
+                </TouchableOpacity>
+
+                <View className='h-0.5 w-full bg-gray-300 my-8'/>
                 
                 <View className='flex-row gap-2 items-center'>
                   <User2Icon style={{ color: "#BE9B7B" }} size={16} />
@@ -139,9 +189,23 @@ const LoginSignup = ({ method }) => {
             {/* SIGNUP FORM */}
             {method === "signup" &&
               <View className='p-6 gap-2'>
-                <Text className='my-4 text-center text-black font-semibold'>
+                <Text className='text-center text-black font-semibold'>
                   Create an account to start ordering!
                 </Text>
+
+                {/* 6. GOOGLE LOGIN BUTTON (Signup) */}
+                <TouchableOpacity 
+                  onPress={handleGoogleSignIn}
+                  className="bg-white border border-gray-300 flex-row items-center justify-center p-3 rounded-md mt-4 shadow-sm"
+                >
+                  <Image 
+                    source={{ uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" }} 
+                    style={{ width: 20, height: 20, marginRight: 10 }} 
+                  />
+                  <Text className="text-gray-700 font-semibold">Sign up with Google</Text>
+                </TouchableOpacity>
+
+                <View className='h-0.5 w-full bg-gray-300 my-8'/>
 
                 <View className='flex-row gap-2 items-center'>
                   <Mail style={{ color: "#BE9B7B" }} size={16} />
@@ -149,6 +213,7 @@ const LoginSignup = ({ method }) => {
                 </View>
                 <TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your first name' value={firstName} onChangeText={setFirstName} />
 
+                {/* ... rest of signup form inputs ... */}
                 <View className='flex-row gap-2 items-center'>
                   <Mail style={{ color: "#BE9B7B" }} size={16} />
                   <Text className=''>Last Name</Text>

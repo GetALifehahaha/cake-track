@@ -252,7 +252,7 @@ const OrderDetails = () => {
                         </View>
 
                         <View className='w-[48%] p-4 bg-white rounded-lg'>
-                            <Text className='text-gray-400 text-xs mb-1'>Due Date</Text>
+                            <Text className='text-gray-400 text-xs mb-1'>Pickup Date</Text>
                             <Text className='text-primary text-lg font-semibold capitalize'>
                                 {dueDate ? new Date(dueDate).toDateString() : 'None'}
                             </Text>

@@ -73,7 +73,7 @@ const Account = () => {
               </Text>
             </View>
 
-            <TouchableOpacity className='mt-8 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('(auth)/login')}>
+            <TouchableOpacity className='mt-8 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('/login')}>
               <Text className='text-lg font-bold text-white'>
                 Login
               </Text>
