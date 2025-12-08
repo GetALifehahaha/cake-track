@@ -82,7 +82,7 @@ const QueueAccepted = () => {
 					<h5 className='text-accent-text/75 font-semibold'>No accepted orders</h5>
 				</div>
 			}
-					<Pagination prev={data.previous} next={data.next} />
+				<Pagination prev={data.previous} next={data.next} />
 
 
 			{orderDetails &&

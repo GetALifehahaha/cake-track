@@ -26,7 +26,7 @@ const QueueRejected = () => {
 	return (
 		<div className='w-full p-4 border-border border-2 rounded-xl'>
 			<div className='pb-4'>
-				<Title variant='table' text='Completed Transactions' />
+				<Title variant='block' text='Rejected Transactions' />
 			</div>
 			<div className='flex flex-row items-center bg-accent-mute rounded-t-xl'>
 				<h5 className={`text-white font-medium text-center py-2 flex-1`}>ID</h5>
