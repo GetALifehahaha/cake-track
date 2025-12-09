@@ -38,6 +38,8 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
         onClose();
     };
 
+    
+
     return (
         <>
             {show &&
@@ -66,19 +68,42 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                             <View className='flex-col gap-3 mb-8'>
                                 <Text className="text-gray-500 font-semibold mb-2">Status</Text>
                                 {FILTER_OPTIONS.map((option) => {
-                                    const isSelected = selected.includes(option.value);
+                                    // Define the specific text color based on the status value
+                                    let statusColor = 'text-gray-600'; // Default fallback
+
+                                    switch (option.value) {
+                                        case 'pending':
+                                            statusColor = 'text-secondary-light';
+                                            break;
+                                        case 'rejected':
+                                            statusColor = 'text-red-500';
+                                            break;
+                                        case 'ready': // Adjust if your value is 'ready_for_pickup'
+                                        case 'ready_for_pickup':
+                                            statusColor = 'text-yellow-500';
+                                            break;
+                                        case 'accepted':
+                                        case 'completed':
+                                            statusColor = 'text-green-500';
+                                            break;
+                                        default:
+                                            break;
+                                    }
+
                                     return (
                                         <TouchableOpacity 
                                             key={option.value}
                                             onPress={() => toggleSelection(option.value)}
                                             className="flex-row items-center justify-between py-2"
                                         >
-                                            <Text className={`text-lg ${isSelected ? 'text-secondary-strong font-semibold' : 'text-gray-600'}`}>
+                                            {/* Text now always uses the statusColor */}
+                                            <Text className={`text-xl font-bold ${statusColor}`}>
                                                 {option.label}
                                             </Text>
                                             
-                                            <View className={`w-6 h-6 rounded-md border items-center justify-center ${isSelected ? 'bg-secondary-strong border-secondary-strong' : 'border-gray-300 bg-white'}`}>
-                                                {isSelected && <Check size={16} color="white" />}
+                                            {/* Checkbox remains the same (logic for checkbox fill usually needs isSelected) */}
+                                            <View className={`w-6 h-6 rounded-md border items-center justify-center ${selected.includes(option.value) ? 'bg-secondary-strong border-secondary-strong' : 'border-gray-300 bg-white'}`}>
+                                                {selected.includes(option.value) && <Check size={16} color="white" />}
                                             </View>
                                         </TouchableOpacity>
                                     );

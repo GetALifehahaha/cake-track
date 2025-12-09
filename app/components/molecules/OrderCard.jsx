@@ -8,18 +8,25 @@ import { router } from 'expo-router'
 const OrderCard = ({ order }) => {
 
     const statusVariants = {
-        pending: 'bg-gray-100 border-gray-500 text-gray-800',
-        accepted: 'bg-green-100 border-green-500 text-green-800',
-        rejected: 'bg-red-100 border-red-500 text-red',
-        completed: 'bg-green-100 border-green-500 text-green-800',
-    }
+        pending: "text-secondary-light bg-secondary-light/10 border-secondary-light",
+        
+        rejected: "text-red-600 bg-red-100 border-red-200",
+        
+        // Handle both 'ready' and 'ready_for_pickup' just in case
+        ready: "text-yellow-700 bg-yellow-100 border-yellow-200",
+        ready_for_pickup: "text-yellow-700 bg-yellow-100 border-yellow-200",
+        
+        // Handle both 'completed' and 'accepted'
+        completed: "text-green-700 bg-green-100 border-green-200",
+        accepted: "text-green-700 bg-green-100 border-green-200",
+    };
 
     const handlePress = () => {
-    router.push({
-      pathname: '/orderDetails',
-      params: { orderData: JSON.stringify(order) } 
-    });
-  }
+        router.push({
+        pathname: '/orderDetails',
+        params: { orderData: JSON.stringify(order) } 
+        });
+    }
 
     return (
         <TouchableOpacity onPress={handlePress}
@@ -30,7 +37,9 @@ const OrderCard = ({ order }) => {
                 <View className='flex-1'>
                     <View className='flex-row justify-between items-center'>
                         <Text className='opacity-50 font-medium text-lg'>#{order.id}</Text>
-                        <Text className={`px-2 py-1 border rounded-md ${statusVariants[(order.status).toLowerCase()]}`}>{capitalize(order.status)}</Text>
+                        <Text className={`px-2 py-1 border rounded-md overflow-hidden font-medium text-xs ${
+                            statusVariants[order.status.toLowerCase()] || "text-gray-600 bg-gray-100 border-gray-200"
+                        }`}>{capitalize(order.status)}</Text>
                     </View>
                     <View className='flex-row justify-between items-center'>
                         <Text className='font-bold text-lg'>{capitalize(order.cake_orders.occasion)}</Text>
