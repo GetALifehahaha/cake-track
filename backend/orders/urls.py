@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     OrderViewSet,
     CakeOrderViewSet,
-    CupcakeOrderViewSet
+    CupcakeOrderViewSet,
+    DashboardView
 )
 
 routers = DefaultRouter()
@@ -13,5 +14,6 @@ routers.register(r'cake-order', CakeOrderViewSet)
 routers.register(r'cupcake-order', CupcakeOrderViewSet)
 
 urlpatterns = [
-    path('', include(routers.urls))
+    path('', include(routers.urls)),
+    path('analytics/', DashboardView.as_view(), name="dashboard-analytics")
 ]

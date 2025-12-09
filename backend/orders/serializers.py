@@ -39,7 +39,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'due_date', 'full_name', 'email', 'phone_number', 'address', 'recipe'
+            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe'
         ]
         read_only_fields = ['id', 'created_at', 'customer']
         
@@ -89,3 +89,9 @@ class OrderBatchUpdateSerializer(serializers.Serializer):
             
         return data
     
+
+class DashboardSerializer(serializers.Serializer):
+    total_orders = serializers.IntegerField()
+    pending_orders = serializers.IntegerField()
+    completed_orders = serializers.IntegerField()
+    rejected_orders = serializers.IntegerField()

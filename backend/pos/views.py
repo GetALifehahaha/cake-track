@@ -227,7 +227,10 @@ class DashboardAnalyticsView(APIView):
         else:
             avg_daily = 0
 
-        # 6. Top 8 Selling Products
+        # 6. Total Revenue Generated
+        total_revenue_generated = sum(t.net_total for t in valid_transactions)
+
+        # 7. Top 8 Selling Products
         top_products = (
             TransactionItem.objects
             .filter(transaction__is_void=False)
@@ -236,42 +239,33 @@ class DashboardAnalyticsView(APIView):
             .order_by('-total_sold')[:8]
         )
 
-        # 7. Chart Data: Selling Trend Each Day (Based on COUNT/QUANTITY)
+        # 8. Chart Data: Selling Trend Each Day
         trend_data = (
             TransactionItem.objects
             .filter(transaction__is_void=False)
             .annotate(date=TruncDate('transaction__created_at'))
             .values('date')
-            .annotate(daily_count=Sum('quantity')) # <--- Corrected to Sum of Quantity
+            .annotate(daily_count=Sum('quantity'))
             .order_by('date')
         )
         
         formatted_trend = [
-            {
-                "date": item['date'].strftime('%Y-%m-%d'), 
-                "amount": item['daily_count'] 
-            } 
+            {"date": item['date'].strftime('%Y-%m-%d'), "amount": item['daily_count']}
             for item in trend_data
         ]
-        
+
+        # 9. Cashier Performance
         now = timezone.now()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        # Calculate start of this week (assuming Monday start)
         week_start = today_start - timedelta(days=now.weekday())
-        # Calculate start of this month
         month_start = today_start.replace(day=1)
 
         cashier_stats = {}
-
         for t in valid_transactions:
-            # Skip if no cashier assigned
             if not t.cashier:
                 continue
 
-            c_id = t.cashier.id #type: ignore
-            
-            # Initialize cashier in dict if not exists
+            c_id = t.cashier.id
             if c_id not in cashier_stats:
                 cashier_stats[c_id] = {
                     "id": c_id,
@@ -282,38 +276,27 @@ class DashboardAnalyticsView(APIView):
                     "total_revenue": 0,
                 }
 
-            # Calculate amount (uses your net_total property logic)
-            # Ensure your models.py "gross_total" fix is applied!
-            amount = t.net_total 
-
-            # Add to Total
+            amount = t.net_total
             cashier_stats[c_id]["total_revenue"] += amount
-
-            # Add to Daily (Today)
             if t.created_at >= today_start:
                 cashier_stats[c_id]["daily_revenue"] += amount
-
-            # Add to Weekly (This Week)
             if t.created_at >= week_start:
                 cashier_stats[c_id]["weekly_revenue"] += amount
-
-            # Add to Monthly (This Month)
             if t.created_at >= month_start:
                 cashier_stats[c_id]["monthly_revenue"] += amount
 
-        # Convert dict to list for JSON response
         cashier_performance_list = list(cashier_stats.values())
-        # ----------------------------------------
 
-        # 8. Prepare Data
+        # 10. Prepare Data
         data = {
             "total_void_amount": void_total,
             "total_successful_transactions": successful_count,
             "total_products_sold": total_products_sold,
             "avg_daily_transactions": round(avg_daily, 2),
+            "total_revenue_generated": round(total_revenue_generated, 2),  # <-- Added here
             "top_selling_products": list(top_products),
             "sales_trend": formatted_trend,
-            "cashier_performance": cashier_performance_list, # <--- Added here
+            "cashier_performance": cashier_performance_list,
         }
 
         serializer = DashboardMetricsSerializer(data)

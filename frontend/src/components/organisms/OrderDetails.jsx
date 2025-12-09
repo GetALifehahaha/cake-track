@@ -5,6 +5,7 @@ import { capitalize } from '@/utils/capitalize';
 import { formatCasing } from '@/utils/formatCasing';
 import { formatDateForDisplay } from '@/utils/date';
 import { PreviewImage } from '../molecules';
+import { parseTimeString } from '@/utils/time';
 
 
 const OrderDetails = ({ orderDetails, onClose }) => {
@@ -39,7 +40,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             <Title variant='modal' text={'Order ' + orderDetails.id || 'Order Details'} />
                             <h5 className='text-text text-sm font-semibold py-1'>{orderDetails.full_name}</h5>
                             <h5 className='text-text text-sm'>Contact #: <strong>{orderDetails.phone_number}</strong></h5>
-                            <h5 className='text-text text-sm'>Pickup Date: <strong>{orderDetails.due_date}</strong></h5>
+                            <h5 className='text-text text-sm'>Pickup Date: <strong>{orderDetails.due_date} : {parseTimeString(orderDetails.pickup_time)}</strong></h5>
                             <h5 className='text-text text-sm'>Order Date: <strong>{formatDateForDisplay(orderDetails.created_at)}</strong></h5>
                         </div>
                         <div>

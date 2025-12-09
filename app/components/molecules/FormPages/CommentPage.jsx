@@ -1,8 +1,9 @@
 import { View, TextInput } from 'react-native';
 import FormLabel from '@/components/atoms/FormLabel';
 import DatePicker from '@/components/atoms/DatePicker';
+import TimePicker from '@/components/atoms/TimePicker';
 
-const CommentPage = ({ comments, setComments, dueDate, setDueDate }) => (
+const CommentPage = ({ comments, setComments, dueDate, setDueDate, pickupTime, setPickupTime }) => (
     <View className='gap-4'>
         <View >
             <FormLabel text={"Comments"} />
@@ -20,6 +21,10 @@ const CommentPage = ({ comments, setComments, dueDate, setDueDate }) => (
         <View >
             <FormLabel text={"Pickup Date"} />
             <DatePicker onSelectDate={setDueDate} />
+        </View>
+        <View >
+            <FormLabel text={"Pickup Time"} />
+            <TimePicker onSelectTime={setPickupTime} />
         </View>
     </View>
 );

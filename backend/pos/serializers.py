@@ -121,7 +121,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
-            'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type'
+            'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
         ]
    
 
@@ -163,6 +163,7 @@ class DashboardMetricsSerializer(serializers.Serializer):
     total_successful_transactions = serializers.IntegerField()
     total_products_sold = serializers.IntegerField()
     avg_daily_transactions = serializers.FloatField()
+    total_revenue_generated = serializers.FloatField()  # <-- New field
     top_selling_products = serializers.ListField(
         child=serializers.DictField()
     )

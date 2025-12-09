@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { Button } from '../atoms';
 import { capitalize } from '@/utils/capitalize';
+import { parseTimeString } from '@/utils/time';
 
 const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 
@@ -22,7 +23,7 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 				<Ellipsis onClick={(e) => { e.stopPropagation(); onShowDetails(order) }} className='cursor-pointer' size={16} />
 			</div>
 			<h5 className='text-accent-text text-xs'>{order.full_name}</h5>
-			<h5 className='text-error text-xs'>{order.due_date}</h5>
+			<h5 className='text-error text-xs'>{order.due_date}: {parseTimeString(order.pickup_time)}</h5>
 
 			{/* Cake Details */}
 			<div className='flex mt-4'>

@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft } from 'lucide-react-native';
 import { capitalize } from '@/utils/capitalize'; // Ensure this path is correct
+import { parseTimeString } from '@/utils/time';
 
 const OrderDetails = () => {
     const router = useRouter();
@@ -28,6 +29,7 @@ const OrderDetails = () => {
         email,
         address,
         due_date: dueDate,
+        pickup_time: pickupTime,
         comments = "",
         image,
         order_images = []
@@ -255,6 +257,12 @@ const OrderDetails = () => {
                             <Text className='text-gray-400 text-xs mb-1'>Pickup Date</Text>
                             <Text className='text-primary text-lg font-semibold capitalize'>
                                 {dueDate ? new Date(dueDate).toDateString() : 'None'}
+                            </Text>
+                        </View>
+                        <View className='w-[48%] p-4 bg-white rounded-lg'>
+                            <Text className='text-gray-400 text-xs mb-1'>Pickup Time</Text>
+                            <Text className='text-primary text-lg font-semibold capitalize'>
+                                {pickupTime ? parseTimeString(pickupTime) : 'None'}
                             </Text>
                         </View>
                     </View>

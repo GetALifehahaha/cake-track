@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import DashboardApi from "@/api/DashboardApi";
+// import OrderDashboardApi from "@/api/OrderDashboardApi"; // we won't call it for now
 
 export default function useDashboard() {
-    const queryKey = ["dashboard-analytics"];
 
-    // Default structure ensures your UI doesn't crash while loading
-    const defaultData = {
+    /** ---------- DEFAULT DATA ---------- **/
+    const defaultDashboard = {
         total_void_amount: 0,
         total_successful_transactions: 0,
         total_products_sold: 0,
@@ -14,29 +14,48 @@ export default function useDashboard() {
         sales_trend: []
     };
 
-    const { 
-        data: dashboardData = defaultData, 
-        isLoading, 
-        error,
-        refetch 
+    const dummyOrderDashboard = {
+        total_orders: 10,
+        pending_orders: 2,
+        completed_orders: 10,
+        rejected_orders: 5
+    };
+
+    /** ---------- POS DASHBOARD QUERY ---------- **/
+    const {
+        data: dashboardData = defaultDashboard,
+        isLoading: dashboardLoading,
+        error: dashboardError,
+        refetch: refreshDashboard
     } = useQuery({
-        queryKey: queryKey,
+        queryKey: ["dashboard-analytics"],
         queryFn: () => DashboardApi(),
-        // Data remains fresh for 5 minutes. 
-        // Use '0' if you want it to refresh every time the user visits the page.
-        staleTime: 1000 * 60 * 5, 
-        retry: 1, // Only retry once if it fails
+        staleTime: 1000 * 60 * 5,
+        retry: 1
     });
 
+    /** ---------- ORDERS DASHBOARD DUMMY ---------- **/
+    const orderDashboardData = dummyOrderDashboard;
+    const orderDashboardLoading = false;
+    const orderDashboardError = null;
+    const refreshOrderDashboard = () => console.log("Order dashboard refreshed");
+
+    /** ---------- RETURN COMBINED ---------- **/
     return {
-        // Data
+        /* POS Dashboard */
         dashboardData,
-        
-        // Statuses
-        dashboardLoading: isLoading,
-        dashboardError: error ? { status: "error", detail: error.message || "Failed to load analytics" } : null,
-        
-        // Actions
-        refreshDashboard: refetch
+        dashboardLoading,
+        dashboardError: dashboardError
+            ? { status: "error", detail: dashboardError.message }
+            : null,
+
+        /* Orders Dashboard (dummy) */
+        orderDashboardData,
+        orderDashboardLoading,
+        orderDashboardError,
+
+        /* Actions */
+        refreshDashboard,
+        refreshOrderDashboard
     };
 }

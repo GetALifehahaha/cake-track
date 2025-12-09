@@ -13,7 +13,8 @@ from .serializers import (
     CakeOrderSerializer,
     CupcakeOrderSerializer,
     OrderSerializer,
-    OrderBatchUpdateSerializer
+    OrderBatchUpdateSerializer,
+    DashboardSerializer
 )
 
 from .models import (
@@ -129,4 +130,18 @@ class OrderViewSet(viewsets.ModelViewSet):
             "message": f"Succesfully updated {updated_count} orders.", "errors": errors
         }, status=status.HTTP_200_OK
         )
-        
+
+class DashboardView(APIView):
+    def get(self, request):
+        # Base queryset
+        orders = Order.objects.all()
+
+        data = {
+            "total_orders": orders.count(),
+            "pending_orders": orders.filter(status="pending").count(),
+            "completed_orders": orders.filter(status="completed").count(),
+            "rejected_orders": orders.filter(status="rejected").count(),
+        }
+
+        serializer = DashboardSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -24,6 +24,7 @@ import ConfirmModal from '@/components/organisms/ConfirmModal';
 import useOrder from '@/hooks/useOrder';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
+import { parseTimeString } from '@/utils/time';
 
 // Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -52,13 +53,14 @@ const CustomOrders = () => {
     const [borderColor, setBorderColor] = useState();
     const [toppings, setToppings] = useState();
     const [addOn, setAddOn] = useState();
-    const [messageType, setMessageType] = useState();
+    const [messageType, setMessageType] = useState("");
     const [message, setMessage] = useState();
     const [hasCupcakes, setHasCupcakes] = useState(false);
     const [cupcakesCount, setCupcakesCount] = useState();
     const [cupcakesFrosting, setCupcakesFrosting] = useState(null);
     const [comments, setComments] = useState('');
     const [dueDate, setDueDate] = useState(null);
+    const [pickupTime, setPickupTime] = useState(null);
     const [images, setImages] = useState([]);
     const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`);
     const [address, setAddress] = useState('');
@@ -187,6 +189,7 @@ const CustomOrders = () => {
                 phone_number: contactNumber,
                 address: address,
                 due_date: dueDate,
+                pickup_time: pickupTime,
                 status: "pending",
                 cake_orders: cakeData,
                 ...((hasCupcakes && !personallyDesign) && {
@@ -241,7 +244,7 @@ const CustomOrders = () => {
 
             case 8: // Comments + Due Date
                 if (!dueDate) {
-                    showToast("Please select a due date for your order", 'error');
+                    showToast("Please select a pickup date for your order", 'error');
                     return false;
                 }
                 // If personally designing, force them to add a comment describing the cake
@@ -425,6 +428,16 @@ const CustomOrders = () => {
         }
     };
 
+    function formatText(str) {
+        return str
+            .split('_')                 // ["On", "both"]
+            .map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            )
+            .join(' ');                 // "On Both"
+    }
+
+
     return (
         <SafeAreaView className='flex-1 bg-[#8B5A3C]'>
             {/* 1. Behavior: 'padding' is best for iOS. Android often handles this automatically.
@@ -527,6 +540,7 @@ const CustomOrders = () => {
                                 <CommentPage
                                     comments={comments} setComments={setComments}
                                     dueDate={dueDate} setDueDate={setDueDate}
+                                    pickupTime={pickupTime} setPickupTime={setPickupTime}
                                 />
                             )}
                             {page === 9 && (
@@ -630,7 +644,7 @@ const CustomOrders = () => {
                                                     <View className='w-[48%] p-4 bg-white rounded-lg'>
                                                         <Text className='text-gray-400 text-xs mb-1'>Message Type</Text>
                                                         <Text className='text-primary text-lg font-semibold capitalize'>
-                                                            {messageType || 'None'}
+                                                            {formatText(messageType) || 'None'}
                                                         </Text>
                                                     </View>
                                                     <View className='w-[48%] p-4 bg-white rounded-lg'>
@@ -727,6 +741,12 @@ const CustomOrders = () => {
                                                 <Text className='text-gray-400 text-xs mb-1'>Pickup Date</Text>
                                                 <Text className='text-primary text-lg font-semibold capitalize'>
                                                     {dueDate ? new Date(dueDate).toDateString() : 'None'}
+                                                </Text>
+                                            </View>
+                                            <View className='w-[48%] p-4 bg-white rounded-lg'>
+                                                <Text className='text-gray-400 text-xs mb-1'>Pickup Date</Text>
+                                                <Text className='text-primary text-lg font-semibold capitalize'>
+                                                    {pickupTime ? pickupTime : 'None'}
                                                 </Text>
                                             </View>
                                         </View>

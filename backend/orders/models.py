@@ -24,6 +24,7 @@ class Order(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField()
+    pickup_time = models.TimeField()
     status = models.CharField(choices=ORDER_STATUS, max_length=50, default='unpaid')
     
     reject_reason = models.TextField(null=True, blank=True)

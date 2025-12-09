@@ -118,7 +118,7 @@ const Transactions = () => {
                         }
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
-                            {item.id}
+                            {item?.display_id || item.id}
                         </h5>
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
