@@ -65,7 +65,9 @@ const Orders = () => {
 
 		const matchesStatus = filters.length === 0 || filters.includes(order.status);
 
-		return matchesSearch && matchesStatus;
+		const isNotCompleted = order.status !== "completed";
+
+		return matchesSearch && matchesStatus && isNotCompleted;
 	}) || []; // Fallback to empty array if data.results is undefined
 
 	const listOrders = filteredList.map((order, index) => (

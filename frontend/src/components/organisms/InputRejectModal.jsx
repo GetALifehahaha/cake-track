@@ -6,7 +6,8 @@ import ConfirmationModalWrapper from './ConfirmationModalWrapper';
 
 const InputRejectModal = ({ onConfirm, onReject }) => {
 
-    const [reason, setReason] = useState();
+    const [reason, setReason] = useState("");
+    const [feedback, setFeedback] = useState("");
 
     return (
         <>
