@@ -4,7 +4,6 @@ import api from '@/api/api';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { Alert } from 'react-native'; // Added for guest interaction
 
 // Polyfill for jwt-decode in React Native environment
 import "core-js/stable/atob";
@@ -126,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         await AsyncStorage.removeItem(ACCESS_TOKEN);
         await AsyncStorage.removeItem(REFRESH_TOKEN);
         handleGuestState();
-        router.replace('/(auth)/login');
+        router.replace('/login');
     };
 
     const register = async (username, password, first_name, last_name, email) => {
@@ -160,7 +159,7 @@ export const AuthProvider = ({ children }) => {
                         onPress: () => {
                             // Navigate to login, passing the params so Login screen knows where to go back to
                             router.push({
-                                pathname: '/(auth)/login',
+                                pathname: '/login',
                                 params: redirectParams 
                             });
                         } 

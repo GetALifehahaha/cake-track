@@ -169,3 +169,4 @@ class DashboardMetricsSerializer(serializers.Serializer):
     sales_trend = serializers.ListField(
         child=serializers.DictField()
     )
+    cashier_performance = serializers.ListField()

@@ -253,6 +253,57 @@ class DashboardAnalyticsView(APIView):
             } 
             for item in trend_data
         ]
+        
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Calculate start of this week (assuming Monday start)
+        week_start = today_start - timedelta(days=now.weekday())
+        # Calculate start of this month
+        month_start = today_start.replace(day=1)
+
+        cashier_stats = {}
+
+        for t in valid_transactions:
+            # Skip if no cashier assigned
+            if not t.cashier:
+                continue
+
+            c_id = t.cashier.id #type: ignore
+            
+            # Initialize cashier in dict if not exists
+            if c_id not in cashier_stats:
+                cashier_stats[c_id] = {
+                    "id": c_id,
+                    "name": t.cashier.get_full_name() or t.cashier.username,
+                    "daily_revenue": 0,
+                    "weekly_revenue": 0,
+                    "monthly_revenue": 0,
+                    "total_revenue": 0,
+                }
+
+            # Calculate amount (uses your net_total property logic)
+            # Ensure your models.py "gross_total" fix is applied!
+            amount = t.net_total 
+
+            # Add to Total
+            cashier_stats[c_id]["total_revenue"] += amount
+
+            # Add to Daily (Today)
+            if t.created_at >= today_start:
+                cashier_stats[c_id]["daily_revenue"] += amount
+
+            # Add to Weekly (This Week)
+            if t.created_at >= week_start:
+                cashier_stats[c_id]["weekly_revenue"] += amount
+
+            # Add to Monthly (This Month)
+            if t.created_at >= month_start:
+                cashier_stats[c_id]["monthly_revenue"] += amount
+
+        # Convert dict to list for JSON response
+        cashier_performance_list = list(cashier_stats.values())
+        # ----------------------------------------
 
         # 8. Prepare Data
         data = {
@@ -261,7 +312,8 @@ class DashboardAnalyticsView(APIView):
             "total_products_sold": total_products_sold,
             "avg_daily_transactions": round(avg_daily, 2),
             "top_selling_products": list(top_products),
-            "sales_trend": formatted_trend
+            "sales_trend": formatted_trend,
+            "cashier_performance": cashier_performance_list, # <--- Added here
         }
 
         serializer = DashboardMetricsSerializer(data)
