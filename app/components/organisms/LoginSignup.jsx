@@ -6,12 +6,12 @@ import { Lock, Mail, Eye, EyeClosed, User2Icon } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 // 1. Import Google Sign-In
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+// import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 const LoginSignup = ({ method }) => {
   const { showToast } = useToast();
   // 2. Destructure googleLogin from context
-  const { login, loading, register, googleLogin } = useContext(AuthContext)
+  const { login, loading, register } = useContext(AuthContext)
   
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
@@ -24,44 +24,44 @@ const LoginSignup = ({ method }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // 3. Configure Google Sign-In on mount
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: 'YOUR_WEB_CLIENT_ID_FROM_GOOGLE_CONSOLE', // <--- REPLACE THIS
-      offlineAccess: true,
-    });
-  }, []);
+  // useEffect(() => {
+  //   GoogleSignin.configure({
+  //     webClientId: 'YOUR_WEB_CLIENT_ID_FROM_GOOGLE_CONSOLE', // <--- REPLACE THIS
+  //     offlineAccess: true,
+  //   });
+  // }, []);
 
-  // 4. Handle Google Login
-  const handleGoogleSignIn = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
+  // // 4. Handle Google Login
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     await GoogleSignin.hasPlayServices();
+  //     const userInfo = await GoogleSignin.signIn();
       
-      // Get the ID token to send to backend
-      const { idToken } = userInfo;
+  //     // Get the ID token to send to backend
+  //     const { idToken } = userInfo;
       
-      if (idToken) {
-        // Pass 'app' source to backend to allow account creation
-        const res = await googleLogin(idToken, 'app'); 
+  //     if (idToken) {
+  //       // Pass 'app' source to backend to allow account creation
+  //       const res = await googleLogin(idToken, 'app'); 
         
-        if (res.success) {
-          showToast("Logged in with Google!", "success");
-          router.replace('/(tabs)/');
-        } else {
-          showToast(res.error || "Google Auth failed", "error");
-        }
-      }
-    } catch (error) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // User cancelled the login flow
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        showToast("Sign in is in progress", "info");
-      } else {
-        console.error(error);
-        showToast("Google Sign-In Error", "error");
-      }
-    }
-  };
+  //       if (res.success) {
+  //         showToast("Logged in with Google!", "success");
+  //         router.replace('/(tabs)/');
+  //       } else {
+  //         showToast(res.error || "Google Auth failed", "error");
+  //       }
+  //     }
+  //   } catch (error) {
+  //     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+  //       // User cancelled the login flow
+  //     } else if (error.code === statusCodes.IN_PROGRESS) {
+  //       showToast("Sign in is in progress", "info");
+  //     } else {
+  //       console.error(error);
+  //       showToast("Google Sign-In Error", "error");
+  //     }
+  //   }
+  // };
 
   const submitForm = async () => {
     if (method === "login") {
@@ -142,7 +142,7 @@ const LoginSignup = ({ method }) => {
                 </Text>
 
                 {/* 5. GOOGLE LOGIN BUTTON */}
-                <TouchableOpacity 
+                {/* <TouchableOpacity 
                   onPress={handleGoogleSignIn}
                   className="bg-white border border-gray-300 flex-row items-center justify-center p-3 rounded-md mt-4 shadow-sm"
                 >
@@ -151,7 +151,7 @@ const LoginSignup = ({ method }) => {
                     style={{ width: 20, height: 20, marginRight: 10 }} 
                   />
                   <Text className="text-gray-700 font-semibold">Continue with Google</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <View className='h-0.5 w-full bg-gray-300 my-8'/>
                 
@@ -194,7 +194,7 @@ const LoginSignup = ({ method }) => {
                 </Text>
 
                 {/* 6. GOOGLE LOGIN BUTTON (Signup) */}
-                <TouchableOpacity 
+                {/* <TouchableOpacity 
                   onPress={handleGoogleSignIn}
                   className="bg-white border border-gray-300 flex-row items-center justify-center p-3 rounded-md mt-4 shadow-sm"
                 >
@@ -203,7 +203,7 @@ const LoginSignup = ({ method }) => {
                     style={{ width: 20, height: 20, marginRight: 10 }} 
                   />
                   <Text className="text-gray-700 font-semibold">Sign up with Google</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
                 <View className='h-0.5 w-full bg-gray-300 my-8'/>
 

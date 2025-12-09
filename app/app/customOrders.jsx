@@ -253,7 +253,7 @@ const CustomOrders = () => {
 
             case 9: // Image
                 // NEW: If personally designing, an image reference is required
-                if (personallyDesign && !image) {
+                if (personallyDesign && images.length === 0) {
                     showToast("Please upload a reference image for your custom design", 'error');
                     return false;
                 }
@@ -772,6 +772,12 @@ const CustomOrders = () => {
                                                     </Text>
                                                 </View>
                                             </View>
+                                        </View>
+                                    </View>
+
+                                    <View className='flex-1 justify-start items-start gap-4 w-full'>
+                                        <View className='flex-col gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                                            <Text className='font-semibold text-secondary-light text-center'>You will be asked to pay ₱ 500.00 as a downpayment</Text>
                                         </View>
                                     </View>
                                 </View>
