@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
-import { CheckoutProduct, ProductCard } from '../components/molecules'
+import { CheckoutProduct, ModalFeedbackCard, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
@@ -211,6 +211,7 @@ const Home = () => {
             addToast("Transaction successful")
         }
         setShowPaymentModal(false);
+        setModalFeedbackContent(null);
     }
 
     const removeAllProducts = () => {
@@ -372,12 +373,8 @@ const Home = () => {
                 />
             }
 
-            {/* {showClearCheckoutModal &&
-                <ClearCheckoutModal onConfirm={voidPayment} />
-            } */}
-
             {showClearCheckoutModal &&
-                <Modal>
+                <Modal onClose={() => setShowClearCheckoutModal(false)}>
                     <div className='flex flex-col justify-center items-center gap-4'>
                         <div className='bg-accent-mute/20 text-accent-mute p-4 rounded-full w-fit'>
                             <Lock size={36}/>
@@ -398,12 +395,6 @@ const Home = () => {
                     </div>
                 </Modal>
             }
-
-            {}
-
-            {/* {prepProduct &&
-                <SizeModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
-            } */}
 
             {prepProduct &&
                 <Modal title="Sizes" onClose={() => setPrepProduct(null)}>
