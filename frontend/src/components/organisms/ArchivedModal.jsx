@@ -9,7 +9,7 @@ import Loading from '../molecules/Loading';
 const ArchivedModal = ({onRestore, onClose}) => {
 
     const [selectedId, setSelectedId] = useState(null);
-    const {productData, productLoading, productError} = useProduct({isArchived: true})
+    const {data: productData, loading: productLoading, error: productError} = useProduct({isArchived: true});
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     if (productLoading) return <Loading />

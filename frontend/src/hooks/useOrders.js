@@ -47,39 +47,27 @@ export default function useOrder() {
         onSuccess: onSuccessInvalidate,
     });
 
-    // BATCH UPDATE
     const batchUpdateMutation = useMutation({
         mutationFn: (params) => OrdersApi.batchUpdate(params),
         onSuccess: onSuccessInvalidate,
     });
 
-    // DELETE
     const deleteMutation = useMutation({
         mutationFn: (id) => OrdersApi.delete(id),
         onSuccess: onSuccessInvalidate,
     });
 
-    // --- 4. Return Interface ---
-    // We map React Query's internal state to match your previous hook's API
-    // so you don't have to rewrite your UI components too much.
-
     return {
-        // Data
-        data: ordersQuery.data || [], // Default to empty array if loading/undefined
+        data: ordersQuery.data || [],
         
-        // Combined Loading State (Fetching OR Mutating)
         loading: ordersQuery.isLoading || 
                  createMutation.isPending || 
                  updateMutation.isPending || 
                  deleteMutation.isPending ||
                  batchUpdateMutation.isPending,
 
-        // Errors (You can pick specific errors or general ones)
         error: ordersQuery.error || createMutation.error || updateMutation.error,
 
-        // Actions
-        // We wrap these to match your old signature (except fetchOrders is removed as it's automatic now)
-        
         postOrder: async (params) => {
             return createMutation.mutateAsync(params);
         },
@@ -96,7 +84,6 @@ export default function useOrder() {
             return deleteMutation.mutateAsync(id);
         },
 
-        // Manual refresh (rarely needed, but available)
         refresh: () => ordersQuery.refetch(),
     };
 }

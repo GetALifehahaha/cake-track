@@ -18,7 +18,7 @@ const Home = () => {
     const { addToast } = useToast();
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const { productData, productLoading, productError } = useProduct();
+    const {data: productData, loading: productLoading, error: productError} = useProduct();
     const { postTransaction, transactionLoading, transactionError, transactionResponse } = useTransaction();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
