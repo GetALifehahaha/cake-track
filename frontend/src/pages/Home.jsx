@@ -185,7 +185,7 @@ const Home = () => {
             return;
         }
 
-        onConfirm(true);
+        voidPayment();
     }
 
     const completePayment = async (value) => {
@@ -221,31 +221,29 @@ const Home = () => {
         if (voidProducts.length > 0) setShowClearCheckoutModal(true);
     }
 
-    const voidPayment = async (value) => {
-        if (value) {
-            const voidProductsPayload = voidProducts.map(p => ({
-                product: p.id,
-                product_size: p.size_id,
-                quantity: p.amount,
-            }))
+    const voidPayment = async () => {
+        const voidProductsPayload = voidProducts.map(p => ({
+            product: p.id,
+            product_size: p.size_id,
+            quantity: p.amount,
+        }))
 
-            await postTransaction({
-                is_void: true,
-                payment_method: "cash",
-                transaction_items: voidProductsPayload,
-                paid_amount: 0,
-                order_type: orderType,
-            })
+        await postTransaction({
+            is_void: true,
+            payment_method: "cash",
+            transaction_items: voidProductsPayload,
+            paid_amount: 0,
+            order_type: orderType,
+        })
 
-            if (transactionResponse) {
-                setReceivedPayment(value);
-            }
-            
-            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
-            setVoidProducts([]);
-            addToast("Transction voided successfully")
-            localStorage.removeItem('cart');
+        if (transactionResponse) {
+            setReceivedPayment(value);
         }
+        
+        setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
+        setVoidProducts([]);
+        addToast("Transction voided successfully")
+        localStorage.removeItem('cart');
 
         setShowClearCheckoutModal(false);
     }
@@ -374,9 +372,9 @@ const Home = () => {
                 />
             }
 
-            {showClearCheckoutModal &&
+            {/* {showClearCheckoutModal &&
                 <ClearCheckoutModal onConfirm={voidPayment} />
-            }
+            } */}
 
             {showClearCheckoutModal &&
                 <Modal>
@@ -395,7 +393,7 @@ const Home = () => {
                     }
 
                     <div className='flex gap-4 ml-auto'>
-                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => onConfirm(false)}/>
+                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => setShowClearCheckoutModal(false)}/>
                         <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode}/>
                     </div>
                 </Modal>
