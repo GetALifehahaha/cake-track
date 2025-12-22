@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
-import { Minus, X } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
 import useTransaction from '@/hooks/useTransaction'
@@ -38,9 +38,16 @@ const Home = () => {
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
-    const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
+    const [showClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
+
+
+    const actualAccessCode = 1234;
+    const [accessCode, setAccessCode] = useState();
+
+    const [modalFeedbackContent, setModalFeedbackContent] = useState({});
+    const [showModalFeedback, setShowModalFeedback] = useState(false);
 
     // SET AND TOGGLES
 
@@ -50,18 +57,6 @@ const Home = () => {
         const discount = discountData.find(d => d.id === value)
         setDiscountValue(value ? discount.rate : null)
     }
-
-    // const handleToggleCheckoutProduct = (product) => {
-    //     setCheckoutProducts(cp => {
-    //         let prod = [...cp];
-
-    //         if (prod.some(p => p.id == product.id)) {
-    //             return prod
-    //         }
-
-    //         return [...prod, { ...product, amount: 1 }];
-    //     })
-    // }
 
     const handleSetFilter = (value) => {
         setFilter(filter => {
@@ -149,6 +144,9 @@ const Home = () => {
 
             return [...checkoutProducts, product]
         })
+
+        setPrepProduct(null);
+        setModalFeedbackContent(null);
     }
 
     const toggleAllVoidItems = () => {
@@ -173,6 +171,21 @@ const Home = () => {
     const proceedToCheckout = () => {
         if (!netTotal) return
         setShowPaymentModal(true);
+    }
+
+    
+    const confirmAccessCode = () => {
+        if (accessCode != actualAccessCode) {
+            setModalFeedbackContent({
+                type: "error",
+                label: "Wrong Access Code",
+                details: "Please enter the correct access code"
+            })
+            setShowModalFeedback(true);
+            return;
+        }
+
+        onConfirm(true);
     }
 
     const completePayment = async (value) => {
@@ -361,9 +374,34 @@ const Home = () => {
                 />
             }
 
-            {showShowClearCheckoutModal &&
+            {showClearCheckoutModal &&
                 <ClearCheckoutModal onConfirm={voidPayment} />
             }
+
+            {showClearCheckoutModal &&
+                <Modal>
+                    <div className='flex flex-col justify-center items-center gap-4'>
+                        <div className='bg-accent-mute/20 text-accent-mute p-4 rounded-full w-fit'>
+                            <Lock size={36}/>
+                        </div>
+                        <h5 className='font-bold text-xl'>Access Code Required</h5>
+                        <h5 className='text-text/75 font-medium'>Enter the 4-digit access code to void items</h5>
+                    </div>
+
+                    <input value={accessCode} onChange={(e) => setAccessCode(e.target.value)} type='password' maxLength={4} className='mx-auto bg-accent-mute/20 p-4 rounded-xl border-4 border-border font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute' placeholder='ENTER CODE'/>
+
+                    { showModalFeedback &&
+                        <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
+                    }
+
+                    <div className='flex gap-4 ml-auto'>
+                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => onConfirm(false)}/>
+                        <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode}/>
+                    </div>
+                </Modal>
+            }
+
+            {}
 
             {/* {prepProduct &&
                 <SizeModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
@@ -376,7 +414,7 @@ const Home = () => {
                             <div 
                             key={id} 
                             className='flex flex-col gap-2 items-center p-2.5 rounded-md border border-border basis-1/5 cursor-pointer hover:bg-main-dark'
-                            // onClick={() => {onChoose({...product, size_id: id, size: size, price: price, amount: 1}); onClose()}}
+                            onClick={() => {addToCheckout({...prepProduct, size_id: id, size: size, price: price, amount: 1})}}
                             >
                                 <h5 className='font-bold text-xl text-text'>{size}</h5>
 
