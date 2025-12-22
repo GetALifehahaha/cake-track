@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Dropdown, Button, Label } from '../components/atoms'
+import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
-import { Minus } from 'lucide-react'
+import { Minus, X } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
 import useTransaction from '@/hooks/useTransaction'
@@ -11,6 +11,7 @@ import useDiscount from '@/hooks/useDiscount'
 import { useToast } from '@/context/ToastContext'
 import Loading from '@/components/molecules/Loading'
 import { cn } from '@/utils/cn'
+import Modal from '@/components/molecules/Modal'
 
 const Home = () => {
 
@@ -364,8 +365,29 @@ const Home = () => {
                 <ClearCheckoutModal onConfirm={voidPayment} />
             }
 
-            {prepProduct &&
+            {/* {prepProduct &&
                 <SizeModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
+            } */}
+
+            {prepProduct &&
+                <Modal title="Sizes" onClose={() => setPrepProduct(null)}>
+                    <div className='flex gap-2'>
+                        {prepProduct.sizes.map(({id, size, price}) => 
+                            <div 
+                            key={id} 
+                            className='flex flex-col gap-2 items-center p-2.5 rounded-md border border-border basis-1/5 cursor-pointer hover:bg-main-dark'
+                            // onClick={() => {onChoose({...product, size_id: id, size: size, price: price, amount: 1}); onClose()}}
+                            >
+                                <h5 className='font-bold text-xl text-text'>{size}</h5>
+
+                                <h5 className='font-semibold text-text/75'>₱ {price}</h5>
+                            </div>
+                        )}
+                        {prepProduct.sizes.length === 0 &&
+                            <h5 className='font-medium text-text/50 mx-auto text-sm'>No Sizes to Show</h5>
+                        }
+                    </div>
+                </Modal>
             }
         </div>
     )
