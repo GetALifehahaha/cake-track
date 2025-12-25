@@ -41,9 +41,9 @@ class Product(models.Model):
         return self.name
     
 
-class ProductSize(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sizes")
-    size = models.CharField(max_length=5)
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
+    label = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
@@ -109,8 +109,8 @@ class TransactionItem(models.Model):
         on_delete=models.PROTECT,
         related_name="product_items"
     )
-    product_size = models.ForeignKey(
-        ProductSize,
+    product_variant = models.ForeignKey(
+        ProductVariant,
         on_delete=models.SET_NULL,
         null=True,
         blank=True
@@ -118,7 +118,7 @@ class TransactionItem(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        size_name = f" - {self.product_size.size}" if self.product_size else ""
+        variant_name = f" - {self.product_variant.label}" if self.product_variant else ""
         return f"{self.quantity} × {self.product.name}{size_name}"
 
 

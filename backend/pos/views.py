@@ -23,7 +23,7 @@ from .filters import TransactionFilter
 
 from .serializers import (DiscountSerializer, 
                           CategorySerializer, 
-                          ProductSizeSerializer, 
+                          ProductVariantSerializer, 
                           ProductSerializer, 
                           TransactionCreateSerializer, 
                           TransactionSerializer, 
@@ -32,7 +32,7 @@ from .serializers import (DiscountSerializer,
                           )
 from .models import (Discount, 
                      Category, 
-                     ProductSize, 
+                     ProductVariant, 
                      Product, 
                      Transaction, 
                      TransactionItem,
@@ -60,9 +60,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     pagination_class = None
     
         
-class ProductSizeViewSet(viewsets.ModelViewSet):
-    queryset = ProductSize.objects.all()
-    serializer_class = ProductSizeSerializer
+class ProductVariantViewSet(viewsets.ModelViewSet):
+    queryset = ProductVariant.objects.all()
+    serializer_class = ProductVariantSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = None
     

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Discount, Category, Product, ProductSize,
+    Discount, Category, Product, ProductVariant,
     Transaction, TransactionItem
 )
 
@@ -20,15 +20,15 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 # -----------------------------
-# Product & ProductSize
+# Product & ProductVariant
 # -----------------------------
-@admin.register(ProductSize)
-class ProductSizeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'product', 'size', 'price']
-    search_fields = ['product__name', 'size__name']
+@admin.register(ProductVariant)
+class ProductVariantAdmin(admin.ModelAdmin):
+    list_display = ['id', 'product', 'label', 'price']
+    search_fields = ['product__name', 'label__name']
 
-class ProductSizeInline(admin.TabularInline):
-    model = ProductSize
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
     extra = 1  # how many blank product sizes to show
     readonly_fields = []
 
@@ -38,7 +38,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'category', 'is_archived']
     search_fields = ['name', 'description']
     list_filter = ['category', 'is_archived']
-    inlines = [ProductSizeInline]
+    inlines = [ProductVariantInline]
 
 
 # -----------------------------
@@ -47,7 +47,7 @@ class ProductAdmin(admin.ModelAdmin):
 class TransactionItemInline(admin.TabularInline):
     model = TransactionItem
     extra = 1
-    autocomplete_fields = ['product', 'product_size']
+    autocomplete_fields = ['product', 'product_variant']
 
 
 @admin.register(Transaction)
@@ -61,6 +61,6 @@ class TransactionAdmin(admin.ModelAdmin):
 # Optional: Register TransactionItem separately if needed
 @admin.register(TransactionItem)
 class TransactionItemAdmin(admin.ModelAdmin):
-    list_display = ['id', 'transaction', 'product', 'product_size', 'quantity']
+    list_display = ['id', 'transaction', 'product', 'product_variant', 'quantity']
     search_fields = ['product__name', 'transaction__id']
     list_filter = ['product']
