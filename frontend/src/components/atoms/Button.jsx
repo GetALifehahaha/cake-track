@@ -1,6 +1,7 @@
+import { cn } from '@/utils/cn'
 import React from 'react'
 
-const Button = ({variant="block", size="base",  text="Button", icon: Icon, onClick}) => {
+const Button = ({variant="block", size="base",  text="Button", icon: Icon, onClick, className=''}) => {
 
     const buttonVariants = {
         main: 'w-full p-2 rounded-full bg-accent justify-center items-center text-sm font-bold text-main-white',
@@ -25,7 +26,7 @@ const Button = ({variant="block", size="base",  text="Button", icon: Icon, onCli
     return (
         <button 
         onClick={onClick}
-        className={`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`}>
+        className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className)}>
             {Icon && <Icon width={18}/>}
             {text && text}
         </button>

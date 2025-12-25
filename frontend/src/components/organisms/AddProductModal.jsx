@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { Button, Dropdown, Label, Title } from '../atoms';
-import { X, Plus, Upload, Loader2 } from 'lucide-react'
+import { X, Plus, Upload, Loader2, Minus, Variable } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
 import { ConfirmationModal } from '.';
 import {
@@ -13,13 +13,18 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const [productName, setProductName] = useState("");
     const [category, setCategory] = useState("");
-    const [sizes, setSizes] = useState([
-        {size: 'XS', active: false, price: ''},
-        {size: 'S', active: false, price: ''},
-        {size: 'M', active: false, price: ''},
-        {size: 'L', active: false, price: ''},
-        {size: 'XL', active: false, price: ''},
-    ]);
+    // const [sizes, setSizes] = useState([
+    //     {size: 'XS', active: false, price: ''},
+    //     {size: 'S', active: false, price: ''},
+    //     {size: 'M', active: false, price: ''},
+    //     {size: 'L', active: false, price: ''},
+    //     {size: 'XL', active: false, price: ''},
+    // ]);
+
+    const [variants, setVariants] = useState([
+        {label: "", price: 0}
+    ])
+    
     const [image, setImage] = useState(null)
     const [loading, setLoading] = useState(false);
 
@@ -126,12 +131,16 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
         setCategory(value);
     }
 
-    const toggleSize = (size) => {
-        setSizes(prev => prev.map(item => item.size === size ? {...item, active: !item.active} : item));
+    const updatePrice = (index, value) => {
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: value} : item));
     }
 
-    const updatePrice = (size, value) => {
-        setSizes(prev => prev.map(item => item.size === size ? {...item, price: value} : item));
+    const updateLabel = (index, value) => {
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: value} : item));
+    }
+
+    const removeVariant = (index) => {
+        setVariants(prev => prev.filter((item, itemIndex) => itemIndex !== index))
     }
 
     const handleSetShowConfirmationModal = () => {
@@ -192,38 +201,36 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                             </div>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Sizes' />
-                            {/* <input 
-                            type='number' 
-                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={price} placeholder='P 0.00' onChange={(e) => handleSetPrice(e)}/> */}
-                            <div className="grid grid-cols-2 gap-4 w-full">
-                                {sizes.map(item => (
-                                    <div key={item.size} className="flex items-center gap-2">
+                            <Label variant='modal' text='Variants' />
+                            <div className="flex flex-col gap-2 w-full">
+                                {variants.map(({label, price}, index) => (
+                                    <div className='flex items-center gap-2 flex-1'>
                                         
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSize(item.size)}
-                                            className={cn(
-                                                "aspect-square w-12 rounded border-2 border-border hover:border-text/50 text-text font-bold cursor-pointer",
-                                                !item.active && 'opacity-50'
-                                            )}
-                                        >
-                                            {item.size}
-                                        </button>
-
-                                        {/* INPUT */}
                                         <input
-                                            type="number"
-                                            value={item.price}
-                                            disabled={!item.active}
-                                            onChange={(e) => updatePrice(item.size, e.target.value)}
+                                            type="text"
+                                            value={label}
+                                            placeholder='Label'
+                                            onChange={(e) => updateLabel(index, e.target.value)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
-                                                !item.active && "opacity-50 pointer-events-none"
                                             )}
                                         />
+                                        <input
+                                            type="number"
+                                            value={price}
+                                            onChange={(e) => updatePrice(index, e.target.value)}
+                                            className={cn(
+                                                "p-2 rounded w-full bg-main-dark/50",
+                                            )}
+                                        />
+                                        {index === variants.length-1 ?
+                                            <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0}])} />
+                                            :
+                                            <Button text='' icon={Minus} variant='icon' onClick={() => removeVariant(index)} />
+                                        }
                                     </div>
-                                ))}
+                                ))
+                            }
                             </div>  
                         </div>
                     </div>
