@@ -20,7 +20,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
-        fields = ['id', 'size', 'price']
+        fields = ['id', 'label', 'price']
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -41,7 +41,6 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         
     def create(self, validated_data):
-        print(validated_data)
         # get data from api call. expects ex: sizes: [{size: 'XL', price: '150'},...]
         variants_data = validated_data.pop('variants', [])
         # create new product if data is validated, destructure keyword arguments

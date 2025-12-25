@@ -77,11 +77,10 @@ class Transaction(models.Model):
     
     @property
     def gross_total(self):
-        # We add "if item.product_size" to check if the size still exists
         return sum(
-            (item.product_size.price * item.quantity) 
+            (item.product_variant.price * item.quantity) 
             for item in self.transaction_items.all() #type:ignore
-            if item.product_size 
+            if item.product_variant
         )
     
     @property
