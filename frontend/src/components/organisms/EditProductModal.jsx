@@ -91,7 +91,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
         setShowConfirmationModal(false);
         setLoading(true);
 
-        if (!productName || !category) {
+        if (!productName || !category || !variants) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -105,7 +105,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
             name: productName,
             image: imageChanged ? image ? await uploadToCloudinary(image) : null : image,
             category_id: category,
-            variants: variants.filter((_, index) => index !== variants.length - 1)
+            variants: variants.filter(({label, price}, index) => index !== variants.length - 1 || (label && price))
         }
 
         onConfirm(payload);

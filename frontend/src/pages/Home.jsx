@@ -174,7 +174,6 @@ const Home = () => {
         setShowPaymentModal(true);
     }
 
-    // TODO: Fix payment
     const completePayment = async (value) => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
@@ -214,7 +213,7 @@ const Home = () => {
         if (value) {
             const voidProductsPayload = voidProducts.map(p => ({
                 product: p.id,
-                product_size: p.size_id,
+                product_variant: p.variant_id,
                 quantity: p.amount,
             }))
 
