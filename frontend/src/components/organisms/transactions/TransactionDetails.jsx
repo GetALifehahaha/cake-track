@@ -1,10 +1,9 @@
 import React from 'react';
-import { Title, Button } from '../atoms';
+import { Title, Button } from '../../atoms';
 import { Download, Printer, X } from 'lucide-react';
+import { formatToDecimal } from '@/utils/formatToDecimal';
 
 const TransactionDetails = ({ transactionDetail, onClose }) => {
-
-    console.log(transactionDetail)
 
     const downloadPdf = async () => {
         window.print()
@@ -48,8 +47,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                                 {transactionDetail.transaction_items.map((item, index) =>
                                     <tr key={index}>
                                         <td className="py-2 text-center">{item.quantity}</td>
-                                        <td className="py-2">{item.product.name} - {item.product_size.size}</td>
-                                        <td className="text-right py-2">{(item.product_size.price * item.quantity).toFixed(2)}</td>
+                                        <td className="py-2">{item.product.name} - {item.product_variant.label}</td>
+                                        <td className="text-right py-2">{(item.product_variant.price * item.quantity).toFixed(2)}</td>
                                     </tr>)}
                             </tbody>
                         </table>
@@ -71,7 +70,7 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                             </div> */}
                             <div className="flex justify-between font-bold text-base pt-1 text-text">
                                 <h5>Total:</h5>
-                                <h5>₱ {(transactionDetail?.net_total || 0).toFixed(2)}</h5>
+                                <h5>₱ {formatToDecimal(transactionDetail.net_total)}</h5>
                             </div>
                         </div>
 

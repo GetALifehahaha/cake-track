@@ -47,7 +47,7 @@ class ProductVariant(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.product.name} - {self.size} : {self.price}"
+        return f"{self.product.name} - {self.label} : {self.price}"
     
 
 class Transaction(models.Model):
@@ -74,28 +74,12 @@ class Transaction(models.Model):
         ('take-out', 'Take OUT')
     ]
     order_type = models.CharField(max_length=10, choices=ORDER_TYPE, default='dine-in')
-    
-    @property
-    def gross_total(self):
-        return sum(
-            (item.product_variant.price * item.quantity) 
-            for item in self.transaction_items.all() #type:ignore
-            if item.product_variant
-        )
-    
-    @property
-    def discount_amount(self):
-        if self.discount:
-            return self.gross_total * self.discount.rate
-        return 0
-    
-    @property
-    def net_total(self):
-        return self.gross_total - self.discount_amount
-    
-    @property
-    def change(self):
-        return (self.net_total - self.paid_amount) * -1
+
+    gross_total = models.DecimalField(max_digits=11, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=11, decimal_places=2)
+    net_total = models.DecimalField(max_digits=11, decimal_places=2)
+    change = models.DecimalField(max_digits=11, decimal_places=2)
+
     
 class TransactionItem(models.Model):
     transaction = models.ForeignKey(
@@ -118,7 +102,7 @@ class TransactionItem(models.Model):
 
     def __str__(self):
         variant_name = f" - {self.product_variant.label}" if self.product_variant else ""
-        return f"{self.quantity} × {self.product.name}{size_name}"
+        return f"{self.quantity} × {self.product.name}{variant_name}"
 
 
 class BusinessSettings(models.Model):

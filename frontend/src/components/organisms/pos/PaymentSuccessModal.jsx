@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Title, Label, Button } from '../atoms';
+import { Title, Label, Button } from '../../atoms';
 import { CheckCircle, X, LucidePrinter, Download } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 

@@ -4,6 +4,8 @@ from .models import (
     Discount, Category, Product, ProductVariant,
     Transaction, TransactionItem, BusinessSettings
 )
+from decimal import Decimal
+import json
 
 class DiscountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -109,11 +111,6 @@ class TransactionSerializer(serializers.ModelSerializer):
     discount = DiscountSerializer(read_only=True)
     transaction_items = TransactionItemSerializer(many=True, read_only=True)
     
-    gross_total = serializers.ReadOnlyField()
-    discount_amount = serializers.ReadOnlyField()
-    net_total = serializers.ReadOnlyField()
-    change = serializers.ReadOnlyField()
-    
     class Meta:
         model = Transaction
         fields = [
@@ -139,15 +136,37 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             "discount": {"required": False, "allow_null": True},
         }
         
-        
+    # FIXME: Fix the bug
     def create(self, validated_data):
+        print(validated_data)
+
         items_data = validated_data.pop('transaction_items')
         validated_data['cashier'] = self.context['request'].user
-        transaction = Transaction.objects.create(**validated_data)
-        
+
+        gross_total = sum(
+            Decimal(item['product_variant'].price) * item['quantity'] # ! item.product_variant.price
+            for item in items_data
+        )
+
+        discount = validated_data.pop('discount', None)
+
+        discount_amount = gross_total * discount.rate if discount else Decimal('0.00')
+
+        net_total = gross_total - discount_amount
+
+        change = validated_data.pop('paid_amount') - net_total
+
+        transaction = Transaction.objects.create(
+            gross_total=gross_total,
+            discount_amount=discount_amount,
+            net_total=net_total,
+            change=change,
+            **validated_data
+        )
+
         for item in items_data:
             TransactionItem.objects.create(transaction=transaction, **item)
-            
+
         return transaction
     
 class BusinessSettingsSerializer(serializers.ModelSerializer):

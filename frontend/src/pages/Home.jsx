@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label } from '../components/atoms'
 import { CheckoutProduct, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal } from '../components/organisms/'
 import { Minus } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -174,11 +174,12 @@ const Home = () => {
         setShowPaymentModal(true);
     }
 
+    // TODO: Fix payment
     const completePayment = async (value) => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
                 product: p.id,
-                product_size: p.size_id,
+                product_variant: p.variant_id,
                 quantity: p.amount,
             }))
 
@@ -187,8 +188,10 @@ const Home = () => {
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
                 paid_amount: parseFloat(value),
-                discount: discount
+                discount: discount,
             })
+
+            // console.log(checkoutProductsPayload)
 
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
@@ -365,7 +368,7 @@ const Home = () => {
             }
 
             {prepProduct &&
-                <SizeModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
+                <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
             }
         </div>
     )

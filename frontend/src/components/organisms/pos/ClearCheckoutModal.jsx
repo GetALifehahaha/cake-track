@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '../atoms';
-import { ModalFeedbackCard } from '../molecules';
+import { Button } from '../../atoms';
+import { ModalFeedbackCard } from '../../molecules';
 import { Lock, X } from 'lucide-react';
 
 const ClearCheckoutModal = ({onConfirm}) => {
