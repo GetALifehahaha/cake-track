@@ -1,6 +1,6 @@
 import React from 'react';
-import { ModalBody } from '../molecules';
-import { Title } from '../atoms';
+import { ModalBody } from '../../molecules';
+import { Title } from '../../atoms';
 import { X } from 'lucide-react';
 
 const VariantModal = ({product, onClose, onChoose}) => {

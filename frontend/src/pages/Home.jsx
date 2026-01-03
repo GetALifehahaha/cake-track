@@ -80,7 +80,7 @@ const Home = () => {
             let products = prod;
 
             products = products.map(product => {
-                if (product.size_id == id) {
+                if (product.variant_id == id) {
                     product.amount = value
                 }
 
@@ -97,9 +97,8 @@ const Home = () => {
         setShowPaymentSuccessModal(!showPaymentSuccessModal);
     }
 
-
-    const itemInVoid = (id) => {
-        return voidProducts.some(prod => prod.id == id);
+    const itemInVoid = (variant_id) => {
+        return voidProducts.some(prod => prod.variant_id == variant_id);
     }
 
     // USE EFFECTS AND MEMOS
@@ -144,7 +143,7 @@ const Home = () => {
 
     const addToCheckout = (product) => {
         setCheckoutProducts(() => {
-            if (checkoutProducts.some(prod => prod.size_id === product.size_id)) return checkoutProducts
+            if (checkoutProducts.some(prod => prod.variant_id === product.variant_id)) return checkoutProducts
 
             return [...checkoutProducts, product]
         })
@@ -161,8 +160,8 @@ const Home = () => {
         setVoidProducts(vp => {
             let prod = [...vp];
 
-            if (prod.some(p => p.id == product.id)) {
-                return prod.filter(p => p.id != product.id);
+            if (itemInVoid(product.variant_id)) {
+                return prod.filter(p => p.variant_id != product.variant_id);
             }
             
             return [...prod, product];
@@ -253,22 +252,26 @@ const Home = () => {
         <ProductCard
             product={product}
             key={product.id}
-            isSelected={checkoutProducts.some(p => p.id == product.id)}
+            isSelected={checkoutProducts.some(p => p.variant_id == product.variant_id)}
             onToggle={() => setPrepProduct(product)} />
     )
 
     const listVoidProducts = checkoutProducts.map((product) => 
         <div 
-        key={product.id} 
-        className={cn('relative flex flex-row gap-8 w-full items-center px-4 cursor-pointer hover:bg-border/50 rounded-sm active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.id)})}
+        key={product.variant_id} 
+        className={cn('relative flex flex-row border-2 border-border rounded-xl gap-8 w-full items-center px-4 py-1.5 cursor-pointer hover:bg-border/50 active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.variant_id)})}
         onClick = {() => addToVoid(product)}
         >
-            {itemInVoid(product.id) &&
+            {itemInVoid(product.variant_id) &&
                 <div className='bg-error w-2 h-2 aspect-square rounded-sm absolute -translate-x-5' />
             }
+
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
-                <h5 className='text-accent-text text-sm'>₱ {Number(product.price * product.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                <div className='flex items-center gap-2'>
+                    <h5 className='font-medium text-sm text-text/50'>{product.label}</h5>
+                    <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                </div>
             </div>
         </div>
     )

@@ -22,7 +22,7 @@ export { default as InventoryInOut } from './InventoryInOut'
 export { default as ProtectedRoute } from './ProtectedRoute'
 export { default as InputRejectModalWrapper } from './InputRejectModalWrapper'
 export { default as InputRejectModal } from './InputRejectModal'
-export { default as VariantModal } from './VariantModal'
+export { default as VariantModal } from './pos/VariantModal'
 export { default as DashboardChart } from './DashboardChart'
 export { default as ReadyCard } from './ReadyCard'
 

@@ -10,9 +10,9 @@ const CheckoutProduct = ({product, onChangeAmount}) => {
                 return;
             }
 
-            onChangeAmount(product.size_id, product.amount-1);
+            onChangeAmount(product.variant_id, product.amount-1);
         } else if (method == "add") {
-            onChangeAmount(product.size_id, product.amount+1);
+            onChangeAmount(product.variant_id, product.amount+1);
         }
 
     }
