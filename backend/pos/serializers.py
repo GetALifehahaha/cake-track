@@ -136,7 +136,6 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             "discount": {"required": False, "allow_null": True},
         }
         
-    # FIXME: Fix the bug
     def create(self, validated_data):
         print(validated_data)
 

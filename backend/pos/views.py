@@ -117,23 +117,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return TransactionCreateSerializer
         return TransactionSerializer
-    
-    # def create(self, request, *args, **kwargs):
-    #     # 1. Use TransactionCreateSerializer to validate input
-    #     write_serializer = self.get_serializer(data=request.data)
-    #     write_serializer.is_valid(raise_exception=True)
-        
-    #     # 2. Save the object (this calls create() in your CreateSerializer)
-    #     transaction_instance = write_serializer.save()
 
-    #     # 3. CRITICAL: Switch to TransactionSerializer for the response
-    #     # This grabs the instance we just made and serializes it with the "Read" format
-    #     read_serializer = TransactionSerializer(transaction_instance)
-        
-    #     headers = self.get_success_headers(read_serializer.data)
-        
-    #     # 4. Return the full data (nested items, totals, etc.)
-    #     return Response(read_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -141,11 +125,21 @@ class TransactionViewSet(viewsets.ModelViewSet):
         # 1. Get the queryset (Today + Current Cashier)
         queryset = self.get_queryset()
         
-        # 2. FIX: Calculate sum in Python loop
-        # Check 'is_void' to ensure we don't count voided transactions
-        daily_revenue = sum(
-            t.net_total for t in queryset 
-            if not t.is_void
+        # # 2. FIX: Calculate sum in Python loop
+        # # Check 'is_void' to ensure we don't count voided transactions
+        # daily_revenue = sum(
+        #     t.net_total for t in queryset 
+        #     if not t.is_void and t.created_at is date.now()
+        # )
+
+        manila_tz = pytz.timezone('Asia/Manila')
+        today = timezone.now().astimezone(manila_tz)
+
+        daily_revenue = (
+            queryset
+            .filter(is_void=False, created_at__date=today)
+            .aggregate(total=Sum("net_total"))['total']
+            or 0
         )
         
         # 3. Inject into response

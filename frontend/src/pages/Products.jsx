@@ -131,9 +131,17 @@ const Products = () => {
                 </div>
             </div>
 
-            <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
-                {listProducts}
-            </div>
+            {productData.results.length == 0 ?
+                <div className='flex justify-center items-center h-full'>
+                    <h5 className='text-sm font-medium text-text/50'>
+                        No products to show
+                    </h5>
+                </div>
+                :
+                <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
+                    {listProducts}
+                </div>
+            }
 
             {showAddProductModal &&
             <AddProductModal categoryOptions={categoryOptions} onConfirm={addProduct} onClose={handleCloseAddProductModal} />
