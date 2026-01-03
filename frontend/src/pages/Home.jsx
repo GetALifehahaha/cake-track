@@ -193,7 +193,6 @@ const Home = () => {
 
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
-            localStorage.removeItem('cart');
 
             addToast("Transaction successful")
         }
@@ -228,7 +227,7 @@ const Home = () => {
                 setReceivedPayment(value);
             }
             
-            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
+            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
             setVoidProducts([]);
             addToast("Transction voided successfully")
             localStorage.removeItem('cart');
