@@ -258,7 +258,7 @@ const Home = () => {
     const listVoidProducts = checkoutProducts.map((product) => 
         <div 
         key={product.variant_id} 
-        className={cn('relative flex flex-row border-2 border-border rounded-xl gap-8 w-full items-center px-4 py-1.5 cursor-pointer hover:bg-border/50 active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.variant_id)})}
+        className={cn('relative flex flex-row border-2 border-border rounded-xl gap-8 w-full items-center px-4 py-1.5 cursor-pointer hover:bg-border active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.variant_id)})}
         onClick = {() => addToVoid(product)}
         >
             {itemInVoid(product.variant_id) &&
@@ -287,9 +287,17 @@ const Home = () => {
                 </div>
 
                 {/* Product Section */}
-                <div className='grid grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
-                    {listProduct}
-                </div>
+                {productData.results.length == 0 ?
+                    <div className='flex justify-center items-center h-full'>
+                        <h5 className='text-sm font-medium text-text/50'>
+                            No products to show
+                        </h5>
+                    </div>
+                    :
+                    <div className='grid grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
+                        {listProduct}
+                    </div>
+                }
             </div>
 
             {/* Checkout Section */}

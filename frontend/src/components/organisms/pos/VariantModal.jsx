@@ -15,10 +15,10 @@ const VariantModal = ({product, onClose, onChoose}) => {
                 {product?.variants?.map(({id, label, price}) => 
                     <div 
                     key={id} 
-                    className='flex flex-col gap-2 items-center p-2.5 rounded-md border border-border basis-1/5 cursor-pointer hover:bg-main-dark'
+                    className='flex flex-col gap-2 items-center p-2.5 rounded-md border border-border basis-1/5 cursor-pointer hover:bg-border'
                     onClick={() => {onChoose({...product, variant_id: id, label: label, price: price, amount: 1}); onClose()}}
                     >
-                        <h5 className='font-bold text-xl text-text'>{label}</h5>
+                        <h5 className='font-bold text-md text-text'>{label}</h5>
 
                         <h5 className='font-semibold text-text/75'>₱ {price}</h5>
                     </div>
