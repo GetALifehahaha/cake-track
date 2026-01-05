@@ -294,7 +294,7 @@ const Home = () => {
                         </h5>
                     </div>
                     :
-                    <div className='grid grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
+                    <div className='grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
                         {listProduct}
                     </div>
                 }
