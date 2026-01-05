@@ -12,9 +12,9 @@ import Loading from '@/components/molecules/Loading';
 
 const Products = () => {
     const { addToast } = useToast();
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();  
     const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
-    const {postProduct, productData, patchProduct, productLoading, productError, productResponse, refresh} = useProduct();
+    const {postProduct, data: productData, patchProduct, loading: productLoading, error: productError} = useProduct();
     const [filter, setFilter] = useState(null);
     const [prepEditProduct, setPrepEditProduct] = useState(null);
 
@@ -23,16 +23,6 @@ const Products = () => {
     const [showArchivedModal, setShowArchivedModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
-
-    useEffect(() => {
-        if (productResponse) {
-            handleCloseAddProductModal();
-            handleCloseEditProductModal();
-            handleCloseArchivedModal();
-            setPrepEditProduct(null)
-            refresh();
-        }
-    }, [productResponse])
 
     useEffect(() => {
         let params = new URLSearchParams();
@@ -45,6 +35,13 @@ const Products = () => {
     if (productLoading || categoryLoading) return <Loading />
     if (productError) return <h5>Error loading product data</h5>
     if (categoryError) return <h5>Error loading category data</h5>
+
+    const clear = () => {
+        handleCloseAddProductModal();
+        handleCloseEditProductModal();
+        handleCloseArchivedModal();
+        setPrepEditProduct(null)
+    }
 
     const handleShowAddProductModal = () => {
         setShowAddProductModal(!showAddProductModal);
@@ -70,10 +67,10 @@ const Products = () => {
 
 
     const addProduct = async (value) => {
-        console.log(value)
         if (value) {
             await postProduct(value);
             addToast('Product added successfully', 'success');
+            clear();
         }
     }
     
@@ -81,6 +78,7 @@ const Products = () => {
         if (value) {
             await patchProduct(prepEditProduct.id, value)
             addToast('Product edited successfully', 'success');
+            clear();
         }
     }
     
@@ -88,6 +86,7 @@ const Products = () => {
         if (value) {
             await patchProduct(value.id, {is_archived: false})
             addToast('Product restored successfully', 'success');
+            clear();
         }
     }
 

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Dropdown, Button, Label } from '../components/atoms'
-import { CheckoutProduct, ProductCard } from '../components/molecules'
+import { Dropdown, Button, Label, Title } from '../components/atoms'
+import { CheckoutProduct, ModalFeedbackCard, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
-import { Minus } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
 import useTransaction from '@/hooks/useTransaction'
@@ -11,13 +11,14 @@ import useDiscount from '@/hooks/useDiscount'
 import { useToast } from '@/context/ToastContext'
 import Loading from '@/components/molecules/Loading'
 import { cn } from '@/utils/cn'
+import Modal from '@/components/molecules/Modal'
 
 const Home = () => {
 
     const { addToast } = useToast();
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const { productData, productLoading, productError } = useProduct();
+    const {data: productData, loading: productLoading, error: productError} = useProduct();
     const { postTransaction, transactionLoading, transactionError, transactionResponse } = useTransaction();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
@@ -37,9 +38,16 @@ const Home = () => {
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
-    const [showShowClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
+    const [showClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
+
+
+    const actualAccessCode = 1234;
+    const [accessCode, setAccessCode] = useState();
+
+    const [modalFeedbackContent, setModalFeedbackContent] = useState({});
+    const [showModalFeedback, setShowModalFeedback] = useState(false);
 
     // SET AND TOGGLES
 
@@ -49,18 +57,6 @@ const Home = () => {
         const discount = discountData.find(d => d.id === value)
         setDiscountValue(value ? discount.rate : null)
     }
-
-    // const handleToggleCheckoutProduct = (product) => {
-    //     setCheckoutProducts(cp => {
-    //         let prod = [...cp];
-
-    //         if (prod.some(p => p.id == product.id)) {
-    //             return prod
-    //         }
-
-    //         return [...prod, { ...product, amount: 1 }];
-    //     })
-    // }
 
     const handleSetFilter = (value) => {
         setFilter(filter => {
@@ -148,6 +144,9 @@ const Home = () => {
 
             return [...checkoutProducts, product]
         })
+
+        setPrepProduct(null);
+        setModalFeedbackContent(null);
     }
 
     const toggleAllVoidItems = () => {
@@ -174,6 +173,21 @@ const Home = () => {
         setShowPaymentModal(true);
     }
 
+    
+    const confirmAccessCode = () => {
+        if (accessCode != actualAccessCode) {
+            setModalFeedbackContent({
+                type: "error",
+                label: "Wrong Access Code",
+                details: "Please enter the correct access code"
+            })
+            setShowModalFeedback(true);
+            return;
+        }
+
+        voidPayment();
+    }
+
     const completePayment = async (value) => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
@@ -197,6 +211,7 @@ const Home = () => {
             addToast("Transaction successful")
         }
         setShowPaymentModal(false);
+        setModalFeedbackContent(null);
     }
 
     const removeAllProducts = () => {
@@ -207,31 +222,29 @@ const Home = () => {
         if (voidProducts.length > 0) setShowClearCheckoutModal(true);
     }
 
-    const voidPayment = async (value) => {
-        if (value) {
-            const voidProductsPayload = voidProducts.map(p => ({
-                product: p.id,
-                product_size: p.size_id,
-                quantity: p.amount,
-            }))
+    const voidPayment = async () => {
+        const voidProductsPayload = voidProducts.map(p => ({
+            product: p.id,
+            product_size: p.size_id,
+            quantity: p.amount,
+        }))
 
-            await postTransaction({
-                is_void: true,
-                payment_method: "cash",
-                transaction_items: voidProductsPayload,
-                paid_amount: 0,
-                order_type: orderType,
-            })
+        await postTransaction({
+            is_void: true,
+            payment_method: "cash",
+            transaction_items: voidProductsPayload,
+            paid_amount: 0,
+            order_type: orderType,
+        })
 
-            if (transactionResponse) {
-                setReceivedPayment(value);
-            }
-            
-            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
-            setVoidProducts([]);
-            addToast("Transction voided successfully")
-            localStorage.removeItem('cart');
+        if (transactionResponse) {
+            setReceivedPayment(value);
         }
+        
+        setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
+        setVoidProducts([]);
+        addToast("Transction voided successfully")
+        localStorage.removeItem('cart');
 
         setShowClearCheckoutModal(false);
     }
@@ -360,12 +373,48 @@ const Home = () => {
                 />
             }
 
-            {showShowClearCheckoutModal &&
-                <ClearCheckoutModal onConfirm={voidPayment} />
+            {showClearCheckoutModal &&
+                <Modal onClose={() => setShowClearCheckoutModal(false)}>
+                    <div className='flex flex-col justify-center items-center gap-4'>
+                        <div className='bg-accent-mute/20 text-accent-mute p-4 rounded-full w-fit'>
+                            <Lock size={36}/>
+                        </div>
+                        <h5 className='font-bold text-xl'>Access Code Required</h5>
+                        <h5 className='text-text/75 font-medium'>Enter the 4-digit access code to void items</h5>
+                    </div>
+
+                    <input value={accessCode} onChange={(e) => setAccessCode(e.target.value)} type='password' maxLength={4} className='mx-auto bg-accent-mute/20 p-4 rounded-xl border-4 border-border font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute' placeholder='ENTER CODE'/>
+
+                    { showModalFeedback &&
+                        <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
+                    }
+
+                    <div className='flex gap-4 ml-auto'>
+                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => setShowClearCheckoutModal(false)}/>
+                        <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode}/>
+                    </div>
+                </Modal>
             }
 
             {prepProduct &&
-                <SizeModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
+                <Modal title="Sizes" onClose={() => setPrepProduct(null)}>
+                    <div className='flex gap-2'>
+                        {prepProduct.sizes.map(({id, size, price}) => 
+                            <div 
+                            key={id} 
+                            className='flex flex-col gap-2 items-center p-2.5 rounded-md border border-border basis-1/5 cursor-pointer hover:bg-main-dark'
+                            onClick={() => {addToCheckout({...prepProduct, size_id: id, size: size, price: price, amount: 1})}}
+                            >
+                                <h5 className='font-bold text-xl text-text'>{size}</h5>
+
+                                <h5 className='font-semibold text-text/75'>₱ {price}</h5>
+                            </div>
+                        )}
+                        {prepProduct.sizes.length === 0 &&
+                            <h5 className='font-medium text-text/50 mx-auto text-sm'>No Sizes to Show</h5>
+                        }
+                    </div>
+                </Modal>
             }
         </div>
     )

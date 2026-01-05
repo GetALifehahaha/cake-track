@@ -1,105 +1,62 @@
-    import { useState, useEffect } from "react";
-    import ProductApi from "../api/ProductApi";
+    import { useMemo } from "react";
+    import { ProductApi } from "@/api/ProductApi";
     import { useParams, useSearchParams } from "react-router-dom";
+    import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
     export default function useProduct({isArchived=false} = {}) {
-        const [productResponse, setProductResponse] = useState();
-        const [productData, setProductData] = useState([]);
-        const [productLoading, setProductLoading] = useState(true);
-        const [productError, setProductError] = useState(null);
         const [searchParams] = useSearchParams();
-        const { product_id } = useParams();
+        const queryClient = useQueryClient();
 
-        const fetchProducts = async () => {
-            setProductLoading(true);
-            try {
-                const params = Object.fromEntries(searchParams.entries());
-                const data = await ProductApi(params, product_id);
-                setProductData(data);
-            } catch (err) {
-                setProductError({ status: "error", detail: "Failed to read product." });
-            } finally {
-                setProductLoading(false);
-            }
-        };
-
-        const fetchArchivedProducts = async () => {
-            setProductLoading(true);
-            try {
-                const params = Object.fromEntries(searchParams.entries());
-
-                params.is_archived = true;
-
-                const data = await ProductApi(params, product_id);
-                setProductData(data);
-            } catch (err) {
-                setProductError({ status: "error", detail: "Failed to read product." });
-            } finally {
-                setProductLoading(false);
-            }
-        }
-
-        const postProduct = async (params) => {
-
-            setProductLoading(true);
-            try {
-                console.log(params)
-                await ProductApi(params, null, "POST");
-                setProductResponse({ status: "success", detail: "Product created successfully." });
-            } catch (err) {
-                setProductError({ status: "error", detail: "Failed to create product." });
-                setProductResponse(null);
-            } finally {
-                setProductLoading(false);
-            }
-        };
-
-        const patchProduct = async (id, params) => {
-            setProductLoading(true);
-            try {
-                await ProductApi(params, id, "PATCH");
-                setProductResponse({ status: "success", detail: "Product edited successfully." });
-                fetchProducts();
-            } catch (err) {
-                setProductError({ status: "error", detail: "Failed to edit product." });
-                setProductResponse(null);
-            } finally {
-                setProductLoading(false);
-            }
-        };
-
-        const deleteProduct = async (id) => {
-            setProductLoading(true);
-            try {
-                await ProductApi(null, id, "DELETE");
-                setProductResponse({ status: "success", detail: "Product deleted successfully." });
-            } catch (err) {
-                setProductError({ status: "error", detail: "Failed to delete product." });
-                setProductResponse(null);
-            } finally {
-                setProductLoading(false);
-            }
-        };
-
-        const refresh = () => fetchProducts();
-
-        useEffect(() => {
+        const apiParams = useMemo(() => {
+            const params = Object.fromEntries(searchParams.entries());
             if (isArchived) {
-                fetchArchivedProducts()
-            } else {
-                fetchProducts();
+                params.is_archived = true;
             }
-        }, [searchParams]);
+            return params;
+        }, [searchParams, isArchived]);
+
+        const productQuery = useQuery({
+            queryKey: ['products', JSON.stringify(apiParams)],
+            queryFn: () => ProductApi.fetchList(apiParams),
+            placeholderData: (previous) => previous
+        })
+
+        const onSuccessInvalidate = () => queryClient.invalidateQueries({queryKey: ['products']});
+
+        const createMutation = useMutation({
+            mutationFn: (data) => ProductApi.create(data),
+            onSuccess: onSuccessInvalidate,
+        })
+
+        const updateMutation = useMutation({
+            mutationFn: ({id, data}) => ProductApi.update(id, data),
+            onSuccess: onSuccessInvalidate,
+        })
+
+        const deleteMutation = useMutation({
+            mutationFn: (id) => ProductApi.delete(id),
+            onSuccess: onSuccessInvalidate,
+        })
 
         return {
-            productData,
-            productResponse,
-            productLoading,
-            productError,
-            fetchProducts,
-            postProduct,
-            patchProduct,
-            deleteProduct,
-            refresh
-        };
+            data: productQuery.data || [],
+
+            loading: productQuery.isPending || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+
+            error: productQuery.error || createMutation.error || updateMutation.error || deleteMutation.error,
+
+            postProduct: async (params) => {
+                return createMutation.mutateAsync(params);
+            },
+
+            patchProduct: async (id, data) => {
+                return updateMutation.mutateAsync({id, data});
+            },
+
+            deleteProduct: async (id) => {
+                return deleteMutation.mutateAsync(id);
+            },
+
+            refresh: () => productQuery.refetch()
+        }
     }
