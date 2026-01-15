@@ -10,9 +10,9 @@ const CheckoutProduct = ({product, onChangeAmount}) => {
                 return;
             }
 
-            onChangeAmount(product.size_id, product.amount-1);
+            onChangeAmount(product.variant_id, product.amount-1);
         } else if (method == "add") {
-            onChangeAmount(product.size_id, product.amount+1);
+            onChangeAmount(product.variant_id, product.amount+1);
         }
 
     }
@@ -22,7 +22,7 @@ const CheckoutProduct = ({product, onChangeAmount}) => {
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
                 <div className='flex items-center gap-2'>
-                    <h5 className='font-medium text-sm text-text/50'>{product.size}</h5>
+                    <h5 className='font-medium text-sm text-text/50'>{product.label}</h5>
                     <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price * product.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                 </div>
             </div>

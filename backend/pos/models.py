@@ -41,13 +41,13 @@ class Product(models.Model):
         return self.name
     
 
-class ProductSize(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sizes")
-    size = models.CharField(max_length=5)
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
+    label = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.product.name} - {self.size} : {self.price}"
+        return f"{self.product.name} - {self.label} : {self.price}"
     
 
 class Transaction(models.Model):
@@ -74,29 +74,12 @@ class Transaction(models.Model):
         ('take-out', 'Take OUT')
     ]
     order_type = models.CharField(max_length=10, choices=ORDER_TYPE, default='dine-in')
-    
-    @property
-    def gross_total(self):
-        # We add "if item.product_size" to check if the size still exists
-        return sum(
-            (item.product_size.price * item.quantity) 
-            for item in self.transaction_items.all() #type:ignore
-            if item.product_size 
-        )
-    
-    @property
-    def discount_amount(self):
-        if self.discount:
-            return self.gross_total * self.discount.rate
-        return 0
-    
-    @property
-    def net_total(self):
-        return self.gross_total - self.discount_amount
-    
-    @property
-    def change(self):
-        return (self.net_total - self.paid_amount) * -1
+
+    gross_total = models.DecimalField(max_digits=11, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=11, decimal_places=2)
+    net_total = models.DecimalField(max_digits=11, decimal_places=2)
+    change = models.DecimalField(max_digits=11, decimal_places=2)
+
     
 class TransactionItem(models.Model):
     transaction = models.ForeignKey(
@@ -109,8 +92,8 @@ class TransactionItem(models.Model):
         on_delete=models.PROTECT,
         related_name="product_items"
     )
-    product_size = models.ForeignKey(
-        ProductSize,
+    product_variant = models.ForeignKey(
+        ProductVariant,
         on_delete=models.SET_NULL,
         null=True,
         blank=True
@@ -118,8 +101,8 @@ class TransactionItem(models.Model):
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        size_name = f" - {self.product_size.size}" if self.product_size else ""
-        return f"{self.quantity} × {self.product.name}{size_name}"
+        variant_name = f" - {self.product_variant.label}" if self.product_variant else ""
+        return f"{self.quantity} × {self.product.name}{variant_name}"
 
 
 class BusinessSettings(models.Model):

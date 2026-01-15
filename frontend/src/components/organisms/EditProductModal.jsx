@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import { Button, Dropdown, Label, Title } from '../atoms';
-import { X, Plus, Upload, Loader2 } from 'lucide-react'
+import { X, Plus, Upload, Loader2, Minus } from 'lucide-react'
 import { ModalFeedbackCard } from '../molecules';
 import { ConfirmationModal } from '.';
 import {
@@ -11,26 +11,12 @@ import { cn } from '@/utils/cn';
 
 const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
-    const ALL_SIZES = ["XS", "S", "M", "L", "XL"];
-
     const [productName, setProductName] = useState(product.name);
     const [category, setCategory] = useState(product.category.id);
-    const [sizes, setSizes] = useState(() => {
-    const productSizes = product.sizes || [];
-
-    return ALL_SIZES.map(size => {
-        const matchSize = productSizes.find((ps) => ps.size === size);
-
-        return {
-            id: matchSize?.id || null,
-            size: size,
-            price: matchSize?.price || "",
-            active: !!matchSize
-        }
-    });
-    });
+    const [variants, setVariants] = useState([...product.variants, {label: "", price: 0}])
     const [image, setImage] = useState(product.image)
     const [loading, setLoading] = useState(false);
+    const [imageChanged, setImageChanged] = useState(false);
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
@@ -42,7 +28,6 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validate file type
             if (!file.type.startsWith("image/")) {
                 setErrorMessages((prev) => [
                     ...prev,
@@ -51,7 +36,6 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                 return;
             }
 
-            // Validate file size (5MB max)
             if (file.size > 5 * 1024 * 1024) {
                 setErrorMessages((prev) => [
                     ...prev,
@@ -62,13 +46,14 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
             setImage(file);
 
-            // Create preview
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
         }
+
+        setImageChanged(true);
     };
 
     const handleRemoveImage = () => {
@@ -106,7 +91,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
         setShowConfirmationModal(false);
         setLoading(true);
 
-        if (!productName || !category) {
+        if (!productName || !category || !variants) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -115,12 +100,14 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
             return
 
         };
-        const payload ={
+
+        const payload = {
             name: productName,
-            image: image == product.image ? image : image ? await uploadToCloudinary(image) : null,
+            image: imageChanged ? image ? await uploadToCloudinary(image) : null : image,
             category_id: category,
-            sizes: sizes.filter(item => item.active).map(item => ({size: item.size, price:item.price}))
+            variants: variants.filter(({label, price}, index) => index !== variants.length - 1 || (label && price))
         }
+
         onConfirm(payload);
         setLoading(false);
     }
@@ -151,12 +138,16 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
-    const toggleSize = (size) => {
-        setSizes(prev => prev.map(item => item.size === size ? {...item, active: !item.active} : item));
+    const updatePrice = (index, value) => {
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: value} : item));
     }
 
-    const updatePrice = (size, value) => {
-        setSizes(prev => prev.map(item => item.size === size ? {...item, price: value} : item));
+    const updateLabel = (index, value) => {
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: value} : item));
+    }
+
+    const removeVariant = (index) => {
+        setVariants(prev => prev.filter((_, itemIndex) => itemIndex !== index))
     }
 
     return (
@@ -179,15 +170,14 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                         </div>
                         <label className='h-60 flex flex-col items-center justify-center gap-2 rounded-xl border-border border aspect-square'>
                             {(imagePreview) ? 
-                            <img src={imagePreview} className='object-cover h-full w-full rounded-xl'/>
+                                <img src={imagePreview} className='object-cover h-full w-full rounded-xl'/>
                             :
-                            <>
-                                <Upload size={48} className='text-text/50'/>
-                                <h5 className='text-text/50 font-semibold text-sm'>Click to upload</h5>
-                                <h5 className='text-text/50 font-semibold text-sm'>PNG, JPG</h5>
-                            </>
+                                <>
+                                    <Upload size={48} className='text-text/50'/>
+                                    <h5 className='text-text/50 font-semibold text-sm'>Click to upload</h5>
+                                    <h5 className='text-text/50 font-semibold text-sm'>PNG, JPG</h5>
+                                </>
                             }
-
                             <input
                                 id="file-upload"
                                 type="file"
@@ -212,32 +202,31 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Product Price' />
-                            <div className="grid grid-cols-2 gap-4 w-full">
-                                {sizes.map(item => (
-                                    <div key={item.size} className="flex items-center gap-2">
-                                        
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSize(item.size)}
-                                            className={cn(
-                                                "aspect-square w-12 rounded border-2 border-border hover:border-text/50 text-text font-bold cursor-pointer",
-                                                !item.active && 'opacity-50'
-                                            )}
-                                        >
-                                            {item.size}
-                                        </button>
-
-                                        {/* INPUT */}
+                            <div className="flex flex-col gap-2 w-full">
+                                {variants.map(({label, price}, index) => (
+                                    <div className='flex items-center gap-2 flex-1'>
                                         <input
-                                            type="number"
-                                            value={item.price}
-                                            disabled={!item.active}
-                                            onChange={(e) => updatePrice(item.size, e.target.value)}
+                                            type="text"
+                                            value={label}
+                                            placeholder='Label'
+                                            onChange={(e) => updateLabel(index, e.target.value)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
-                                                !item.active && "opacity-50 pointer-events-none"
                                             )}
                                         />
+                                        <input
+                                            type="number"
+                                            value={price}
+                                            onChange={(e) => updatePrice(index, e.target.value)}
+                                            className={cn(
+                                                "p-2 rounded w-full bg-main-dark/50",
+                                            )}
+                                        />
+                                        {index === variants.length-1 ?
+                                            <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0}])} />
+                                            :
+                                            <Button text='' icon={Minus} variant='icon' onClick={() => removeVariant(index)} />
+                                        }
                                     </div>
                                 ))}
                             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ModalFeedbackCard, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, SizeModal } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -76,7 +76,7 @@ const Home = () => {
             let products = prod;
 
             products = products.map(product => {
-                if (product.size_id == id) {
+                if (product.variant_id == id) {
                     product.amount = value
                 }
 
@@ -93,9 +93,8 @@ const Home = () => {
         setShowPaymentSuccessModal(!showPaymentSuccessModal);
     }
 
-
-    const itemInVoid = (id) => {
-        return voidProducts.some(prod => prod.id == id);
+    const itemInVoid = (variant_id) => {
+        return voidProducts.some(prod => prod.variant_id == variant_id);
     }
 
     // USE EFFECTS AND MEMOS
@@ -140,7 +139,7 @@ const Home = () => {
 
     const addToCheckout = (product) => {
         setCheckoutProducts(() => {
-            if (checkoutProducts.some(prod => prod.size_id === product.size_id)) return checkoutProducts
+            if (checkoutProducts.some(prod => prod.variant_id === product.variant_id)) return checkoutProducts
 
             return [...checkoutProducts, product]
         })
@@ -160,8 +159,8 @@ const Home = () => {
         setVoidProducts(vp => {
             let prod = [...vp];
 
-            if (prod.some(p => p.id == product.id)) {
-                return prod.filter(p => p.id != product.id);
+            if (itemInVoid(product.variant_id)) {
+                return prod.filter(p => p.variant_id != product.variant_id);
             }
             
             return [...prod, product];
@@ -192,7 +191,7 @@ const Home = () => {
         if (value) {
             const checkoutProductsPayload = checkoutProducts.map(p => ({
                 product: p.id,
-                product_size: p.size_id,
+                product_variant: p.variant_id,
                 quantity: p.amount,
             }))
 
@@ -201,12 +200,13 @@ const Home = () => {
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
                 paid_amount: parseFloat(value),
-                discount: discount
+                discount: discount,
             })
+
+            // console.log(checkoutProductsPayload)
 
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
-            localStorage.removeItem('cart');
 
             addToast("Transaction successful")
         }
@@ -222,12 +222,13 @@ const Home = () => {
         if (voidProducts.length > 0) setShowClearCheckoutModal(true);
     }
 
-    const voidPayment = async () => {
-        const voidProductsPayload = voidProducts.map(p => ({
-            product: p.id,
-            product_size: p.size_id,
-            quantity: p.amount,
-        }))
+    const voidPayment = async (value) => {
+        if (value) {
+            const voidProductsPayload = voidProducts.map(p => ({
+                product: p.id,
+                product_variant: p.variant_id,
+                quantity: p.amount,
+            }))
 
         await postTransaction({
             is_void: true,
@@ -237,14 +238,15 @@ const Home = () => {
             order_type: orderType,
         })
 
-        if (transactionResponse) {
-            setReceivedPayment(value);
+            if (transactionResponse) {
+                setReceivedPayment(value);
+            }
+            
+            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
+            setVoidProducts([]);
+            addToast("Transction voided successfully")
+            localStorage.removeItem('cart');
         }
-        
-        setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.id)));
-        setVoidProducts([]);
-        addToast("Transction voided successfully")
-        localStorage.removeItem('cart');
 
         setShowClearCheckoutModal(false);
     }
@@ -264,22 +266,26 @@ const Home = () => {
         <ProductCard
             product={product}
             key={product.id}
-            isSelected={checkoutProducts.some(p => p.id == product.id)}
+            isSelected={checkoutProducts.some(p => p.variant_id == product.variant_id)}
             onToggle={() => setPrepProduct(product)} />
     )
 
     const listVoidProducts = checkoutProducts.map((product) => 
         <div 
-        key={product.id} 
-        className={cn('relative flex flex-row gap-8 w-full items-center px-4 cursor-pointer hover:bg-border/50 rounded-sm active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.id)})}
+        key={product.variant_id} 
+        className={cn('relative flex flex-row border-2 border-border rounded-xl gap-8 w-full items-center px-4 py-1.5 cursor-pointer hover:bg-border active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.variant_id)})}
         onClick = {() => addToVoid(product)}
         >
-            {itemInVoid(product.id) &&
+            {itemInVoid(product.variant_id) &&
                 <div className='bg-error w-2 h-2 aspect-square rounded-sm absolute -translate-x-5' />
             }
+
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
-                <h5 className='text-accent-text text-sm'>₱ {Number(product.price * product.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                <div className='flex items-center gap-2'>
+                    <h5 className='font-medium text-sm text-text/50'>{product.label}</h5>
+                    <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                </div>
             </div>
         </div>
     )
@@ -296,9 +302,17 @@ const Home = () => {
                 </div>
 
                 {/* Product Section */}
-                <div className='grid grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
-                    {listProduct}
-                </div>
+                {productData.results.length == 0 ?
+                    <div className='flex justify-center items-center h-full'>
+                        <h5 className='text-sm font-medium text-text/50'>
+                            No products to show
+                        </h5>
+                    </div>
+                    :
+                    <div className='grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
+                        {listProduct}
+                    </div>
+                }
             </div>
 
             {/* Checkout Section */}
@@ -397,24 +411,7 @@ const Home = () => {
             }
 
             {prepProduct &&
-                <Modal title="Sizes" onClose={() => setPrepProduct(null)}>
-                    <div className='flex gap-2'>
-                        {prepProduct.sizes.map(({id, size, price}) => 
-                            <div 
-                            key={id} 
-                            className='flex flex-col gap-2 items-center p-2.5 rounded-md border border-border basis-1/5 cursor-pointer hover:bg-main-dark'
-                            onClick={() => {addToCheckout({...prepProduct, size_id: id, size: size, price: price, amount: 1})}}
-                            >
-                                <h5 className='font-bold text-xl text-text'>{size}</h5>
-
-                                <h5 className='font-semibold text-text/75'>₱ {price}</h5>
-                            </div>
-                        )}
-                        {prepProduct.sizes.length === 0 &&
-                            <h5 className='font-medium text-text/50 mx-auto text-sm'>No Sizes to Show</h5>
-                        }
-                    </div>
-                </Modal>
+                <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
             }
         </div>
     )

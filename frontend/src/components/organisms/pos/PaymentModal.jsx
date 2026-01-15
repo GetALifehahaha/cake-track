@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Label, Title } from '../atoms';
-import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../molecules';
+import { Button, Label, Title } from '../../atoms';
+import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../../molecules';
 import { X } from 'lucide-react';
-import ConfirmationModal from './ConfirmationModal';
+import ConfirmationModal from '../ConfirmationModal';
 
 const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
 

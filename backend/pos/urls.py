@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import (DiscountViewSet,
                     CategoryViewSet,
-                    ProductSizeViewSet,
+                    ProductVariantViewSet,
                     ProductViewSet,
                     TransactionViewSet,
                     TransactionItemViewSet,
@@ -14,7 +14,7 @@ from .views import (DiscountViewSet,
 router = DefaultRouter()
 router.register(r'discounts', DiscountViewSet)
 router.register(r'categories', CategoryViewSet)
-router.register(r'product-sizes', ProductSizeViewSet)
+router.register(r'product-variants', ProductVariantViewSet)
 router.register(r'products', ProductViewSet)
 router.register(r'transactions', TransactionViewSet)
 router.register(r'transaction-items', TransactionItemViewSet)

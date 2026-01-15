@@ -9,10 +9,10 @@ import { DatePicker } from '@/components/molecules';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { AuthContext } from '@/context/AuthContext';
+import { formatToDecimal } from '@/utils/formatToDecimal';
 
 const Transactions = () => {
 
-    // add backend later
     const { transactionData, transactionLoading, transactionError } = useTransaction();
     const { user } = useContext(AuthContext);
 
@@ -33,7 +33,6 @@ const Transactions = () => {
     if (transactionLoading) return <Loading />
     if (transactionError) return <h5>Error loading transactions</h5>
 
-
     const handleSetDateFilter = (date) => {
         const newParams = Object.fromEntries(searchParams.entries());
 
@@ -46,7 +45,6 @@ const Transactions = () => {
         setSearchParams(newParams)
     }
 
-    // 1. Helper to format the Date Key (e.g., "November 30, 2025")
     const getGroupKey = (dateString) => {
         return new Date(dateString).toLocaleDateString('default', {
             month: 'long',
@@ -55,23 +53,18 @@ const Transactions = () => {
         });
     };
 
-    // 2. Group the data
     const groupedTransactions = transactionData.results.reduce((groups, item) => {
         const dateKey = getGroupKey(item.created_at);
 
-        // If this date doesn't exist in our groups yet, create an empty array
         if (!groups[dateKey]) {
             groups[dateKey] = [];
         }
 
-        // Push the item into the correct date bucket
         groups[dateKey].push(item);
 
         return groups;
     }, {});
 
-    // 3. Sort the dates (Newest First) if needed
-    // This assumes your API sends data sorted, but this ensures the keys are in order
     const sortedDates = Object.keys(groupedTransactions).sort((a, b) => new Date(b) - new Date(a));
 
     const capitalize = (string) => {
@@ -97,7 +90,6 @@ const Transactions = () => {
     const listContent = sortedDates.map((date, dateIndex) => (
         <div key={dateIndex} className="w-full flex flex-col mb-6">
 
-            {/* --- The Date Header --- */}
             {user.is_staff && new Date(date).toDateString() !== new Date().toDateString() &&
                 <div className="w-full py-2 px-4 bg-accent-mute/10 rounded-md mb-2 flex items-center justify-between">
                     <h5 className="text-text font-bold text-sm opacity-70 uppercase tracking-wider">
@@ -106,11 +98,9 @@ const Transactions = () => {
                 </div>
             }
 
-            {/* --- The Items for this Date --- */}
             <div className="flex flex-col gap-2">
                 {groupedTransactions[date].map((item, index) => (
                     <div className='flex w-full hover:bg-black/5 p-1 rounded transition-colors' key={item.id}>
-                        {/* Time only, since date is in header */}
                         {
                             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
                                 {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -130,8 +120,9 @@ const Transactions = () => {
                         </h5>
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
-                            ₱ {(item?.net_total || 0).toFixed(2)}
+                            ₱ {formatToDecimal(item.net_total)}
                         </h5>
+
 
                         {item.is_void ?
                             <div className={basis} /> :
