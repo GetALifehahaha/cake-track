@@ -98,7 +98,9 @@ const QueuePending = () => {
 		if (orderIds.length === 0) return;
 
 		try {
+			// console.log("Start")
 			await batchUpdateOrders({ order_ids: orderIds, status: "rejected", "reject_reason": rejectReason });
+			// console.log("Success")
 
 			addToast("Orders rejected successfully", "success")
 		} catch (err) {

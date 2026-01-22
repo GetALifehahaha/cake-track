@@ -72,7 +72,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if not user.is_staff:
             queryset = queryset.filter(customer=user)
             
-        return queryset.order_by('-created_at')
+        return queryset.order_by('created_at')
     
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)

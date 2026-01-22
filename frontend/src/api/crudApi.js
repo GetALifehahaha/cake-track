@@ -1,7 +1,7 @@
 import api from "./api";
 
 export const crudApi = (resource) => ({
-    fetchList: (params) => api.get(`/${resource}/`, params).then(res => res.data),
+    fetchList: (params) => api.get(`/${resource}/`, {params}).then(res => res.data),
 
     fetchById: (id) => api.get(`/${resource}/${id}/`).then(res => res.data),
 
