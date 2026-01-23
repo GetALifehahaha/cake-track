@@ -21,15 +21,13 @@ const Orders = () => {
 	const [refreshing, setRefreshing] = useState(false);
 
 	const onRefresh = async () => {
-		setRefreshing(true);  // Start animation
-		await refresh();      // Wait for new data from backend
-		setRefreshing(false); // Stop animation
+		setRefreshing(true); 
+		await refresh();      
+		setRefreshing(false); 
 	};
 
 	const handleFilterChoose = (selectedStatuses) => {
 		setFilters(selectedStatuses);
-		// You can now filter your data based on these statuses
-		// Example: refresh(selectedStatuses) if your backend supports it
 	};
 
 	if (!user) {
@@ -74,16 +72,16 @@ const Orders = () => {
 		<OrderCard key={index} order={order} />
 	))
 
-	const finishedOrders = data.results.filter(order => order.status == "completed")
+	const finishedOrders = data?.results?.filter(order => order.status == "completed") || []
 
 	const listCompleteOrders = finishedOrders.map((order, index) => (
 		<OrderCard key={index} order={order} />
 	))
 
 	// Calculate stats based on actual data
-	const totalOrders = data.count;
-	const readyOrders = data.results.filter(o => o.status === 'ready').length;
-	const pendingOrders = data.results.filter(o => o.status === 'pending').length;
+	const totalOrders = data?.count || 0;
+	const readyOrders = data?.results?.filter(o => o.status === 'ready').length || 0;
+	const pendingOrders = data?.results?.filter(o => o.status === 'pending').length || 0;
 	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>)
 
 	return (

@@ -47,12 +47,10 @@ export default function useOrder() {
         onSuccess: onSuccessInvalidate,
     });
 
-    console.log("Start")
     const batchUpdateMutation = useMutation({
         mutationFn: (params) => OrdersApi.batchUpdate(params),
         onSuccess: onSuccessInvalidate,
     });
-    console.log("End")
 
     const deleteMutation = useMutation({
         mutationFn: (id) => OrdersApi.delete(id),
