@@ -55,18 +55,16 @@ const Orders = () => {
 	const filteredList = data?.results?.filter(order => {
 		const query = search.toLowerCase().trim();
 		const orderId = order.id.toString();
-		const customerName = order.full_name ? order.full_name.toLowerCase() : '';
 
 		const matchesSearch = search === "" ||
-			orderId.includes(query) ||
-			customerName.includes(query);
+			orderId.includes(query)
 
 		const matchesStatus = filters.length === 0 || filters.includes(order.status);
 
 		const isNotCompleted = order.status !== "completed";
 
 		return matchesSearch && matchesStatus && isNotCompleted;
-	}) || []; // Fallback to empty array if data.results is undefined
+	}) || [];
 
 	const listOrders = filteredList.map((order, index) => (
 		<OrderCard key={index} order={order} />

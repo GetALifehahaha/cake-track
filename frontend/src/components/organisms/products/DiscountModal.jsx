@@ -1,8 +1,8 @@
 import React, {useState, useEffect} from 'react'
-import { ModalBody } from '../molecules'
-import { Button, Title } from '../atoms'
-import { ModalFeedbackCard } from '../molecules';
-import {ConfirmationModal} from './';
+import { ModalBody } from '../../molecules'
+import { Button, Title } from '../../atoms'
+import { ModalFeedbackCard } from '../../molecules';
+import {ConfirmationModal} from '..';
 import { Minus, Plus, X } from 'lucide-react'
 import useDiscount from '@/hooks/useDiscount'
 
@@ -24,16 +24,19 @@ const DiscountModal = ({onClose}) => {
     if (discountLoading) return <h5>Loading discount...</h5>
     if (discountError) return <h5>Error loading discount...</h5>
 
-    const handleShowDiscountForm = () => setShowDiscountForm(true);
+    const resetFeedback = () => setFeedback();
+    const closeDiscountForm = () => {
+        setDiscountName("");
+        setDiscountRate(0);
+        setShowDiscountForm(false);
+    }
+
+    const handleShowDiscountForm = () => {
+        setShowDiscountForm(true);
+    }
     const handleCloseDiscountForm = () => setShowDiscountForm(false);
 
-    const handleShowConfirmPostModal = () => setShowConfirmPostModal(true);
-    const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
-
-    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
-    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
-
-    const handlePostDiscount = async () => {
+    const handleShowConfirmPostModal = () => {
         if (!discountName || !discountRate) {
             setFeedback({
                 label: 'Incomplete details',
@@ -43,8 +46,18 @@ const DiscountModal = ({onClose}) => {
             return;
         }
 
+        setShowConfirmPostModal(true);
+    }
+    const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
+
+    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
+    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
+
+    const handlePostDiscount = async () => {
         await postDiscount({name: discountName, rate: discountRate/100});
 
+        resetFeedback();
+        closeDiscountForm();
         handleCloseConfirmPostModal();
     }
 
@@ -64,6 +77,7 @@ const DiscountModal = ({onClose}) => {
         await deleteDiscount(prepDeleteId)
 
         removePrepDeleteDiscount();
+        resetFeedback();
     }
 
     const listDiscount = discountData.map((discount, index) => 
@@ -75,12 +89,7 @@ const DiscountModal = ({onClose}) => {
     )
 
     return (
-        <ModalBody>
-            <div className="flex justify-between items-center w-full">
-                <Title variant='modal' text='Discounts' />
-                <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
-            </div>
-
+        <ModalBody title='Discounts' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
                 {listDiscount}
                 <div className='ml-auto'>

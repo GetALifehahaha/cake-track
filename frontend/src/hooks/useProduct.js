@@ -38,6 +38,11 @@
             onSuccess: onSuccessInvalidate,
         })
 
+        const batchUnarchiveMutation = useMutation({
+            mutationFn: (params) => ProductApi.batchUnarchive(params),
+            onSuccess: onSuccessInvalidate,
+        })
+
         return {
             data: productQuery.data || [],
 
@@ -51,6 +56,10 @@
 
             patchProduct: async (id, data) => {
                 return updateMutation.mutateAsync({id, data});
+            },
+
+            batchUnarchiveProduct: async (data) => {
+                return batchUnarchiveMutation.mutateAsync(data)
             },
 
             deleteProduct: async (id) => {

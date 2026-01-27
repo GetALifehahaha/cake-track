@@ -14,7 +14,7 @@ const Products = () => {
     const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();  
     const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
-    const {postProduct, data: productData, patchProduct, loading: productLoading, error: productError} = useProduct();
+    const {postProduct, data: productData, patchProduct, loading: productLoading, error: productError, batchUnarchiveProduct} = useProduct();
     const [filter, setFilter] = useState(null);
     const [prepEditProduct, setPrepEditProduct] = useState(null);
 
@@ -82,9 +82,9 @@ const Products = () => {
         }
     }
     
-    const restoreProduct = async (value) => {
-        if (value) {
-            await patchProduct(value.id, {is_archived: false})
+    const restoreProduct = async (value = []) => {
+        if (value.length) {
+            await batchUnarchiveProduct({product_ids: value})
             addToast('Product restored successfully', 'success');
             clear();
         }

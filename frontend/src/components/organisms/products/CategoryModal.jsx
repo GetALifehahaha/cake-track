@@ -1,8 +1,8 @@
 import React, {useState, useEffect} from 'react'
-import { ModalBody } from '../molecules'
-import { Button, Title } from '../atoms'
-import { ModalFeedbackCard } from '../molecules';
-import {ConfirmationModal} from './';
+import { ModalBody } from '../../molecules'
+import { Button, Title } from '../../atoms'
+import { ModalFeedbackCard } from '../../molecules';
+import {ConfirmationModal} from '..';
 import { Minus, Plus, X } from 'lucide-react'
 import useCategory from '@/hooks/useCategory'
 
@@ -23,16 +23,19 @@ const CategoryModal = ({onClose}) => {
     if (categoryLoading) return <h5>Loading categories...</h5>
     if (categoryError) return <h5>Error loading categories...</h5>
 
+    const resetFeedback = () => {
+        setFeedback();
+    }
+
+    const closeCategoryForm = () => {
+        setCategoryName("");
+        setShowCategoryForm(false);
+    }
+
     const handleShowCategoryForm = () => setShowCategoryForm(true);
     const handleCloseCategoryForm = () => setShowCategoryForm(false);
 
-    const handleShowConfirmPostModal = () => setShowConfirmPostModal(true);
-    const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
-
-    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
-    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
-
-    const handlePostCategory = async () => {
+    const handleShowConfirmPostModal = () => {
         if (!categoryName) {
             setFeedback({
                 label: 'Incomplete details',
@@ -42,8 +45,19 @@ const CategoryModal = ({onClose}) => {
             return;
         }
 
+        setShowConfirmPostModal(true);
+    }
+    
+    const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
+
+    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
+    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
+
+    const handlePostCategory = async () => {
         await postCategory({name: categoryName});
 
+        resetFeedback();
+        closeCategoryForm();
         handleCloseConfirmPostModal();
     }
 
@@ -62,6 +76,7 @@ const CategoryModal = ({onClose}) => {
     const handleDeleteCategory = async () => {
         await deleteCategory(prepDeleteId)
 
+        resetFeedback();
         removePrepDeleteCategory();
     }
 
@@ -75,12 +90,7 @@ const CategoryModal = ({onClose}) => {
     )
 
     return (
-        <ModalBody>
-            <div className="flex justify-between items-center w-full">
-                <Title variant='modal' text='Categories' />
-                <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
-            </div>
-
+        <ModalBody title='Categories' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
                 {listCategory}
                 <div className='ml-auto'>

@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
-import { Button, Dropdown, Label, Title } from '../atoms';
+import { Button, Dropdown, Label, Title } from '../../atoms';
 import { X, Plus, Upload, Loader2, Minus, Variable } from 'lucide-react'
-import { ModalFeedbackCard } from '../molecules';
-import { ConfirmationModal } from '.';
+import { ModalBody, ModalFeedbackCard } from '../../molecules';
+import { ConfirmationModal } from '..';
 import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
@@ -148,16 +148,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     }
 
     return (
-        <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10 gap-4'>
-            <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
-                <div className='flex flex-col gap-2'>
-                    <div className="flex justify-between items-center w-full">
-                        <Title variant='modal' text='Add New Item' />
-                        <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
-                    </div>
-                    <Label variant='small' text='Create a new product by filling in the details below' />
-                </div>
-
+        <ModalBody title='Add New Item' onClose={onClose} subtitle='Create a new product by filling in the details below'>
                 <div className='flex gap-8'>
                     <div className='flex flex-col gap-2 relative'>
                         <div className='flex justify-between items-center w-full mb-2'>
@@ -256,10 +247,8 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                 {showConfirmationModal &&
                     <ConfirmationModal title="Add Product?" content="Are you sure you want to add this product?" onReject={handleSetShowConfirmationModal} onConfirm={handleConfirmModal} />
                 }
-            </div>
-
             {/* Sizes and Prices */}
-        </div>
+        </ModalBody>
     )
 }
 

@@ -13,6 +13,7 @@ from .models import Transaction, TransactionItem
 from .serializers import DashboardMetricsSerializer
 from rest_framework.views import APIView
 from rest_framework import permissions, viewsets, generics, filters
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend #type: ignore
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -28,7 +29,8 @@ from .serializers import (DiscountSerializer,
                           TransactionCreateSerializer, 
                           TransactionSerializer, 
                           TransactionItemSerializer,
-                          BusinessSettingsSerializer
+                          BusinessSettingsSerializer,
+                          ProductBatchUnarchiveSerializer
                           )
 from .models import (Discount, 
                      Category, 
@@ -94,6 +96,18 @@ class ProductViewSet(viewsets.ModelViewSet):
             return queryset.filter(is_archived=False)
 
         return queryset
+    
+    @action(detail=False, methods=["post"])
+    def unarchive(self, request):
+        print(request.data)
+        serializer = ProductBatchUnarchiveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        updated = serializer.save()
+
+        return Response (
+            {updated: updated},
+            status=status.HTTP_200_OK
+        )
     
 
 class TransactionViewSet(viewsets.ModelViewSet):

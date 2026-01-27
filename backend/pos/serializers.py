@@ -5,7 +5,6 @@ from .models import (
     Transaction, TransactionItem, BusinessSettings
 )
 from decimal import Decimal
-import json
 
 class DiscountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -96,6 +95,30 @@ class ProductSerializer(serializers.ModelSerializer):
                 
         return instance
                 
+class ProductBatchUnarchiveSerializer(serializers.Serializer):
+
+    product_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
+
+    def validate(self, attrs):
+        product_ids = attrs["product_ids"]
+        existing_id = Product.objects.filter(id__in=product_ids).count()
+
+        if existing_id != len(set(product_ids)):
+            raise serializers.ValidationError("One or more ID is invalid!")
+        
+        return attrs
+    
+    def save(self):
+        product_ids = self.validated_data["product_ids"]
+
+        return Product.objects.filter(id__in=product_ids).update(
+            is_archived=False
+        )
+
+
 
 class TransactionItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
