@@ -222,13 +222,12 @@ const Home = () => {
         if (voidProducts.length > 0) setShowClearCheckoutModal(true);
     }
 
-    const voidPayment = async (value) => {
-        if (value) {
-            const voidProductsPayload = voidProducts.map(p => ({
-                product: p.id,
-                product_variant: p.variant_id,
-                quantity: p.amount,
-            }))
+    const voidPayment = async () => {
+        const voidProductsPayload = voidProducts.map(p => ({
+            product: p.id,
+            product_variant: p.variant_id,
+            quantity: p.amount,
+        }))
 
         await postTransaction({
             is_void: true,
@@ -238,15 +237,14 @@ const Home = () => {
             order_type: orderType,
         })
 
-            if (transactionResponse) {
-                setReceivedPayment(value);
-            }
-            
-            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
-            setVoidProducts([]);
-            addToast("Transction voided successfully")
-            localStorage.removeItem('cart');
+        if (transactionResponse) {
+            setReceivedPayment(value);
         }
+        
+        setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
+        setVoidProducts([]);
+        addToast("Transction voided successfully")
+        localStorage.removeItem('cart');
 
         setShowClearCheckoutModal(false);
     }
