@@ -20,6 +20,7 @@ import {
 	QueueReady,
 	QueueRejected
 } from './pages'
+import { SetAccount } from './features';
 import { ProtectedRoute } from './components/organisms'
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => {
 				</Route>
 
 				<Route path='/login' element={<Login />} />
+				<Route path='/setPassword' element={<SetAccount />}/>
 				<Route path='*' element={<NotFound />} />
 			</Routes>
 		</QueryClientProvider>

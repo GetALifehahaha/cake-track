@@ -1,7 +1,7 @@
 import React from 'react';
 import { Title, Label, Button } from '../atoms';
 
-const ConfirmationModal = ({title, content, onConfirm, onReject}) => {
+const ConfirmationModal = ({title, content, onConfirm, onReject, confirmText="Confirm", cancelText="Cancel"}) => {
     return (
          <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
@@ -9,8 +9,8 @@ const ConfirmationModal = ({title, content, onConfirm, onReject}) => {
                     <Title variant='modal' text={title} />
                     <h5 className='text-text/75 py-4'>{content}</h5>
                     <div className='flex flex-row ml-auto gap-2'>
-                        <Button text='Cancel' onClick={onReject} variant='modalOutline' />
-                        <Button text='Confirm' onClick={onConfirm} variant='modalBlock' />
+                        <Button text={cancelText} onClick={onReject} variant='modalOutline' />
+                        <Button text={confirmText} onClick={onConfirm} variant='modalBlock' />
                     </div>
                 </div>
             </div>

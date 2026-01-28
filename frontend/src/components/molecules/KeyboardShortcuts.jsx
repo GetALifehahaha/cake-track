@@ -19,7 +19,9 @@ const KeyboardShortcuts = () => {
         window.addEventListener("keydown", keypressHandler);
 
         return () => window.removeEventListener("keydown", keypressHandler)
-    })
+    }, [navigate]);
+
+    return null;
 }
 
 export default KeyboardShortcuts

@@ -6,10 +6,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import action
 
-from .serializers import UserSerializer, UserProfileSerializer
+from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer
 
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsCashier
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -19,6 +20,11 @@ class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
+
+    def get_serializer_class(self):
+        if self.request.user.is_staff:
+            return CashierCreateSerializer
+        return UserSerializer
     
     
 class UserViewSet(viewsets.ModelViewSet):
@@ -31,6 +37,17 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    @action(methods=['post'], permission_classes=[IsAuthenticated], detail=False, url_path='change-password')
+    def change_password(self, request):
+        user = request.user
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user.set_password(serializer.validated_data['password'])
+        user.save()
+
+        return Response({"detail": "Password has been changed successfully"}, status=status.HTTP_200_OK)
+
     
 class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]

@@ -38,7 +38,7 @@ export default function useOrder() {
     };
 
     const createMutation = useMutation({
-        mutationFn: (newOrderParams) => OrdersApi.create(newOrderParams),
+        mutationFn: (params) => OrdersApi.create(params),
         onSuccess: onSuccessInvalidate,
     });
 
@@ -60,7 +60,7 @@ export default function useOrder() {
     return {
         data: ordersQuery.data || [],
         
-        loading: ordersQuery.isLoading || 
+        loading: ordersQuery.isPending || 
                  createMutation.isPending || 
                  updateMutation.isPending || 
                  deleteMutation.isPending ||

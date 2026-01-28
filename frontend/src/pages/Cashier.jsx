@@ -11,14 +11,14 @@ import clsx from 'clsx';
 const Cashier = () => {
 
     const { addToast } = useToast();
-    const { cashierData, cashierLoading, cashierError, refresh, postCashier, patchCashier } = useCashier();
+    const { data, loading, error, refresh, postCashier, patchCashier } = useCashier();
 
     const [showAddCashierModal, setShowAddCashierModal] = useState(false);
     const [showEditCashierModal, setShowEditCashierModal] = useState(false);
     const [prepCashier, setPrepCashier] = useState(null)
 
-    if (cashierLoading) return <Loading />
-    if (cashierError) return <h5>Error</h5>
+    if (loading) return <Loading />
+    if (error) return <h5>Error</h5>
 
     const handleShowAddCashierModal = () => {
         setShowAddCashierModal(!showAddCashierModal)
@@ -65,7 +65,7 @@ const Cashier = () => {
         handleShowEditCashierModal();
     }
 
-    const listCashiers = cashierData.results.map((cashier, index) =>
+    const listCashiers = data.results.map((cashier, index) =>
         <div key={index} 
             className={clsx('p-2 flex flex-row cashiers-center text-text font-medium text-md text-center border-b-border border-b', 
             {'opacity-50': !cashier.is_active})}>
@@ -104,7 +104,7 @@ const Cashier = () => {
                     {listCashiers}
                     
                     <div className='mt-auto mx-auto'>
-                        <Pagination prev={cashierData.previous} next={cashierData.next} />
+                        <Pagination prev={data.previous} next={data.next} />
                     </div>
                 </div>
             </div>

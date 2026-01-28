@@ -22,6 +22,29 @@ class UserSerializer(serializers.ModelSerializer):
         user.groups.add(cashier)
         
         return user
+    
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(required=True)
+
+    def validate_password(self, value):
+        from django.contrib.auth.password_validation import validate_password
+        validate_password(value)
+        return value
+
+        
+class CashierCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'username', 'email', 'password']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+
+        cashier, _ = Group.objects.get_or_create(name="cashier")
+        user.groups.add(cashier)
+
+        return user
         
 
 class UserProfileSerializer(serializers.ModelSerializer):
