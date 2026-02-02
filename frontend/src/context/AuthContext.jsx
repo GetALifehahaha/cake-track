@@ -20,56 +20,39 @@ export const AuthProvider = ({children}) => {
     }, []);
 
     const auth = async () => {
-        const accessToken = localStorage.getItem(ACCESS_TOKEN);
-        
-        if (!accessToken) {
-            setUser(null);
-            setIsAuthorized(false);
-            return;        
-        }
-
         try {
-            const decodedToken = jwtDecode(accessToken);
-            const tokenExpiration = decodedToken.exp;
-            const currentDate = Date.now() / 1000;
-
-            if (tokenExpiration < currentDate){
-                await refreshToken();
-            } else {
-                await getUserData();
-                setIsAuthorized(true);
-            }
-        } catch (err) {
-            console.error('Authentication failed:', err);
-            setUser(null);
-            setIsAuthorized(false);
-        }
-    }
-
-    const refreshToken = async () => {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-
-        if (!refreshToken) {
-            setUser(null);
-            setIsAuthorized(false);
-            return;    
-        }
-
-        try {
-            const response = await api.post('/users/token/refresh/', {
-                refresh: refreshToken,
-            });
-            localStorage.setItem(ACCESS_TOKEN, response.data.access);
             await getUserData();
             setIsAuthorized(true);
         } catch (err) {
-            // Clear invalid tokens
-            localStorage.removeItem(ACCESS_TOKEN);
-            localStorage.removeItem(REFRESH_TOKEN);
             setUser(null);
             setIsAuthorized(false);
         }
     }
+
+    // const refreshToken = async () => {
+    //     const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+
+    //     if (!refreshToken) {
+    //         setUser(null);
+    //         setIsAuthorized(false);
+    //         return;    
+    //     }
+
+    //     try {
+    //         const response = await api.post('/users/token/refresh/', {
+    //             refresh: refreshToken,
+    //         });
+    //         localStorage.setItem(ACCESS_TOKEN, response.data.access);
+    //         await getUserData();
+    //         setIsAuthorized(true);
+    //     } catch (err) {
+    //         // Clear invalid tokens
+    //         localStorage.removeItem(ACCESS_TOKEN);
+    //         localStorage.removeItem(REFRESH_TOKEN);
+    //         setUser(null);
+    //         setIsAuthorized(false);
+    //     }
+    // }
 
     const getUserData = async () => {
         try {
