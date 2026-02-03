@@ -8,7 +8,7 @@ const Sidebar = () => {
 
     const { user, logout } = useContext(AuthContext);
 
-    const role = user.groups[0]
+    const role = user?.groups[0]
     const isAdmin = user.is_staff
 
     const filteredSidebar = SidebarConfig.filter((item) => item.allowedRoles.includes(isAdmin ? 'admin' : role))

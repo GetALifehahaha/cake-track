@@ -205,12 +205,67 @@ class BusinessSettingsView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
+from datetime import datetime, timedelta
+from django.utils.timezone import make_aware
+import calendar
+
+from collections import defaultdict
+from django.db.models.functions import TruncDay, TruncMonth
 
 class DashboardAnalyticsView(APIView):
     def get(self, request):
+        # Filters and Ranges
+        now = timezone.localtime()
+
+        frequency = request.query_params.get('frequency') or None
+        date_str = request.query_params.get('date') or  now.strftime("%Y-%m-%d")
+        month = request.query_params.get('month') or None
+        year = request.query_params.get('year') or None
+
+        start_date = None
+        end_date = None
+
+        print(frequency, date_str, month, year)
+
+        if frequency == 'daily' and date_str:
+            day = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
+            start_date = day.replace(hour=0, minute=0, second=0)
+            end_date = day.replace(hour=23, minute=59, second=59)
+
+        elif frequency == 'weekly' and date_str:
+            day = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
+            start_date = day - timedelta(days=day.weekday())  # Monday
+            start_date = start_date.replace(hour=0, minute=0, second=0)
+            end_date = start_date + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        elif frequency == 'monthly' and year and month:
+            year = int(year)
+            month = int(month)
+            last_day = calendar.monthrange(year, month)[1]
+
+            start_date = make_aware(datetime(year, month, 1))
+            end_date = make_aware(datetime(year, month, last_day, 23, 59, 59))
+
         # 1. Base Querysets
         all_transactions = Transaction.objects.all()
+
+        if start_date and end_date:
+            all_transactions = all_transactions.filter(created_at__range=(start_date, end_date))
+
+        if frequency == 'daily':
+            trunc = TruncDay('transaction__created_at')
+            date_format = '%Y-%m-%d'
+
+        elif frequency == 'weekly':
+            date_format = '&Y-%W'
+
+        elif frequency == 'monthly':
+            trunc = TruncMonth('transaction__created_at')
+            date_format = '%Y-%m'
+
+
         valid_transactions = all_transactions.filter(is_void=False).prefetch_related('transaction_items', 'discount')
         void_transactions = all_transactions.filter(is_void=True).prefetch_related('transaction_items', 'discount')
 
@@ -236,7 +291,10 @@ class DashboardAnalyticsView(APIView):
             avg_daily = 0
 
         # 6. Total Revenue Generated
-        total_revenue_generated = sum(t.net_total for t in valid_transactions)
+        total_revenue_generated = (
+            valid_transactions.aggregate(total=Sum('net_total'))['total'] or 0
+        )
+
 
         # 7. Top 8 Selling Products
         top_products = (
@@ -248,19 +306,44 @@ class DashboardAnalyticsView(APIView):
         )
 
         # 8. Chart Data: Selling Trend Each Day
-        trend_data = (
-            TransactionItem.objects
-            .filter(transaction__is_void=False)
-            .annotate(date=TruncDate('transaction__created_at'))
-            .values('date')
-            .annotate(daily_count=Sum('quantity'))
-            .order_by('date')
-        )
+        if frequency in ['daily', 'monthly']:
+            trend_data = (
+                TransactionItem.objects
+                .filter(transaction__is_void=False)
+                .annotate(period=trunc)
+                .values('period')
+                .annotate(amount=Sum('quantity'))
+                .order_by('period')
+            )
+        else:
+            qs = (
+                TransactionItem.objects
+                .filter(transaction__is_void=False)
+                .annotate(day=TruncDay('transaction__created_at'))
+                .values('day')
+                .annotate(amount=Sum('quantity'))
+                .order_by('day')
+            )
+
+            weekly = defaultdict(int)
+            for row in qs:
+                week_start = row['day'] - timedelta(days=row['day'].weekday())
+                weekly[week_start] += row['amount']
+
+            trend_data = [
+                {"period": k, "amount": v}
+                for k, v in sorted(weekly.items())
+            ]
+
         
         formatted_trend = [
-            {"date": item['date'].strftime('%Y-%m-%d'), "amount": item['daily_count']}
+            {
+                "period": item['period'].strftime(date_format),
+                "amount": item['amount']
+            }
             for item in trend_data
         ]
+
 
         # 9. Cashier Performance
         now = timezone.now()

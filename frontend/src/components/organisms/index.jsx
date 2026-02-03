@@ -25,4 +25,5 @@ export { default as InputRejectModal } from './InputRejectModal'
 export { default as VariantModal } from './pos/VariantModal'
 export { default as DashboardChart } from './DashboardChart'
 export { default as ReadyCard } from './ReadyCard'
+export { default as DownloadReportModal } from './reports/DownloadReportModal'
 
