@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Button, Label, Title } from '../components/atoms';
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import loginImage1 from '../assets/image/login-image-1.webp'
 import loginImage2 from '../assets/image/login-image-2.png'
 import loginImage3 from '../assets/image/login-image-3.png'
@@ -80,10 +80,13 @@ const Login = () => {
                             <Label variant='login' text='PASSWORD' />
                             <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
                         </div>
-                        <span className='flex flex-row items-center gap-2'>
-                            <input type='checkbox' onChange={() => setRememberMe(!rememberMe)} />
-                            <label>Remember me</label>
-                        </span>
+                        <div className='flex justify-between items-center'>
+                            <span className='flex flex-row items-center gap-2'>
+                                <input type='checkbox' onChange={() => setRememberMe(!rememberMe)} />
+                                <label className='font-semibold text-accent-mute'>Remember me</label>
+                            </span>
+                            <Link to='/forgotPassword' className='font-semibold text-accent-mute'> Forgot Password</Link>
+                        </div>
                         
                         <span className='w-4/5 mx-auto flex gap-2 items-center justify-center'>
                             {loading ?
@@ -92,7 +95,7 @@ const Login = () => {
                                     <Loader2 size={14} className='text-accent animate-spin' />
                                 </>
                                 :
-                                <Button text='Login' variant='form' onClick={handleLogin}/>
+                                <Button className='bg-accent' text='Login' variant='form' onClick={handleLogin}/>
                             }
                         </span>
                     </form>

@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'inventory',
     'orders',
     'payment',
+    'users',
     
     'rest_framework',
     'corsheaders',

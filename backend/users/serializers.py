@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
+from .models import OTP
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,3 +55,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active']
         read_only_fields = ['id', 'username', 'groups', 'is_staff']
+
+class OTPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OTP
+        fields = ['id', 'user', 'otp', 'is_valid']
+        read_only_fields = fields

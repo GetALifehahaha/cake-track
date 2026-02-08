@@ -9,6 +9,8 @@ export {default as BusinessDetails} from './BusinessDetails'
 export {default as Cashier} from './Cashier'
 export {default as Reports} from './Reports'
 export {default as Login} from './Login'
+export {default as ForgotPassword} from './ForgotPassword'
+export {default as SetAccount} from './SetAccount'
 
 export {default as QueueLayout} from './Queue/QueueLayout'
 export {default as QueueOverview} from './Queue/QueueOverview'

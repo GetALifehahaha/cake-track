@@ -1,6 +1,8 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import status, viewsets, generics
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
@@ -8,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action
 
-from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer
+from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer
+from .models import OTP
 
 from .permissions import IsAdmin, IsCashier
 
@@ -123,3 +126,50 @@ class GoogleAuthView(APIView):
             return Response({"error": f"Invalid Google Token: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": f"Authentication failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+import random
+
+class OTPViewSet(viewsets.ModelViewSet):
+    queryset = OTP.objects.all()
+    serializer_class = OTPSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request):
+        email = request.data.get('email', '').strip().lower()
+
+        if not email:
+            return Response({'type': 'error', 'label': 'No Email', 'details': 'No email has been sent'}, status=status.HTTP_400_BAD_REQUEST)
+
+        random_otp = int(''.join(map(str, [random.randint(1, 6) for _ in range(6)])))
+        user = None
+        otp = None
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            pass
+        
+        if user:
+            try:
+                otp = OTP.objects.get(user__email=email)
+
+                otp.otp = random_otp
+                otp.is_valid = True
+                otp.expires_at=timezone.localtime() + timedelta(minutes=15)
+                otp.save()
+
+            except OTP.DoesNotExist:
+                otp = OTP.objects.create(
+                    user=user,
+                    otp=random_otp,
+                    is_valid=True,
+                    expires_at=timezone.localtime() + timedelta(minutes=15)
+                )
+                serializer = self.get_serializer(otp)
+                if serializer.is_valid():
+                    serializer.save()
+        
+        print(otp)
+        
+
+        return Response({'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
