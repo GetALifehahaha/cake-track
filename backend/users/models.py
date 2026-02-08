@@ -9,3 +9,10 @@ class OTP(models.Model):
     otp = models.IntegerField(max_length=6)
     is_valid = models.BooleanField()
     expires_at = models.DateTimeField()
+
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)

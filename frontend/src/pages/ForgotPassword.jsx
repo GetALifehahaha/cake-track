@@ -1,6 +1,7 @@
 import { Button } from '@/components/atoms'
 import React, { useEffect, useState } from 'react'
 import { ModalFeedbackCard } from '@/components/molecules';
+import { ConfirmationModal } from '@/components/organisms';
 import api from '@/api/api';
 
 const ForgotPassword = () => {
@@ -67,11 +68,10 @@ const ForgotPassword = () => {
 			}
 
 		} catch (err) {
-			console.log(err)
 			setFeedback({
-				type: err.data.type,
-				label: err.data.label,
-				details: err.data.details
+				type: err.response.data.type,
+				label: err.response.data.label,
+				details: err.response.data.details
 			})
 		}
 	}
@@ -106,6 +106,7 @@ const ForgotPassword = () => {
 
 	const targetOtp = 123456;
 	const [otp, setOtp] = useState('');
+	const [token, setToken] = useState('');
 
 	const handleOtp = (e) => {
 		e.preventDefault()
@@ -117,7 +118,7 @@ const ForgotPassword = () => {
 		setOtp(e.target.value)
 	}
 
-	const verifyOtp = () => {
+	const verifyOtp = async () => {
 		if (otp < 6) {
 			setFeedback({
 				type: 'error',
@@ -127,20 +128,66 @@ const ForgotPassword = () => {
 
 			return;
 		}
-		if (targetOtp === Number.parseInt(otp)) {
-			handlePage('add')
-			clearFeedback();	
-		} else {
+
+		try {
+
+			const res = await api.post('/verify-otp/', {email: email, otp: otp});
+
+			if (res.status === 200) {
+				console.log(res.data)
+				setFeedback({
+					type: res.data.type,
+					label: res.data.label,
+					details: res.data.details
+				})
+				setToken(res.data.token);
+			}
+
+			handlePage('add');
+		} catch (err) {
+			console.log(err)
 			setFeedback({
-				type: 'error',
-				label: 'Invalid OTP',
-				details: 'The OTP does not match what is in our system. Please check if it is valid.'
+				type: err.response.data.type,
+				label: err.response.data.label,
+				details: err.response.data.details
 			})
 		}
 	}
 
-	const [newPassword, setNewPassword] = useState("")
+	// ============= SETTING NEW PASSWORD ==============
 
+	const [newPassword, setNewPassword] = useState("")
+	const [confirmModal, setConfirmModal] = useState(false);
+
+	const handleNewPassword = (e) => {
+		e.preventDefault(e)
+
+		setNewPassword(e.target.value)
+	}
+
+	const handleConfirmModal = (value) => {
+		setConfirmModal(value)
+	}
+
+	const confirmNewPassword = async () => {
+		if (newPassword.length < 8) {
+			setFeedback({
+				type: "error",
+				label: "Password too short",
+				details: "Please set your password to have at least 8 letters or numbers"
+			})
+
+			return;
+		}
+
+		try {
+			const res = await api.post('/change-password-token/', {email: email, token: token, password: newPassword});
+
+			console.log(res)
+		} catch (err) {
+			console.log(err.response)
+		}
+	}
   	return (
 		<div className='bg-main w-full h-screen flex justify-center items-center'>
 			<div className='rounded-md p-8 bg-main-white flex flex-col gap-2 shadow-md min-w-[40vw]'>
@@ -172,16 +219,19 @@ const ForgotPassword = () => {
 				}
 				{page === 2 &&
 					<>
-						<input type='text' value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className='bg-accent-mute/20 p-1 rounded-md font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute flex-1' placeholder='ENTER NEW PASSWORD'/>
+						<input type='text' value={newPassword} onChange={(e) => handleNewPassword(e)} className='bg-accent-mute/20 p-1 rounded-md font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute flex-1' placeholder='ENTER NEW PASSWORD'/>
 
 						{Object.keys(feedback).length > 0 &&
 							<ModalFeedbackCard type={feedback.type} label={feedback.label} details={feedback.details} />
 						}
-						
-						<Button className='mx-auto mt-2' text='Verify OTP' onClick={verifyOtp} />
+						<Button className='mx-auto mt-2' text='Verify OTP' onClick={handleConfirmModal} />
 					</>
 				}
 			</div>
+			
+			{confirmModal &&
+				<ConfirmationModal title="Change Password" content="Are you about your password? Be sure to remember it." confirmText="Yes. I'm sure" cancelText='Wait, go back.' onConfirm={confirmNewPassword} onReject={() => handleConfirmModal(false)}/>
+			}
 		</div>	
   	)
 }
