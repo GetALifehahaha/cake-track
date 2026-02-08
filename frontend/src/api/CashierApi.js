@@ -1,5 +1,6 @@
 // import api from "./api";
 import { crudApi } from "./crudApi";
+import api from "./api";
 
 // const CashierApi = async (params, id = null, method = "GET") => {
 //     try {
@@ -42,4 +43,10 @@ import { crudApi } from "./crudApi";
 
 // export default CashierApi;
 
-export const CashierApi = crudApi('users');
+const baseApi = crudApi('users');
+
+export const CashierApi = {
+    ...baseApi,
+
+    getOtp: () => ('/api/')
+}

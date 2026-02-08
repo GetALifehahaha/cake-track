@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ModalBody } from '../../molecules';
+import { ModalBody, ModalFeedbackCard } from '../../molecules';
 import { Check } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button } from '@/components/atoms';
@@ -7,8 +7,18 @@ import { Button } from '@/components/atoms';
 const VariantModal = ({product, onClose, onChoose}) => {
 
     const [selected, setSelected] = useState({id: null, variant: null});
+    const [feedback, setFeedback] = useState(null);
 
     const selectVariant = () => {
+        if (selected.id === null) {
+            setFeedback({
+                type: 'error',
+                label: 'No selected variant',
+                details: 'Please select a variant to add to cart'
+            })
+            return;
+        }
+
         onChoose(selected.variant)
     }
 
@@ -36,9 +46,14 @@ const VariantModal = ({product, onClose, onChoose}) => {
                 {product.variants.length === 0 &&
                     <h5 className='font-medium text-text/50 mx-auto text-sm'>There are no product variants yet</h5>
                 }
+                {feedback &&
+                    <ModalFeedbackCard type={feedback.type} label={feedback.label} details={feedback.details} />
+                }
                 <div className='flex gap-2 mt-8 ml-auto'>
-                    <Button text='Cancel' variant='modalOutline' size='small' onClick={selectVariant} />
-                    <Button text='Add Order' variant='modalBlock' className='bg-accent-dark' size='small' onClick={selectVariant} />
+                    <Button text='Cancel' variant='modalOutline' size='small' onClick={onClose} />
+                    {product.variants.length > 0 &&
+                        <Button text='Add Order' variant='modalBlock' className={cn('bg-accent-dark', selected.id === null && 'opacity-50')} size='small' onClick={selectVariant} />
+                    }
                 </div>
             </div>
         </ModalBody>

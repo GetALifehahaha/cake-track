@@ -33,7 +33,12 @@ api.interceptors.response.use(
             // get refresh token, return Promise if no refresh token is found: 
             // login again
             const refresh = localStorage.getItem(REFRESH_TOKEN)
-            if (!refresh) return Promise.reject(error)
+            if (!refresh) {
+                localStorage.setItem("ACCESS", null)
+                localStorage.setItem("REFRESH", null)
+                window.location.href('/login')
+                return Promise.reject(error)
+            }
             
             try {
                 const res = await axios.post(

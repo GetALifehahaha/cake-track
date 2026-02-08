@@ -59,8 +59,9 @@ export const AuthProvider = ({children}) => {
             const response = await api.get('/me/');
             const userData = response.data
             setUser(userData);
-        } catch {
+        } catch (err) {
             setUser(null);
+            throw err
         }
     }
 

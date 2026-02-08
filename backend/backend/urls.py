@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 
-from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView
+from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView, OTPViewSet, VerifyOTPViewSet, ChangePasswordViaToken
 
 router = DefaultRouter()
 router.register('users', UserViewSet, basename="cashiers")
@@ -37,6 +37,9 @@ urlpatterns = [
     path('users/token/', TokenObtainPairView.as_view(), name="get_token"),
     path('users/token/refresh/', TokenRefreshView.as_view(), name="refresh_token"),
     path('api-auth/', include('rest_framework.urls', namespace="rest_framework")),
+    path('request-otp/', OTPViewSet.as_view({'post': 'create'}), name="request-otp"),
+    path('verify-otp/', VerifyOTPViewSet.as_view({'post': 'create'}, name="verify-otp")),
+    path('change-password-token/', ChangePasswordViaToken.as_view({'post': 'create'}, name="change-password-token")),
     path('payment/', include('payment.urls')),
     path('', include(router.urls))
 ]
