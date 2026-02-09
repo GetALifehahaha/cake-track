@@ -34,24 +34,18 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const [feedback, setFeedback] = useState("");
 
+    const clearFeedback = () => setFeedback({})
+
     const handleConfirmModal = async () => {
         setShowConfirmationModal(false);
         setLoading(true);
+        clearFeedback();
         // if (!productName || !category || !price || !imagePreview) {
-        if (!productName || !category) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: "Please don't leave any blank fields",
-                type: 'error'
-            })
-            return
-
-        };
         const payload ={
             name: productName,
             image: image ? await uploadToCloudinary(image) : null,
             category_id: category,
-            sizes: sizes.filter(item => item.active).map(item => ({size: item.size, price:item.price}))
+            variants: variants
         }
         onConfirm(payload);
         setLoading(false);
@@ -124,6 +118,8 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     const handleSetProductName = (e) => {
         e.preventDefault();
 
+        if (e.target.value.length > 51) return
+
         setProductName(e.target.value);
     }
     const handleSetCategory = (value) => {
@@ -131,12 +127,24 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
         setCategory(value);
     }
 
-    const updatePrice = (index, value) => {
-        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: value} : item));
+    const updatePrice = (index, e) => {
+        e.preventDefault();
+
+        const raw = e.target.value
+
+        if (!/^\d*\.?\d{0,2}$/.test(raw)) return
+
+        if (e.target.value.length > 7) return;
+
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: e.target.value} : item));
     }
 
-    const updateLabel = (index, value) => {
-        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: value} : item));
+    const updateLabel = (index, e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 11) return
+
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: e.target.value} : item));
     }
 
     const removeVariant = (index) => {
@@ -144,6 +152,16 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     }
 
     const handleSetShowConfirmationModal = () => {
+        if (!productName || !category || !imagePreview || !variants.some(v => v.label.trim() && v.price > 0)) {
+            setFeedback({
+                label: 'Incomplete details',
+                details: "Please don't leave any blank fields",
+                type: 'error'
+            })
+            return
+
+        };
+
         setShowConfirmationModal(!showConfirmationModal);
     }
 
@@ -182,7 +200,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                     <div className='flex flex-col gap-8 w-120'>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Product Name' />
-                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} max={50} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Category' />
@@ -201,15 +219,15 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                                             type="text"
                                             value={label}
                                             placeholder='Label'
-                                            onChange={(e) => updateLabel(index, e.target.value)}
+                                            onChange={(e) => updateLabel(index, e)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
                                             )}
                                         />
                                         <input
-                                            type="number"
+                                            type="text"
                                             value={price}
-                                            onChange={(e) => updatePrice(index, e.target.value)}
+                                            onChange={(e) => updatePrice(index, e)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
                                             )}

@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import {AddProductModal, ArchivedModal, DiscountModal, CategoryModal} from '../components/organisms';
+import { AddProductModal, ArchivedModal, DiscountModal, CategoryModal, EditProductModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
-import EditProductModal from '@/components/organisms/EditProductModal';
 import { useToast } from '@/context/ToastContext';
 import Loading from '@/components/molecules/Loading';
 

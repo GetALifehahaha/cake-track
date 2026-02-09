@@ -53,7 +53,7 @@ const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
 
         const raw = e.target.value
 
-        if (!/^\d*\.?\d*$/.test(raw)) return
+        if (!/^\d*\.?\d{0,2}$/.test(raw)) return
 
         if (e.target.value.length > 13) return;
 

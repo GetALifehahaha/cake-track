@@ -1,6 +1,7 @@
 export { default as PaymentModal } from './pos/PaymentModal'
 export { default as ReceiptsTable } from './ReceiptsTable'
 export { default as AddProductModal } from './products/AddProductModal'
+export { default as EditProductModal } from './products/EditProductModal'
 export { default as PaymentSuccessModal } from './pos/PaymentSuccessModal'
 export { default as ClearCheckoutModal } from './pos/ClearCheckoutModal'
 export { default as InventoryAddItem } from './InventoryAddItem'

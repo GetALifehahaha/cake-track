@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
-import { Button, Dropdown, Label, Title } from '../atoms';
+import { Button, Dropdown, Label, Title } from '../../atoms';
 import { X, Plus, Upload, Loader2, Minus } from 'lucide-react'
-import { ModalFeedbackCard } from '../molecules';
-import { ConfirmationModal } from '.';
+import { ModalFeedbackCard } from '../../molecules';
+import { ConfirmationModal } from '..';
 import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
@@ -114,6 +114,8 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     const handleSetProductName = (e) => {
         e.preventDefault();
 
+        if (e.target.value.length > 51) return
+
         setProductName(e.target.value);
     }
     const handleSetCategory = (value) => {
@@ -122,7 +124,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     }
 
     const handleSetShowConfirmationModal = () => {
-        if (!productName || !category || !imagePreview) {
+        if (!productName || !category || !imagePreview || !variants.some(v => v.label.trim() && v.price > 0)) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -138,12 +140,22 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
-    const updatePrice = (index, value) => {
-        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: value} : item));
+    const updatePrice = (index, e) => {
+
+        if (e.target.value.length > 7) return
+
+        const raw = e.target.value
+
+        if (!/^\d*\.?\d{0,2}$/.test(raw)) return
+
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: e.target.value} : item));
     }
 
-    const updateLabel = (index, value) => {
-        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: value} : item));
+    const updateLabel = (index, e) => {
+
+        if (e.target.value.length > 7) return
+
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: e.target.value} : item));
     }
 
     const removeVariant = (index) => {
@@ -209,15 +221,15 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                                             type="text"
                                             value={label}
                                             placeholder='Label'
-                                            onChange={(e) => updateLabel(index, e.target.value)}
+                                            onChange={(e) => updateLabel(index, e)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
                                             )}
                                         />
                                         <input
-                                            type="number"
+                                            type="text"
                                             value={price}
-                                            onChange={(e) => updatePrice(index, e.target.value)}
+                                            onChange={(e) => updatePrice(index, e)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
                                             )}

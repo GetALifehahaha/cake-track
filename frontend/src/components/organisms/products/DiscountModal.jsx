@@ -80,6 +80,29 @@ const DiscountModal = ({onClose}) => {
         resetFeedback();
     }
 
+    const handleDiscountName = (e) => {
+
+        if (e.target.value.length > 31) return
+
+        setDiscountName(e.target.value)
+    }
+
+    const handleDiscountRate = (e) => {
+
+        if (e.target.value.length > 4) return
+
+        const raw = e.target.value
+
+        if (!/^\d*$/.test(raw)) return
+
+        if (e.target.value > 100) {
+            setDiscountRate(100); 
+            return;
+        }
+
+        setDiscountRate(e.target.value)
+    }
+
     const listDiscount = discountData.map((discount, index) => 
         <div key={index} className='text-text font-medium flex gap-2 rounded-md p-2 bg-main-white border border-border'>
             <h5 className='flex-1 p-2'>{discount.name}</h5>
@@ -96,8 +119,8 @@ const DiscountModal = ({onClose}) => {
                     {
                         showDiscountForm ? 
                         <div className='flex flex-row gap-2'>
-                            <input type='text' value={discountName} placeholder='Set discount name' className='rounded-sm p-2 bg-main text-text/75' onChange={(e) => setDiscountName(e.target.value)} /> 
-                            <input type='number' value={discountRate} placeholder='Set discount rate' className='rounded-sm p-2 bg-main text-text/75' onChange={(e) => setDiscountRate(e.target.value)} />
+                            <input type='text' value={discountName} placeholder='Set discount name' className='rounded-sm p-2 bg-main text-text/75' onChange={(e) => handleDiscountName(e)} /> 
+                            <input type='text' value={discountRate} placeholder='Set discount rate' className='rounded-sm p-2 bg-main text-text/75' onChange={(e) => handleDiscountRate(e)} />
                             <Button text='' variant='modalOutline' size='fit' icon={Plus}  onClick={handleShowConfirmPostModal}/>
                             <Button text='' variant='modalOutline' size='fit' icon={X} onClick={handleCloseDiscountForm} />
                         </div>

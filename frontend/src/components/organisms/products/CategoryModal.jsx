@@ -80,6 +80,14 @@ const CategoryModal = ({onClose}) => {
         removePrepDeleteCategory();
     }
 
+    const handleCategoryName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 13) return;
+
+        setCategoryName(e.target.value)
+    }
+
     const capitalize = (str) => str[0].toUpperCase() + str.slice(1)
 
     const listCategory = categoryData.map((category, index) => 
@@ -102,7 +110,7 @@ const CategoryModal = ({onClose}) => {
                                 value={categoryName} 
                                 placeholder='Set category name' 
                                 className='rounded-sm p-2 bg-main text-text/75' 
-                                onChange={(e) => setCategoryName(e.target.value)} 
+                                onChange={(e) => handleCategoryName(e)} 
                             /> 
                             <Button text='' variant='modalOutline' size='fit' icon={Plus}  onClick={handleShowConfirmPostModal}/>
                             <Button text='' variant='modalOutline' size='fit' icon={X} onClick={handleCloseCategoryForm} />
