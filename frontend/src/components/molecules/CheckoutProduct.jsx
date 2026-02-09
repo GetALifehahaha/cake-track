@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '../atoms';
 import {X, Plus, Minus} from 'lucide-react'
+import { cn } from '@/lib/utils';
 
 const CheckoutProduct = ({product, onChangeAmount}) => {
 
@@ -12,6 +13,7 @@ const CheckoutProduct = ({product, onChangeAmount}) => {
 
             onChangeAmount(product.variant_id, product.amount-1);
         } else if (method == "add") {
+            if (product.amount + 1 === 100) return
             onChangeAmount(product.variant_id, product.amount+1);
         }
 
@@ -27,9 +29,9 @@ const CheckoutProduct = ({product, onChangeAmount}) => {
                 </div>
             </div>
 
-            <div className='flex flex-row gap-4 items-center ml-auto'>
+            <div className='flex flex-row items-center gap-2 ml-auto'>
                 <button className='text-accent border border-accent p-0.5 rounded-full cursor-pointer' onClick={() => handleSetAmount("minus")}><Minus size={12}/></button>
-                <h5 className='text-text font-sm'>{product.amount}</h5>
+                <h5 className={cn('text-text font-sm w-6 text-center', product.amount == 99 && 'font-semibold')}>{product.amount}</h5>
                 <button className='text-accent border border-accent p-0.5 rounded-full cursor-pointer' onClick={() => handleSetAmount("add")}><Plus size={12}/></button>
             </div>
         </div>

@@ -27,7 +27,7 @@ const VariantModal = ({product, onClose, onChoose}) => {
     }
 
     return (
-        <ModalBody title='Select Size' subtitle={product.name} onClose={onClose}>
+        <ModalBody title='Select Product' subtitle={product.name} onClose={onClose}>
             <div className='flex flex-col gap-2'>
                 {product?.variants?.map(({id, label, price}) => 
                     <div 

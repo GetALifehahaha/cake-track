@@ -50,6 +50,13 @@ const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
 
     const handleSetReceivedPayment = (e) => {
         e.preventDefault();
+
+        const raw = e.target.value
+
+        if (!/^\d*\.?\d*$/.test(raw)) return
+
+        if (e.target.value.length > 13) return;
+
         setReceivedPayment(e.target.value);
         handleRenderSelectAmount(0);
         setIsExact(true);
@@ -123,7 +130,7 @@ const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
 
                 <div className='flex flex-col gap-2'>
                     <Label variant='small' text='Or Enter Amount'/>
-                    <input type='number' min={0} maxLength={11} value={receivedPayment} onChange={(e) => handleSetReceivedPayment(e)} className={`focus:outline-none p-4 rounded-lg border-main-dark/50 border  ${(isExact) ? '' : 'bg-main-dark/50'}`}/>
+                    <input type='text' min={0} maxLength={11} value={receivedPayment} onChange={(e) => handleSetReceivedPayment(e)} className={`focus:outline-none p-4 rounded-lg border-main-dark/50 border  ${(isExact) ? '' : 'bg-main-dark/50'}`}/>
                 </div>
 
                 { showModalFeedback &&
