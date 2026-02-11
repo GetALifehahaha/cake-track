@@ -145,3 +145,26 @@ class DashboardView(APIView):
 
         serializer = DashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+from rest_framework import viewsets, permissions, filters
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Cake
+from .serializers import CakeSerializer
+
+
+class CakeViewSet(viewsets.ModelViewSet):
+    queryset = Cake.objects.all()
+    serializer_class = CakeSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCustomerOrAdmin]
+
+    # filter_backends = [
+    #     DjangoFilterBackend,
+    #     filters.SearchFilter,
+    #     filters.OrderingFilter,
+    # ]
+
+    # search_fields = ["name"]
+    # ordering_fields = ["name", "price", "created_at"]
+    # ordering = ["name"]
+

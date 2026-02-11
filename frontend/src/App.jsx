@@ -20,7 +20,8 @@ import {
 	QueueReady,
 	QueueRejected,
 	ForgotPassword,
-	SetAccount
+	SetAccount,
+	Cakes
 } from './pages'
 import { ProtectedRoute } from './components/organisms'
 
@@ -44,6 +45,7 @@ const App = () => {
 						<Route path='rejected' element={<QueueRejected />} />
 					</Route>
 					<Route path='/recipe' element={<Recipe />} />
+					<Route path='/cakes' element={<Cakes />} />
 					<Route path='/reports' element={<Reports />} />
 					<Route path='/details' element={<BusinessDetails />} />
 					<Route path='/cashier' element={<Cashier />} />

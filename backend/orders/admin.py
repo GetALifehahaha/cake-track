@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from .models import Order, CakeOrder, CupcakeOrder
+from .models import Order, CakeOrder, CupcakeOrder, Cake
 
 # 1. Create Inlines for the specific order types
 # This allows you to edit Cake/Cupcake details inside the main Order page.
@@ -46,6 +46,9 @@ class OrderAdmin(admin.ModelAdmin):
             return "Cupcake"
         return "Generic/Other"
     get_order_type.short_description = 'Order Type'
+
+
+admin.site.register(Cake)
 
 # Optional: If you want to see them separately as well, you can register them, 
 # but usually, the Inlines above are enough.

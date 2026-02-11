@@ -95,3 +95,19 @@ class DashboardSerializer(serializers.Serializer):
     pending_orders = serializers.IntegerField()
     completed_orders = serializers.IntegerField()
     rejected_orders = serializers.IntegerField()
+
+
+from .models import Cake
+
+class CakeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cake
+        fields = [
+            "id",
+            "name",
+            "price",
+            "image",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
