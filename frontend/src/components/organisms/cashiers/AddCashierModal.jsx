@@ -12,9 +12,9 @@ const AddCashierModal = ({onConfirm, onClose}) => {
 
     // Removed alongside the first form
     const [firstName, setFirstName] = useState('');
+    const [middleName, setMiddleName] = useState('');
     const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
     // const [showPassword, setShowPassword] = useState(false);
 
     // New parameters
@@ -28,8 +28,48 @@ const AddCashierModal = ({onConfirm, onClose}) => {
         if (firstName.length > 1 && lastName.length > 1) setUsername(`${firstName.toLowerCase()}_${lastName.toLowerCase()}`)
     }, [firstName, lastName])
 
+    const handleFirstName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setFirstName(e.target.value)
+    }
+
+    const handleMiddleName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setMiddleName(e.target.value)
+    }
+
+    const handleLastName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setLastName(e.target.value)
+    }
+
+    const handleUserName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setUsername(e.target.value)
+    }
+
+    const handleEmailAddress = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setEmailAddress(e.target.value)
+    }
+
     const validateForm = () => {
-        if (!emailAddress || !tempPassword || !username || !firstName || !lastName) {
+        if (!emailAddress || !tempPassword || !username || !firstName || !lastName || tempPassword === "Create a random temporary password") {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -39,8 +79,26 @@ const AddCashierModal = ({onConfirm, onClose}) => {
             return false;
         }
 
+        if (!validateEmail()) {
+            setFeedback({
+                label: 'Invalid email address',
+                details: "Please enter a valid email address",
+                type: 'error'
+            })
+
+            return false;
+        }
+
         return true;
     }
+
+    const validateEmail = () => {
+		return String(emailAddress)
+		.toLowerCase()
+		.match(
+		/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+		);
+	}
 
     const generatePassword = () => {
         let retVal = "";
@@ -65,64 +123,36 @@ const AddCashierModal = ({onConfirm, onClose}) => {
     return (
         <ModalBody title='Add Cashier' onClose={onClose}>
             <div className='flex gap-8'>
-                {/* Previous Needed Information */}
-                {/* <div className='flex flex-col gap-8 w-120'>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='First Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} placeholder='e.g., Adrian' onChange={(e) => setFirstName(e.target.value)}/>
+                <div className='flex flex-row gap-4'>
+                    <div className='flex flex-col gap-4'>
+                        <div className='flex flex-col gap-2'>
+                            <Label variant='modal' text='First Name' />
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} placeholder='e.g., Adrian' onChange={(e) => handleFirstName(e)}/>
+                        </div>
+                        <div className='flex flex-col gap-2'>
+                            <Label variant='modal' text='Middle Name' />
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={middleName} placeholder='e.g., Agraviador' onChange={(e) => handleMiddleName(e)}/>
+                        </div>
+                        <div className='flex flex-col gap-2'>
+                            <Label variant='modal' text='Last Name' />
+                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => handleLastName(e)}/>
+                        </div>
                     </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Last Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => setLastName(e.target.value)}/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Username' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={username} placeholder='e.g., adrianagraviador' onChange={(e) => setUsername(e.target.value)}/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Email Address' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={emailAddress} placeholder='e.g., agraviador@gmail.com' onChange={(e) => setEmailAddress(e.target.value)}/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Password' />
-                        <span className='px-4 py-2 rounded-sm bg-main-dark/50 flex flex-row gap-2 items-center'>
-                            {showPassword ?
-                                <>
-                                    <input type='text' className=' focus:outline-none w-full' placeholder="Enter the cashier's password" value={password} onChange={(e) => setPassword(e.target.value)}/>
-                                    <EyeClosed className='text-text/50 cursor-pointer' onClick={() => setShowPassword(false)} />
-                                </> :
-                                <>
-                                    <input type='password' className=' focus:outline-none w-full' placeholder="Enter the cashier's password" value={password} onChange={(e) => setPassword(e.target.value)}/>
-                                    <Eye className='text-text/50 cursor-pointer' onClick={() => setShowPassword(true)} />
-                                </>
-                            }
-                        </span>
-                    </div>
-                </div> */}
-
-                {/* New Needed Information */}
-                <div className='flex flex-col gap-4 w-120'>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='First Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} placeholder='e.g., Adrian' onChange={(e) => setFirstName(e.target.value)}/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Last Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => setLastName(e.target.value)}/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label text='Username' variant='modal' />
-                        <input value={username} onChange={(e) => {e.preventDefault(); setUsername(e.target.value)}} className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' placeholder="Enter a temporary username"/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label text='Email Address' variant='modal' />
-                        <input value={emailAddress} onChange={(e) => {e.preventDefault(); setEmailAddress(e.target.value)}} className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' placeholder="Enter the new cashier's valid email address"/>
-                    </div>
-                    <div className='flex flex-col gap-2'>
-                        <Label text='Temporary Password' variant='modal' />
-                        <div className='flex gap-2 items-center'>
-                            <h5 className='flex-1 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'>{tempPassword}</h5>
-                            <Button text='Create Password' variant='modalBlock' size='small' onClick={generatePassword}/>
+                    <div className='flex flex-col gap-4'>
+                        <div className='flex flex-col gap-2'>
+                            <Label text='Username' variant='modal' />
+                            <input value={username} onChange={(e) => handleUserName(e)} className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' placeholder="Enter a temporary username"/>
+                        </div>
+                        <div className='flex flex-col gap-2'>
+                            <Label text='Email Address' variant='modal' />
+                            <input value={emailAddress} onChange={(e) => handleEmailAddress(e)} className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' placeholder="Enter the new cashier's valid email address"/>
+                        </div>
+                        <div className='flex flex-col gap-2'>
+                            <Label text='Temporary Password' variant='modal' />
+                            <div className='flex gap-2 items-center'>
+                                <h5 className='flex-1 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'>{tempPassword}</h5>
+                                <Button text='Create Password' variant='modalBlock' size='small' onClick={generatePassword}/>
+                            </div>
                         </div>
                     </div>
                 </div>
