@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Title, Label, Button, Dropdown } from '../atoms';
-import { DatePicker, ModalFeedbackCard } from '../molecules';
+import { Title, Label, Button, Dropdown } from '../../atoms';
+import { DatePicker, ModalFeedbackCard } from '../../molecules';
 import { X } from 'lucide-react';
-import ConfirmationModal from './ConfirmationModal';
+import ConfirmationModal from '../ConfirmationModal';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
@@ -93,7 +93,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                     <div className='flex items-center gap-4'>
                         <div className='flex-1 flex flex-col gap-2'>
                             <Label variant='modal' text='Amount'/>
-                            <input type='number' value={amount} onChange={(e) => handleAmount(e)} 
+                            <input type='text' placeholder='Enter amount' value={amount} onChange={(e) => handleAmount(e)} 
                                     className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
                         </div>
 
