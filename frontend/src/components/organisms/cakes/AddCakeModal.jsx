@@ -120,7 +120,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                     <div className='flex justify-between items-center w-full mb-2'>
                         <Label variant='modal' text='Cake Image' />
                         {imagePreview &&
-                            <Button variant='icon' icon={X} onClick={handleRemoveImage} />
+                            <Button variant='icon' text='' icon={X} onClick={handleRemoveImage} />
                         }
                     </div>
 

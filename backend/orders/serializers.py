@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import (Order, CakeOrder, CupcakeOrder, OrderImage)
+from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake)
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -95,9 +95,6 @@ class DashboardSerializer(serializers.Serializer):
     pending_orders = serializers.IntegerField()
     completed_orders = serializers.IntegerField()
     rejected_orders = serializers.IntegerField()
-
-
-from .models import Cake
 
 class CakeSerializer(serializers.ModelSerializer):
     class Meta:
