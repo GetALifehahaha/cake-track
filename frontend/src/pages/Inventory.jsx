@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard, Pagination } from '../components/molecules';
 import { EditInventoryItem, InventoryAddItem, InventoryInOut } from '../components/organisms';
-import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, ChevronLeft, ChevronRight, ChevronDown, EllipsisVertical, Box } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
-import clsx from 'clsx';
+import { cn } from '@/utils/cn';
 
 const Inventory = () => {
 
@@ -29,7 +29,7 @@ const Inventory = () => {
     }
 
     const handleShowEditItemModal = () => {
-        setShowEditItemModal(!showEditItemModal)
+        setShowEditItemModal(!showEditItemModal)    
     }
     const handleAddItem = async (value) => {
         try {
@@ -50,14 +50,12 @@ const Inventory = () => {
     }
 
     const handleEditItem = (value) => {
-        // const updatedItem = inventoryItems.map((item, index) => item.id === value.id ? value : item)
-        // setInventoryItems(updatedItem);
+
         handlePrepEditItem(null);
         handleShowEditItemModal();
     }
 
     const handleDeleteItem = (id) => {
-        // setInventoryItems(items => items.filter((item) => item.id != id))
         handlePrepEditItem(null);
         handleShowEditItemModal();
     }
@@ -72,29 +70,41 @@ const Inventory = () => {
 
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
-            <div className='p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-main-dark border-b-2 cursor-pointer' onClick={() => handleSetActiveIndex(index)}>
-                <h5 className='flex-1'>{item.name}</h5>
-                <h5 className='flex-1'>{(item.total_stock).replace(/\.00$/, '')} {item.unit}</h5>
-                <div className='flex-1'><StockLabel amount={item.total_stock} /></div>
-                <h5 className='flex-1'><ChevronDown size={18} className={`mx-auto cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`}  /></h5>
+            <div className='p-2.5 flex flex-row items-center text-text font-medium text-md text-center bg-main-white border-b-main-dark border-b-2 cursor-pointer border-x border-x-main-dark' onClick={() => handleSetActiveIndex(index)}>
+                <div className='w-1/25'><ChevronDown size={18} className={`cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`}  /></div>
+                <div className='flex-1 text-left flex gap-2'>
+                    <h5 >{item.name}</h5>
+                </div>
+                <h5 className='flex-1 text-left'>{(item.total_stock).replace(/\.00$/, '')} {item.unit}</h5>
+                <div className='flex-1 text-left'><StockLabel amount={item.total_stock} /></div>
+                <div className='w-1/25'><EllipsisVertical size={18} /></div>
             </div>
             {index == activeIndex &&
-                <div className='border-b border-border'>
-                    <div className=' p-0.5 flex flex-row items-center text-text/50 font-semibold text-xs text-center border-b-border/50 border-b'>
-                        <h5 className='flex-1'>Remaining Amount</h5>
-                        <h5 className='flex-1'>Purchase Date</h5>
-                        <h5 className='flex-1'>Expiration Date</h5>
+                <div className='border-b border-border border-x border-x-border'>
+                    <div className='p-2 px-12 flex flex-col'>
+                        <h5 className='text-md font-medium text-text/50 mb-4'>Batch Details</h5>
+
+                        {/* <h5 className='flex-1'>Remaining Amount</h5>
+                        <h5 className='flex-1'>Expiration Date</h5> */}
+                        {item.batches.map((batch, batchIndex) =>
+                            <div key={batchIndex} className={cn('p-4 flex flex-row text-text bg-white rounded-lg border-border border', new Date(batch.expiration_date) <= Date.now() && 'border-error-border bg-error-fill')}>
+                                <div className='flex-1 flex flex-col items-start gap-2'>
+                                    <h5 className='text-text/50'>Remaining Amount</h5>
+                                    <h5 >{(batch.remaining_amount).replace(/\.00$/, '')}</h5>
+                                </div>
+                                <div className='flex-1 flex flex-col items-start gap-2'>
+                                    <h5 className='text-text/50'>Purchase Date</h5>
+                                    <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                </div>
+                                <div className='flex-1 flex flex-col items-start gap-2'>
+                                    <h5 className='text-text/50'>Expiration Date</h5>
+                                    <h5 className={cn('text-text', new Date(batch.expiration_date) <= Date.now() && 'text-error')}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
 
-                    {item.batches.map((batch, batchIndex) =>
-                        <div key={batchIndex} className={clsx('p-2 flex flex-row items-center text-text font-medium text-md text-center border-b-border/50 border-b bg-main-white', { 'opacity-50': new Date(batch.expiration_date) < new Date() })}>
-
-                            <h5 className='flex-1'>{(batch.remaining_amount).replace(/\.00$/, '')}</h5>
-                            <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
-                            <h5 className='flex-1'>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
-                        </div>
-                    )}
                 </div>
             }
         </div>
@@ -109,32 +119,31 @@ const Inventory = () => {
                 <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none' amount={ingredientDashboard.data.summary.expired_count} />
             </div>
 
-            <div className='border-accent-mute border rounded-lg p-4'>
+            <div className=''>
                 {/* Header */}
                 <div className="flex flex-row justify-between items-center">
                     <Title variant='block' text='Inventory Overview' />
 
                     <div className='flex flex-row items-center gap-2'>
-                        <Button variant='block' size='small' text='Adjust Stocks' icon={Plus} onClick={handleSetShowInOut} />
-                        <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} />
+                        <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm' />
+                        <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm' />
                     </div>
                 </div>
 
                 {/* Table */}
                 <div className='mt-2 flex flex-col min-h-120'>
-                    <div className='p-2 bg-accent-mute rounded-lg flex flex-row items-center text-white text-sm text-center'>
-                        <h5 className='flex-1'>Item Name</h5>
-                        <h5 className='flex-1'>Amount</h5>
-                        {/* <h5 className='basis-1/6'>Purchase Date</h5> */}
-                        {/* <h5 className='basis-1/6'>Expiration</h5> */}
-                        <h5 className='flex-1'>Status</h5>
-                        <h5 className='flex-1'>Action</h5>
+                    <div className='p-2 py-3 bg-accent-mute rounded-t-lg flex flex-row items-center text-white text-sm text-center'>
+                        <h5 className='w-1/25'></h5>
+                        <h5 className='flex-1 text-left'>Item Name</h5>
+                        <h5 className='flex-1 text-left'>Amount</h5>
+                        <h5 className='flex-1 text-left'>Status</h5>
+                        <h5 className='w-1/25'></h5>
                     </div>
 
                     {listIngredientData}
 
                     {/* Pagination */}
-                    <div className='mt-4 mx-auto'>
+                    <div className='mt-auto mx-auto'>
                         <Pagination next={ingredientData.next} prev={ingredientData.previous} />
                     </div>
                 </div>

@@ -6,14 +6,13 @@ import ConfirmationModal from './ConfirmationModal';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
-
     const units = [
         { key: 'Pieces', value: 'pc' },
         { key: 'Kilograms', value: 'kg' },
         { key: 'Grams', value: 'g' },
         { key: 'Sticks', value: 'st' },
         { key: 'Milliliter', value: 'ml' },
-        { key: 'Cup', value: 'cup' }
+        { key: 'Cup', value: 'cp' }
     ];
 
     const [name, setName] = useState("");
@@ -27,6 +26,26 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
     const handleConfirm = () => {
         onConfirm({name, amount, unit, purchaseDate: purchaseDate.toLocaleDateString("en-CA"), expirationDate: expirationDate.toLocaleDateString("en-CA")});
+    }
+
+    const handleName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return;
+
+        setName(e.target.value);
+    }
+
+    const handleAmount = (e) => {
+        e.preventDefault();
+
+        const raw = e.target.value
+
+        if (!/^\d*\.?\d{0,2}$/.test(raw)) return
+
+        if (e.target.value.length > 11) return;
+
+        setAmount(e.target.value);
     }
 
     const handleSetUnit = (value) => {
@@ -45,6 +64,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
         }
         setShowConfirm(true)
     };
+    
     const handleSetCloseConfirm = () => setShowConfirm(false);
 
     useEffect(() => {
@@ -66,14 +86,14 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                 <div className='flex flex-col gap-4'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Name'/>
-                        <input type='text' placeholder='Enter item name' value={name} onChange={(e) => setName(e.target.value)} 
+                        <input type='text' placeholder='Enter item name' value={name} onChange={(e) => handleName(e)} 
                                 className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
                     </div>
 
                     <div className='flex items-center gap-4'>
                         <div className='flex-1 flex flex-col gap-2'>
                             <Label variant='modal' text='Amount'/>
-                            <input type='number' value={amount} onChange={(e) => setAmount(e.target.value)} 
+                            <input type='number' value={amount} onChange={(e) => handleAmount(e)} 
                                     className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
                         </div>
 

@@ -123,14 +123,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	)
 
 	return (
-		<ModalBody className='w-[90vw]'>
-			{/* Header */}
-			<div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-main-white">
-				<Title text='Inventory Management' variant='modal' />
-
-				<X size={20} className='text-text cursor-pointer' onClick={onClose} />
-			</div>
-
+		<ModalBody title='Inventory Management' onClose={onClose} className='w-[90vw]'>
 			<input type='text' className='ml-2 p-2 border-border rounded-sm border w-120' value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search available ingredients' />
 
 			{/* Two Panel Layout */}
