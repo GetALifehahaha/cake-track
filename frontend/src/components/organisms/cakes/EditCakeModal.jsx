@@ -20,6 +20,26 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const [feedback, setFeedback] = useState(null);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
+    const handleCakeName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setCakeName(e.target.value);
+    }
+
+    const handlePrice = (e) => {
+        e.preventDefault();
+
+        const raw = e.target.value
+
+        if (!/^\d*\.?\d{0,2}$/.test(raw)) return
+
+        if (e.target.value.length > 13) return
+
+        setPrice(e.target.value);
+    }
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -77,17 +97,29 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
         return data.secure_url;
     };
 
-    const handleConfirmModal = async () => {
-        setShowConfirmationModal(false);
-
-        if (!cakeName || !price) {
+    const validateFields = () => {
+        if (!cakeName || !price || !image) {
             setFeedback({
                 label: 'Incomplete details',
                 details: 'Please fill in all required fields.',
                 type: 'error'
             });
+            return false;
+        }
+
+        return true
+    }
+
+    const handleConfirmationModal = () => {
+        if (!validateFields()) {
             return;
         }
+
+        setShowConfirmationModal(true)
+    }
+
+    const editCake = async () => {
+        setShowConfirmationModal(false);
 
         try {
             setLoading(true);
@@ -171,17 +203,17 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                                 type='text'
                                 className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
                                 value={cakeName}
-                                onChange={(e) => setCakeName(e.target.value)}
+                                onChange={(e) => handleCakeName(e)}
                             />
                         </div>
 
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Price' />
                             <input
-                                type='number'
+                                type='text'
                                 className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
                                 value={price}
-                                onChange={(e) => setPrice(e.target.value)}
+                                onChange={(e) => handlePrice(e)}
                             />
                         </div>
 
@@ -216,7 +248,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                                 variant='modalBlock'
                                 size='base'
                                 text='Save'
-                                onClick={() => setShowConfirmationModal(true)}
+                                onClick={handleConfirmationModal}
                             />
                         </>
                     )}
@@ -227,7 +259,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                         title="Save Changes?"
                         content="Are you sure you want to update this cake?"
                         onReject={() => setShowConfirmationModal(false)}
-                        onConfirm={handleConfirmModal}
+                        onConfirm={editCake}
                     />
                 }
 

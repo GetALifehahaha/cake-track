@@ -19,18 +19,49 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
     const [feedback, setFeedback] = useState(null);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
-    const handleConfirmModal = async () => {
-        setShowConfirmationModal(false);
+    const handleCakeName = (e) => {
+        e.preventDefault();
 
-        if (!cakeName || !price) {
+        if (e.target.value.length > 50) return
+
+        setCakeName(e.target.value);
+    }
+
+    const handlePrice = (e) => {
+        e.preventDefault();
+
+        const raw = e.target.value
+
+        if (!/^\d*\.?\d{0,2}$/.test(raw)) return
+
+        if (e.target.value.length > 13) return
+
+        setPrice(e.target.value);
+    }
+
+    const validateFields = () => {
+        if (!cakeName || !price || !image) {
             setFeedback({
                 label: 'Incomplete details',
                 details: 'Please fill in all required fields.',
                 type: 'error'
             });
+            return false;
+        }
+
+        return true
+    }
+
+    const handleConfirmationModal = () => {
+        if (!validateFields()) {
             return;
         }
 
+        setShowConfirmationModal(true)
+    }
+    
+
+    const addCake = async () => {
         try {
             setLoading(true);
 
@@ -162,18 +193,18 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
                             value={cakeName}
                             placeholder='e.g., Chocolate Fudge'
-                            onChange={(e) => setCakeName(e.target.value)}
+                            onChange={(e) => handleCakeName(e)}
                         />
                     </div>
 
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Price' />
                         <input
-                            type='number'
+                            type='text'
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
                             value={price}
                             placeholder='e.g., 850'
-                            onChange={(e) => setPrice(e.target.value)}
+                            onChange={(e) => handlePrice(e)}
                         />
                     </div>
 
@@ -208,7 +239,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                             variant='modalBlock'
                             size='base'
                             text='Add Cake'
-                            onClick={() => setShowConfirmationModal(true)}
+                            onClick={handleConfirmationModal}
                         />
                     </>
                 )}
@@ -219,7 +250,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                     title="Add Cake?"
                     content="Are you sure you want to add this cake?"
                     onReject={() => setShowConfirmationModal(false)}
-                    onConfirm={handleConfirmModal}
+                    onConfirm={addCake}
                 />
             }
         </ModalBody>

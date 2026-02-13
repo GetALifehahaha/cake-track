@@ -19,5 +19,3 @@ urlpatterns = [
     path('', include(routers.urls)),
     path('analytics/', DashboardView.as_view(), name="dashboard-analytics")
 ]
-
-print(routers.urls)
