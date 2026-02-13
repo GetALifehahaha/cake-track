@@ -1,7 +1,7 @@
 import { crudApi } from "./crudApi";
 import api from "./api";
 
-const baseApi = crudApi("orders")
+const baseApi = crudApi("orders/orders")
 
 export const OrdersApi = {
     ...baseApi,

@@ -27,4 +27,7 @@ export { default as VariantModal } from './pos/VariantModal'
 export { default as DashboardChart } from './DashboardChart'
 export { default as ReadyCard } from './ReadyCard'
 export { default as DownloadReportModal } from './reports/DownloadReportModal'
+export { default as AddCakeModal } from './cakes/AddCakeModal'
+export { default as EditCakeModal } from './cakes/EditCakeModal'
+
 

@@ -14,13 +14,15 @@ from .serializers import (
     CupcakeOrderSerializer,
     OrderSerializer,
     OrderBatchUpdateSerializer,
-    DashboardSerializer
+    DashboardSerializer,
+    CakeSerializer
 )
 
 from .models import (
     CakeOrder,
     CupcakeOrder,
     Order,
+    Cake
 )
 
 from users.permissions import IsCashier, IsCustomerOrAdmin
@@ -145,3 +147,19 @@ class DashboardView(APIView):
 
         serializer = DashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class CakeViewSet(viewsets.ModelViewSet):
+    queryset = Cake.objects.all()
+    serializer_class = CakeSerializer
+
+    # filter_backends = [
+    #     DjangoFilterBackend,
+    #     filters.SearchFilter,
+    #     filters.OrderingFilter,
+    # ]
+
+    # search_fields = ["name"]
+    # ordering_fields = ["name", "price", "created_at"]
+    # ordering = ["name"]
+
