@@ -6,7 +6,7 @@ import loginImage2 from '../assets/image/login-image-2.png'
 import loginImage3 from '../assets/image/login-image-3.png'
 import { AuthContext } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeClosed } from 'lucide-react';
 import GoogleLoginApi from '@/api/GoogleLoginApi';
 
 const Login = () => {
@@ -17,6 +17,7 @@ const Login = () => {
     const [password, setPassword] = useState();
     const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSetUsername = (e) => {
         e.preventDefault()
@@ -78,14 +79,28 @@ const Login = () => {
                         </div>
                         <div className='flex flex-col gap-4'>
                             <Label variant='login' text='PASSWORD' />
-                            <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
+                            <div className='flex gap-2 w-full'>
+                                {showPassword ?
+                                <input type='text' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
+                                    :
+                                <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
+                                }
+                                
+                                <button type='button' className='p-1.5 bg-main cursor-pointer text-text/50' onClick={() => setShowPassword(!showPassword)}>
+                                    {showPassword ?
+                                        <EyeClosed />
+                                        :
+                                        <Eye />
+                                    }
+                                </button>
+                            </div>
                         </div>
                         <div className='flex justify-between items-center'>
                             <span className='flex flex-row items-center gap-2'>
                                 <input type='checkbox' onChange={() => setRememberMe(!rememberMe)} />
                                 <label className='font-semibold text-accent-mute'>Remember me</label>
                             </span>
-                            <Link to='/forgotPassword' className='font-semibold text-accent-mute'> Forgot Password</Link>
+                            <Link to='/forgotPassword' className='text-accent-text hover:underline hover:underline-offset-1'> Forgot Password</Link>
                         </div>
                         
                         <span className='w-4/5 mx-auto flex gap-2 items-center justify-center'>
