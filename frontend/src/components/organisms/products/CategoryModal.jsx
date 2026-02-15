@@ -100,7 +100,9 @@ const CategoryModal = ({onClose}) => {
     return (
         <ModalBody title='Categories' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
-                {listCategory}
+                <div className='flex flex-col gap-2 max-h-[50vh] overflow-auto'>
+                    {listCategory}
+                </div>
                 <div className='ml-auto'>
                     {
                         showCategoryForm ? 

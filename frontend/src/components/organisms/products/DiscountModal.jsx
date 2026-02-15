@@ -114,7 +114,9 @@ const DiscountModal = ({onClose}) => {
     return (
         <ModalBody title='Discounts' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
-                {listDiscount}
+                <div className='flex flex-col gap-2 max-h-[50vh] overflow-auto'>
+                    {listDiscount}
+                </div>
                 <div className='ml-auto'>
                     {
                         showDiscountForm ? 
