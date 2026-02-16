@@ -77,7 +77,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
-    filterset_fields = ['category__name', 'is_archived']
+    filterset_fields = ['categories__name', 'is_archived']
     
     search_fields = ['name']
     

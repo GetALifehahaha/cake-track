@@ -29,7 +29,7 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=255, blank=True, null=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
+    categories = models.ManyToManyField(Category, blank=True, related_name="products")
     image = models.CharField(max_length=500, blank=True, null=True)
     
     is_archived = models.BooleanField(default=False)

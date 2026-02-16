@@ -25,75 +25,60 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset = Category.objects.all(),
-        source='category',
-        write_only=True
+    categories = CategorySerializer(
+        many=True,
+        read_only=True
     )
-    # remove read only
+
+    category_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Category.objects.all(),
+        write_only=True,
+        source="categories"
+    )
+
     variants = ProductVariantSerializer(many=True)
-    
+
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'category', 'category_id',
+            'id', 'name', 'description',
+            'categories', 'category_ids',
             'image', 'is_archived', 'variants'
         ]
-        
-    def create(self, validated_data):
-        # get data from api call. expects ex: sizes: [{size: 'XL', price: '150'},...]
-        variants_data = validated_data.pop('variants', [])
-        # create new product if data is validated, destructure keyword arguments
-        product = Product.objects.create(**validated_data)
-        
-        for variant in variants_data:
-            ProductVariant.objects.create(product=product, **variant)
-            
-        return product
-        
-    # add update function for bulk creation
-    def update(self, instance, validated_data):
-        variants_data = validated_data.pop('variants', None)
-        instance = super().update(instance, validated_data)
-        
-        # If PATCH didn’t include `variants`: leave them unchanged
-        if variants_data is None:
-            return instance
-        
-        # get all existing variants in current object
-        existing_variants = {variant.id: variant for variant in instance.variants.all()}
-        # prepare array for the currently sent items
-        sent_ids = []
-        
-        for variant_item in variants_data:
-            # get ids in the sent variant_item
-            variant_id = variant_item.get('id')
-            
-            # if there's a variant_id in sent request and that variant_id exist in 
-            # current variants
-            if variant_id and variant_id in existing_variants:
-                # get the object
-                variant_obj = existing_variants[variant_id]
-                
-                # quick hand adjust the variant object
-                for attr, value in variant_item.items():
-                    setattr(variant_obj, attr, value)
-                variant_obj.save()
-                
-                # add the variant id in the array
-                sent_ids.append(variant_id)
-            else:
-                # if there's no variant_id in existing variants, create new one
-                ProductVariant.objects.create(product=instance, **variant_item)
 
-        # for loop through all existing variants, getting the variant id and object (attr)
-        for variant_id, variant_obj in existing_variants.items():
-            # if the current variant is not in the sent ids, assume that it has been deleted
-            if variant_id not in sent_ids:
-                variant_obj.delete()
-                
+    def create(self, validated_data):
+        categories = validated_data.pop("categories", [])
+        variants_data = validated_data.pop("variants", [])
+
+        product = Product.objects.create(**validated_data)
+
+        product.categories.set(categories)
+
+        for variant_data in variants_data:
+            ProductVariant.objects.create(product=product, **variant_data)
+
+        return product
+
+    def update(self, instance, validated_data):
+        categories = validated_data.pop("categories", None)
+        variants_data = validated_data.pop("variants", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if categories is not None:
+            instance.categories.set(categories)
+
+        if variants_data is not None:
+            instance.variants.all().delete()
+            for variant_data in variants_data:
+                ProductVariant.objects.create(product=instance, **variant_data)
+
         return instance
+
                 
 class ProductBatchUnarchiveSerializer(serializers.Serializer):
 

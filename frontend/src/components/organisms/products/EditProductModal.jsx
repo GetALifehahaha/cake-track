@@ -11,8 +11,11 @@ import { cn } from '@/utils/cn';
 
 const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
+    console.log(product)
+
     const [productName, setProductName] = useState(product.name);
-    const [category, setCategory] = useState(product.category.id);
+    // const [category, setCategory] = useState(product.category.id);
+    const [categories, setCategories] = useState([...product.categories_id])
     const [variants, setVariants] = useState([...product.variants, {label: "", price: 0}])
     const [image, setImage] = useState(product.image)
     const [loading, setLoading] = useState(false);
@@ -140,6 +143,26 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
+    const handleCategories = (value, index) => {
+        setCategories(prev.map(
+            (category, idx) => idx === index ? value : category
+        ))
+    }
+
+    const handleCategoryCount = (method, index = null) => {
+        setCategories(prev => {
+            if (method === "plus") {
+                return [...prev, null];
+            }
+
+            if (method === "minus" && index !== null) {
+                return prev.filter((_, idx) => idx !== index);
+            }
+
+            return prev;
+        });
+    };
+
     const updatePrice = (index, e) => {
 
         if (e.target.value.length > 7) return
@@ -206,12 +229,37 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                             <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Category' />
-                            <div className='flex gap-2'>
-                                <Dropdown variant='modal' value={category} selection="e.g., Drinks" size='full' options={categoryOptions} onSelect={handleSetCategory} />
-                                <Button variant='icon' text='' icon={Plus}/>
+                            <Label variant='modal' text='Categories' />
+                            <div className='flex flex-col gap-2'>
+                                {categories.map((categoryId, index) => (
+                                    <div key={index} className='flex gap-2 items-center'>
+                                        <Dropdown
+                                            variant='modal'
+                                            value={categoryId}
+                                            selection="Select category"
+                                            size='full'
+                                            options={categoryOptions}
+                                            onSelect={(value) => handleCategories(value, index)}
+                                        />
+
+                                        {index === categories.length - 1 ? (
+                                            <Button
+                                                variant='icon'
+                                                icon={Plus}
+                                                onClick={() => handleCategoryCount("plus")}
+                                            />
+                                        ) : (
+                                            <Button
+                                                variant='icon'
+                                                icon={Minus}
+                                                onClick={() => handleCategoryCount("minus", index)}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
+
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Product Price' />
                             <div className="flex flex-col gap-2 w-full">

@@ -35,10 +35,15 @@ class ProductVariantInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'category', 'is_archived']
+    list_display = ['id', 'name', 'display_categories', 'is_archived']
     search_fields = ['name', 'description']
-    list_filter = ['category', 'is_archived']
+    list_filter = ['categories', 'is_archived']
     inlines = [ProductVariantInline]
+
+    def display_categories(self, obj):
+        return ", ".join(category.name for category in obj.categories.all())
+    
+    display_categories.short_description = "Categories"
 
 
 # -----------------------------

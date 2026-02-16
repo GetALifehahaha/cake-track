@@ -1,7 +1,7 @@
 import { cn } from '@/utils/cn';
 import React, { useState } from 'react'
 
-const ProductCard = ({ product = { name: '', sizes: ["XS", "S"], image: null }, onToggle, isArchived, selected = [] }) => {
+const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived, selected = [] }) => {
     const handleToggleClick = () => {
         if (isArchived) {
             onToggle(product.id)
