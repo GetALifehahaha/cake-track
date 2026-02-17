@@ -14,7 +14,9 @@ from users.permissions import IsCashier, IsCustomerOrAdmin, IsAdmin
 
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
-    serializer = UnitSerializer
+    serializer_class = UnitSerializer
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+    pagination_class = None
 
 
 class TransactionViewSet(viewsets.ModelViewSet):

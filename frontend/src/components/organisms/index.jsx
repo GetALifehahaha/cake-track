@@ -29,5 +29,6 @@ export { default as ReadyCard } from './ReadyCard'
 export { default as DownloadReportModal } from './reports/DownloadReportModal'
 export { default as AddCakeModal } from './cakes/AddCakeModal'
 export { default as EditCakeModal } from './cakes/EditCakeModal'
+export { default as UnitModal } from './inventory/UnitModal'
 
 

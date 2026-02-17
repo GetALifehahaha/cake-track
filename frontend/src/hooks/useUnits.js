@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UnitApi } from '@/api/UnitApi'; // Your API wrapper for units
 
-export const useUnits = (apiParams = {}) => {
+export default function useUnits(){
     const queryClient = useQueryClient();
 
     const unitsQuery = useQuery({
-        queryKey: ['units', JSON.stringify(apiParams)],
-        queryFn: () => UnitApi.fetchList(apiParams),
+        queryKey: ['units'],
+        queryFn: () => UnitApi.fetchList(),
         placeholderData: (previous) => previous,
     });
 

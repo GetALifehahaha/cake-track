@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard, Pagination } from '../components/molecules';
-import { EditInventoryItem, InventoryAddItem, InventoryInOut } from '../components/organisms';
+import { EditInventoryItem, InventoryAddItem, InventoryInOut, UnitModal } from '../components/organisms';
 import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, ChevronLeft, ChevronRight, ChevronDown, EllipsisVertical, Box } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
@@ -17,6 +17,7 @@ const Inventory = () => {
     const [prepEditItem, setPrepEditItem] = useState(null);
     const [activeIndex, setActiveIndex] = useState(null);
     const [showInOut, setShowInOut] = useState(false);
+    const [showUnitsModal, setShowUnitsModal] = useState(false);
 
     if (ingredientLoading) return <Loading />
     if (ingredientError) return <h5>Error</h5>
@@ -67,6 +68,7 @@ const Inventory = () => {
 
     const handleSetShowInOut = () => setShowInOut(true);
     const handleSetCloseInOut = () => { setShowInOut(false); refresh() }
+    const toggleUnitsModal = () => setShowUnitsModal(!showUnitsModal)
 
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
@@ -125,6 +127,7 @@ const Inventory = () => {
                     <Title variant='block' text='Inventory Overview' />
 
                     <div className='flex flex-row items-center gap-2'>
+                        <Button variant='modalOutline' size='small' text='Manage Units' icon={Box} onClick={toggleUnitsModal} className='shadow-sm' />
                         <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm' />
                         <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm' />
                     </div>
@@ -161,6 +164,10 @@ const Inventory = () => {
 
             {showInOut &&
                 <InventoryInOut onClose={handleSetCloseInOut} />
+            }
+
+            {showUnitsModal &&
+                <UnitModal onClose={toggleUnitsModal} />
             }
         </div>
     )
