@@ -6,6 +6,8 @@ import useUnits from '@/hooks/useUnits';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const {data: units, loading, error} = useUnits()
+
+    console.log(item)
     
     const [name, setName] = useState(item.name);
     const [unit, setUnit] = useState(item.unit.id);
@@ -33,13 +35,13 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     }
 
     const handleConfirm = () => {
-        if (!name || !amount || !purchaseDate || !expirationDate || !status) {
+        if (!name || !unit) {
             setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
             setShowModalFeedback(true);
             return;
         }
 
-        onConfirm({ id: item.id, name, unit})
+        onConfirm({ id: item.id, name, unit_id: unit})
     }
 
     const capitalize = (str) => {

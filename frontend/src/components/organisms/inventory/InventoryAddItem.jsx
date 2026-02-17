@@ -33,7 +33,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     }))
 
     const handleConfirm = () => {
-        onConfirm({name, amount, unit, purchaseDate: purchaseDate.toLocaleDateString("en-CA"), expirationDate: expirationDate.toLocaleDateString("en-CA")});
+        onConfirm({name, amount, unit_id: unit, purchaseDate: purchaseDate.toLocaleDateString("en-CA"), expirationDate: expirationDate.toLocaleDateString("en-CA")});
     }
 
     const handleName = (e) => {

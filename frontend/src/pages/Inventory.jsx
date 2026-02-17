@@ -11,7 +11,7 @@ import { cn } from '@/utils/cn';
 const Inventory = () => {
 
     const { addToast } = useToast();
-    const { ingredientData, ingredientLoading, ingredientError, postIngredient, refresh, ingredientDashboard } = useIngredient();
+    const {ingredientData, ingredientDashboard, ingredientError, ingredientLoading, postIngredient, patchIngredient} = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);
@@ -36,7 +36,6 @@ const Inventory = () => {
         try {
             await postIngredient(value);
             handleCloseAddItemModal();
-            refresh();
             addToast("New ingredient added successfully")
         } catch (err) {
             addToast("Failed to add new ingredient", "error")
@@ -50,10 +49,14 @@ const Inventory = () => {
         handleShowEditItemModal();
     }
 
-    const handleEditItem = (value) => {
-
-        handlePrepEditItem(null);
-        handleShowEditItemModal();
+    const handleEditItem = async (value) => {
+        try {
+            await patchIngredient(value.id, {...value})
+            handlePrepEditItem(null);
+            addToast("Ingredient has been edited successfully")
+        } catch (err) {
+            addToast("Failed to edit ingredient", "error")
+        }
     }
 
     const handleDeleteItem = (id) => {
@@ -77,7 +80,7 @@ const Inventory = () => {
                 <div className='flex-1 text-left flex gap-2'>
                     <h5 >{item.name}</h5>
                 </div>
-                <h5 className='flex-1 text-left'>{(item.total_stock).replace(/\.00$/, '')} {item.unit}</h5>
+                <h5 className='flex-1 text-left'>{(item.total_stock).replace(/\.00$/, '')} {item.unit.abbreviation}</h5>
                 <div className='flex-1 text-left'><StockLabel amount={item.total_stock} /></div>
                 <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}><EllipsisVertical size={18} /></div>
             </div>
@@ -115,10 +118,10 @@ const Inventory = () => {
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
             <div className='h-fit w-full flex gap-4'>
-                <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success' amount={ingredientDashboard.data.summary.in_stock_count} />
-                <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error' amount={ingredientDashboard.data.summary.out_of_stock_count} />
-                <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning' amount={ingredientDashboard.data.summary.running_low_count} />
-                <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none' amount={ingredientDashboard.data.summary.expired_count} />
+                <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success' amount={ingredientDashboard.summary.in_stock_count} />
+                <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error' amount={ingredientDashboard.summary.out_of_stock_count} />
+                <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning' amount={ingredientDashboard.summary.running_low_count} />
+                <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none' amount={ingredientDashboard.summary.expired_count} />
             </div>
 
             <div className=''>

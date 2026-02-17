@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ingredient, Transaction
+from .models import Ingredient, Transaction, Unit
 
 # Inline to show transactions inside Ingredient
 class TransactionInline(admin.TabularInline):
@@ -22,3 +22,5 @@ class TransactionAdmin(admin.ModelAdmin):
     list_filter = ('transaction_type',)
     search_fields = ('ingredient__name',)
     ordering = ('-purchase_date',)
+
+admin.site.register(Unit)

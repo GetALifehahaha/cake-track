@@ -107,10 +107,16 @@ class IngredientBatchSerializer(serializers.ModelSerializer):
         
 class IngredientSerializer(serializers.ModelSerializer):
     batches = serializers.SerializerMethodField()
+    unit = UnitSerializer(read_only=True)
+    unit_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        queryset=Unit.objects.all(),
+        source="unit"
+    )
 
     class Meta:
         model = Ingredient
-        fields = ['id', 'name', 'unit', 'total_stock', 'batches']
+        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'batches']
         
     def get_batches(self, obj):
         queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')

@@ -14,15 +14,7 @@ class Ingredient(models.Model):
     name = models.CharField(max_length=20)
     total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0) #type: ignore
 
-    UNITS = [
-        ('kg', 'Kilogram'),
-        ('g', 'Gram'),
-        ('pc', 'Pieces'),
-        ('st', 'Sticks'),
-        ('ml', 'Milliliter'),
-        ('cp', 'Cup'),
-    ]
-    unit = models.CharField(max_length=2, choices=UNITS)
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name="ingredients")
 
     def __str__(self):
         return self.name

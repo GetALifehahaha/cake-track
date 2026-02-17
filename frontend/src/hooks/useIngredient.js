@@ -1,87 +1,77 @@
-import { useState, useCallback, useEffect } from "react";
-import IngredientApi from "../api/IngredientApi";
+import { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+import { IngredientApi } from "../api/IngredientApi";
 
 export default function useIngredient(all = false) {
-    const [ingredientData, setIngredientData] = useState(null); // Init as null
-    const [ingredientDashboard, setIngredientDashboard] = useState(null); // Init as null
-    
-    // Combined loading state
-    const [ingredientLoading, setIngredientLoading] = useState(true);
-    const [ingredientError, setIngredientError] = useState(null);
-    const [ingredientResponse, setIngredientResponse] = useState(null);
+    const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
 
-    // 1. Standalone fetchers (return the promise, don't set global loading false yet)
-    const fetchIngredientsPromise = useCallback(async () => {
-        try {
-            if (all) {
-                const data = await IngredientApi(null, null, true, "GET");
-                setIngredientData(data);
-            } else {
-                const data = await IngredientApi();
-                setIngredientData(data);
-            }
-        } catch (err) {
-            console.error(err);
-            setIngredientError({ status: "error", detail: "Failed to read ingredients." });
-        }
-    }, [all]);
+    const apiParams = useMemo(() => {
+        const params = Object.fromEntries(searchParams.entries());
 
-    const fetchDashboardPromise = useCallback(async () => {
-        try {
-            const data = await IngredientApi(null, null, null, "DASHBOARD");
-            setIngredientDashboard(data);
-        } catch (err) {
-            console.error(err);
-            // Don't overwrite main error if list failed, but log it
-            console.warn("Dashboard fetch failed"); 
-        }
-    }, []);
+        return params;
+    }, [searchParams]);
 
-    // 2. The Master Loader
-    const refresh = useCallback(async () => {
-        setIngredientLoading(true);
-        try {
-            // Wait for BOTH to finish before continuing
-            await Promise.all([
-                fetchIngredientsPromise(),
-                fetchDashboardPromise()
-            ]);
-        } catch (err) {
-            setIngredientError(err);
-        } finally {
-            // Only stop loading when EVERYTHING is done
-            setIngredientLoading(false);
-        }
-    }, [fetchIngredientsPromise, fetchDashboardPromise]);
+    const ingredientsQuery = useQuery({
+        queryKey: ["ingredients", JSON.stringify(apiParams)],
+        queryFn: () => IngredientApi.fetchList(apiParams),
+        placeholderData: (previous) => previous,
+    });
 
-    // 3. Modifying Write Operations to auto-refresh
-    const postIngredient = async (params) => {
-        setIngredientLoading(true);
-        try {
-            await IngredientApi(params, null, null, "POST");
-            setIngredientResponse({ status: "success", detail: "Ingredient created successfully." });
-            await refresh(); // Auto refresh list after add
-        } catch (err) {
-            setIngredientError({ status: "error", detail: "Failed to create ingredient." });
-        } finally {
-            setIngredientLoading(false);
-        }
+    const dashboardQuery = useQuery({
+        queryKey: ["ingredient-dashboard"],
+        queryFn: IngredientApi.fetchDashboard,
+        placeholderData: (previous) => previous,
+    });
+
+    const invalidateAll = () => {
+        queryClient.invalidateQueries({ queryKey: ["ingredients"] });
+        queryClient.invalidateQueries({ queryKey: ["ingredient-dashboard"] });
     };
 
-    // ... (Repeat pattern for patch and delete) ...
+    const createMutation = useMutation({
+        mutationFn: IngredientApi.create,
+        onSuccess: invalidateAll,
+    });
 
-    // Initial Load
-    useEffect(() => {
-        refresh();
-    }, [refresh]);
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) =>
+            IngredientApi.update(id, data),
+        onSuccess: invalidateAll,
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: IngredientApi.delete,
+        onSuccess: invalidateAll,
+    });
 
     return {
-        ingredientData,
-        ingredientDashboard,
-        ingredientResponse,
-        ingredientLoading,
-        ingredientError,
-        postIngredient,
-        refresh,
+        ingredientData: ingredientsQuery.data || [],
+        ingredientDashboard: dashboardQuery.data || null,
+
+        ingredientLoading:
+            ingredientsQuery.isPending ||
+            dashboardQuery.isPending ||
+            createMutation.isPending ||
+            updateMutation.isPending ||
+            deleteMutation.isPending,
+
+        ingredientError:
+            ingredientsQuery.error ||
+            dashboardQuery.error ||
+            createMutation.error ||
+            updateMutation.error ||
+            deleteMutation.error,
+
+        postIngredient: createMutation.mutateAsync,
+        patchIngredient: (id, data) =>
+            updateMutation.mutateAsync({ id, data }),
+        deleteIngredient: deleteMutation.mutateAsync,
+
+        refresh: () => {
+            ingredientsQuery.refetch();
+            dashboardQuery.refetch();
+        },
     };
 }
