@@ -177,19 +177,19 @@ const QueueOverview = () => {
 					<div className='grid grid-cols-2'>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>In Stock</h5>
-							<h5 className='text-success font-bold text-2xl'>{ingredientDashboard.data.summary.in_stock_count}</h5>
+							<h5 className='text-success font-bold text-2xl'>{ingredientDashboard.summary.in_stock_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Running Low</h5>
-							<h5 className='text-warning font-bold text-2xl'>{ingredientDashboard.data.summary.running_low_count}</h5>
+							<h5 className='text-warning font-bold text-2xl'>{ingredientDashboard.summary.running_low_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Out of Stock</h5>
-							<h5 className='text-error font-bold text-2xl'>{ingredientDashboard.data.summary.out_of_stock_count}</h5>
+							<h5 className='text-error font-bold text-2xl'>{ingredientDashboard.summary.out_of_stock_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Expired</h5>
-							<h5 className='text-none font-bold text-2xl'>{ingredientDashboard.data.summary.expired_count}</h5>
+							<h5 className='text-none font-bold text-2xl'>{ingredientDashboard.summary.expired_count}</h5>
 						</span>
 					</div>
 				</div>
