@@ -43,10 +43,10 @@ const Inventory = () => {
 
     }
 
-    const handlePrepEditItem = (value) => {
+    const handlePrepEditItem = (value, e) => {
+        if (e) e.stopPropagation();
         setPrepEditItem(value);
         handleShowEditItemModal();
-        refresh();
     }
 
     const handleEditItem = (value) => {
@@ -77,12 +77,12 @@ const Inventory = () => {
                 </div>
                 <h5 className='flex-1 text-left'>{(item.total_stock).replace(/\.00$/, '')} {item.unit}</h5>
                 <div className='flex-1 text-left'><StockLabel amount={item.total_stock} /></div>
-                <div className='w-1/25'><EllipsisVertical size={18} /></div>
+                <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}><EllipsisVertical size={18} /></div>
             </div>
             {index == activeIndex &&
                 <div className='border-b border-border border-x border-x-border'>
                     <div className='p-2 px-12 flex flex-col'>
-                        <h5 className='text-md font-medium text-text/50 mb-4'>Batch Details</h5>
+                        <h5 className='text-sm font-medium text-text/50 mb-4'>Batch Details</h5>
 
                         {/* <h5 className='flex-1'>Remaining Amount</h5>
                         <h5 className='flex-1'>Expiration Date</h5> */}
@@ -155,8 +155,8 @@ const Inventory = () => {
                 <InventoryAddItem onConfirm={handleAddItem} onClose={handleCloseAddItemModal} />
             }
 
-            {showEditItemModal &&
-                <EditInventoryItem item={prepEditItem} onDelete={handleDeleteItem} onConfirm={handleEditItem} onClose={handleShowEditItemModal} />
+            {prepEditItem &&
+                <EditInventoryItem item={prepEditItem} onDelete={handleDeleteItem} onConfirm={handleEditItem} onClose={() => handlePrepEditItem(null)} />
             }
 
             {showInOut &&
