@@ -11,11 +11,8 @@ import { cn } from '@/utils/cn';
 
 const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
-    console.log(product)
-
     const [productName, setProductName] = useState(product.name);
-    // const [category, setCategory] = useState(product.category.id);
-    const [categories, setCategories] = useState([...product.categories_id])
+    const [categories, setCategories] = useState(product.categories?.length? [...product.categories]: [""])
     const [variants, setVariants] = useState([...product.variants, {label: "", price: 0}])
     const [image, setImage] = useState(product.image)
     const [loading, setLoading] = useState(false);
@@ -94,23 +91,23 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
         setShowConfirmationModal(false);
         setLoading(true);
 
-        if (!productName || !category || !variants) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: "Please don't leave any blank fields",
-                type: 'error'
-            })
-            return
+        if (!validateFields()) {
+            return;
+        }
 
-        };
+        console.log([...categories.filter(Boolean).values()])
+
 
         const payload = {
             name: productName,
             image: imageChanged ? image ? await uploadToCloudinary(image) : null : image,
-            category_id: category,
-            variants: variants.filter(({label, price}, index) => index !== variants.length - 1 || (label && price))
+            category_ids: [...categories.filter(Boolean).map(category => category.id)],
+            variants: variants.filter(
+                ({label, price}, index) =>
+                    index !== variants.length - 1 || (label && price)
+            )
         }
-
+        
         onConfirm(payload);
         setLoading(false);
     }
@@ -121,20 +118,25 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
         setProductName(e.target.value);
     }
-    const handleSetCategory = (value) => {
 
-        setCategory(value);
-    }
-
-    const handleSetShowConfirmationModal = () => {
-        if (!productName || !category || !imagePreview || !variants.some(v => v.label.trim() && v.price > 0)) {
+    const validateFields = () => {
+        if (!productName || categories.length === 0 || !categories.some(c => c) || !variants.some(v => v.label.trim() && v.price > 0)) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
                 type: 'error'
-            })
-            return
-        };
+            });
+
+            return false;
+        }
+
+        return true;
+    }
+
+    const handleSetShowConfirmationModal = () => {
+        if (!validateFields()) {
+            return;
+        }
 
         setShowConfirmationModal(!showConfirmationModal);
     }
@@ -144,15 +146,19 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
     const handleCategories = (value, index) => {
-        setCategories(prev.map(
-            (category, idx) => idx === index ? value : category
+        if (categories.includes(value)) return;
+
+        setCategories(prev => prev.map(
+            ({id}, idx) => idx === index ? {id: value} : {id}
         ))
     }
 
-    const handleCategoryCount = (method, index = null) => {
+    console.log(categories)
+
+    const handleCategoryCount = (method, index) => {
         setCategories(prev => {
             if (method === "plus") {
-                return [...prev, null];
+                return [...prev, ""];
             }
 
             if (method === "minus" && index !== null) {
@@ -231,11 +237,11 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Categories' />
                             <div className='flex flex-col gap-2'>
-                                {categories.map((categoryId, index) => (
+                                {categories.map(({id}, index) => (
                                     <div key={index} className='flex gap-2 items-center'>
                                         <Dropdown
                                             variant='modal'
-                                            value={categoryId}
+                                            value={id}
                                             selection="Select category"
                                             size='full'
                                             options={categoryOptions}
@@ -245,12 +251,14 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                                         {index === categories.length - 1 ? (
                                             <Button
                                                 variant='icon'
+                                                text=''
                                                 icon={Plus}
                                                 onClick={() => handleCategoryCount("plus")}
                                             />
                                         ) : (
                                             <Button
                                                 variant='icon'
+                                                text=''
                                                 icon={Minus}
                                                 onClick={() => handleCategoryCount("minus", index)}
                                             />

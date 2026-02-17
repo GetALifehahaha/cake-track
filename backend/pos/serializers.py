@@ -48,8 +48,10 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        categories = validated_data.pop("categories", [])
+        categories = validated_data.pop("category_ids", [])
         variants_data = validated_data.pop("variants", [])
+
+        print(categories)
 
         product = Product.objects.create(**validated_data)
 
