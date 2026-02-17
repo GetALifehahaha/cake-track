@@ -148,6 +148,18 @@ const Home = () => {
         setModalFeedbackContent(null);
     }
 
+    // TODO: Auto-select a the product if only one variants exist
+    const handlePrepProduct = (product) => {
+        if (product.variants.length === 1) addToCheckout({
+            ...product, 
+            variant_id: product.variants[0].id, 
+            label: product.variants[0].label, 
+            price: product.variants[0].price, 
+            amount: 1
+        })
+        else setPrepProduct(product)
+    }
+
     const toggleAllVoidItems = () => {
         if (checkoutProducts.length === voidProducts.length) {
             setVoidProducts([]);        
@@ -265,7 +277,7 @@ const Home = () => {
             product={product}
             key={product.id}
             isSelected={checkoutProducts.some(p => p.variant_id == product.variant_id)}
-            onToggle={() => setPrepProduct(product)} />
+            onToggle={handlePrepProduct} />
     )
 
     const listVoidProducts = checkoutProducts.map((product) => 

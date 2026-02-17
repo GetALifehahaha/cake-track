@@ -95,9 +95,6 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
             return;
         }
 
-        console.log([...categories.filter(Boolean).values()])
-
-
         const payload = {
             name: productName,
             image: imageChanged ? image ? await uploadToCloudinary(image) : null : image,
@@ -146,14 +143,12 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
     const handleCategories = (value, index) => {
-        if (categories.includes(value)) return;
+        if (categories.some(cat => cat.id === value)) return;
 
         setCategories(prev => prev.map(
             ({id}, idx) => idx === index ? {id: value} : {id}
         ))
     }
-
-    console.log(categories)
 
     const handleCategoryCount = (method, index) => {
         setCategories(prev => {
@@ -236,7 +231,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Categories' />
-                            <div className='flex flex-col gap-2'>
+                            <div className='flex flex-col gap-2 max-h-40 overflow-auto'>
                                 {categories.map(({id}, index) => (
                                     <div key={index} className='flex gap-2 items-center'>
                                         <Dropdown
@@ -270,7 +265,11 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
 
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Product Price' />
-                            <div className="flex flex-col gap-2 w-full">
+                            <div className="flex flex-col gap-2 w-full max-h-40 overflow-auto">
+                                <div className='flex items-center gap-2 flex-1'>
+                                    <h5 className='text-xs font-medium flex-1'>Label</h5>
+                                    <h5 className='text-xs font-medium flex-1 -ml-12'>Price</h5>
+                                </div>
                                 {variants.map(({label, price}, index) => (
                                     <div className='flex items-center gap-2 flex-1'>
                                         <input
@@ -280,6 +279,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                                             onChange={(e) => updateLabel(index, e)}
                                             className={cn(
                                                 "p-2 rounded w-full bg-main-dark/50",
+                                                index == 0 && 'before:content-["Label"]'
                                             )}
                                         />
                                         <input

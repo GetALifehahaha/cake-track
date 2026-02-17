@@ -12,14 +12,7 @@ import { cn } from '@/utils/cn';
 const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const [productName, setProductName] = useState("");
-    const [category, setCategory] = useState("");
-    // const [sizes, setSizes] = useState([
-    //     {size: 'XS', active: false, price: ''},
-    //     {size: 'S', active: false, price: ''},
-    //     {size: 'M', active: false, price: ''},
-    //     {size: 'L', active: false, price: ''},
-    //     {size: 'XL', active: false, price: ''},
-    // ]);
+    const [categories, setCategories] = useState([{ id: "" }]);
 
     const [variants, setVariants] = useState([
         {label: "", price: 0}
@@ -40,12 +33,11 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
         setShowConfirmationModal(false);
         setLoading(true);
         clearFeedback();
-        // if (!productName || !category || !price || !imagePreview) {
         const payload ={
             name: productName,
             image: image ? await uploadToCloudinary(image) : null,
-            category_id: category,
-            variants: variants
+            category_ids: [...categories.filter(Boolean).map(category => category.id)],
+            variants: variants.filter(({ label, price }) => label.trim() && price > 0)
         }
         onConfirm(payload);
         setLoading(false);
@@ -88,6 +80,20 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
         setImagePreview(null);
     };
 
+    const validateFields = () => {
+        if (!productName || categories.length === 0 || !categories.some(c => c) || !variants.some(v => v.label.trim() && v.price > 0)) {
+            setFeedback({
+                label: 'Incomplete details',
+                details: "Please don't leave any blank fields",
+                type: 'error'
+            });
+
+            return false;
+        }
+
+        return true;
+    }
+
     const uploadToCloudinary = async (imageFile) => {
         const formData = new FormData();
         formData.append("file", imageFile);
@@ -122,10 +128,30 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
         setProductName(e.target.value);
     }
-    const handleSetCategory = (value) => {
 
-        setCategory(value);
-    }
+    const handleCategories = (value, index) => {
+        if (categories.some(c => c.id === value)) return;
+
+        setCategories(prev =>
+            prev.map((cat, idx) =>
+                idx === index ? { id: value } : cat
+            )
+        );
+    };
+
+    const handleCategoryCount = (method, index = null) => {
+        setCategories(prev => {
+            if (method === "plus") {
+                return [...prev, { id: "" }];
+            }
+
+            if (method === "minus" && index !== null) {
+                return prev.filter((_, idx) => idx !== index);
+            }
+
+            return prev;
+        });
+    };
 
     const updatePrice = (index, e) => {
         e.preventDefault();
@@ -152,15 +178,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     }
 
     const handleSetShowConfirmationModal = () => {
-        if (!productName || !category || !imagePreview || !variants.some(v => v.label.trim() && v.price > 0)) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: "Please don't leave any blank fields",
-                type: 'error'
-            })
-            return
-
-        };
+        if (!validateFields()) return
 
         setShowConfirmationModal(!showConfirmationModal);
     }
@@ -203,11 +221,37 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                             <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} max={50} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Category' />
-                            <div className='flex gap-2'>
-                                <Dropdown variant='modal' value={category} selection="e.g., Drinks" size='full' options={categoryOptions} onSelect={handleSetCategory} />
-                                <Button variant='icon' text='' icon={Plus}/>
-                            </div>
+                            <Label variant='modal' text='Categories' />
+                                <div className='flex flex-col gap-2 max-h-40 overflow-auto'>
+                                    {categories.map(({ id }, index) => (
+                                        <div key={index} className='flex gap-2 items-center'>
+                                            <Dropdown
+                                                variant='modal'
+                                                value={id}
+                                                selection="Select category"
+                                                size='full'
+                                                options={categoryOptions}
+                                                onSelect={(value) => handleCategories(value, index)}
+                                            />
+
+                                            {index === categories.length - 1 ? (
+                                                <Button
+                                                    variant='icon'
+                                                    text=''
+                                                    icon={Plus}
+                                                    onClick={() => handleCategoryCount("plus")}
+                                                />
+                                            ) : (
+                                                <Button
+                                                    variant='icon'
+                                                    text=''
+                                                    icon={Minus}
+                                                    onClick={() => handleCategoryCount("minus", index)}
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Variants' />
