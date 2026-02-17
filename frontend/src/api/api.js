@@ -36,7 +36,6 @@ api.interceptors.response.use(
             if (!refresh) {
                 localStorage.setItem("ACCESS", null)
                 localStorage.setItem("REFRESH", null)
-                window.location.href('/login')
                 return Promise.reject(error)
             }
             

@@ -3,6 +3,13 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 # Create your models here.
+class Unit(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    abbreviation = models.CharField(max_length=10, blank=True)
+
+    def __str__(self):
+        return f"{self.abbreviation} : {self.name}"
+
 class Ingredient(models.Model):
     name = models.CharField(max_length=20)
     total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0) #type: ignore

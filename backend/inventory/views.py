@@ -6,11 +6,16 @@ from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
 
-from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, DashboardSummarySerializer)
+from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, DashboardSummarySerializer, UnitSerializer)
 
-from .models import (Transaction, Ingredient, Recipe)
+from .models import (Transaction, Ingredient, Recipe, Unit)
 
 from users.permissions import IsCashier, IsCustomerOrAdmin, IsAdmin
+
+class UnitViewSet(viewsets.ModelViewSet):
+    queryset = Unit.objects.all()
+    serializer = UnitSerializer
+
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all().order_by('-purchase_date')

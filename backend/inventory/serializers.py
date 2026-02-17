@@ -1,9 +1,14 @@
 from django.db import transaction, models
 from rest_framework import serializers
-from .models import (Recipe, Transaction, Ingredient, RecipeIngredient  )
+from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit )
 from decimal import Decimal
 from rest_framework.serializers import ValidationError
-    
+
+class UnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Unit
+        fields = ['id', 'name', 'abbreviation']
+
 class TransactionSerializer(serializers.ModelSerializer):
     ingredient_id = serializers.IntegerField()
     
