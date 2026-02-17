@@ -2,20 +2,35 @@ import React, { useState } from 'react';
 import { Label, Title, Button, Dropdown, } from '../../atoms';
 import { ModalFeedbackCard, DatePicker, ModalBody } from '../../molecules';
 import { X } from 'lucide-react';
+import useUnits from '@/hooks/useUnits';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
-    const units = {
-        Pieces: 'pcs',
-        Kilograms: "kg",
-        Sticks: 'stk',
-        Milliliter: "ml",
-    }
-
-    const [name, setName] = useState(item.name)
-    const [amount, setAmount] = useState(item.amount);
+    const {data: units, loading, error} = useUnits()
+    
+    const [name, setName] = useState(item.name);
+    const [unit, setUnit] = useState(item.unit.id);
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
+
+    if (loading) return <h5>Loading Units</h5>
+    if (error) return <h5>Error loading units</h5>
+
+    const unitSelection = units.map(unit => ({
+        key: unit.name, value: unit.id
+    }))
+
+    const handleName = (e) => {
+        e.preventDefault();
+
+        if (e.target.value.length > 50) return
+
+        setName(e.target.value)
+    }
+
+    const handleUnit = (value) => {
+        setUnit(value)
+    }
 
     const handleConfirm = () => {
         if (!name || !amount || !purchaseDate || !expirationDate || !status) {
@@ -24,7 +39,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             return;
         }
 
-        onConfirm({ id: item.id, name, unit: item.unit, amount, purchaseDate, expirationDate, status: capitalize(status) })
+        onConfirm({ id: item.id, name, unit})
     }
 
     const capitalize = (str) => {
@@ -40,8 +55,12 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                 <div className='flex-1 flex flex-col gap-2'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Item Name' />
-                        <input type='text' placeholder='e.g., Chocolate Cake' value={name} onChange={(e) => setName(e.target.value)}
+                        <input type='text' placeholder='e.g., Chocolate Cake' value={name} onChange={handleName}
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
+                    </div>
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Unit' />
+                        <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleUnit} />
                     </div>
                 </div>
             </div>

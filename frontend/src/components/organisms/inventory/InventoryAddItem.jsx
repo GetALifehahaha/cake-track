@@ -3,18 +3,11 @@ import { Title, Label, Button, Dropdown } from '../../atoms';
 import { DatePicker, ModalFeedbackCard } from '../../molecules';
 import { X } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
+import useUnits from '@/hooks/useUnits';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
-    const units = [
-        { key: 'Pieces', value: 'pc' },
-        { key: 'Kilograms', value: 'kg' },
-        { key: 'Grams', value: 'g' },
-        { key: 'Sticks', value: 'st' },
-        { key: 'Milliliter', value: 'ml' },
-        { key: 'Cup', value: 'cp' }
-    ];
-
+    const {data: units, loading, error} = useUnits()
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);
     const [unit, setUnit] = useState(null);
@@ -23,6 +16,21 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+
+    useEffect(() => {
+        if (modalFeedbackContent) {
+            setShowModalFeedback(true);
+        } else {
+            setModalFeedbackContent(false);
+        }
+    }, [modalFeedbackContent])
+
+    if (loading) return <h5>Loading Units</h5>
+    if (error) return <h5>Error loading units</h5>
+
+    const unitSelection = units.map(unit => ({
+        key: unit.name, value: unit.id
+    }))
 
     const handleConfirm = () => {
         onConfirm({name, amount, unit, purchaseDate: purchaseDate.toLocaleDateString("en-CA"), expirationDate: expirationDate.toLocaleDateString("en-CA")});
@@ -67,14 +75,6 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     
     const handleSetCloseConfirm = () => setShowConfirm(false);
 
-    useEffect(() => {
-        if (modalFeedbackContent) {
-            setShowModalFeedback(true);
-        } else {
-            setModalFeedbackContent(false);
-        }
-    }, [modalFeedbackContent])
-
     return (
         <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
@@ -99,7 +99,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
                         <div className='flex-1 flex flex-col gap-2'>
                             <Label variant='modal' text='Unit'/>
-                            <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={units} onSelect={handleSetUnit} />
+                            <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
                         </div>
                     </div>
 
