@@ -189,21 +189,33 @@ class TransactionItemViewSet(viewsets.ModelViewSet):
     pagination_class = None
     
     
-class BusinessSettingsView(APIView):
-    permission_classes = [IsAdmin] 
+class BusinessSettingsView(viewsets.ModelViewSet):
+    queryset = BusinessSettings.objects.all()
+    serializer_class = BusinessSettingsSerializer
+    permission_classes = [permissions.IsAuthenticated] 
+
     def get(self, request):
-        """Get current business settings"""
         settings = BusinessSettings.load()
         serializer = BusinessSettingsSerializer(settings)
         return Response(serializer.data)
 
     def put(self, request):
-        """Update business settings"""
+        user = self.request.user
+
+        if not user.groups.filter(name="admin").exists():
+            return Response({
+                'label': "Permission Not Granted",
+                'details': "You do not have the permission to edit business details",
+                'type': "Error"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         settings = BusinessSettings.load()
         serializer = BusinessSettingsSerializer(settings, data=request.data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 

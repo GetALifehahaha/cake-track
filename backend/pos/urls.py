@@ -8,7 +8,9 @@ from .views import (DiscountViewSet,
                     ProductViewSet,
                     TransactionViewSet,
                     TransactionItemViewSet,
-                    DashboardAnalyticsView)
+                    DashboardAnalyticsView,
+                    BusinessSettingsView
+                    )
 
 
 router = DefaultRouter()
@@ -18,6 +20,7 @@ router.register(r'product-variants', ProductVariantViewSet)
 router.register(r'products', ProductViewSet)
 router.register(r'transactions', TransactionViewSet)
 router.register(r'transaction-items', TransactionItemViewSet)
+router.register(r'business-settings', BusinessSettingsView)
 
 urlpatterns = [
     path('', include(router.urls)), 

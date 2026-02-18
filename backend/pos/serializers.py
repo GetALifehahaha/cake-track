@@ -179,7 +179,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
-        fields = ['business_name', 'address', 'tin', 'contact_number', 'message', 'logo']
+        fields = ['business_name', 'address', 'tin', 'contact_number', 'message']
         
         
 class DashboardMetricsSerializer(serializers.Serializer):
@@ -187,7 +187,7 @@ class DashboardMetricsSerializer(serializers.Serializer):
     total_successful_transactions = serializers.IntegerField()
     total_products_sold = serializers.IntegerField()
     avg_daily_transactions = serializers.FloatField()
-    total_revenue_generated = serializers.FloatField()  # <-- New field
+    total_revenue_generated = serializers.FloatField() 
     top_selling_products = serializers.ListField(
         child=serializers.DictField()
     )

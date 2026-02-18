@@ -106,19 +106,13 @@ class TransactionItem(models.Model):
 
 
 class BusinessSettings(models.Model):
-    # --- Business Details ---
     business_name = models.CharField(max_length=100, default="My Business")
     address = models.TextField(blank=True, verbose_name="Business Address")
     
-    # --- Credentials ---
     tin = models.CharField(max_length=30, blank=True, verbose_name="Tax Identification Number (TIN)")
     
-    # --- Contact and Message ---
     contact_number = models.CharField(max_length=20, blank=True)
     message = models.TextField(blank=True, help_text="Message to appear at the bottom of the receipt (e.g. Thank you!)")
-    
-    # Optional: Add a logo
-    logo = models.ImageField(upload_to='company/', blank=True, null=True)
 
     class Meta:
         verbose_name = "Business Settings"
