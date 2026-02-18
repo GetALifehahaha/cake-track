@@ -137,16 +137,19 @@ const Home = () => {
 
     // MAIN FUNCTIONS
 
-    const addToCheckout = (product) => {
-        setCheckoutProducts(() => {
-            if (checkoutProducts.some(prod => prod.variant_id === product.variant_id)) return checkoutProducts
+    const addToCheckout = (product, amount) => {
+        setCheckoutProducts(prev => {
+            if (prev.some(prod => prod.variant_id === product.variant_id)) {
+                return prev
+            }
 
-            return [...checkoutProducts, product]
+            return [...prev, {...product, amount}]
         })
 
-        setPrepProduct(null);
-        setModalFeedbackContent(null);
+        setPrepProduct(null)
+        setModalFeedbackContent(null)
     }
+
 
     // TODO: Auto-select a the product if only one variants exist
     const handlePrepProduct = (product) => {
@@ -155,8 +158,7 @@ const Home = () => {
             variant_id: product.variants[0].id, 
             label: product.variants[0].label, 
             price: product.variants[0].price, 
-            amount: 1
-        })
+        }, 1)
         else setPrepProduct(product)
     }
 

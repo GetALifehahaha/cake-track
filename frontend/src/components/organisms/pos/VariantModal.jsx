@@ -1,29 +1,75 @@
 import React, { useState } from 'react';
 import { ModalBody, ModalFeedbackCard } from '../../molecules';
-import { Check } from 'lucide-react';
+import { Check, Minus, Plus } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button } from '@/components/atoms';
 
 const VariantModal = ({product, onClose, onChoose}) => {
 
-    const [selected, setSelected] = useState({id: null, variant: null});
+    const [selected, setSelected] = useState([]);
     const [feedback, setFeedback] = useState(null);
 
+    console.log(selected)
+
     const selectVariant = () => {
-        if (selected.id === null) {
+        if (!selected.length) {
             setFeedback({
                 type: 'error',
-                label: 'No selected variant',
-                details: 'Please select a variant to add to cart'
+                label: 'No selected variants',
+                details: 'Please select at least one variant to add to cart'
             })
             return;
         }
 
-        onChoose(selected.variant)
+        selected.forEach(item => {
+            onChoose(item.variant, item.amount)
+        })
     }
 
     const selectOption = (id, variant) => {
-        selected === id ? setSelected({id: null, variant: null}) : setSelected({id: id, variant: variant})
+        setSelected(prev => {
+            const exists = prev.some(
+                item => item.id === id
+            )
+
+            if (exists) {
+                return prev.filter(
+                    item => !(item.id === id)
+                )
+            }
+
+            return [...prev, { id, variant, amount: 1 }]
+        })
+    }
+
+    const handleSetAmount = (e, id, change) => {
+        e.stopPropagation();
+
+        setSelected(prev =>
+            prev.map(item => {
+                if (item.id === id) {
+                    const newQty = item.amount + change
+
+                    if (newQty === 100) return item
+
+                    return {
+                        ...item,
+                        amount: newQty < 1 ? 1 : newQty
+                    }
+                }
+                return item
+            })
+        )
+    }
+
+    const isSelected = (id) =>
+        selected.some(
+            item => item.id === id
+        )
+
+    const getAmount = (id) => {
+        const found = selected.find(item => item.id === id)
+        return found ? found.amount : 1
     }
 
     return (
@@ -32,15 +78,22 @@ const VariantModal = ({product, onClose, onChoose}) => {
                 {product?.variants?.map(({id, label, price}) => 
                     <div 
                     key={id} 
-                    className={cn('flex flex-row gap-2 items-center p-3.5 rounded-md border-2 border-border/75 basis-1/5 cursor-pointer hover:bg-border', selected.id==id && 'border-accent-mute bg-main-dark/25')}
+                    className={cn('flex flex-row gap-2 items-center p-3.5 rounded-md border-2 border-border/75 basis-1/5 cursor-pointer hover:bg-border', isSelected(id) && 'border-accent-mute bg-main-dark/25')}
                     onClick={() => {selectOption(id, {...product, variant_id: id, label: label, price: price, amount: 1})}}
                     >
-                        <div className={cn('flex items-center justify-center rounded-full border-gray border p-0.5', selected.id==id && 'bg-accent-mute border-accent-mute')}>
-                            <Check size={14} className={cn('text-white opacity-0', selected.id == id && 'opacity-100')} />
+                        <div className={cn('flex items-center justify-center rounded-full border-gray border p-0.5 mr-2', isSelected(id) && 'bg-accent-mute border-accent-mute')}>
+                            <Check size={14} className={cn('text-white opacity-0', isSelected(id) && 'opacity-100')} />
                         </div>
-                        <h5 className='font-semibold text-md text-text'>{label}</h5>
-
-                        <h5 className='ml-auto font-semibold text-accent-mute'>₱ {price}</h5>
+                        <h5 className='font-semibold text-md text-text mr-4'>{label}</h5>
+                        <h5 className='font-semibold text-accent-mute'>₱ {price}</h5>
+                        
+                        {isSelected(id) &&
+                            <div className='flex flex-row items-center gap-2 ml-auto'>
+                                <button className='bg-accent-mute text-white p-2 rounded-full cursor-pointer' onClick={(e) => handleSetAmount(e, id, -1)}><Minus size={12}/></button>
+                                <h5 className={cn('text-text font-sm w-6 text-center', product.amount == 99 && 'font-semibold')}>{getAmount(id)}</h5>
+                                <button className='bg-accent-mute text-white p-2 rounded-full cursor-pointer' onClick={(e) => handleSetAmount(e, id, 1)}><Plus size={12}/></button>
+                            </div>
+                        }
                     </div>
                 )}
                 {product.variants.length === 0 &&
