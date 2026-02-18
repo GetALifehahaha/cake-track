@@ -1,17 +1,16 @@
 import React, {useState, useEffect} from 'react'
 import { ModalBody } from '../../molecules'
-import { Button, Title } from '../../atoms'
+import { Button } from '../../atoms'
 import { ModalFeedbackCard } from '../../molecules';
-import {ConfirmationModal} from '..';
-import { Minus, Plus, X } from 'lucide-react'
+import { ConfirmationModal } from '..';
+import { Plus, Pen, Trash } from 'lucide-react'
 import useDiscount from '@/hooks/useDiscount'
 
 const DiscountModal = ({onClose}) => {
 
     const {discountData, discountLoading, discountError, postDiscount, refresh, discountResponse, deleteDiscount} = useDiscount();
-    const [showDiscountForm, setShowDiscountForm] = useState(false);
     const [discountName, setDiscountName] = useState("")
-    const [discountRate, setDiscountRate] = useState(0)
+    const [discountRate, setDiscountRate] = useState("") 
     const [feedback, setFeedback] = useState("");
     const [showConfirmPostModal, setShowConfirmPostModal] = useState();
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState();
@@ -25,16 +24,11 @@ const DiscountModal = ({onClose}) => {
     if (discountError) return <h5>Error loading discount...</h5>
 
     const resetFeedback = () => setFeedback();
+    
     const closeDiscountForm = () => {
         setDiscountName("");
-        setDiscountRate(0);
-        setShowDiscountForm(false);
+        setDiscountRate("");
     }
-
-    const handleShowDiscountForm = () => {
-        setShowDiscountForm(true);
-    }
-    const handleCloseDiscountForm = () => setShowDiscountForm(false);
 
     const handleShowConfirmPostModal = () => {
         if (!discountName || !discountRate) {
@@ -45,16 +39,17 @@ const DiscountModal = ({onClose}) => {
             })
             return;
         }
-
         setShowConfirmPostModal(true);
     }
+    
     const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
 
     const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
     const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
 
     const handlePostDiscount = async () => {
-        await postDiscount({name: discountName, rate: discountRate/100});
+        // Ensure rate is treated as number for API
+        await postDiscount({name: discountName, rate: Number(discountRate)/100});
 
         resetFeedback();
         closeDiscountForm();
@@ -63,72 +58,101 @@ const DiscountModal = ({onClose}) => {
 
     const prepDeleteDiscount = (id) => {
         setPrepDeleteId(id);
-
         handleShowConfirmDeleteModal();
     }
 
     const removePrepDeleteDiscount = () => {
         setPrepDeleteId(null);
-
         handleCloseConfirmDeleteModal();
     }
 
     const handleDeleteDiscount = async () => {
         await deleteDiscount(prepDeleteId)
-
         removePrepDeleteDiscount();
         resetFeedback();
     }
 
     const handleDiscountName = (e) => {
-
         if (e.target.value.length > 31) return
-
         setDiscountName(e.target.value)
     }
 
     const handleDiscountRate = (e) => {
-
         if (e.target.value.length > 4) return
-
         const raw = e.target.value
-
         if (!/^\d*$/.test(raw)) return
-
-        if (e.target.value > 100) {
-            setDiscountRate(100); 
+        if (Number(raw) > 100) {
+            setDiscountRate("100"); 
             return;
         }
-
-        setDiscountRate(e.target.value)
+        setDiscountRate(raw)
     }
 
-    const listDiscount = discountData.map((discount, index) => 
-        <div key={index} className='text-text font-medium flex gap-2 rounded-md p-2 bg-main-white border border-border'>
-            <h5 className='flex-1 p-2'>{discount.name}</h5>
-            <h5 className='basis-1/4 p-2 text-center'>{discount.rate * 100}%</h5>
-            <Button text='' variant='modalOutline' size='fit' icon={Minus} onClick={() => prepDeleteDiscount(discount.id)} />
+    const listDiscount = discountData.map((discount, index) => (
+        <div 
+            key={index} 
+            className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white"
+        >
+            <div className="flex-1 font-medium text-text flex gap-2">
+                <span>{discount.name}</span>
+                <span className="text-text/60">({discount.rate * 100}%)</span>
+            </div>
+
+            <Button 
+                text="Edit" 
+                variant="modalOutline" 
+                size="fit" 
+                icon={Pen} 
+            />
+
+            <Button 
+                text="Delete" 
+                variant="modalBlock" 
+                className='bg-error' 
+                size="fit" 
+                icon={Trash} 
+                onClick={() => prepDeleteDiscount(discount.id)} 
+            />
         </div>
-    )
+    ))
 
     return (
-        <ModalBody title='Discounts' onClose={onClose}>
+        <ModalBody className='w-[40vw]' title='Manage Discounts' subtitle='Add, edit, or delete discounts for your products' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
-                <div className='flex flex-col gap-2 max-h-[50vh] overflow-auto'>
-                    {listDiscount}
+                
+                {/* Add New Section */}
+                <div className="flex flex-col gap-2">
+                    <h5 className="text-text">Add New Discount</h5>
+                    <div className="flex gap-2">
+                        <input 
+                            type='text' 
+                            value={discountName} 
+                            placeholder='Name (e.g. Summer Sale)' 
+                            className="flex-2 rounded-md px-3 py-2 bg-main-dark/50 text-text"
+                            onChange={handleDiscountName} 
+                        /> 
+                        <input 
+                            type='text' 
+                            value={discountRate} 
+                            placeholder='Rate %' 
+                            className="flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text"
+                            onChange={handleDiscountRate} 
+                        />
+                        <Button 
+                            text="Add" 
+                            variant="modalBlock"
+                            className='bg-text/50' 
+                            size="fit" 
+                            icon={Plus}  
+                            onClick={handleShowConfirmPostModal}
+                        />
+                    </div>
                 </div>
-                <div className='ml-auto'>
-                    {
-                        showDiscountForm ? 
-                        <div className='flex flex-row gap-2'>
-                            <input type='text' value={discountName} placeholder='Set discount name' className='rounded-sm p-2 bg-main text-text/75' onChange={(e) => handleDiscountName(e)} /> 
-                            <input type='text' value={discountRate} placeholder='Set discount rate' className='rounded-sm p-2 bg-main text-text/75' onChange={(e) => handleDiscountRate(e)} />
-                            <Button text='' variant='modalOutline' size='fit' icon={Plus}  onClick={handleShowConfirmPostModal}/>
-                            <Button text='' variant='modalOutline' size='fit' icon={X} onClick={handleCloseDiscountForm} />
-                        </div>
-                        :
-                        <Button text='Add Discount' variant='modalOutline' size='fit' icon={Plus} onClick={handleShowDiscountForm}/>
-                    }
+
+                {/* List Section */}
+                <h5 className="text-text mt-2">Existing Discounts</h5>
+                <div className='flex flex-col gap-2 max-h-[30vh] overflow-auto'>
+                    {listDiscount}
                 </div>
             </div>
 
@@ -136,15 +160,21 @@ const DiscountModal = ({onClose}) => {
                 <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
             }
 
-            <div className='flex gap-4 ml-auto'>
-                <Button variant='modalOutline' size='base' text='Close' onClick={onClose}/>
-            </div>
-
             { showConfirmPostModal &&
-                <ConfirmationModal title="Add Discount?" content="Are you sure you want to add this discount?" onReject={handleCloseConfirmPostModal} onConfirm={handlePostDiscount} />
+                <ConfirmationModal 
+                    title="Add Discount?" 
+                    content="Are you sure you want to add this discount?" 
+                    onReject={handleCloseConfirmPostModal} 
+                    onConfirm={handlePostDiscount} 
+                />
             }
             { showConfirmDeleteModal &&
-                <ConfirmationModal title="Delete Discount?" content="Are you sure you want to delete this disccount?" onReject={removePrepDeleteDiscount} onConfirm={handleDeleteDiscount} />
+                <ConfirmationModal 
+                    title="Delete Discount?" 
+                    content="Are you sure you want to delete this discount?" 
+                    onReject={removePrepDeleteDiscount} 
+                    onConfirm={handleDeleteDiscount} 
+                />
             }
         </ModalBody>
     )

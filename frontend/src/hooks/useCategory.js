@@ -1,80 +1,56 @@
-import { useState, useEffect } from "react";
-import CategoryApi from "../api/CategoryApi";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CategoryApi } from "../api/CategoryApi";
 
 export default function useCategory() {
-    const [categoryResponse, setCategoryResponse] = useState();
-    const [categoryData, setCategoryData] = useState([]);
-    const [categoryLoading, setCategoryLoading] = useState(true);
-    const [categoryError, setCategoryError] = useState(null);
+    const queryClient = useQueryClient();
 
-    const fetchCategories = async () => {
-        setCategoryLoading(true);
-        try {
-            const data = await CategoryApi();
-            setCategoryData(data);
-        } catch (err) {
-            setCategoryError({ status: "error", detail: "Failed to read category." });
-        } finally {
-            setCategoryLoading(false);
-        }
-    };
+    const categoryQuery = useQuery({
+        queryKey: ['categories'],
+        queryFn: () => CategoryApi.fetchList(),
+        placeholderData: (previous) => previous,
+    });
 
-    const postCategory = async (params) => {
-        setCategoryLoading(true);
-        try {
-            await CategoryApi(params, null, "POST");
-            setCategoryResponse({ status: "success", detail: "Category created successfully." });
-        } catch (err) {
-            setCategoryError({ status: "error", detail: "Failed to create category." });
-            setCategoryResponse(null);
-        } finally {
-            setCategoryLoading(false);
-        }
-    };
+    const onSuccessInvalidate = () =>
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
 
-    const patchCategory = async (id, params) => {
-        setCategoryLoading(true);
-        try {
-            await CategoryApi(params, id, "PATCH");
-            setCategoryResponse({ status: "success", detail: "Category edited successfully." });
-            fetchCategories();
-        } catch (err) {
-            setCategoryError({ status: "error", detail: "Failed to edit category." });
-            setCategoryResponse(null);
-        } finally {
-            setCategoryLoading(false);
-        }
-    };
+    const createMutation = useMutation({
+        mutationFn: (params) => CategoryApi.create(params),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    const deleteCategory = async (id) => {
-        setCategoryLoading(true);
-        try {
-            await CategoryApi(null, id, "DELETE");
-            setCategoryResponse({ status: "success", detail: "Category deleted successfully." });
-        } catch (err) {
-            setCategoryError({ status: "error", detail: "Failed to delete category." });
-            setCategoryResponse(null);
-        } finally {
-            setCategoryLoading(false);
-        }
-    };
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => CategoryApi.update(id, data),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    const refresh = () => fetchCategories();
-
-    useEffect(() => {
-        fetchCategories();
-    }, []);
+    const deleteMutation = useMutation({
+        mutationFn: (id) => CategoryApi.delete(id),
+        onSuccess: onSuccessInvalidate,
+    });
 
     return {
-        categoryData,
-        categoryResponse,
-        categoryLoading,
-        categoryError,
-        fetchCategories,
-        postCategory,
-        patchCategory,
-        deleteCategory,
-        refresh
+        categoryData: categoryQuery.data || [],
+        
+        categoryLoading:
+            categoryQuery.isPending ||
+            createMutation.isPending ||
+            updateMutation.isPending ||
+            deleteMutation.isPending,
+
+        categoryError:
+            categoryQuery.error ||
+            createMutation.error ||
+            updateMutation.error ||
+            deleteMutation.error,
+
+        categoryResponse: createMutation.data || updateMutation.data || deleteMutation.data,
+
+        fetchCategories: () => categoryQuery.refetch(),
+        refresh: () => categoryQuery.refetch(),
+        
+        postCategory: async (params) => createMutation.mutateAsync(params),
+        patchCategory: async (id, data) => updateMutation.mutateAsync({ id, data }),
+        deleteCategory: async (id) => deleteMutation.mutateAsync(id),
+        updateCategory: async (id, data) => updateMutation.mutateAsync({ id, data }),
     };
 }

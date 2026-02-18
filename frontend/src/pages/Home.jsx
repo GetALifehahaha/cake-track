@@ -151,7 +151,6 @@ const Home = () => {
     }
 
 
-    // TODO: Auto-select a the product if only one variants exist
     const handlePrepProduct = (product) => {
         if (product.variants.length === 1) addToCheckout({
             ...product, 

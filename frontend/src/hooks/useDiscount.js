@@ -1,80 +1,55 @@
-import { useState, useEffect } from "react";
-import DiscountApi from "../api/DiscountApi";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DiscountApi } from "../api/DiscountApi";
 
 export default function useDiscount() {
-    const [discountResponse, setDiscountResponse] = useState();
-    const [discountData, setDiscountData] = useState([]);
-    const [discountLoading, setDiscountLoading] = useState(true);
-    const [discountError, setDiscountError] = useState(null);
+    const queryClient = useQueryClient();
 
-    const fetchDiscounts = async () => {
-        setDiscountLoading(true);
-        try {
-            const data = await DiscountApi();
-            setDiscountData(data);
-        } catch (err) {
-            setDiscountError({ status: "error", detail: "Failed to read discount." });
-        } finally {
-            setDiscountLoading(false);
-        }
-    };
+    const discountQuery = useQuery({
+        queryKey: ['discounts'],
+        queryFn: () => DiscountApi.fetchList(),
+        placeholderData: (previous) => previous,
+    });
 
-    const postDiscount = async (params) => {
-        setDiscountLoading(true);
-        try {
-            await DiscountApi(params, null, "POST");
-            setDiscountResponse({ status: "success", detail: "Discount created successfully." });
-        } catch (err) {
-            setDiscountError({ status: "error", detail: "Failed to create discount." });
-            setDiscountResponse(null);
-        } finally {
-            setDiscountLoading(false);
-        }
-    };
+    const onSuccessInvalidate = () =>
+        queryClient.invalidateQueries({ queryKey: ['discounts'] });
 
-    const patchDiscount = async (id, params) => {
-        setDiscountLoading(true);
-        try {
-            await DiscountApi(params, id, "PATCH");
-            setDiscountResponse({ status: "success", detail: "Discount edited successfully." });
-            fetchDiscounts();
-        } catch (err) {
-            setDiscountError({ status: "error", detail: "Failed to edit discount." });
-            setDiscountResponse(null);
-        } finally {
-            setDiscountLoading(false);
-        }
-    };
+    const createMutation = useMutation({
+        mutationFn: (params) => DiscountApi.create(params),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    const deleteDiscount = async (id) => {
-        setDiscountLoading(true);
-        try {
-            await DiscountApi(null, id, "DELETE");
-            setDiscountResponse({ status: "success", detail: "Discount deleted successfully." });
-        } catch (err) {
-            setDiscountError({ status: "error", detail: "Failed to delete discount." });
-            setDiscountResponse(null);
-        } finally {
-            setDiscountLoading(false);
-        }
-    };
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => DiscountApi.update(id, data),
+        onSuccess: onSuccessInvalidate,
+    });
 
-    const refresh = () => fetchDiscounts();
-
-    useEffect(() => {
-        fetchDiscounts();
-    }, []);
+    const deleteMutation = useMutation({
+        mutationFn: (id) => DiscountApi.delete(id),
+        onSuccess: onSuccessInvalidate,
+    });
 
     return {
-        discountData,
-        discountResponse,
-        discountLoading,
-        discountError,
-        fetchDiscounts,
-        postDiscount,
-        patchDiscount,
-        deleteDiscount,
-        refresh
+        discountData: discountQuery.data || [],
+
+        discountLoading:
+            discountQuery.isPending ||
+            createMutation.isPending ||
+            updateMutation.isPending ||
+            deleteMutation.isPending,
+
+        discountError:
+            discountQuery.error ||
+            createMutation.error ||
+            updateMutation.error ||
+            deleteMutation.error,
+        
+        discountResponse: createMutation.data || updateMutation.data || deleteMutation.data,
+
+        fetchDiscounts: () => discountQuery.refetch(),
+        refresh: () => discountQuery.refetch(),
+
+        postDiscount: async (params) => createMutation.mutateAsync(params),
+        patchDiscount: async (id, data) => updateMutation.mutateAsync({ id, data }),
+        deleteDiscount: async (id) => deleteMutation.mutateAsync(id),
     };
 }

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ModalBody } from '../../molecules';
-import { Button, Title } from '../../atoms';
+import { Button } from '../../atoms';
 import { ModalFeedbackCard } from '../../molecules';
 import { ConfirmationModal } from '..';
-import { Minus, Plus, X } from 'lucide-react';
+import { Plus, Pen, Trash } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
 
 const UnitModal = ({ onClose }) => {
     const { data: unitData, loading: unitLoading, error: unitError, postUnit, refresh, deleteUnit } = useUnits();
-    const [showUnitForm, setShowUnitForm] = useState(false);
     const [unitName, setUnitName] = useState('');
     const [unitAbbreviation, setUnitAbbreviation] = useState('');
     const [feedback, setFeedback] = useState('');
@@ -16,7 +15,6 @@ const UnitModal = ({ onClose }) => {
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [prepDeleteId, setPrepDeleteId] = useState(null);
 
-    // Refresh units on mount or after changes
     useEffect(() => {
         refresh();
     }, []);
@@ -29,11 +27,7 @@ const UnitModal = ({ onClose }) => {
     const closeUnitForm = () => {
         setUnitName('');
         setUnitAbbreviation('');
-        setShowUnitForm(false);
     };
-
-    const handleShowUnitForm = () => setShowUnitForm(true);
-    const handleCloseUnitForm = () => closeUnitForm();
 
     const handleShowConfirmPostModal = () => {
         if (!unitName) {
@@ -48,13 +42,11 @@ const UnitModal = ({ onClose }) => {
     };
 
     const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
-
     const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
     const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
 
     const handlePostUnit = async () => {
         await postUnit({ name: unitName, abbreviation: unitAbbreviation });
-
         resetFeedback();
         closeUnitForm();
         handleCloseConfirmPostModal();
@@ -90,55 +82,76 @@ const UnitModal = ({ onClose }) => {
 
     const capitalize = (str) => str[0].toUpperCase() + str.slice(1);
 
-    const listUnits = unitData.map((unit, index) =>
-        <div key={index} className='text-text font-medium flex gap-2 rounded-md p-2 bg-main-white border border-border'>
-            <div className="flex-1 p-2">
+    const listUnits = unitData.map((unit, index) => (
+        <div 
+            key={index} 
+            className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white"
+        >
+            <span className="flex-1 font-medium text-text">
                 {capitalize(unit.name)} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
-            </div>
-            <Button text='' variant='modalOutline' size='fit' icon={Minus} onClick={() => prepDeleteUnit(unit.id)} />
+            </span>
+
+            <Button 
+                text="Edit" 
+                variant="modalOutline" 
+                size="fit" 
+                icon={Pen} 
+            />
+
+            <Button 
+                text="Delete" 
+                variant="modalBlock" 
+                className='bg-error' 
+                size="fit" 
+                icon={Trash} 
+                onClick={() => prepDeleteUnit(unit.id)} 
+            />
         </div>
-    );
+    ));
 
     return (
-        <ModalBody title='Units' onClose={onClose}>
+        <ModalBody className='w-[40vw]' title='Manage Units' subtitle='Add, edit, or delete units for measurements' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
-                <div className='flex flex-col gap-2 max-h-[50vh] overflow-auto'>
-                    {listUnits}
+                
+                {/* Add New Section */}
+                <div className="flex flex-col gap-2">
+                    <h5 className="text-text">Add New Unit</h5>
+                    <div className="flex gap-2">
+                        <input
+                            type='text'
+                            value={unitName}
+                            placeholder='Unit Name (e.g. Kilogram)'
+                            className="flex-[2] rounded-md px-3 py-2 bg-main-dark/50 text-text"
+                            onChange={handleUnitNameChange}
+                        />
+                        <input
+                            type='text'
+                            value={unitAbbreviation}
+                            placeholder='Abbr (e.g. kg)'
+                            className="flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text"
+                            onChange={handleUnitAbbreviationChange}
+                        />
+                        <Button 
+                            text="Add" 
+                            variant="modalBlock"
+                            className='bg-text/50' 
+                            size="fit" 
+                            icon={Plus} 
+                            onClick={handleShowConfirmPostModal} 
+                        />
+                    </div>
                 </div>
 
-                <div className='flex-1'>
-                    {showUnitForm ?
-                        <div className='flex flex-row gap-2'>
-                            <input
-                                type='text'
-                                value={unitName}
-                                placeholder='Unit name'
-                                className='rounded-sm p-2 bg-main text-text/75'
-                                onChange={handleUnitNameChange}
-                            />
-                            <input
-                                type='text'
-                                value={unitAbbreviation}
-                                placeholder='Abbreviation'
-                                className='rounded-sm p-2 bg-main text-text/75'
-                                onChange={handleUnitAbbreviationChange}
-                            />
-                            <Button text='' variant='modalOutline' size='fit' icon={Plus} onClick={handleShowConfirmPostModal} />
-                            <Button text='' variant='modalOutline' size='fit' icon={X} onClick={handleCloseUnitForm} />
-                        </div>
-                        :
-                        <Button text='Add Unit' variant='modalOutline' size='fit' icon={Plus} onClick={handleShowUnitForm} className='ml-auto' />
-                    }
+                {/* List Section */}
+                <h5 className="text-text mt-2">Existing Units</h5>
+                <div className='flex flex-col gap-2 max-h-[30vh] overflow-auto'>
+                    {listUnits}
                 </div>
             </div>
 
             {feedback &&
                 <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
             }
-
-            <div className='flex gap-4 ml-auto'>
-                <Button variant='modalOutline' size='base' text='Close' onClick={onClose} />
-            </div>
 
             {showConfirmPostModal &&
                 <ConfirmationModal
