@@ -3,6 +3,7 @@ import Loading from '@/components/molecules/Loading';
 import useBusinessDetails from '@/hooks/useBusinessDetails';
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/context/ToastContext';
+import { ConfirmationModal } from '@/components/organisms';
 
 const BusinessDetails = () => {
 
@@ -57,6 +58,7 @@ const BusinessDetails = () => {
             const response = await patchBusinessDetails(1, payload);
 
             addToast("Business details changed successfully")
+            toggleConfirmationModal();
         } catch (err) {
             addToast("Failed to edit business details")
         }
@@ -66,6 +68,9 @@ const BusinessDetails = () => {
     const { addToast } = useToast();
 
     // MODAL LOGIC
+    
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const toggleConfirmationModal = () => setShowConfirmationModal(prev => !prev);
 
     // UI LOGIC
 
@@ -78,7 +83,7 @@ const BusinessDetails = () => {
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>
                     <div className='flex items-center justify-between'>
                         <Title text='Business Details' variant='block' />
-                        <Button text='Save' size='small' onClick={editBusinessDetails}/>
+                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
                     </div>
 
                     <div className='mt-4'>
@@ -94,7 +99,7 @@ const BusinessDetails = () => {
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>
                     <div className='flex items-center justify-between'>
                         <Title text='Business Credentials' variant='block' />
-                        <Button text='Save' size='small' onClick={editBusinessDetails}/>
+                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
                     </div>
 
                     <div className='mt-4'>
@@ -106,7 +111,7 @@ const BusinessDetails = () => {
                 <div className='p-6 rounded-sm bg-main-white shadow-sm'>
                     <div className='flex items-center justify-between'>
                         <Title text='Contact and Message' variant='block' />
-                        <Button text='Save' size='small' onClick={editBusinessDetails}/>
+                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
                     </div>
 
                     <div className='mt-4'>
@@ -119,6 +124,10 @@ const BusinessDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {showConfirmationModal &&
+                <ConfirmationModal title="Edit Business Details" content="Are you sure you want to verify the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />
+            }
         </div>
     )
 }
