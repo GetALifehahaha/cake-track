@@ -42,7 +42,7 @@ const ArchivedModal = ({onRestore, onClose}) => {
 
     return (
         <ModalBody title='Archived Products' subtitle='View and manage your archived products. You can restore or permanently delete them' onClose={() => onClose(false)}>
-            <div className='grid grid-cols-3 gap-4 h-80 overflow-y-auto p-2'>
+            <div className='grid grid-cols-6 gap-4 h-120 overflow-y-auto p-2'>
                 {listArchivedProducts}
             </div>
 
