@@ -217,8 +217,6 @@ const Home = () => {
                 discount: discount,
             })
 
-            // console.log(checkoutProductsPayload)
-
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
 
@@ -251,13 +249,10 @@ const Home = () => {
             order_type: orderType,
         })
 
-        if (transactionResponse) {
-            setReceivedPayment(value);
-        }
-        
         setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
         setVoidProducts([]);
-        addToast("Transction voided successfully")
+        addToast("Transction voided successfully");
+        setAccessCode('');
         localStorage.removeItem('cart');
 
         setShowClearCheckoutModal(false);
@@ -343,7 +338,7 @@ const Home = () => {
                         <Button variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")} />
                     </div>
 
-                    <div className='px-4 py-8 flex flex-col gap-4'>
+                    <div className={cn('px-4 py-8 flex flex-col gap-4 h-[45vh] overflow-y-auto', showVoid && 'h-[50vh]')}>
                         {showVoid ?
                             listVoidProducts
                             :
