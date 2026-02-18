@@ -194,29 +194,36 @@ class BusinessSettingsView(viewsets.ModelViewSet):
     serializer_class = BusinessSettingsSerializer
     permission_classes = [permissions.IsAuthenticated] 
 
-    def get(self, request):
-        settings = BusinessSettings.load()
-        serializer = BusinessSettingsSerializer(settings)
+    def get_object(self):
+        obj, _ = BusinessSettings.objects.get_or_create(pk=1)
+        return obj
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object())
         return Response(serializer.data)
 
-    def put(self, request):
-        user = self.request.user
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object())
+        return Response(serializer.data)
 
-        if not user.groups.filter(name="admin").exists():
+    def update(self, request, *args, **kwargs):
+        if not request.user.is_staff:
             return Response({
                 'label': "Permission Not Granted",
                 'details': "You do not have the permission to edit business details",
                 'type': "Error"
             }, status=status.HTTP_403_FORBIDDEN)
-        
-        settings = BusinessSettings.load()
-        serializer = BusinessSettingsSerializer(settings, data=request.data, partial=True)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        return Response({"detail": "Creation not allowed."}, status=405)
     
 
 from datetime import datetime, timedelta
