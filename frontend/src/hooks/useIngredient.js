@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { IngredientApi } from "../api/IngredientApi";
 
-export default function useIngredient(all = false) {
+export default function useIngredient() {
     const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
 
@@ -19,6 +19,11 @@ export default function useIngredient(all = false) {
         placeholderData: (previous) => previous,
     });
 
+    const fetchAllIngredients = useQuery({
+        queryKey: ["ingredients-all"],
+        queryFn: () => IngredientApi.fetchAll(),
+    });
+    
     const dashboardQuery = useQuery({
         queryKey: ["ingredient-dashboard"],
         queryFn: IngredientApi.fetchDashboard,
@@ -28,6 +33,7 @@ export default function useIngredient(all = false) {
     const invalidateAll = () => {
         queryClient.invalidateQueries({ queryKey: ["ingredients"] });
         queryClient.invalidateQueries({ queryKey: ["ingredient-dashboard"] });
+        queryClient.invalidateQueries({ queryKey: ['ingredients-all'] });
     };
 
     const createMutation = useMutation({
@@ -55,14 +61,18 @@ export default function useIngredient(all = false) {
             dashboardQuery.isPending ||
             createMutation.isPending ||
             updateMutation.isPending ||
-            deleteMutation.isPending,
+            deleteMutation.isPending ||
+            fetchAllIngredients.isPending,
 
         ingredientError:
             ingredientsQuery.error ||
             dashboardQuery.error ||
             createMutation.error ||
             updateMutation.error ||
-            deleteMutation.error,
+            deleteMutation.error ||
+            fetchAllIngredients.error,
+
+        ingredientAll: fetchAllIngredients.data || [],
 
         postIngredient: createMutation.mutateAsync,
         patchIngredient: (id, data) =>

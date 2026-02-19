@@ -59,9 +59,12 @@ const Inventory = () => {
         }
     }
 
+    const handleCloseEditItemModal = () => handlePrepEditItem(null)
+
     const deleteItem = async (id) => {
         try {
             await deleteIngredient(id);
+            handlePrepEditItem(null)
             addToast("Ingredient has been deleted successfully!")
         } catch (err) {
             addToast("Failed to delete ingredient", "error")
@@ -74,8 +77,23 @@ const Inventory = () => {
     }
 
     const handleSetShowInOut = () => setShowInOut(true);
-    const handleSetCloseInOut = () => { setShowInOut(false); refresh() }
+    const handleSetCloseInOut = () => { setShowInOut(false)}
     const toggleUnitsModal = () => setShowUnitsModal(!showUnitsModal)
+
+    const getBatchStatus = (expirationDate) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const expiry = new Date(expirationDate);
+        expiry.setHours(0, 0, 0, 0);
+
+        const diffInDays = (expiry - today) / (1000 * 60 * 60 * 24);
+
+        if (diffInDays < 0) return "expired";
+        if (diffInDays <= 7) return "near";
+        return "normal";
+    };
+
 
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
@@ -85,9 +103,28 @@ const Inventory = () => {
                     <h5 >{item.name}</h5>
                 </div>
                 <h5 className='flex-1 text-left'>{(item.total_stock).replace(/\.00$/, '')} {item.unit.abbreviation}</h5>
-                <div className='flex-1 text-left'><StockLabel amount={item.total_stock} /></div>
-                <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}><EllipsisVertical size={18} /></div>
+                <div className='flex-1 text-left flex items-center'>
+                    <StockLabel amount={item.total_stock} />
+
+                    <div className='w-fit flex flex-row gap-2 ml-4'>
+                        {item.batches.some(batch => new Date(batch.expiration_date) < Date.now()) && (
+                            <Clock9 size={20} className='text-error'/>
+                        )}
+                        {item.batches.some(batch => {
+                            const today = new Date();
+                            const exp = new Date(batch.expiration_date);
+                            const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
+                            return diffDays >= 0 && diffDays <= 7;
+                        }) && (
+                            <CircleAlert size={20} className='text-warning' />
+                        )}
+                    </div>
+                </div>
+                <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}>
+                    <EllipsisVertical size={18} />
+                </div>
             </div>
+
             {index == activeIndex &&
                 <div className='border-b border-border border-x border-x-border'>
                     <div className='p-2 px-12 flex flex-col gap-2'>
@@ -95,25 +132,36 @@ const Inventory = () => {
 
                         {/* <h5 className='flex-1'>Remaining Amount</h5>
                         <h5 className='flex-1'>Expiration Date</h5> */}
-                        {item.batches.map((batch, batchIndex) =>
-                            <div key={batchIndex} className={cn('p-4 flex flex-row text-text bg-white rounded-lg border-border border', new Date(batch.expiration_date) <= Date.now() && 'border-error-border bg-error-fill')}>
-                                <div className='flex-1 flex flex-col items-start gap-2'>
-                                    <h5 className='text-text/50'>Remaining Amount</h5>
-                                    <h5 >{(batch.remaining_amount).replace(/\.00$/, '')}</h5>
+                        {item.batches.map((batch, batchIndex) => {
+                            const status = getBatchStatus(batch.expiration_date);
+
+                            return (
+                                <div
+                                    key={batchIndex}
+                                    className={cn(
+                                        'p-4 flex flex-row rounded-lg border',
+                                        status === 'expired' && 'border-error bg-white text-error',
+                                        status === 'near' && 'border-warning bg-white text-warning',
+                                        status === 'normal' && 'border-border bg-white text-text'
+                                    )}
+                                >
+                                    <div className='flex-1 flex flex-col items-start gap-2'>
+                                        <h5 className='text-text/50'>Remaining Amount</h5>
+                                        <h5 >{(batch.remaining_amount).replace(/\.00$/, '')}</h5>
+                                    </div>
+                                    <div className='flex-1 flex flex-col items-start gap-2'>
+                                        <h5 className='text-text/50'>Purchase Date</h5>
+                                        <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                    </div>
+                                    <div className='flex-1 flex flex-col items-start gap-2'>
+                                        <h5 className='text-text/50'>Expiration Date</h5>
+                                        <h5 className={cn(status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text' )}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                    </div>
                                 </div>
-                                <div className='flex-1 flex flex-col items-start gap-2'>
-                                    <h5 className='text-text/50'>Purchase Date</h5>
-                                    <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
-                                </div>
-                                <div className='flex-1 flex flex-col items-start gap-2'>
-                                    <h5 className='text-text/50'>Expiration Date</h5>
-                                    <h5 className={cn('text-text', new Date(batch.expiration_date) <= Date.now() && 'text-error')}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
-                                </div>
-                            </div>
+                                )
+                            }
                         )}
                     </div>
-
-
                 </div>
             }
         </div>
@@ -124,7 +172,7 @@ const Inventory = () => {
             <div className='h-fit w-full flex gap-4'>
                 <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success' amount={ingredientDashboard.summary.in_stock_count} />
                 <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error' amount={ingredientDashboard.summary.out_of_stock_count} />
-                <InventoryDashboardCard title='RUNNING LOW' subtitle='WARNING' icon={CircleAlert} variant='warning' amount={ingredientDashboard.summary.running_low_count} />
+                <InventoryDashboardCard title='NEAR EXPIRATION' subtitle='ATTENTION' icon={CircleAlert} variant='warning' amount={ingredientDashboard.summary.near_expiration_count} />
                 <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none' amount={ingredientDashboard.summary.expired_count} />
             </div>
 
@@ -166,7 +214,7 @@ const Inventory = () => {
             }
 
             {prepEditItem &&
-                <EditInventoryItem item={prepEditItem} onDelete={deleteItem} onConfirm={handleEditItem} onClose={() => handlePrepEditItem(null)} />
+                <EditInventoryItem item={prepEditItem} onDelete={deleteItem} onConfirm={handleEditItem} onClose={handleCloseEditItemModal} />
             }
 
             {showInOut &&

@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from django.db import models, transaction
 from django.db.models import F
 from django.utils import timezone
+from decimal import Decimal
+from datetime import timedelta
 
 from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, DashboardSummarySerializer, UnitSerializer)
 
@@ -33,6 +35,64 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+
+    @action(detail=False, methods=["post"], url_path="stock-out-expired")
+    def stock_out_expired(self, request):
+        if not request.user.is_staff:
+            return Response(
+                {"detail": "You do not have permission to perform this action."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        today = timezone.localdate()
+
+        expired_batches = Transaction.objects.filter(
+            transaction_type='in',
+            expiration_date__lt=today,
+            remaining_amount__gt=0
+        ).select_related("ingredient")
+
+        if not expired_batches.exists():
+            return Response(
+                {"message": "No expired batches found."},
+                status=status.HTTP_200_OK
+            )
+
+        affected_ingredients = {}
+        total_stocked_out = Decimal("0")
+
+        with transaction.atomic():
+            for batch in expired_batches:
+                ingredient = batch.ingredient
+                remaining = batch.remaining_amount
+
+                # Accumulate per ingredient
+                if ingredient.id not in affected_ingredients:
+                    affected_ingredients[ingredient.id] = Decimal("0")
+
+                affected_ingredients[ingredient.id] += remaining
+                total_stocked_out += remaining
+
+                # Zero out the batch
+                batch.remaining_amount = Decimal("0")
+                batch.save()
+
+            # Update ingredient total_stock safely
+            for ingredient_id, deducted_amount in affected_ingredients.items():
+                ingredient = Ingredient.objects.get(id=ingredient_id)
+                ingredient.total_stock -= deducted_amount
+                if ingredient.total_stock < 0:
+                    ingredient.total_stock = Decimal("0")
+                ingredient.save()
+
+        return Response(
+            {
+                "message": "Expired batches stocked out successfully.",
+                "total_quantity_removed": str(total_stocked_out),
+                "affected_ingredients": len(affected_ingredients)
+            },
+            status=status.HTTP_200_OK
+        )
     
     
 class IngredientAllViewSet(viewsets.ModelViewSet):
@@ -68,38 +128,46 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-LOW_STOCK_THRESHOLD = 10 
-
 class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
+
     def list(self, request, *args, **kwargs):
+        today = timezone.localdate()
+        near_threshold = today + timedelta(days=7)
 
-        in_stock_qs = self.get_queryset().filter(total_stock__gt=0)
-        
-        out_of_stock_qs = self.get_queryset().filter(total_stock__lte=0)
-        
-        running_low_qs = self.get_queryset().filter(total_stock__lt=LOW_STOCK_THRESHOLD)# Distinct ensures each ingredient is only counted once
+        # Batch-level queries
+        in_stock_batches = Transaction.objects.filter(
+            transaction_type='in',
+            remaining_amount__gt=0
+        )
 
-        expired_qs = orders_to_update = Ingredient.objects.filter(
-            transactions__expiration_date__lt=timezone.now().date(),
-            transactions__remaining_amount__gt=0
-        ).distinct() # Distinct ensures each ingredient is only counted once
-        
+        expired_batches = Transaction.objects.filter(
+            transaction_type='in',
+            expiration_date__lt=today,
+            remaining_amount__gt=0
+        )
+
+        near_expiration_batches = Transaction.objects.filter(
+            transaction_type='in',
+            expiration_date__gte=today,
+            expiration_date__lte=near_threshold,
+            remaining_amount__gt=0
+        )
+
+        # Ingredient-level for out of stock
+        out_of_stock_ingredients = Ingredient.objects.filter(total_stock__lte=0)
+
         summary_data = {
-            'in_stock_count': in_stock_qs.count(),
-            'out_of_stock_count': out_of_stock_qs.count(),
-            'running_low_count': running_low_qs.count(), 
-            'expired_count': expired_qs.count(),
+            "in_stock_count": in_stock_batches.count(),
+            "out_of_stock_count": out_of_stock_ingredients.count(),
+            "near_expiration_count": near_expiration_batches.count(),
+            "expired_count": expired_batches.count(),
         }
 
-        summary_serializer = DashboardSummarySerializer(summary_data)
-        
-        running_low_details = self.get_serializer(running_low_qs, many=True).data
-
         return Response({
-            'summary': summary_serializer.data,
-            'running_low_items': running_low_details,
+            "summary": summary_data
         })
+

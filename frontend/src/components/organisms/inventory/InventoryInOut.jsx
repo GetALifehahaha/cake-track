@@ -13,13 +13,12 @@ import { cn } from '@/utils/cn';
 const InventoryInOut = ({ onConfirm, onClose }) => {
 
 	const { addToast } = useToast();
-	const { ingredientData, ingredientLoading, ingredientError } = useIngredient(true);
+	const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
 	const { postInventoryTransaction, inventoryTransactionLoading, inventoryTransactionError } = useInventoryTransaction();
 	const [ingredientItems, setIngredientItems] = useState([]);
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [search, setSearch] = useState('');
 	
-
 	if (ingredientLoading || inventoryTransactionLoading) return <Loading />
 	if (ingredientError) return <h5>Error</h5>
 	if (inventoryTransactionError) return <h5>Error</h5>
@@ -129,7 +128,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 		onClose()
 	}
 
-	const filteredIngredients = ingredientData.results.filter(ing => 
+	const filteredIngredients = ingredientAll.filter(ing => 
         ing.name.toLowerCase().includes(search.toLowerCase())
     );
 

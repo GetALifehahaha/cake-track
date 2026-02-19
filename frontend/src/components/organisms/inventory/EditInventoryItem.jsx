@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Label, Title, Button, Dropdown, } from '../../atoms';
 import { ModalFeedbackCard, DatePicker, ModalBody } from '../../molecules';
 import ConfirmationModal from '../ConfirmationModal';
@@ -17,9 +17,12 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     if (loading) return <h5>Loading Units</h5>
     if (error) return <h5>Error loading units</h5>
 
-    const unitSelection = units.map(unit => ({
-        key: unit.name, value: unit.id
-    }))
+    const unitSelection = useMemo(() => {
+        return units.map(unit => ({
+            key: unit.name,
+            value: unit.id
+        }))
+    }, [units])
 
     const handleName = (e) => {
         e.preventDefault();
@@ -44,7 +47,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     }
 
     const handleDelete = () => {
-        toggleDeleteConfirmationModal();
+        // toggleDeleteConfirmationModal();
         onDelete(item.id)
     }
 

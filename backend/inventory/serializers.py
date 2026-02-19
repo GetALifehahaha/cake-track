@@ -265,8 +265,6 @@ class BulkRecipeCookSerializer(serializers.Serializer):
             for ing_id, total_amount_needed in ingredient_totals.items():
                 ingredient = Ingredient.objects.get(id=ing_id)
                 
-                # --- YOUR FIFO/FEFO LOGIC STARTS HERE ---
-                
                 out_count = total_amount_needed
                 
                 # Get batches with remaining amount, ordered by expiration (FEFO)
@@ -319,5 +317,5 @@ class BulkRecipeCookSerializer(serializers.Serializer):
 class DashboardSummarySerializer(serializers.Serializer):
     in_stock_count = serializers.IntegerField()
     out_of_stock_count = serializers.IntegerField()
-    running_low_count = serializers.IntegerField()
+    near_expiration_count = serializers.IntegerField()
     expired_count = serializers.IntegerField()
