@@ -211,7 +211,7 @@ class BusinessSettingsView(viewsets.ModelViewSet):
             return Response({
                 'label': "Permission Not Granted",
                 'details': "You do not have the permission to edit business details",
-                'type': "Error"
+                'type': "error"
             }, status=status.HTTP_403_FORBIDDEN)
 
         instance = self.get_object()
@@ -223,7 +223,10 @@ class BusinessSettingsView(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        return Response({"detail": "Creation not allowed."}, status=405)
+        return Response({
+            'label': "Creation Not Allowed",
+            "detail": "There can only be one business detail existing",
+            'type': "error"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
 
 from datetime import datetime, timedelta

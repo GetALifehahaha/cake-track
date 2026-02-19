@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { BusinessDetailsApi } from "@/api/BusinessDetailsApi";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-export default function useBusinessDetails({ isArchived = false } = {}) {
+export default function useBusinessDetails() {
     const queryClient = useQueryClient();
 
     const businessDetailsQuery = useQuery({

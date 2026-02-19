@@ -114,6 +114,8 @@ class BusinessSettings(models.Model):
     contact_number = models.CharField(max_length=20, blank=True)
     message = models.TextField(blank=True, help_text="Message to appear at the bottom of the receipt (e.g. Thank you!)")
 
+    secret_pin = models.IntegerField(default=1234)
+
     class Meta:
         verbose_name = "Business Settings"
         verbose_name_plural = "Business Settings"

@@ -179,7 +179,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
-        fields = ['business_name', 'address', 'tin', 'contact_number', 'message']
+        fields = ['business_name', 'address', 'tin', 'contact_number', 'message', 'secret_pin']
         
         
 class DashboardMetricsSerializer(serializers.Serializer):

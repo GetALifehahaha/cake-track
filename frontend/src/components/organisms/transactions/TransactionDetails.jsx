@@ -2,8 +2,16 @@ import React from 'react';
 import { Title, Button } from '../../atoms';
 import { Download, Printer, X } from 'lucide-react';
 import { formatToDecimal } from '@/utils/formatToDecimal';
+import useBusinessDetails from '@/hooks/useBusinessDetails';
+import Loading from '@/components/molecules/Loading';
 
 const TransactionDetails = ({ transactionDetail, onClose }) => {
+
+    const {data, loading, error} = useBusinessDetails();
+
+    if (loading) return <Loading />
+    if (error) return <h5>Error</h5>
+
 
     const downloadPdf = async () => {
         window.print()
@@ -15,12 +23,12 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                     <div className='max-h-[80vh] overflow-y-auto mx-auto p-6 text-sm w-md flex flex-col justify-between'>
 
                         <h5 className="text-center text-text font-bold text-lg mb-2 ">
-                            Michelle's Cakes and Cafe
+                            {data.business_name}
                         </h5>
 
                         <div className="text-center text-text/50 text-sm mb-4 space-y-0.5 border-b border-b-main-dark pb-8">
-                            <h5>Boalan, Zamboanga City</h5>
-                            <h5>TIN: 123-456-789-000</h5>
+                            <h5>{data.address}</h5>
+                            <h5>TIN: {data.tin}</h5>
                             <h5>Permit No: ATP-2025-56789</h5>
                         </div>
 
@@ -76,8 +84,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
 
                         <div className="text-center text-text text-sm space-y-1 mb-3">
                             <h5>System-Generated Receipt</h5>
-                            <h5>Contact us: +63 966 443 1581</h5>
-                            <h5>Thank you! Come back for another coffee!</h5>
+                            <h5>Contact us: {data.contact_number}</h5>
+                            <h5>{data.message}</h5>
                         </div>
 
                         <h5 className="text-center text-text text-sm italic">

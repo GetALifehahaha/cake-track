@@ -14,6 +14,7 @@ const BusinessDetails = () => {
     const [tin, setTin] = useState("");
     const [contactNumber, setContactNumber] = useState("");
     const [message, setMessage] = useState("");
+    const [secretPIN, setSecretPIN] = useState()
 
     useEffect(() => {
         if (data) {
@@ -22,6 +23,7 @@ const BusinessDetails = () => {
             setTin(data.tin || "");
             setContactNumber(data.contact_number || "");
             setMessage(data.message || "");
+            setSecretPIN(data.secret_pin || "")
         }
     }, [data]);
 
@@ -44,6 +46,7 @@ const BusinessDetails = () => {
     const handleTin = createChangeHandler(setTin, {maxLength: 12, isNumber: true});
     const handleContactNumber = createChangeHandler(setContactNumber, {maxLength: 12, isNumber: true});
     const handleMessage = createChangeHandler(setMessage, {maxLength: 255})
+    const handleSecretPIN = createChangeHandler(setSecretPIN, {maxLength: 4, isNumber: true})
 
     const editBusinessDetails = async () => {
         const payload = {
@@ -121,6 +124,17 @@ const BusinessDetails = () => {
                     <div className='mt-4'>
                         <Label variant='small' text='Message' />
                         <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={message} onChange={handleMessage}/>
+                    </div>
+                </div>
+
+                <div className='p-6 rounded-sm bg-main-white shadow-sm w-fit'>
+                    <div className='flex items-center justify-between'>
+                        <Title text='Secret PIN' variant='block' />
+                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
+                    </div>
+                    <div className='mt-4'>
+                        <Label variant='small' text='POS PIN' />
+                        <input type='password' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={secretPIN} onChange={handleSecretPIN}/>
                     </div>
                 </div>
             </div>
