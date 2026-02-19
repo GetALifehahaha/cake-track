@@ -52,6 +52,11 @@ export default function useIngredient() {
         onSuccess: invalidateAll,
     });
 
+    const stockOutAllExpiredMutation = useMutation({
+        mutationFn: IngredientApi.stockOutAllExpired,
+        onSuccess: invalidateAll
+    })
+
     return {
         ingredientData: ingredientsQuery.data || [],
         ingredientDashboard: dashboardQuery.data || null,
@@ -78,6 +83,7 @@ export default function useIngredient() {
         patchIngredient: (id, data) =>
             updateMutation.mutateAsync({ id, data }),
         deleteIngredient: deleteMutation.mutateAsync,
+        stockOutAllExpiredIngredient: stockOutAllExpiredMutation.mutateAsync,
 
         refresh: () => {
             ingredientsQuery.refetch();

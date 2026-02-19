@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard, Pagination } from '../components/molecules';
-import { EditInventoryItem, InventoryAddItem, InventoryInOut, UnitModal } from '../components/organisms';
-import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, ChevronLeft, ChevronRight, ChevronDown, EllipsisVertical, Box } from 'lucide-react';
+import { ConfirmationModal, EditInventoryItem, InventoryAddItem, InventoryInOut, UnitModal } from '../components/organisms';
+import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, Trash, ChevronRight, ChevronDown, EllipsisVertical, Box } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
@@ -11,16 +11,19 @@ import { cn } from '@/utils/cn';
 const Inventory = () => {
 
     const { addToast } = useToast();
-    const {ingredientData, ingredientDashboard, ingredientError, ingredientLoading, postIngredient, patchIngredient, deleteIngredient} = useIngredient();
+    const {ingredientData, ingredientDashboard, ingredientError, ingredientLoading, postIngredient, patchIngredient, deleteIngredient, stockOutAllExpiredIngredient} = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);
     const [activeIndex, setActiveIndex] = useState(null);
     const [showInOut, setShowInOut] = useState(false);
     const [showUnitsModal, setShowUnitsModal] = useState(false);
+    const [showStockOutAllConfirmationModal, setShowStockOutAllConfirmationModal] = useState(false);
 
     if (ingredientLoading) return <Loading />
     if (ingredientError) return <h5>Error</h5>
+
+    const toggleStockOutAllConfirmationModal = () => setShowStockOutAllConfirmationModal(prev => !prev);
 
     const handleShowAddItemModal = () => {
         setShowAddItemModal(true)
@@ -68,6 +71,16 @@ const Inventory = () => {
             addToast("Ingredient has been deleted successfully!")
         } catch (err) {
             addToast("Failed to delete ingredient", "error")
+        }
+    }
+
+    const stockOutExpiredIngredients = async () => {
+        try {
+            await stockOutAllExpiredIngredient();
+            addToast("All expired ingredients has been stocked out!")
+            toggleStockOutAllConfirmationModal();
+        } catch (err) {
+            addToast("Failed to stock out expired ingredients", "error")
         }
     }
 
@@ -182,6 +195,9 @@ const Inventory = () => {
                     <Title variant='block' text='Inventory Overview' />
 
                     <div className='flex flex-row items-center gap-2'>
+                        {ingredientDashboard.summary.expired_count > 0 &&
+                            <Button variant='modalOutline' size='small' text='Stock Out Expired Ingredients' icon={Trash} onClick={toggleStockOutAllConfirmationModal} className='shadow-sm' />
+                        }
                         <Button variant='modalOutline' size='small' text='Manage Units' icon={Box} onClick={toggleUnitsModal} className='shadow-sm' />
                         <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm' />
                         <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm' />
@@ -223,6 +239,10 @@ const Inventory = () => {
 
             {showUnitsModal &&
                 <UnitModal onClose={toggleUnitsModal} />
+            }
+
+            {showStockOutAllConfirmationModal &&
+                <ConfirmationModal title="Stock out all expired ingredients" content="Are you sure you want to stock out all expired ingredients?" onConfirm={stockOutExpiredIngredients} onReject={toggleStockOutAllConfirmationModal} />
             }
         </div>
     )

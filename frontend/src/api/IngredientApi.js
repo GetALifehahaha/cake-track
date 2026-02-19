@@ -8,4 +8,5 @@ export const IngredientApi = {
 
     fetchDashboard: () => api.get('/inventory/dashboard/').then(res => res.data),
     fetchAll: () => api.get('/inventory/ingredients-all/').then(res => res.data),
+    stockOutAllExpired: () => api.post('/inventory/ingredients/stock-out-expired/').then(res => res.data)
 }
