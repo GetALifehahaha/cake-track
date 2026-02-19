@@ -11,7 +11,7 @@ import { cn } from '@/utils/cn';
 const Inventory = () => {
 
     const { addToast } = useToast();
-    const {ingredientData, ingredientDashboard, ingredientError, ingredientLoading, postIngredient, patchIngredient} = useIngredient();
+    const {ingredientData, ingredientDashboard, ingredientError, ingredientLoading, postIngredient, patchIngredient, deleteIngredient} = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);
@@ -59,9 +59,13 @@ const Inventory = () => {
         }
     }
 
-    const handleDeleteItem = (id) => {
-        handlePrepEditItem(null);
-        handleShowEditItemModal();
+    const deleteItem = async (id) => {
+        try {
+            await deleteIngredient(id);
+            addToast("Ingredient has been deleted successfully!")
+        } catch (err) {
+            addToast("Failed to delete ingredient", "error")
+        }
     }
 
     const handleSetActiveIndex = (index) => {
@@ -86,7 +90,7 @@ const Inventory = () => {
             </div>
             {index == activeIndex &&
                 <div className='border-b border-border border-x border-x-border'>
-                    <div className='p-2 px-12 flex flex-col'>
+                    <div className='p-2 px-12 flex flex-col gap-2'>
                         <h5 className='text-sm font-medium text-text/50 mb-4'>Batch Details</h5>
 
                         {/* <h5 className='flex-1'>Remaining Amount</h5>
@@ -162,7 +166,7 @@ const Inventory = () => {
             }
 
             {prepEditItem &&
-                <EditInventoryItem item={prepEditItem} onDelete={handleDeleteItem} onConfirm={handleEditItem} onClose={() => handlePrepEditItem(null)} />
+                <EditInventoryItem item={prepEditItem} onDelete={deleteItem} onConfirm={handleEditItem} onClose={() => handlePrepEditItem(null)} />
             }
 
             {showInOut &&

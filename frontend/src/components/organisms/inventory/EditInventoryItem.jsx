@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Label, Title, Button, Dropdown, } from '../../atoms';
 import { ModalFeedbackCard, DatePicker, ModalBody } from '../../molecules';
+import ConfirmationModal from '../ConfirmationModal';
 import { X } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const {data: units, loading, error} = useUnits()
 
-    console.log(item)
-    
     const [name, setName] = useState(item.name);
     const [unit, setUnit] = useState(item.unit.id);
 
@@ -44,12 +43,24 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         onConfirm({ id: item.id, name, unit_id: unit})
     }
 
+    const handleDelete = () => {
+        toggleDeleteConfirmationModal();
+        onDelete(item.id)
+    }
+
     const capitalize = (str) => {
         return str
             .split('_')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
     }
+
+    // CONFIRMATION MODAL
+    const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
+    const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
+
+    const toggleDeleteConfirmationModal = () => setShowDeleteConfirmationModal(!showDeleteConfirmationModal);
+    const toggleEditConfirmationModal = () => setShowEditConfirmationModal(!showEditConfirmationModal);
 
     return (
         <ModalBody title='Edit Inventory Item' subtitle='Modify the product by editing in the detail below or delete the current product.' onClose={onClose}>
@@ -72,9 +83,17 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             }
 
             <div className='flex gap-4 mt-4 ml-auto'>
-                <Button variant='error' size='modalSize' text='Delete' onClick={() => onDelete(item.id)} />
-                <Button variant='modalBlock' size='modalSize' text='Save' onClick={handleConfirm} />
+                <Button variant='error' size='modalSize' text='Delete' onClick={toggleDeleteConfirmationModal} />
+                <Button variant='modalBlock' size='modalSize' text='Save' onClick={toggleEditConfirmationModal} />
             </div>
+
+            {showEditConfirmationModal &&
+                <ConfirmationModal title="Edit Inventory Details?" content="Are you sure you want to edit this inventory details?" onConfirm={handleConfirm} onReject={toggleEditConfirmationModal} />
+            }
+
+            {showDeleteConfirmationModal &&
+                <ConfirmationModal title="Delete Inventory Item?" content="Are you sure you want to delete this item?" onConfirm={handleDelete} onReject={toggleDeleteConfirmationModal} />
+            }
         </ModalBody>
     )
 }
