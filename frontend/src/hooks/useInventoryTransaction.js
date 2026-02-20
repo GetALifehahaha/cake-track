@@ -3,7 +3,7 @@ import InventoryTransactionApi from "@/api/InventoryTransaction";
 
 export default function useInventoryTransaction() {
     const queryClient = useQueryClient();
-    const queryKey = ["inventoryTransactions"];
+    const queryKey = ["inventory-transactions"];
 
     // 1. FETCH (Read)
     const { 
@@ -22,9 +22,11 @@ export default function useInventoryTransaction() {
     const createMutation = useMutation({
         mutationFn: (params) => InventoryTransactionApi(params, null, "POST"),
         onSuccess: () => {
-            // Automatically refetch the list after a successful creation
-            queryClient.invalidateQueries({ queryKey: queryKey });
-        },
+            queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+            queryClient.invalidateQueries({ queryKey: ['ingredient-fetch-all'] });
+            queryClient.invalidateQueries({ queryKey: ['ingredient-dashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+        }
     });
 
     // 3. UPDATE (Patch)

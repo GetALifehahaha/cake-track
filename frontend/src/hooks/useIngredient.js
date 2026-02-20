@@ -20,37 +20,43 @@ export default function useIngredient() {
     });
 
     const fetchAllIngredients = useQuery({
-        queryKey: ["ingredients", "all"],
+        queryKey: ["ingredient-fetch-all"],
         queryFn: () => IngredientApi.fetchAll(),
     });
     
     const dashboardQuery = useQuery({
-        queryKey: ["ingredients", "dashboard"],
+        queryKey: ["ingredient-dashboard"],
         queryFn: IngredientApi.fetchDashboard,
         placeholderData: (previous) => previous,
     });
 
-    const onSuccessInvalidate = () => queryClient.invalidateQueries({ queryKey: ['ingredients']})
+    const invalidateAllInventoryData = () => {
+        queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+        queryClient.invalidateQueries({ queryKey: ['ingredient-fetch-all'] });
+        queryClient.invalidateQueries({ queryKey: ['ingredient-dashboard'] });
+        // If you have a separate history query key, add it here as well
+        queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+    };
 
     const createMutation = useMutation({
         mutationFn: IngredientApi.create,
-        onSuccess: onSuccessInvalidate,
+        onSuccess: invalidateAllInventoryData,
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) =>
             IngredientApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
+        onSuccess: invalidateAllInventoryData,
     });
 
     const deleteMutation = useMutation({
         mutationFn: IngredientApi.delete,
-        onSuccess: onSuccessInvalidate,
+        onSuccess: invalidateAllInventoryData,
     });
 
     const stockOutAllExpiredMutation = useMutation({
         mutationFn: IngredientApi.stockOutAllExpired,
-        onSuccess: onSuccessInvalidate
+        onSuccess: invalidateAllInventoryData
     })
 
     return {

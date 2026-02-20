@@ -14,8 +14,8 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
 
-    if (loading) return <h5>Loading Units</h5>
-    if (error) return <h5>Error loading units</h5>
+    const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
+    const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
 
     const unitSelection = useMemo(() => {
         return units.map(unit => ({
@@ -23,6 +23,9 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             value: unit.id
         }))
     }, [units])
+
+    if (loading) return <h5>Loading Units</h5>
+    if (error) return <h5>Error loading units</h5>
 
     const handleName = (e) => {
         e.preventDefault();
@@ -59,9 +62,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     }
 
     // CONFIRMATION MODAL
-    const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
-    const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
-
+    
     const toggleDeleteConfirmationModal = () => setShowDeleteConfirmationModal(!showDeleteConfirmationModal);
     const toggleEditConfirmationModal = () => setShowEditConfirmationModal(!showEditConfirmationModal);
 
