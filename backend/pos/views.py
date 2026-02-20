@@ -99,7 +99,6 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=["post"])
     def unarchive(self, request):
-        print(request.data)
         serializer = ProductBatchUnarchiveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         updated = serializer.save()

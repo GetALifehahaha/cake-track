@@ -95,6 +95,7 @@ class DashboardSerializer(serializers.Serializer):
     pending_orders = serializers.IntegerField()
     completed_orders = serializers.IntegerField()
     rejected_orders = serializers.IntegerField()
+ 
 
 class CakeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -106,5 +107,28 @@ class CakeSerializer(serializers.ModelSerializer):
             "image",
             "created_at",
             "updated_at",
+            "is_archived"
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class CakeBatchUnarchiveSerializer(serializers.Serializer):
+    cake_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False
+    )
+
+    def validate(self, attrs):
+        cake_ids = attrs["cake_ids"]
+        existing_id = Cake.objects.filter(id__in=cake_ids).count()
+
+        if existing_id != len(set(cake_ids)):
+            raise serializers.ValidationError("One or more ID is invalid!")
+        
+        return attrs
+    
+
+    def save(self):
+        ids = self.validated_data['cake_ids']
+        updated_count = CakeOrder.objects.filter(id__in=ids).update(is_archived=False)
+        return updated_count
