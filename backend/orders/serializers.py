@@ -130,5 +130,5 @@ class CakeBatchUnarchiveSerializer(serializers.Serializer):
 
     def save(self):
         ids = self.validated_data['cake_ids']
-        updated_count = CakeOrder.objects.filter(id__in=ids).update(is_archived=False)
+        updated_count = Cake.objects.filter(id__in=ids).update(is_archived=False)
         return updated_count
