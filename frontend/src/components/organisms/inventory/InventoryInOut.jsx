@@ -103,18 +103,27 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 		setShowConfirm(true);
 	}
 
+	const formatDate = (date) => {
+		if (!date) return null;
+		const offset = date.getTimezoneOffset();
+		const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
+		return adjustedDate.toISOString().split('T')[0];
+	};
+
 	const updateIngredients = async () => {
 		const payload = {
 			transactions: ingredientItems.map(item => ({
 				ingredient_id: item.ingredient_id,
 				amount: item.amount,
 				transaction_type: item.transaction_type,
-				...(item.transaction_type === 'in' ? {
-					expiration_date: item.expiration_date.toISOString().split('T')[0],
-					purchase_date: item.purchase_date.toISOString().split('T')[0]
-				} : {})
+				purchase_date: item.transaction_type === 'in' 
+					? formatDate(item.purchase_date) 
+					: formatDate(new Date()), 
+				...(item.transaction_type === 'in' && {
+					expiration_date: formatDate(item.expiration_date)
+				})
 			}))
-		}
+		};
 
 		try {
 			await postInventoryTransaction(payload);

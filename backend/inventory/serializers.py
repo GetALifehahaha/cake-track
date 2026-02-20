@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit )
 from decimal import Decimal
 from rest_framework.serializers import ValidationError
+from datetime import timezone
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,6 +42,7 @@ class TransactionCreateSerializer(serializers.Serializer):
                 ingredient = Ingredient.objects.get(id=item['ingredient_id'])
                 amount = item['amount']
                 transaction_type = item['transaction_type']
+                purchase_date = item.get("purchase_date") or timezone.now().date()
                 
                 
                 if transaction_type == 'in':
@@ -51,7 +53,7 @@ class TransactionCreateSerializer(serializers.Serializer):
                         remaining_amount=amount,
                         transaction_type=transaction_type,
                         expiration_date=item.get("expiration_date"),
-                        purchase_date=item.get("purchase_date")
+                        purchase_date=purchase_date
                     )
                     ingredient.total_stock += amount
                     ingredient.save()
@@ -82,7 +84,8 @@ class TransactionCreateSerializer(serializers.Serializer):
                         ingredient=ingredient,
                         amount=amount,
                         remaining_amount=Decimal("0"),
-                        transaction_type="out"
+                        transaction_type="out",
+                        purchase_date=purchase_date
                     )
                     
                     ingredient.total_stock -= amount
@@ -267,7 +270,6 @@ class BulkRecipeCookSerializer(serializers.Serializer):
                 
                 out_count = total_amount_needed
                 
-                # Get batches with remaining amount, ordered by expiration (FEFO)
                 batches = ingredient.transactions.filter(
                     transaction_type='in', 
                     remaining_amount__gt=0
@@ -319,3 +321,21 @@ class DashboardSummarySerializer(serializers.Serializer):
     out_of_stock_count = serializers.IntegerField()
     near_expiration_count = serializers.IntegerField()
     expired_count = serializers.IntegerField()
+
+
+class TransactionHistorySerializer(serializers.ModelSerializer):
+    ingredient_name = serializers.CharField(source='ingredient.name', read_only=True)
+    unit_abbreviation = serializers.CharField(source='ingredient.unit.abbreviation', read_only=True)
+
+    class Meta:
+        model = Transaction
+        fields = [
+            'id', 
+            'ingredient_name', 
+            'unit_abbreviation', 
+            'amount', 
+            'transaction_type', 
+            'remaining_amount', 
+            'purchase_date', 
+            'expiration_date'
+        ]

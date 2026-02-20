@@ -8,7 +8,15 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
 
-from .serializers import (TransactionSerializer, TransactionCreateSerializer, IngredientSerializer, RecipeSerializer, BulkRecipeCookSerializer, DashboardSummarySerializer, UnitSerializer)
+from .serializers import (TransactionSerializer, 
+                          TransactionCreateSerializer, 
+                          IngredientSerializer, 
+                          RecipeSerializer, 
+                          BulkRecipeCookSerializer, 
+                          DashboardSummarySerializer, 
+                          UnitSerializer,
+                          TransactionHistorySerializer,
+                          )
 
 from .models import (Transaction, Ingredient, Recipe, Unit)
 
@@ -22,12 +30,14 @@ class UnitViewSet(viewsets.ModelViewSet):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all().order_by('-purchase_date')
+    queryset = Transaction.objects.all().order_by('-purchase_date', '-id')
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     
     def get_serializer_class(self):
         if (self.action == "create"):
             return TransactionCreateSerializer
+        if self.action == "list" or self.action == "retrieve":
+            return TransactionHistorySerializer
         return TransactionSerializer
     
 
@@ -66,24 +76,29 @@ class IngredientViewSet(viewsets.ModelViewSet):
                 ingredient = batch.ingredient
                 remaining = batch.remaining_amount
 
-                # Accumulate per ingredient
                 if ingredient.id not in affected_ingredients:
                     affected_ingredients[ingredient.id] = Decimal("0")
 
                 affected_ingredients[ingredient.id] += remaining
                 total_stocked_out += remaining
 
-                # Zero out the batch
                 batch.remaining_amount = Decimal("0")
                 batch.save()
 
-            # Update ingredient total_stock safely
             for ingredient_id, deducted_amount in affected_ingredients.items():
                 ingredient = Ingredient.objects.get(id=ingredient_id)
                 ingredient.total_stock -= deducted_amount
                 if ingredient.total_stock < 0:
                     ingredient.total_stock = Decimal("0")
                 ingredient.save()
+
+                Transaction.objects.create(
+                    ingredient=ingredient,
+                    amount=deducted_amount,
+                    remaining_amount=Decimal("0"), 
+                    transaction_type='out',
+                    purchase_date=today 
+                )
 
         return Response(
             {

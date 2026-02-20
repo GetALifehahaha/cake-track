@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard, Pagination } from '../components/molecules';
-import { ConfirmationModal, EditInventoryItem, InventoryAddItem, InventoryInOut, UnitModal } from '../components/organisms';
+import { ConfirmationModal, EditInventoryItem, InventoryAddItem, InventoryInOut, TransactionHistoryModal, UnitModal } from '../components/organisms';
 import { Plus, CheckCircle2, XCircle, CircleAlert, Clock9, Trash, ChevronRight, ChevronDown, EllipsisVertical, Box } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
@@ -26,10 +26,13 @@ const Inventory = () => {
     const [showInOut, setShowInOut] = useState(false);
     const [showUnitsModal, setShowUnitsModal] = useState(false);
     const [showStockOutAllConfirmationModal, setShowStockOutAllConfirmationModal] = useState(false);
+    const [showTransactionHistoryModal, setShowTransactionHistoryModal] = useState(false);
 
     if (ingredientLoading) return <Loading />
     if (ingredientError) return <h5>Error</h5>
-
+    
+    
+    const toggleTransactionHistoryModal = () => setShowTransactionHistoryModal(prev => !prev);
     const toggleStockOutAllConfirmationModal = () => setShowStockOutAllConfirmationModal(prev => !prev);
 
     const handleShowAddItemModal = () => {
@@ -205,6 +208,7 @@ const Inventory = () => {
                         {ingredientDashboard.summary.expired_count > 0 &&
                             <Button variant='modalOutline' size='small' text='Stock Out Expired Ingredients' icon={Trash} onClick={toggleStockOutAllConfirmationModal} className='shadow-sm' />
                         }
+                        <Button variant='modalOutline' size='small' text='Transaction History' icon={Box} onClick={toggleTransactionHistoryModal} className='shadow-sm' />
                         <Button variant='modalOutline' size='small' text='Manage Units' icon={Box} onClick={toggleUnitsModal} className='shadow-sm' />
                         <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm' />
                         <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm' />
@@ -246,6 +250,10 @@ const Inventory = () => {
 
             {showUnitsModal &&
                 <UnitModal onClose={toggleUnitsModal} />
+            }
+
+            {showTransactionHistoryModal &&
+                <TransactionHistoryModal onClose={toggleTransactionHistoryModal} />
             }
 
             {showStockOutAllConfirmationModal &&
