@@ -52,9 +52,7 @@ const Cakes = () => {
 
     const restoreCake = async (value = []) => {
         if (value.length) {
-            // Assuming the backend expects an object like { product_ids: [...] } or { cake_ids: [...] }
-            // Adjusted to match the Product pattern provided
-            await batchUnarchiveCake({ product_ids: value }); 
+            await batchUnarchiveCake({ cake_ids: value }); 
             addToast('Cakes restored successfully', 'success');
             clear();
         }

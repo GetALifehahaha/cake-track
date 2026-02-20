@@ -19,6 +19,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const [showArchiveConfirmationModal, setShowArchiveConfirmationModal] = useState(false);
 
     const handleCakeName = (e) => {
         e.preventDefault();
@@ -146,6 +147,11 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
         }
     };
 
+    const toggleShowArchiveConfirmationModal = () => setShowArchiveConfirmationModal(!showArchiveConfirmationModal)
+
+    const handleArchive = () => onConfirm({is_archived: true})
+
+
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
@@ -239,6 +245,12 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                     ) : (
                         <>
                             <Button
+                                variant='modalBlock'
+                                size='base'
+                                text='Archive Item'
+                                onClick={toggleShowArchiveConfirmationModal}
+                            />
+                            <Button
                                 variant='modalOutline'
                                 size='base'
                                 text='Cancel'
@@ -261,6 +273,13 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                         onReject={() => setShowConfirmationModal(false)}
                         onConfirm={editCake}
                     />
+                }
+                {showArchiveConfirmationModal &&
+                    <ConfirmationModal 
+                        title="Archive Cake?" 
+                        content="Are you sure you want to archive this cake? You can get it back from the archives" 
+                        onReject={toggleShowArchiveConfirmationModal} 
+                        onConfirm={handleArchive} />
                 }
 
             </div>
