@@ -43,18 +43,18 @@ class Transaction(models.Model):
 
 class Recipe(models.Model): 
     name = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
     ingredients = models.ManyToManyField(
         Ingredient, 
         through='RecipeIngredient'
     )
     image = models.CharField(max_length=500, blank=True, null=True)
+    instructions = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
     
     def is_available(self):
-        for ing in self.recipe_ingredients.all(): #type: ignore
+        for ing in self.recipe_ingredients.all():
             if ing.ingredient.total_stock < ing.amount_needed:
                 return False
         return True

@@ -1,78 +1,52 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/api/api"; // your axios instance
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { RecipeApi } from '@/api/RecipeApi';
 
-export default function useRecipe() {
+export default function useRecipe(params = {}){
     const queryClient = useQueryClient();
-    const queryKey = ["recipes"];
 
-    // 1. FETCH (Read all recipes)
-    const { 
-        data: recipeData = [], 
-        isLoading: isReading, 
-        error: readError,
-        refetch 
-    } = useQuery({
-        queryKey,
-        queryFn: () => api.get('/recipes/').then(res => res.data),
-        staleTime: 1000 * 60,
+    const recipeQuery = useQuery({
+        queryKey: ['recipes', params],
+        queryFn: () => RecipeApi.fetchList(params),
+        placeholderData: (previous) => previous,
     });
 
-    // 2. CREATE (Post)
+    const onSuccessInvalidate = () =>
+        queryClient.invalidateQueries({ queryKey: ['recipes'] });
+
     const createMutation = useMutation({
-        mutationFn: (params) => api.post('/recipes/', params).then(res => res.data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+        mutationFn: (data) => RecipeApi.create(data),
+        onSuccess: onSuccessInvalidate,
     });
 
-    // 3. UPDATE (Patch)
     const updateMutation = useMutation({
-        mutationFn: ({ id, params }) => api.patch(`/recipes/${id}/`, params).then(res => res.data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+        mutationFn: ({ id, data }) => RecipeApi.update(id, data),
+        onSuccess: onSuccessInvalidate,
     });
 
-    // 4. DELETE
     const deleteMutation = useMutation({
-        mutationFn: (id) => api.delete(`/recipes/${id}/`).then(res => res.data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+        mutationFn: (id) => RecipeApi.delete(id),
+        onSuccess: onSuccessInvalidate,
     });
-
-    // 5. COOK (POST to /recipes/:id/cook/)
-    const cookMutation = useMutation({
-        mutationFn: (id) => api.post(`/recipes/${id}/cook/`).then(res => res.data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-    });
-
-    // Helper to consolidate loading states
-    const recipeLoading = isReading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || cookMutation.isPending;
-
-    // Helper to consolidate errors
-    const recipeError = readError || createMutation.error || updateMutation.error || deleteMutation.error || cookMutation.error;
-
-    // Helper to consolidate success responses
-    const recipeResponse = createMutation.isSuccess
-        ? { status: "success", detail: "Recipe created successfully." }
-        : updateMutation.isSuccess
-        ? { status: "success", detail: "Recipe updated successfully." }
-        : deleteMutation.isSuccess
-        ? { status: "success", detail: "Recipe deleted successfully." }
-        : cookMutation.isSuccess
-        ? { status: "success", detail: "Recipe cooked successfully." }
-        : null;
 
     return {
-        // Data
-        recipeData,
+        // Automatically extracts results if the API is paginated
+        data: recipeQuery.data || [],
 
-        // Statuses
-        recipeLoading,
-        recipeError: recipeError ? { status: "error", detail: recipeError.message || "An error occurred" } : null,
-        recipeResponse,
+        loading:
+            recipeQuery.isPending ||
+            createMutation.isPending ||
+            updateMutation.isPending ||
+            deleteMutation.isPending,
 
-        // Actions
-        fetchRecipes: refetch,
-        postRecipe: (params) => createMutation.mutateAsync(params),
-        patchRecipe: (id, params) => updateMutation.mutateAsync({ id, params }),
-        deleteRecipe: (id) => deleteMutation.mutateAsync(id),
-        cookRecipe: (id) => cookMutation.mutateAsync(id),
-        refresh: refetch,
+        error:
+            recipeQuery.error ||
+            createMutation.error ||
+            updateMutation.error ||
+            deleteMutation.error,
+
+        postRecipe: async (data) => createMutation.mutateAsync(data),
+        patchRecipe: async (id, data) => updateMutation.mutateAsync({ id, data }),
+        deleteRecipe: async (id) => deleteMutation.mutateAsync(id),
+        refresh: () => recipeQuery.refetch(),
     };
-}
+};

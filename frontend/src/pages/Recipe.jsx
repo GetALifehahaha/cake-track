@@ -1,122 +1,76 @@
 import React, { useState } from 'react';
 import { Button, Title } from '@/components/atoms';
-import { ChevronLeft, ChevronRight, EllipsisVertical, Pen, Plus } from 'lucide-react';
-import { AddRecipeModal, EditRecipeModal } from '@/components/organisms';
+import { ChevronLeft, ChevronRight, Plus, AlertCircle } from 'lucide-react';
+import { AddRecipeModal } from '@/components/organisms';
+import useRecipe from '@/hooks/useRecipe';
+import { Pagination } from '@/components/molecules';
+import Loading from '@/components/molecules/Loading';
+import { useToast } from '@/context/ToastContext';
 
 const Recipe = () => {
 
-    const [pageNum, setPageNum] = useState(1);
-
-    const [recipes, setRecipes] = useState([
-        {   id: 1,
-            name: "Chocolate Cake", ingredients: [
-            {amount: 1, unit: "cup", name: "Flour"},
-            {amount: 1, unit: "cup", name: "Cocoa Powder"},
-        ]}
-    ]);
-
-    const [prepEditRecipe, setPrepEditRecipe] = useState(null);
-
+    const { addToast } = useToast();
+    const { data, loading, error, postRecipe } = useRecipe();
     const [showAddRecipe, setShowAddRecipe] = useState(false);
-    const [showEditRecipe, setShowEditRecipe] = useState(false);
-
-    const handleSetPageNum = (direction) => {
-        if (direction == "prev") {
-            if (pageNum - 1 == 0) {
-                return;
-            }
-
-            setPageNum(p => p-1);
-        } else if (direction == "next") {
-            setPageNum(p => p+1)
-        }
-    }
+    
+    if (loading) return <Loading />
+    if (error) return <h5>Error...</h5>
 
     const handleSetShowAddRecipe = () => {
         setShowAddRecipe(!showAddRecipe);
-    }
+    };
 
-    const handleAddRecipe = (recipe) => {
-        setRecipes([...recipes, recipe])
-        handleSetShowAddRecipe();
-    }
+    const handleAddRecipe = async (payload) => {
+        try {
+            await postRecipe(payload);
+            setShowAddRecipe(false);
+            addToast("A new recipe has been added!");
+        } catch (err) {
+            addToast("Failed to add new recipe", "error");
+        }
+    };
 
-    const handlePrepEditRecipe = (recipe) => {
-        setPrepEditRecipe(recipe);
-        handleSetShowEditRecipe();
-    }
-
-    const handleSetShowEditRecipe = () => {
-        setShowEditRecipe(!showEditRecipe);
-    }
-    
-    const handleEditRecipe = (value) => {
-        const updatedRecipe = recipes.map((recipe, index) => recipe.id === value.id ? value : recipe)
-        setRecipes(updatedRecipe);
-        setShowEditRecipe(!showEditRecipe);
-        setPrepEditRecipe(null);
-    }
-    
-    const handleDeleteRecipe = (id) => {
-        setRecipes(recipes => recipes.filter((recipe) => recipe.id != id))
-        setShowEditRecipe(!showEditRecipe);
-        setPrepEditRecipe(null);
-    }
-
-    const listRecipes = recipes.map((recipe, index) => 
-        <div className='bg-main-white rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md' key={index}>
-            <div className='flex justify-between items-start'>
-                <h5 className='text-text font-semibold'>{recipe.name}</h5>
-                <Pen className='cursor-pointer' onClick={() => handlePrepEditRecipe(recipe)} size={16} />
-            </div>
-
-            <div className='flex flex-col gap-1 px-8 py-4 text-text/50 text-sm'>
-                {
-                    recipe.ingredients.map((ingredient) => 
-                    <li>
-                        {ingredient.amount} {ingredient.unit} {ingredient.name}
-                    </li>
-                    )
-                }
-            </div>
+    const listRecipes = data.results?.map((recipe) => (
+        <div key={recipe.id} className='relative flex flex-col p-4 bg-main-white rounded-lg shadow-sm border border-border/50'>
+            {!recipe.is_available && (
+                <div className='absolute top-2 right-2 flex items-center gap-1 bg-error/10 text-error px-2 py-1 rounded-full text-xs font-medium'>
+                    <AlertCircle size={12} />
+                    <span>Insufficient Stock</span>
+                </div>
+            )}
+            <h3 className='font-semibold text-lg text-text mt-2'>{recipe.name}</h3>
             
+            <div className='flex-1'>
+                <h5 className='text-xs font-semibold text-text/50 uppercase mb-2'>Ingredients</h5>
+                <ul className='flex flex-col gap-1'>
+                    {recipe.ingredients.map(ing => (
+                        <li key={ing.ingredient_id} className='text-sm text-text'>
+                            • {ing.amount_needed} {ing.ingredient_unit} {ing.ingredient_name}
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </div>
-    )
+    ));
 
     return (
-        <div className='flex flex-col h-full'>
-            <Title variant='page' text='Recipe Management'/>
-
-            <div className='mt-8 border-accent-mute border rounded-lg p-4 min-h-4/5 flex flex-col' >
-                <span className='ml-auto'>
+        <div className='h-full flex flex-col p-6'>
+            <Title text='Recipes' />
+            <div className='mt-8 border-accent-mute border rounded-lg p-6 flex-1 flex flex-col bg-accent-mute/5' >
+                <span className='ml-auto mb-6'>
                     <Button text='Add Recipe' icon={Plus} variant='block' onClick={handleSetShowAddRecipe} />
                 </span>
 
-                <div className='grid grid-cols-4 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
                     {listRecipes}
                 </div>
 
-                {/* Pagination */}
-                <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
-                    <button onClick={() => handleSetPageNum("prev")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                        <ChevronLeft size={18}/>
-                    </button>
-                    <span className='rounded-sm bg-main-dark aspect-square w-6 flex justify-center items-center'>
-                        <h5>
-                            {pageNum}
-                        </h5>
-                    </span>
-                    <button onClick={() => handleSetPageNum("next")} className='p-2 rounded-sm bg-main-dark cursor-pointer'>
-                        <ChevronRight size={18}/>
-                    </button>
-                </div>
+                <Pagination next={data.next} prev={data.prev}/>
             </div>
 
             {showAddRecipe && <AddRecipeModal onConfirm={handleAddRecipe} onClose={handleSetShowAddRecipe}/>}
-
-            {showEditRecipe && <EditRecipeModal recipe={prepEditRecipe} onConfirm={handleEditRecipe} onClose={handleSetShowEditRecipe} onDelete={handleDeleteRecipe}/>}
         </div>
-    )
-}
+    );
+};
 
 export default Recipe;

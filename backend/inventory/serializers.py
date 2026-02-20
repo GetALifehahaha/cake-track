@@ -181,29 +181,22 @@ class RecipeOrderInputSerializer(serializers.Serializer):
     
     
 class RecipeSerializer(serializers.ModelSerializer):
-    """
-    Standard CRUD Serializer. 
-    Handles creating a Recipe and linking ingredients in one API call.
-    """
     ingredients = RecipeIngredientSerializer(source='recipe_ingredients', many=True)
+    is_available = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Recipe
-        fields = ['id', 'name', 'price', 'ingredients', 'image']
+        fields = ['id', 'name', 'ingredients', 'image', 'instructions', 'is_available']
         
-
     def create(self, validated_data):
-        # 1. Pop ingredients out of the main data
         ingredients_data = validated_data.pop('recipe_ingredients')
         
-        # 2. Create the Recipe
         recipe = Recipe.objects.create(**validated_data)
         
-        # 3. Create the links (RecipeIngredient)
         for item in ingredients_data:
             RecipeIngredient.objects.create(
                 recipe=recipe, 
-                ingredient=item['ingredient'],
+                ingredient_id=item['ingredient_id'],
                 amount_needed=item['amount_needed']
             )
         return recipe

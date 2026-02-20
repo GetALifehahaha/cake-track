@@ -226,7 +226,8 @@ const Inventory = () => {
                     </div>
 
                     {listIngredientData}
-
+                    
+                    <div className='mt-2'/>
                     {/* Pagination */}
                     <div className='mt-auto mx-auto'>
                         <Pagination next={ingredientData.next} prev={ingredientData.previous} />
