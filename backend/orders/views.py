@@ -15,7 +15,8 @@ from .serializers import (
     OrderSerializer,
     OrderBatchUpdateSerializer,
     DashboardSerializer,
-    CakeSerializer
+    CakeSerializer,
+    CakeBatchUnarchiveSerializer
 )
 
 from .models import (
@@ -152,14 +153,40 @@ class DashboardView(APIView):
 class CakeViewSet(viewsets.ModelViewSet):
     queryset = Cake.objects.all()
     serializer_class = CakeSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    filterset_fields = ['is_archived']
+    
+    search_fields = ['name']
+    
+    ordering_fields = ['name', 'price', 'created_at']
+    ordering = ['name']
 
-    # filter_backends = [
-    #     DjangoFilterBackend,
-    #     filters.SearchFilter,
-    #     filters.OrderingFilter,
-    # ]
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Cake.objects.all()
 
-    # search_fields = ["name"]
-    # ordering_fields = ["name", "price", "created_at"]
-    # ordering = ["name"]
+        if self.action == "list":
+            is_archived_param = self.request.query_params.get('is_archived') # type: ignore
+            
+            if is_archived_param is not None and is_archived_param.lower() == "true":
+                return queryset.filter(is_archived=True)
+                
+            return queryset.filter(is_archived=False)
+        
+        return queryset
+
+    @action(detail=False, methods=["post"])
+    def unarchive(self, request):
+
+        serializer = CakeBatchUnarchiveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        updated_count = serializer.save()
+
+        return Response(
+            {"updated": updated_count},
+            status=status.HTTP_200_OK
+        )
 
