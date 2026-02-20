@@ -11,7 +11,14 @@ import { cn } from '@/utils/cn';
 const Inventory = () => {
 
     const { addToast } = useToast();
-    const {ingredientData, ingredientDashboard, ingredientError, ingredientLoading, postIngredient, patchIngredient, deleteIngredient, stockOutAllExpiredIngredient} = useIngredient();
+    const {ingredientData, 
+        ingredientDashboard, 
+        ingredientError, 
+        ingredientLoading, 
+        postIngredient, 
+        patchIngredient, 
+        deleteIngredient, 
+        stockOutAllExpiredIngredient} = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);

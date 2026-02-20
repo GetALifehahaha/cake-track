@@ -121,7 +121,7 @@ const UnitModal = ({ onClose }) => {
                             type='text'
                             value={unitName}
                             placeholder='Unit Name (e.g. Kilogram)'
-                            className="flex-[2] rounded-md px-3 py-2 bg-main-dark/50 text-text"
+                            className="flex-2 rounded-md px-3 py-2 bg-main-dark/50 text-text"
                             onChange={handleUnitNameChange}
                         />
                         <input

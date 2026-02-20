@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '../components/atoms';
 import { ProductCard } from '../components/molecules';
-import { Plus } from 'lucide-react';
-import { AddCakeModal, EditCakeModal } from '../components/organisms';
+import { Plus, Archive } from 'lucide-react';
+import { AddCakeModal, EditCakeModal, CakeArchivedModal } from '../components/organisms';
 import useCakes from '@/hooks/useCakes';
 import { useToast } from '@/context/ToastContext';
 import Loading from '@/components/molecules/Loading';
@@ -13,7 +13,8 @@ const Cakes = () => {
         data: cakeData, 
         postCake, 
         patchCake, 
-        deleteCake, 
+        deleteCake,
+        batchUnarchiveCake,
         loading, 
         error 
     } = useCakes();
@@ -21,13 +22,15 @@ const Cakes = () => {
     const [prepEditCake, setPrepEditCake] = useState(null);
     const [showAddCakeModal, setShowAddCakeModal] = useState(false);
     const [showEditCakeModal, setShowEditCakeModal] = useState(false);
+    const [showArchivedModal, setShowArchivedModal] = useState(false);
 
     if (loading) return <Loading />;
     if (error) return <h5>Error loading cake data</h5>;
-
+    
     const clear = () => {
         setShowAddCakeModal(false);
         setShowEditCakeModal(false);
+        setShowArchivedModal(false);
         setPrepEditCake(null);
     };
 
@@ -43,6 +46,16 @@ const Cakes = () => {
         if (value) {
             await patchCake(prepEditCake.id, value);
             addToast('Cake updated successfully', 'success');
+            clear();
+        }
+    };
+
+    const restoreCake = async (value = []) => {
+        if (value.length) {
+            // Assuming the backend expects an object like { product_ids: [...] } or { cake_ids: [...] }
+            // Adjusted to match the Product pattern provided
+            await batchUnarchiveCake({ product_ids: value }); 
+            addToast('Cakes restored successfully', 'success');
             clear();
         }
     };
@@ -68,13 +81,26 @@ const Cakes = () => {
 
     return (
         <div className='flex flex-col gap-8'>
-            <div className='flex justify-end'>
-                <Button 
-                    variant='block' 
-                    text='Add Cake' 
-                    icon={Plus} 
-                    onClick={() => setShowAddCakeModal(true)} 
-                />
+            <div className='flex justify-between items-center'>
+                {/* Archive Button Section */}
+                <div>
+                     <Button 
+                        variant='block2' 
+                        text='Archives' 
+                        icon={Archive} 
+                        onClick={() => setShowArchivedModal(true)} 
+                    />
+                </div>
+                
+                {/* Add Button Section */}
+                <div>
+                    <Button 
+                        variant='block' 
+                        text='Add Cake' 
+                        icon={Plus} 
+                        onClick={() => setShowAddCakeModal(true)} 
+                    />
+                </div>
             </div>
 
             {(cakeData?.results || []).length === 0 ? (
@@ -101,6 +127,13 @@ const Cakes = () => {
                     cake={prepEditCake}
                     onConfirm={editCake}
                     onClose={() => setShowEditCakeModal(false)}
+                />
+            )}
+
+            {showArchivedModal && (
+                <CakeArchivedModal 
+                    onRestore={restoreCake} 
+                    onClose={() => setShowArchivedModal(false)} 
                 />
             )}
         </div>

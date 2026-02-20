@@ -39,6 +39,11 @@ export default function useCakes({ isArchived = false } = {}) {
         onSuccess: onSuccessInvalidate,
     });
 
+    const batchUnarchiveMutation = useMutation({
+        mutationFn: (params) => CakeApi.batchUnarchive(params),
+        onSuccess: onSuccessInvalidate,
+    });
+
     return {
         data: cakesQuery.data || [],
 
@@ -64,6 +69,10 @@ export default function useCakes({ isArchived = false } = {}) {
 
         deleteCake: async (id) => {
             return deleteMutation.mutateAsync(id);
+        },
+
+        batchUnarchiveCake: async (data) => {
+            return batchUnarchiveMutation.mutateAsync(data);
         },
 
         refresh: () => cakesQuery.refetch()
