@@ -6,15 +6,22 @@ import useRecipe from '@/hooks/useRecipe';
 import { Pagination } from '@/components/molecules';
 import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
+import ViewRecipeModal from '@/components/organisms/recipe/ViewRecipeModal';
 
 const Recipe = () => {
 
     const { addToast } = useToast();
     const { data, loading, error, postRecipe } = useRecipe();
     const [showAddRecipe, setShowAddRecipe] = useState(false);
+
+    const [viewRecipe, setViewRecipe] = useState(null);
     
     if (loading) return <Loading />
     if (error) return <h5>Error...</h5>
+
+    const selectViewRecipe = (recipe) => {
+        setViewRecipe(recipe)
+    }
 
     const handleSetShowAddRecipe = () => {
         setShowAddRecipe(!showAddRecipe);
@@ -31,11 +38,13 @@ const Recipe = () => {
     };
 
     const listRecipes = data.results?.map((recipe) => (
-        <div key={recipe.id} className='relative flex flex-col p-4 bg-main-white rounded-lg shadow-sm border border-border/50'>
+        <div 
+            key={recipe.id} 
+            onClick={() => selectViewRecipe(recipe)}
+            className='relative flex flex-col p-4 bg-main-white rounded-lg shadow-sm border border-border/50 cursor-pointer hover:-translate-y-1 transition'>
             {!recipe.is_available && (
-                <div className='absolute top-2 right-2 flex items-center gap-1 bg-error/10 text-error px-2 py-1 rounded-full text-xs font-medium'>
-                    <AlertCircle size={12} />
-                    <span>Insufficient Stock</span>
+                <div className='absolute top-2 right-2 flex items-center gap-1 bg-error-fill text-error aspect-square p-2 rounded-full text-xs font-medium '>
+                    <AlertCircle size={18} />
                 </div>
             )}
             <h3 className='font-semibold text-lg text-text mt-2'>{recipe.name}</h3>
@@ -69,6 +78,8 @@ const Recipe = () => {
             </div>
 
             {showAddRecipe && <AddRecipeModal onConfirm={handleAddRecipe} onClose={handleSetShowAddRecipe}/>}
+
+            <ViewRecipeModal recipe={viewRecipe} onClose={() => selectViewRecipe(null)} />
         </div>
     );
 };

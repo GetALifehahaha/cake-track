@@ -30,7 +30,7 @@ export default function useRecipe(params = {}){
 
     return {
         // Automatically extracts results if the API is paginated
-        data: recipeQuery.data || [],
+        data: recipeQuery?.data || [],
 
         loading:
             recipeQuery.isPending ||

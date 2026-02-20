@@ -44,7 +44,7 @@
         })
 
         return {
-            data: productQuery.data || [],
+            data: productQuery?.data || [],
 
             loading: productQuery.isPending || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
 
