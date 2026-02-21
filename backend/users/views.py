@@ -25,6 +25,9 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def get_serializer_class(self):
+        print(f"User making request: {self.request.user}")
+        print(f"Is staff: {self.request.user.is_staff}")
+
         if self.request.user.is_staff:
             return CashierCreateSerializer
         return UserSerializer
@@ -40,16 +43,16 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return queryset
     
-    @action(methods=['post'], permission_classes=[IsAuthenticated], detail=False, url_path='change-password')
-    def change_password(self, request):
-        user = request.user
-        serializer = ChangePasswordSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    # @action(methods=['post'], permission_classes=[IsAuthenticated], detail=False, url_path='change-password')
+    # def change_password(self, request):
+    #     user = request.user
+    #     serializer = ChangePasswordSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
 
-        user.set_password(serializer.validated_data['password'])
-        user.save()
+    #     user.set_password(serializer.validated_data['password'])
+    #     user.save()
 
-        return Response({"detail": "Password has been changed successfully"}, status=status.HTTP_200_OK)
+    #     return Response({"detail": "Password has been changed successfully"}, status=status.HTTP_200_OK)
 
     
 class UserProfileView(generics.RetrieveUpdateAPIView):
@@ -174,7 +177,6 @@ class OTPViewSet(viewsets.ModelViewSet):
             subject = 'Your Password Reset OTP'
             message = f'Your OTP for password reset is {random_otp}. It will expire in 15 minutes.'
             response = send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
-            print(response)
         
         return Response({'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
 
@@ -246,7 +248,7 @@ class ChangePasswordViaToken(viewsets.ModelViewSet):
             token.used = True
             token.save(update_fields=['used'])
 
-            return Response({'type': 'success', 'label': 'Password Changed', 'details': 'Your password has been changed successfully. '}, status=status.HTTP_200_OK)
+            return Response({'type': 'success', 'label': 'Password Changed', 'details': 'Your password has been changed successfully. You will be redirected to the login page shortly.'}, status=status.HTTP_200_OK)
             
         except PasswordResetToken.DoesNotExist:
             return Response({'type': 'error', 'label': 'Missing Token.', 'details': 'You have missing token. Please redo the process carefully'}, status=status.HTTP_400_BAD_REQUEST)
@@ -254,3 +256,46 @@ class ChangePasswordViaToken(viewsets.ModelViewSet):
             return Response({'type': 'error', 'label': 'Invalid User', 'details': 'Your credentials does not exist in the system.'}, status=status.HTTP_400_BAD_REQUEST)
 
         
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
+
+class ActivateAccountView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        uidb64 = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('password')
+
+        if not uidb64 or not token or not new_password:
+            return Response({
+            "label": "Missing Details",
+            "details": "You have missing data. Please try activating your account again.",
+            "type": "error"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.set_password(new_password)
+            user.save()
+
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                "label": "Account Activated Successfully",
+                "details": "Your account has been activated successfully. Welcome to Cake Track!",
+                "type": "success"
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            "label": "Invalid Activation Link",
+            "details": "Activation link is invalid or has expired.",
+            "type": "error"
+            }, status=status.HTTP_400_BAD_REQUEST)

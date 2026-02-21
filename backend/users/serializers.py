@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
 from .models import OTP
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,12 +43,30 @@ class CashierCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'username', 'email', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
     def create(self, validated_data):
+        validated_data['is_active'] = False
         user = User.objects.create_user(**validated_data)
 
         cashier, _ = Group.objects.get_or_create(name="cashier")
         user.groups.add(cashier)
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+
+        # 4. Build the activation link and send the email
+        # Adjust frontend_url to match your React application's URL
+        frontend_url = settings.FRONTEND_URL
+        activation_link = f"{frontend_url}setAccount?uid={uid}&token={token}"
+
+        subject = 'Activate Your Cashier Account'
+        message = f'Hi {user.first_name},\n\nAn admin has created a cashier account for you. Please click the link below to activate your account:\n{activation_link}'
+        
+        response = send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+        print(response)
 
         return user
         

@@ -10,12 +10,14 @@ export default function useCashier() {
         placeholderData: (previousData) => previousData,
     });
 
+    
+
     const onSuccessValidate = () => {
         queryClient.invalidateQueries({queryKey: ['cashiers']})
     }
 
     const createMutation = useMutation({
-        mutationFn: (params) => CashierApi.create(params),
+        mutationFn: (params) => CashierApi.createCashier(params),
         onSuccess: onSuccessValidate
     })
 
@@ -26,6 +28,11 @@ export default function useCashier() {
 
     const deleteMutation = useMutation({
         mutationFn: (id) => CashierApi.delete(id),
+        onSuccess: onSuccessValidate
+    })
+
+    const activateAccountMutation = useMutation({
+        mutationFn: (data) => CashierApi.activateAccount(data),
         onSuccess: onSuccessValidate
     })
 
@@ -52,6 +59,10 @@ export default function useCashier() {
 
         deleteCashier: async (id) => {
             return deleteMutation.mutateAsync(id)
+        },
+
+        activateAccount: async (data) => {
+            return activateAccountMutation.mutateAsync(data)
         },
 
         refresh: () => cashiersQuery.refetch(),

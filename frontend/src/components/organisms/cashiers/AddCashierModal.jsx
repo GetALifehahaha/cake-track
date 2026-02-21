@@ -121,9 +121,9 @@ const AddCashierModal = ({onConfirm, onClose}) => {
 
 
     return (
-        <ModalBody title='Add Cashier' onClose={onClose}>
-            <div className='flex gap-8'>
-                <div className='flex flex-row gap-4'>
+        <ModalBody title='Add Cashier' onClose={onClose} className="w-[45vw]">
+            <div className='flex gap-8 w-full'>
+                <div className='flex flex-row gap-4 flex-1'>
                     <div className='flex flex-col gap-4'>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='First Name' />
@@ -138,7 +138,7 @@ const AddCashierModal = ({onConfirm, onClose}) => {
                             <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => handleLastName(e)}/>
                         </div>
                     </div>
-                    <div className='flex flex-col gap-4'>
+                    <div className='flex flex-col gap-4 flex-1'>
                         <div className='flex flex-col gap-2'>
                             <Label text='Username' variant='modal' />
                             <input value={username} onChange={(e) => handleUserName(e)} className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' placeholder="Enter a temporary username"/>
@@ -163,7 +163,7 @@ const AddCashierModal = ({onConfirm, onClose}) => {
             }
 
             {isConfirmModalOpen &&
-                <ConfirmationModal title="Add Cashier" content="Are you sure you want to add a new cashier?" onConfirm={handleAddCashier}/>
+                <ConfirmationModal title="Add Cashier" content="Are you sure you want to add a new cashier?" onConfirm={handleAddCashier} onReject={() => setIsConfirmModalOpen(false)}/>
             }
 
             <div className='flex gap-4 ml-auto'>
