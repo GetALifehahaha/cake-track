@@ -129,6 +129,7 @@ class GoogleAuthView(APIView):
         
 import random
 import secrets
+from django.core.mail import send_mail
 
 class OTPViewSet(viewsets.ModelViewSet):
     queryset = OTP.objects.all()
@@ -169,8 +170,13 @@ class OTPViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(otp)
                 if serializer.is_valid():
                     serializer.save()
+
+            subject = 'Your Password Reset OTP'
+            message = f'Your OTP for password reset is {random_otp}. It will expire in 15 minutes.'
+            response = send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
+            print(response)
         
-        return Response({'otp': str(random_otp), 'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
+        return Response({'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
 
 
 class VerifyOTPViewSet(viewsets.ModelViewSet):

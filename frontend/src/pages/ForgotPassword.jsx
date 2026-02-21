@@ -175,7 +175,6 @@ const ForgotPassword = () => {
 
 	const confirmNewPassword = async () => {
 		handleConfirmModal(false);
-		
 		if (newPassword.length < 8) {
 			setFeedback({
 				type: "error",
