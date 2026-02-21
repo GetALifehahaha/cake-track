@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { ModalFeedbackCard } from '@/components/molecules';
 import { ConfirmationModal } from '@/components/organisms';
 import api from '@/api/api';
+import { useNavigate } from 'react-router-dom';
 
 const ForgotPassword = () => {
 
@@ -15,6 +16,8 @@ const ForgotPassword = () => {
 	// input password
 	// change password
 	// validate
+
+	const navigate = useNavigate();
 
 	// ============ FEEDBACK ============
 	
@@ -104,7 +107,6 @@ const ForgotPassword = () => {
 		// get an otp from the backend
 	}
 
-	const targetOtp = 123456;
 	const [otp, setOtp] = useState('');
 	const [token, setToken] = useState('');
 
@@ -167,9 +169,13 @@ const ForgotPassword = () => {
 
 	const handleConfirmModal = (value) => {
 		setConfirmModal(value)
+
+		
 	}
 
 	const confirmNewPassword = async () => {
+		handleConfirmModal(false);
+		
 		if (newPassword.length < 8) {
 			setFeedback({
 				type: "error",
@@ -184,6 +190,17 @@ const ForgotPassword = () => {
 			const res = await api.post('/change-password-token/', {email: email, token: token, password: newPassword});
 
 			console.log(res)
+			if (res.status === 200) {
+				setFeedback({
+					type: "success",
+					label: "Password Changed Successfully",
+					details: "Your password has been changed successfully. Will be redirected to the login page in a few seconds."
+				})
+			}
+
+			setTimeout(() => {
+				navigate('/login')
+			}, 3000)
 		} catch (err) {
 			console.log(err.response)
 		}
@@ -224,7 +241,7 @@ const ForgotPassword = () => {
 						{Object.keys(feedback).length > 0 &&
 							<ModalFeedbackCard type={feedback.type} label={feedback.label} details={feedback.details} />
 						}
-						<Button className='mx-auto mt-2' text='Verify OTP' onClick={handleConfirmModal} />
+						<Button className='mx-auto mt-2' text='Change Password' onClick={handleConfirmModal} />
 					</>
 				}
 			</div>
