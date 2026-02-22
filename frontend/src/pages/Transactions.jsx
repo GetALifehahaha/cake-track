@@ -126,13 +126,10 @@ const Transactions = () => {
                         </h5>
 
 
-                        {item.is_void ?
-                            <div className={basis} /> :
-                            <Ellipsis
-                                className={`text-text ${basis} cursor-pointer`}
-                                onClick={() => handleSetTransactionDetails(item)}
-                            />
-                        }
+                        <Ellipsis
+                            className={`text-text ${basis} cursor-pointer`}
+                            onClick={() => handleSetTransactionDetails(item)}
+                        />
                     </div>
                 ))}
             </div>
