@@ -12,6 +12,7 @@ import { useToast } from '@/context/ToastContext'
 import Loading from '@/components/molecules/Loading'
 import { cn } from '@/utils/cn'
 import Modal from '@/components/molecules/Modal'
+import useBusinessDetails from '@/hooks/useBusinessDetails'
 
 const Home = () => {
 
@@ -19,7 +20,8 @@ const Home = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
     const {data: productData, loading: productLoading, error: productError} = useProduct();
-    const { postTransaction, transactionLoading, transactionError, transactionResponse } = useTransaction();
+    const { postTransaction, loading: transactionLoading, error: transactionError, transactionResponse } = useTransaction();
+    const {data: businessData, loading: businessLoading, error: businessError} = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
     const [checkoutProducts, setCheckoutProducts] = useState(() => {
@@ -43,7 +45,7 @@ const Home = () => {
     const [prepProduct, setPrepProduct] = useState(false);
 
 
-    const actualAccessCode = 1234;
+    const [actualAccessCode, setActualAccessCode] = useState();
     const [accessCode, setAccessCode] = useState();
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
@@ -121,6 +123,10 @@ const Home = () => {
         setNetTotal(grossTotal - grossTotal * discountValue);
     }, [grossTotal, discountValue, discount])
 
+    useMemo(() => {
+        setActualAccessCode(businessData.secret_pin)
+    }, [])
+
     useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(checkoutProducts));
     }, [checkoutProducts]);
@@ -128,11 +134,12 @@ const Home = () => {
 
     // GUARDS
 
-    if (productLoading || categoryLoading || transactionLoading || discountLoading ) return <Loading />
+    if (productLoading || categoryLoading || transactionLoading || discountLoading || businessLoading ) return <Loading />
     if (productError) return <h5>Error</h5>
     if (categoryError) return <h5>Error</h5>
     if (transactionError) return <h5>Error</h5>
     if (discountError) return <h5>Error</h5>
+    if (businessError) return <h5>Error</h5>
 
 
     // MAIN FUNCTIONS

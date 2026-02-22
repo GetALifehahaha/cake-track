@@ -54,7 +54,8 @@ const BusinessDetails = () => {
             address,
             tin,
             contact_number: contactNumber,
-            message
+            message,
+            secret_pin: secretPIN
         };
 
         try {
@@ -140,7 +141,7 @@ const BusinessDetails = () => {
             </div>
 
             {showConfirmationModal &&
-                <ConfirmationModal title="Edit Business Details" content="Are you sure you want to verify the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />
+                <ConfirmationModal title="Edit Business Details" content="Are you sure you want to change the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />
             }
         </div>
     )
