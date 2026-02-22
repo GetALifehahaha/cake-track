@@ -13,9 +13,12 @@ const Login = () => {
 
     const { login } = useContext(AuthContext)
     const { addToast } = useToast();
-    const [username, setUsername] = useState();
+    const [username, setUsername] = useState(JSON.parse(localStorage.getItem('username')) || '');
     const [password, setPassword] = useState();
-    const [rememberMe, setRememberMe] = useState(false);
+    const [rememberMe, setRememberMe] = useState(() => {
+        const stored = localStorage.getItem('rememberMe');
+        return stored ? JSON.parse(stored) : false;
+    });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -34,6 +37,15 @@ const Login = () => {
         e.preventDefault()
 
         setLoading(true)
+
+        if (rememberMe) {
+            localStorage.setItem('rememberMe', JSON.stringify(true));
+            localStorage.setItem('username', JSON.stringify(username));
+        } else {
+            localStorage.removeItem('rememberMe');
+            localStorage.removeItem('username');
+        }
+
         try {
             const res = await login(username, password);
 
@@ -97,7 +109,7 @@ const Login = () => {
                         </div>
                         <div className='flex justify-between items-center'>
                             <span className='flex flex-row items-center gap-2'>
-                                <input type='checkbox' onChange={() => setRememberMe(!rememberMe)} />
+                                <input type='checkbox' checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />
                                 <label className='font-semibold text-accent-mute'>Remember me</label>
                             </span>
                             <Link to='/forgotPassword' className='text-accent-text hover:underline hover:underline-offset-1'> Forgot Password</Link>
