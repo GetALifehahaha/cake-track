@@ -13,7 +13,7 @@ import { formatToDecimal } from '@/utils/formatToDecimal';
 
 const Transactions = () => {
 
-    const { transactionData, transactionLoading, transactionError } = useTransaction();
+    const { data, loading, error } = useTransaction();
     const { user } = useContext(AuthContext);
 
     const [searchParams, setSearchParams] = useSearchParams();
@@ -30,8 +30,10 @@ const Transactions = () => {
     const [transactionDetails, setTransactionDetails] = useState(null);
     const [showTransactionDetails, setShowTransactionDetails] = useState(false);
 
-    if (transactionLoading) return <Loading />
-    if (transactionError) return <h5>Error loading transactions</h5>
+    if (loading) return <Loading />
+    if (error) return <h5>Error loading transactions</h5>
+
+    console.log(data)
 
     const handleSetDateFilter = (date) => {
         const newParams = Object.fromEntries(searchParams.entries());
@@ -53,7 +55,7 @@ const Transactions = () => {
         });
     };
 
-    const groupedTransactions = transactionData.results.reduce((groups, item) => {
+    const groupedTransactions = data.results.reduce((groups, item) => {
         const dateKey = getGroupKey(item.created_at);
 
         if (!groups[dateKey]) {
@@ -142,7 +144,7 @@ const Transactions = () => {
         <div className='w-[90%] mx-auto flex flex-col gap-8'>
             <Title variant='page' text='Transaction History' />
             <div className='px-4 py-2.5 rounded-md border border-border'>
-                <h5 className='text-accent-text font-medium text-md'>Today's Revenue: <strong className='ml-4 text-accent-dark'>₱ {(transactionData.daily_total_revenue).toFixed(2)}</strong></h5>
+                <h5 className='text-accent-text font-medium text-md'>Today's Revenue: <strong className='ml-4 text-accent-dark'>₱ {(data.daily_total_revenue).toFixed(2)}</strong></h5>
             </div>
 
             <div className='w-full p-4 border-border border-2 rounded-xl'>
@@ -163,7 +165,7 @@ const Transactions = () => {
                     {listHeaders}
                 </div>
                 <div className='flex flex-col items-center gap-2 py-2 min-h-[40vh]'>
-                    {transactionData.results.length == 0 &&
+                    {data.results.length == 0 &&
                         <h5 className='font-medium text-text/50 my-auto'>
                             No transactions found
                         </h5>
@@ -172,7 +174,7 @@ const Transactions = () => {
                 </div>
             </div>
 
-            <Pagination prev={transactionData.previous} next={transactionData.next} />
+            <Pagination prev={data.previous} next={data.next} />
 
             {showTransactionDetails &&
                 <TransactionDetails transactionDetail={transactionDetails} onClose={handleCloseTransactionDetails} />
