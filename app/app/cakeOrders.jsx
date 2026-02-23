@@ -1,19 +1,43 @@
-import { View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import React, { useState, useContext } from 'react'
-import { ArrowLeft, Calendar, Search } from 'lucide-react-native'
+import React, { useState, useContext, useEffect } from 'react'
+import { ArrowLeft, Search } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import CakeOrderCard from '@/components/molecules/CakeOrderCard'
 import { useCart } from '@/context/CartContext'
 import { AuthContext } from '@/context/AuthContext'
-import useOrder from '@/hooks/useOrder'
-import { router } from 'expo-router'
+import api from '@/api/api'
 
 const CakeOrders = () => {
 
     const { user, loading: userLoading } = useContext(AuthContext);
+    const router = useRouter();
 
-    if (userLoading) return (
+    const [cakes, setCakes] = useState([]);
+    const [fetchingCakes, setFetchingCakes] = useState(true);
+    const { cart, addToCart, setAmount } = useCart();
+    const [input, setInput] = useState("");
+
+    useEffect(() => {
+        const fetchCakes = async () => {
+            try {
+                const response = await api.get('/orders/cakes/');
+                // DRF might return paginated data (response.data.results) or a flat array (response.data)
+                console.log(response.data)
+                const data = response.data.results || response.data;
+                setCakes(data);
+            } catch (error) {
+                console.error("Failed to fetch cakes:", error);
+            } finally {
+                setFetchingCakes(false);
+            }
+        }
+
+        fetchCakes();
+    }, []);
+
+
+    if (userLoading || fetchingCakes) return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#8B5A3C" />
         </View>
@@ -21,64 +45,28 @@ const CakeOrders = () => {
 
     if (!user) {
         router.replace('/(auth)/login');
+        return null;
     }
 
-    const cakeData = [
-        {
-            id: 1,
-            name: "Chocolate Moist Cake",
-            description: "A moist chocolate cake classic with bold flavor",
-            price: 800.00,
-            image: require('@/assets/images/premade-cakes/chocolate-cake.png')
-        },
-        {
-            id: 2,
-            name: "Strawberry Cake",
-            description: "Light, fruity, and full of charm",
-            price: 700.00,
-            image: require('@/assets/images/premade-cakes/strawberry.png')
-        },
-        {
-            id: 3,
-            name: "Mango Bravo",
-            description: "A tropical favorite with a flair",
-            price: 750.00,
-            image: require('@/assets/images/premade-cakes/mango.png')
-        },
-        {
-            id: 4,
-            name: "Mocha Cake",
-            description: "Bold, smooth, and worth savoring",
-            price: 600.00,
-            image: require('@/assets/images/premade-cakes/mocha.png')
-        },
-        {
-            id: 5,
-            name: "Vanilla Cake",
-            description: "Simple, soft, and a timeless classic",
-            price: 600.00,
-            image: require('@/assets/images/premade-cakes/vanilla-birthday.png')
-        },
-        {
-            id: 6,
-            name: "Red Velvet Cake",
-            description: "Classic red sponge, tangy cheese frosting.",
-            price: 850.00,
-            image: require('@/assets/images/premade-cakes/red-velvet.png')
-        },
-        {
-            id: 7,
-            name: "Carrot Cake",
-            description: "Moist spiced carrots, rich creamy frosting.",
-            price: 850.00,
-            image: require('@/assets/images/premade-cakes/carrot.png')
-        },
-    ]
+    // Filter cakes based on search input
+    const filteredCakes = cakes.filter(cake => 
+        cake.name.toLowerCase().includes(input.toLowerCase())
+    );
 
-    const { cart, addToCart, setAmount } = useCart();
-    const [input, setInput] = useState("");
-
-    const listCakes = cakeData.map((cake, index) => <CakeOrderCard key={index} id={cake.id} price={cake.price} image={cake.image} name={cake.name} description={cake.description} addedToCart={cart.some((prod) => prod.id === cake.id)} addToCart={addToCart} amount={cart.find((prod) => prod.id === cake.id)?.amount || 0} onSetAmount={setAmount} />)
+    const listCakes = filteredCakes.map((cake, index) => (
+        <CakeOrderCard 
+            key={index} 
+            id={cake.id} 
+            price={cake.price} 
+            image={{ uri: cake.image }} // Pass the Cloudinary URL
+            name={cake.name} 
+            description={""} // Omitted description
+            addedToCart={cart.some((prod) => prod.id === cake.id)} 
+            addToCart={addToCart} 
+            amount={cart.find((prod) => prod.id === cake.id)?.amount || 0} 
+            onSetAmount={setAmount} 
+        />
+    ));
 
     return (
         <SafeAreaView className='flex-1 bg-white'>
@@ -98,7 +86,9 @@ const CakeOrders = () => {
                     <Text className='text-2xl font-extrabold px-2 py-4'>Pre-made Cakes</Text>
 
                     <View className='w-full p-2'>
-                        {listCakes}
+                        {listCakes.length > 0 ? listCakes : (
+                            <Text className="text-center text-gray-500 mt-4">No cakes found.</Text>
+                        )}
                     </View>
                 </View>
             </ScrollView>

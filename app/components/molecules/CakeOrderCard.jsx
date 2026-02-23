@@ -5,7 +5,7 @@ import { Minus, Plus } from 'lucide-react-native'
 const CakeOrderCard = ({ id, image, name, price, description, addedToCart, addToCart, amount, onSetAmount }) => {
 
     const handleAddToCart = () => {
-        addToCart({ id, name, price, amount: 1 });
+        addToCart({ id, name, price, amount: 1, image });
     }
 
     return (
@@ -28,7 +28,7 @@ const CakeOrderCard = ({ id, image, name, price, description, addedToCart, addTo
 
                     {/* Description (flex-1 to allow text wrapping) */}
                     <Text className='text-2xl font-semibold text-gray-400 w-1/2 pr-4 leading-5'>
-                        ₱ {(price).toFixed(2)}
+                        ₱ {(price)}
                     </Text>
 
                     {/* Button Logic */}

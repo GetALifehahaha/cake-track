@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native'
 import React, { useContext, useState } from 'react'
 import { useCart } from '@/context/CartContext'
 import { useRouter } from 'expo-router';
@@ -6,33 +6,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Minus, Plus } from 'lucide-react-native';
 import FormLabel from '@/components/atoms/FormLabel';
 import DatePicker from '@/components/atoms/DatePicker';
+import TimePicker from '@/components/atoms/TimePicker';
 import Checkbox from '@/components/atoms/Checkbox';
 import ConfirmModal from '@/components/organisms/ConfirmModal';
 import { AuthContext } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import useOrder from '@/hooks/useOrder';
+import api from '@/api/api';
 
 const Checkout = () => {
     
-    const {showToast} = useToast();
-    const {user} = useContext(AuthContext);
+    const { showToast } = useToast();
+    const { user } = useContext(AuthContext);
     const { cart, setAmount, setCart } = useCart();
     const router = useRouter();
-    const [fullName, setFullName] = useState(`${user?.first_name} ${user?.last_name}` || "");
+    
+    const { postOrder } = useOrder();
+    
+    const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`.trim());
     const [address, setAddress] = useState("");
-    const [email, setEmail] = useState(user.email || "");
+    const [email, setEmail] = useState(user?.email || "");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [dueDate, setDueDate] = useState();
+    const [pickupTime, setPickupTime] = useState();
     const [agreeToTOC, setAgreeToTOC] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const validateContactDetails = () => {
         if (!fullName.trim()) {
             showToast("Please enter your full name", 'error');
             return false;
         }
-        // 1. Remove all spaces and dashes
-        const cleanedNumber = phoneNumber.replace(/[\s-]/g, '');
 
-        // 2. Validate the clean version
+        const cleanedNumber = phoneNumber.replace(/[\s-]/g, '');
         const phoneRegex = /^\+63\d{10}$/;
 
         if (!phoneNumber.trim()) {
@@ -57,6 +63,17 @@ const Checkout = () => {
             showToast("Please enter your address", 'error');
             return false;
         }
+        
+        if (!dueDate) {
+            showToast("Please select a pickup date", 'error');
+            return false;
+        }
+        
+        if (!pickupTime) {
+            showToast("Please select a pickup time", 'error');
+            return false;
+        }
+
         if (!agreeToTOC) {
             showToast("You must agree to the Terms and Conditions to proceed", 'error');
             return false;
@@ -65,8 +82,88 @@ const Checkout = () => {
         return true
     }
 
-    const orderCake = () => {
+    const handlePayViaGCash = async (orderId) => {
+        try {
+            showToast("Initiating GCash payment...", "info");
+            const payload = { order_id: orderId };
+            
+            const response = await api.post(`/payment/initiate/`, payload);
+            const { checkout_url } = response.data;
+
+            if (checkout_url) {
+                router.push({
+                    pathname: '/paymentScreen', 
+                    params: { checkoutUrl: checkout_url, orderId: orderId }
+                });
+            }
+        } catch (error) {
+            console.error("Payment Error:", error.response?.data || error.message);
+            showToast("Error initiating payment. Please check your connection.", "error");
+            router.push('/orderSuccess'); // Fallback to success page if payment gateway fails to init
+        }
+    };
+
+    const orderCake = async () => {
+
         if (!validateContactDetails()) return;
+        
+        setIsSubmitting(true);
+        
+        try {
+            const cartItemsString = cart.map(item => `${item.amount}x ${item.name}`).join(', ');
+
+            // Format dates for Django (YYYY-MM-DD and HH:MM:SS)
+            const formattedDate = dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate;
+            const formattedTime = pickupTime instanceof Date ? pickupTime.toTimeString().split(' ')[0] : pickupTime;
+
+            // 2. Retrieve image URLs directly from the cart items
+            const cartImages = cart.map(item => item.image.uri);
+
+            const payload = {
+                full_name: fullName,
+                email: email,
+                phone_number: phoneNumber,
+                address: address,
+                due_date: formattedDate,
+                pickup_time: formattedTime,
+                status: "pending",
+                cake_orders: {
+                    occasion: "pre-made",
+                    shape: "pre-made",
+                    cake_tier: 1,
+                    base_flavor: "pre-made",
+                    filling: "pre-made",
+                    coating_color: "none",
+                    border: "none",
+                    border_color: "none",
+                    toppings: "none",
+                    addons: "none",
+                    message_type: "none",
+                    message: ""
+                },
+                comments: `PRE-MADE ORDER: ${cartItemsString}`,
+                image: cartImages.length > 0 ? cartImages[0] : null,
+                uploaded_images: cartImages
+            };
+            
+            const response = await postOrder(payload);
+            const newOrderId = response?.id || response?.data?.id;
+
+            setCart([]); 
+
+            if (newOrderId) {
+                await handlePayViaGCash(newOrderId);
+            } else {
+                showToast("Order placed, but ID missing. Check Order History.");
+                router.replace('/orderSuccess');
+            }
+            
+        } catch (error) {
+            console.error("Order Submission Error:", error.response?.data || error);
+            showToast("Failed to place order. Please try again.", "error");
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     const listCartItems = cart.map((item, index) =>
@@ -76,7 +173,7 @@ const Checkout = () => {
                     {item.name}
                 </Text>
                 <Text className='font-semibold text-gray-600 text-md'>
-                    ₱ {(item.price).toFixed(2)}
+                    ₱ {(item.price)}
                 </Text>
             </View>
 
@@ -98,6 +195,15 @@ const Checkout = () => {
             </View>
         </View>
     )
+
+    if (isSubmitting) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#8B5A3C" />
+                <Text className="text-secondary-light mt-2">Processing Order...</Text>
+            </View>
+        );
+    }
 
     return (
         <SafeAreaView className='flex-1 bg-main-form'>
@@ -122,11 +228,17 @@ const Checkout = () => {
                             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={email} onChangeText={setEmail} placeholder='juan@example.com' />
                             <FormLabel text={"Phone Number"} />
                             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={setPhoneNumber} placeholder='+63 912 345 6789' />
-                            <FormLabel text={"Due Date"} />
+                            
+                            <FormLabel text={"Pickup Date"} />
                             <DatePicker onSelectDate={setDueDate} />
+                            
+                            <View className='mt-2' />
+                            <FormLabel text={"Pickup Time"} />
+                            <TimePicker onSelectTime={setPickupTime} />
+                            
                             <View className='mt-4 flex-row gap-2 p-4 rounded-md border border-secondary-light items-center'>
                                 <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />
-                                <Text className='font-medium text-secondary-strong'>I agree to the terms and conditions</Text>
+                                <Text className='font-medium text-secondary-strong flex-1'>I agree to the terms and conditions</Text>
                             </View>
                         </View>
 

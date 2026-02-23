@@ -9,7 +9,7 @@ import { Star, ArrowRight, TrendingUp } from 'lucide-react-native'; // Ensure yo
 
 const { width } = Dimensions.get('window');
 
-const Index = () => {
+export default function Index() {
     const { user, loading } = useContext(AuthContext)
 
     // --- DATA ---
@@ -271,5 +271,3 @@ const Index = () => {
         </ScrollView >
     )
 }
-
-export default Index
