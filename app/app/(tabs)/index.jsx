@@ -1,11 +1,12 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackground, ActivityIndicator } from 'react-native'
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'
 import Carousel from 'react-native-reanimated-carousel';
 import { Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Star, ArrowRight, TrendingUp } from 'lucide-react-native'; // Ensure you have lucide-react-native installed
+import api from '@/api/api';
 
 const { width } = Dimensions.get('window');
 
@@ -13,15 +14,25 @@ export default function Index() {
     const { user, loading } = useContext(AuthContext)
 
     // --- DATA ---
-    const cakeData = [
-        { name: "Chocolate Moist Cake", image: require('@/assets/images/premade-cakes/chocolate-cake.png') },
-        { name: "Strawberry Cake", image: require('@/assets/images/premade-cakes/strawberry.png') },
-        { name: "Mango Bravo", image: require('@/assets/images/premade-cakes/mango.png') },
-        { name: "Mocha Cake", image: require('@/assets/images/premade-cakes/mocha.png') },
-        { name: "Vanilla Cake", image: require('@/assets/images/premade-cakes/vanilla-birthday.png') },
-        { name: "Red Velvet Cake", image: require('@/assets/images/premade-cakes/red-velvet.png') },
-        { name: "Carrot Cake", image: require('@/assets/images/premade-cakes/carrot.png') },
-    ]
+    const [cakes, setCakes] = useState([]);
+    const [loadingCakes, setLoadingCakes] = useState(true);
+
+    useEffect(() => {
+        const fetchCakes = async () => {
+            try {
+                const response = await api.get('/orders/cakes/');
+                // Check if backend returns paginated results or a plain array
+                const data = response.data.results || response.data;
+                setCakes(data);
+            } catch (error) {
+                console.error("Failed to fetch cakes for carousel:", error);
+            } finally {
+                setLoadingCakes(false);
+            }
+        };
+
+        fetchCakes();
+    }, []);
 
     const carouselItems = [
         {
@@ -154,7 +165,7 @@ export default function Index() {
                             width={width / 2}
                             height={200}
                             style={{ width: width }}
-                            data={cakeData}
+                            data={cakes}
                             autoPlay={true}
                             autoPlayInterval={1}
                             scrollAnimationDuration={5000}
@@ -170,7 +181,7 @@ export default function Index() {
                                     >
                                         <View className="w-full h-32 items-center justify-center mb-2">
                                             <Image
-                                                source={item.image}
+                                                source={{uri: item.image}}
                                                 style={{ width: '100%', height: '100%' }}
                                                 resizeMode="contain"
                                             />
