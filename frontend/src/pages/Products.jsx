@@ -129,20 +129,23 @@ const Products = () => {
                 </div>
             </div>
 
-            {productData.results.length == 0 ?
-                <div className='flex justify-center items-center h-full'>
-                    <h5 className='text-sm font-medium text-text/50'>
-                        No products to show
-                    </h5>
-                </div>
-                :
-                <div className='overflow-x-auto flex items-center flex-col gap-2'>
-                    <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap '>
-                        {listProducts}
+            <div className='flex flex-col h-[75vh] justify-between'>
+                {productData.results.length == 0 ?
+                    <div className='flex justify-center items-center h-full'>
+                        <h5 className='text-sm font-medium text-text/50'>
+                            No products to show
+                        </h5>
                     </div>
-                </div>
-            }
-            <Pagination prev={productData.previous} next={productData.next} />
+                    :
+                    <div className='overflow-x-auto flex items-center flex-col gap-2'>
+                        <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap '>
+                            {listProducts}
+                        </div>
+                    </div>
+                }
+
+                <Pagination prev={productData.previous} next={productData.next} />
+            </div>
 
             {showAddProductModal &&
             <AddProductModal categoryOptions={categoryOptions} onConfirm={addProduct} onClose={handleCloseAddProductModal} />
