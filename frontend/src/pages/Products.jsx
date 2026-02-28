@@ -26,7 +26,7 @@ const Products = () => {
     useEffect(() => {
         let params = new URLSearchParams();
         
-        if (filter) params.set('category__name', filter)
+        if (filter) params.set('categories__name', filter)
 
         setSearchParams(params)
     }, [filter])
