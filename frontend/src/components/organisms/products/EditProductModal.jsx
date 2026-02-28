@@ -264,7 +264,7 @@ const EditProductModal = ({product, categoryOptions, onConfirm, onClose}) => {
                         </div>
 
                         <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Product Price' />
+                            <Label variant='modal' text='Variants' />
                             <div className="flex flex-col gap-2 w-full max-h-40 overflow-auto">
                                 <div className='flex items-center gap-2 flex-1'>
                                     <h5 className='text-xs font-medium flex-1'>Label</h5>
