@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
-import { CheckoutProduct, ModalFeedbackCard, ProductCard } from '../components/molecules'
+import { CheckoutProduct, ModalFeedbackCard, Pagination, ProductCard } from '../components/molecules'
 import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
@@ -322,11 +322,16 @@ const Home = () => {
                         </h5>
                     </div>
                     :
-                    <div className='grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
-                        {listProduct}
+                    <div className='h-[70vh] overflow-y-auto flex items-center flex-col gap-2'>
+                        <div className='grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-wrap'>
+                            {listProduct}
+                        </div>
                     </div>
                 }
+
+                <Pagination prev={productData.previous} next={productData.next} />
             </div>
+
 
             {/* Checkout Section */}
             <div className='basis-1/4 flex flex-col gap-4'>

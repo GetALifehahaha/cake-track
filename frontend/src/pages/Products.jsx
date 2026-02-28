@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
-import { ProductCard } from '../components/molecules';
+import { Pagination, ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
 import { AddProductModal, ArchivedModal, DiscountModal, CategoryModal, EditProductModal} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
@@ -136,10 +136,13 @@ const Products = () => {
                     </h5>
                 </div>
                 :
-                <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap overflow-x-auto'>
-                    {listProducts}
+                <div className='overflow-x-auto flex items-center flex-col gap-2'>
+                    <div className='grid grid-cols-7 p-2 gap-4 w-full flex-wrap '>
+                        {listProducts}
+                    </div>
                 </div>
             }
+            <Pagination prev={productData.previous} next={productData.next} />
 
             {showAddProductModal &&
             <AddProductModal categoryOptions={categoryOptions} onConfirm={addProduct} onClose={handleCloseAddProductModal} />
