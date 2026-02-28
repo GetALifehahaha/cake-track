@@ -81,7 +81,15 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
     };
 
     const validateFields = () => {
-        if (!productName || categories.length === 0 || !categories.some(c => c) || !variants.some(v => v.label.trim() && v.price > 0)) {
+        const hasValidCategory = categories.some(c => c.id && c.id !== "");
+
+        
+        const hasValidVariant = variants.some(
+            v => v.label !== "" && Number(v.price) > 0
+        );
+
+
+        if (!productName.trim() || !hasValidCategory || !hasValidVariant) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
