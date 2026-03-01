@@ -1,13 +1,15 @@
 import { jsPDF } from "jspdf"; 
 import autoTable from "jspdf-autotable";
-import React, { useState, useEffect } from 'react';
-import { Download, XCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Download, Filter, X, XCircle } from 'lucide-react';
 import useDashboard from '@/hooks/useDashboard';
 import Loading from '@/components/molecules/Loading';
 import { DashboardChart, DownloadReportModal } from '@/components/organisms';
 import { Button, Label, Dropdown } from "@/components/atoms";
 import { cn } from "@/utils/cn";
 import { useSearchParams } from "react-router-dom";
+import { DatePicker } from "@/components/molecules";
+import { formatDateForAPI } from "@/utils/date";
 
 jsPDF.API.autoTable = autoTable;
 
@@ -23,9 +25,11 @@ const Reports = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     
     const [frequency, setFrequency] = useState('daily')
-    const [month, setMonth] = useState(null);
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
 
     const [downloadModal, setDownloadModal] = useState(false);
+    const [openFilter, setOpenFilter] = useState(false);
 
     useEffect(() => {
         let params = {};
@@ -34,12 +38,11 @@ const Reports = () => {
             params.frequency = frequency;
         }
 
-        if (month !== undefined && month !== null) {
-            params.month = Number(month);
-        }
+        if (startDate !== null) params.startDate = formatDateForAPI(startDate)
+        if (endDate !== null) params.endDate = formatDateForAPI(endDate)
 
         setSearchParams(params)
-    }, [frequency, month])
+    }, [frequency, startDate, endDate])
     
     if (loading) return <Loading />;
     if (error) return <h5>Error...</h5>;
@@ -154,18 +157,22 @@ const Reports = () => {
         document.body.removeChild(link);
     };
 
+    // FILTERS AND PARAMETERS
+
     const handleFrequency = (value) => {
         if (value === frequency) {setFrequency('daily'); return;}
 
         setFrequency(value)
     }
 
-    const handleSetMonth = (value) => {
-        setMonth(month => {
-            if (month == value) return null;
-                return value
-            })
+    const handleStartDate = (value) => setStartDate(value);
+    const handleEndDate = (value) => setEndDate(value);
+    const clearDates = () => {
+        handleStartDate(null);
+        handleEndDate(null);
     }
+
+    // MAPS
 
     const topSellingProducts = posDashboardData.top_selling_products.map((item, index) => (
         <div className='flex w-80 gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
@@ -202,31 +209,52 @@ const Reports = () => {
     );
 
     return (
-        <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col pb-8'>
+        <div className='flex-1 flex p-2 gap-6 w-full h-full flex-col pb-8'>
             <button 
                 onClick={() => setDownloadModal(true)}
                 className='p-2.5 w-fit rounded-md bg-main-white border border-border flex flex-row items-center gap-2 text-sm font-medium cursor-pointer hover:bg-main-dark text-text/50 ml-auto'>
                 Download Report
                 <Download size={18} />
             </button>
-
-            <div className="flex gap-2">
-                <Button text="Daily" onClick={() => handleFrequency('daily')} className={cn("text-xs font-medium py-2 px-8 bg-white text-accent-mute border-accent-mute", frequency === "daily" && 'bg-accent text-white border-accent')}/>
-                <Button text="Weekly" onClick={() => handleFrequency('weekly')} className={cn("text-xs font-medium py-2 px-8 bg-white text-accent-mute border-accent-mute", frequency === "weekly" && 'bg-accent text-white border-accent')}/>
-                <Button text="Monthly" onClick={() => handleFrequency('monthly')} className={cn("text-xs font-medium py-2 px-8 bg-white text-accent-mute border-accent-mute", frequency === "monthly" && 'bg-accent text-white border-accent')}/>
-
-            {false &&
-                    <Dropdown value={month} selection={"Select Month"} options={months} onSelect={handleSetMonth}/>
-                } 
+            <div className="flex gap-2 bg-white p-4 rounded-sm shadow-sm w-fit">
+                <div>
+                    <h5 className="text-xs font-semibold text-text/50 mb-2">Report Type</h5>
+                    <div className="flex gap-2">
+                        <Button text="Daily" onClick={() => handleFrequency('daily')} className={cn("rounded-sm text-xs font-semibold py-2 px-4 bg-white text-accent-mute shadow-md border-none", frequency === "daily" && 'bg-accent text-white')}/>
+                        <Button text="Weekly" onClick={() => handleFrequency('weekly')} className={cn("rounded-sm text-xs font-semibold py-2 px-4 bg-white text-accent-mute shadow-md border-none", frequency === "weekly" && 'bg-accent text-white')}/>
+                        <Button text="Monthly" onClick={() => handleFrequency('monthly')} className={cn("rounded-sm text-xs font-semibold py-2 px-4 bg-white text-accent-mute shadow-md border-none", frequency === "monthly" && 'bg-accent text-white')}/>
+                    </div>
+                </div>
+                
+                <div className="flex gap-2">
+                    <div className="">
+                        <h5 className="text-xs font-semibold text-text/50 mb-1">Start Date</h5>
+                        <div className="flex gap-2 items-center">
+                            <DatePicker selected={startDate} onSelect={handleStartDate} className='w-fit bg-white gap-8 ml-4 shadow-sm text-xs font-semibold text-accent-mute border-accent-mute'/> 
+                            {startDate &&
+                                <Button icon={X} onClick={() => handleStartDate(null)} variant="icon" text="" className="border-none font-semibold text-sm text-accent-mute" />
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <h5 className="text-xs font-semibold text-text/50 mb-1">End Date</h5>
+                        <div className="flex gap-2 items-center">
+                            <DatePicker selected={endDate} onSelect={handleEndDate} className='w-fit bg-white gap-8 shadow-sm text-xs font-semibold text-accent-mute'/> 
+                            {endDate &&
+                                <Button icon={X} onClick={() => handleEndDate(null)} variant="icon" text="" className="border-none font-semibold text-sm text-accent-mute" />
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Existing POS dashboards */}
             <Label variant="small" text="POS Sales Data"/>
-            <div className='flex items-center gap-4'>
+            <div className='flex items-center gap-4 -mt-4'>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Voided Transactions</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
 
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_void_amount}</h5>
@@ -235,7 +263,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Orders</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
 
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_successful_transactions}</h5>
@@ -244,7 +272,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Products Sold</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
 
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_products_sold}</h5>
@@ -253,7 +281,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Avg Daily Orders</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
 
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.avg_daily_transactions}</h5>
@@ -262,7 +290,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Revenue</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>₱ {(posDashboardData.total_revenue_generated).toFixed(2)}</h5>
                     <h5 className='text-sm text-success'>Revenue Generated</h5>
@@ -270,11 +298,11 @@ const Reports = () => {
             </div>
 
             <Label variant="small" text="Cake Order Sales Data"/>
-            <div className='flex items-center gap-4 mt-4'>
+            <div className='flex items-center gap-4 -mt-4'>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Orders</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.total_orders}</h5>
                     <h5 className='text-sm text-none-text'>All Orders</h5>
@@ -283,7 +311,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Pending</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.pending_orders}</h5>
                     <h5 className='text-sm text-warning'>Waiting</h5>
@@ -292,7 +320,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Completed</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.completed_orders}</h5>
                     <h5 className='text-sm text-success'>Success</h5>
@@ -301,7 +329,7 @@ const Reports = () => {
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Rejected</h5>
-                        <XCircle className='text-accent' size={16} />
+                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.rejected_orders}</h5>
                     <h5 className='text-sm text-error'>Cancelled</h5>

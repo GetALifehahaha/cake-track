@@ -359,7 +359,7 @@ class DashboardAnalyticsView(APIView):
         
         formatted_trend = [
             {
-                "period": item['period'].strftime(date_format),
+                "period": item['period'],
                 "amount": item['amount']
             }
             for item in trend_data
