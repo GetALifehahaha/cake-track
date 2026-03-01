@@ -7,7 +7,8 @@ export default function useDashboard() {
     const [searchParams] = useSearchParams();
     const params = useMemo(() => ({
         frequency: searchParams.get('frequency') || undefined,
-        month: searchParams.get('month') || undefined
+        startDate: searchParams.get('startDate') || undefined,
+        endDate: searchParams.get('endDate') || undefined,
     }), [searchParams]);
 
     const posDashboardQuery = useQueryFetch('pos-dashboard', '/pos/dashboard/', params);

@@ -84,15 +84,7 @@ const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
 
     const handleToggleExact = () => {
         setIsExact(!isExact);
-        setReceivedPayment(rp => {
-            let payment = rp;
-
-            if ([50, 200, 500, 1000].some((element) => {payment == element})) {
-                return 0;
-            }
-
-            return payment;
-        });
+        setReceivedPayment(totalPrice);
         handleRenderSelectAmount(0);
     }
 

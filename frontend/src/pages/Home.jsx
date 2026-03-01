@@ -225,6 +225,7 @@ const Home = () => {
 
             setReceivedPayment(value);
             setShowPaymentSuccessModal(true);
+            removeAllProducts();
 
             addToast("Transaction successful")
         }
