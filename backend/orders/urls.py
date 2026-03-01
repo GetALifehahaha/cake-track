@@ -17,5 +17,5 @@ routers.register(r'cakes', CakeViewSet)
 
 urlpatterns = [
     path('', include(routers.urls)),
-    path('analytics/', DashboardView.as_view(), name="dashboard-analytics")
+    path('dashboard/', DashboardView.as_view(), name="dashboard-analytics")
 ]

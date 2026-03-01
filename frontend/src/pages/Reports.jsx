@@ -14,12 +14,10 @@ jsPDF.API.autoTable = autoTable;
 const Reports = () => {
     
     const {
-        dashboardData,
-        orderDashboardData,
-        dashboardLoading,
-        orderDashboardLoading,
-        dashboardError,
-        orderDashboardError
+        posDashboardData,
+        ordersDashboardData,
+        loading,
+        error
     } = useDashboard();
 
     const [searchParams, setSearchParams] = useSearchParams();
@@ -43,8 +41,8 @@ const Reports = () => {
         setSearchParams(params)
     }, [frequency, month])
     
-    if (dashboardLoading || orderDashboardLoading) return <Loading />;
-    if (dashboardError || orderDashboardError) return <h5>Error...</h5>;
+    if (loading) return <Loading />;
+    if (error) return <h5>Error...</h5>;
 
     const months = [
         { key: 'january', value: 1 },
@@ -79,19 +77,19 @@ const Reports = () => {
             csvContent += "Metric,Value\n";
 
             if (selected.includes('total_transactions'))
-            csvContent += `Total Successful Transactions,${dashboardData.total_successful_transactions}\n`;
+            csvContent += `Total Successful Transactions,${posDashboardData.total_successful_transactions}\n`;
 
             if (selected.includes('products_sold'))
-            csvContent += `Total Products Sold,${dashboardData.total_products_sold}\n`;
+            csvContent += `Total Products Sold,${posDashboardData.total_products_sold}\n`;
 
             if (selected.includes('avg_daily_orders'))
-            csvContent += `Average Daily Transactions,${dashboardData.avg_daily_transactions}\n`;
+            csvContent += `Average Daily Transactions,${posDashboardData.avg_daily_transactions}\n`;
 
             if (selected.includes('voided_transactions'))
-            csvContent += `Total Voided Transactions,${dashboardData.total_void_amount}\n`;
+            csvContent += `Total Voided Transactions,${posDashboardData.total_void_amount}\n`;
 
             if (selected.includes('total_revenue'))
-            csvContent += `Total Revenue,${dashboardData.total_revenue_generated}\n`;
+            csvContent += `Total Revenue,${posDashboardData.total_revenue_generated}\n`;
 
             csvContent += "\n";
         }
@@ -100,7 +98,7 @@ const Reports = () => {
         if (selected.includes('cashier_data')) {
             csvContent += "Cashier Performance\n";
             csvContent += "Name,Daily Revenue,Weekly Revenue,Monthly Revenue,Total Revenue\n";
-            dashboardData.cashier_performance.forEach(c => {
+            posDashboardData.cashier_performance.forEach(c => {
             csvContent += `${c.name},${c.daily_revenue.toFixed(2)},${c.weekly_revenue.toFixed(2)},${c.monthly_revenue.toFixed(2)},${c.total_revenue.toFixed(2)}\n`;
             });
             csvContent += "\n";
@@ -110,7 +108,7 @@ const Reports = () => {
         if (selected.includes('top_selling_products')) {
             csvContent += "Top Selling Products\n";
             csvContent += "Product Name,Total Sold\n";
-            dashboardData.top_selling_products.forEach(p => {
+            posDashboardData.top_selling_products.forEach(p => {
             csvContent += `${p.product__name},${p.total_sold}\n`;
             });
             csvContent += "\n";
@@ -120,7 +118,7 @@ const Reports = () => {
         if (selected.includes('products_sold_trend')) {
             csvContent += "Sales Trend\n";
             csvContent += "Date,Items Sold\n";
-            dashboardData.sales_trend.forEach(t => {
+            posDashboardData.sales_trend.forEach(t => {
             csvContent += `${t.date},${t.amount}\n`;
             });
             csvContent += "\n";
@@ -132,16 +130,16 @@ const Reports = () => {
             csvContent += "Metric,Value\n";
 
             if (selected.includes('total_orders'))
-            csvContent += `Total Orders,${orderDashboardData.total_orders}\n`;
+            csvContent += `Total Orders,${ordersDashboardData.total_orders}\n`;
 
             if (selected.includes('pending'))
-            csvContent += `Pending Orders,${orderDashboardData.pending_orders}\n`;
+            csvContent += `Pending Orders,${ordersDashboardData.pending_orders}\n`;
 
             if (selected.includes('completed'))
-            csvContent += `Completed Orders,${orderDashboardData.completed_orders}\n`;
+            csvContent += `Completed Orders,${ordersDashboardData.completed_orders}\n`;
 
             if (selected.includes('rejected'))
-            csvContent += `Rejected Orders,${orderDashboardData.rejected_orders}\n`;
+            csvContent += `Rejected Orders,${ordersDashboardData.rejected_orders}\n`;
 
             csvContent += "\n";
         }
@@ -169,7 +167,7 @@ const Reports = () => {
             })
     }
 
-    const topSellingProducts = dashboardData.top_selling_products.map((item, index) => (
+    const topSellingProducts = posDashboardData.top_selling_products.map((item, index) => (
         <div className='flex w-80 gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
             <div className='w-8 h-8 font-semibold rounded-full aspect-square flex justify-center items-center bg-accent-mute text-white '><h5>{index + 1}</h5></div>
             <div className='text-sm'>
@@ -193,7 +191,7 @@ const Reports = () => {
 
     const cashierRowStyle = 'flex-1 text-center text-sm font-semibold text-text';
 
-    const listCashiers = dashboardData.cashier_performance.map((cashier, index) =>
+    const listCashiers = posDashboardData.cashier_performance.map((cashier, index) =>
         <div key={index} className='flex flex-row p-2.5 border-b border-b-border'>
             <h5 className={cashierRowStyle}>{cashier.name}</h5>
             <h5 className={cashierRowStyle}>₱ {(cashier.daily_revenue).toFixed(2)}</h5>
@@ -231,7 +229,7 @@ const Reports = () => {
                         <XCircle className='text-accent' size={16} />
                     </div>
 
-                    <h5 className='text-2xl font-bold mt-8'>{dashboardData.total_void_amount}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_void_amount}</h5>
                     <h5 className='text-sm text-error'>Cancelled Orders</h5>
                 </div>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
@@ -240,7 +238,7 @@ const Reports = () => {
                         <XCircle className='text-accent' size={16} />
                     </div>
 
-                    <h5 className='text-2xl font-bold mt-8'>{dashboardData.total_successful_transactions}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_successful_transactions}</h5>
                     <h5 className='text-sm text-success'>Completed Transactions</h5>
                 </div>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
@@ -249,7 +247,7 @@ const Reports = () => {
                         <XCircle className='text-accent' size={16} />
                     </div>
 
-                    <h5 className='text-2xl font-bold mt-8'>{dashboardData.total_products_sold}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_products_sold}</h5>
                     <h5 className='text-sm text-none-text'>Total Items</h5>
                 </div>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
@@ -258,7 +256,7 @@ const Reports = () => {
                         <XCircle className='text-accent' size={16} />
                     </div>
 
-                    <h5 className='text-2xl font-bold mt-8'>{dashboardData.avg_daily_transactions}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{posDashboardData.avg_daily_transactions}</h5>
                     <h5 className='text-sm text-none-text'>Orders</h5>
                 </div>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
@@ -266,7 +264,7 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Total Revenue</h5>
                         <XCircle className='text-accent' size={16} />
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>₱ {(dashboardData.total_revenue_generated).toFixed(2)}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>₱ {(posDashboardData.total_revenue_generated).toFixed(2)}</h5>
                     <h5 className='text-sm text-success'>Revenue Generated</h5>
                 </div>
             </div>
@@ -278,7 +276,7 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Total Orders</h5>
                         <XCircle className='text-accent' size={16} />
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>{orderDashboardData.total_orders}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.total_orders}</h5>
                     <h5 className='text-sm text-none-text'>All Orders</h5>
                 </div>
 
@@ -287,7 +285,7 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Pending</h5>
                         <XCircle className='text-accent' size={16} />
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>{orderDashboardData.pending_orders}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.pending_orders}</h5>
                     <h5 className='text-sm text-warning'>Waiting</h5>
                 </div>
 
@@ -296,7 +294,7 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Completed</h5>
                         <XCircle className='text-accent' size={16} />
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>{orderDashboardData.completed_orders}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.completed_orders}</h5>
                     <h5 className='text-sm text-success'>Success</h5>
                 </div>
 
@@ -305,14 +303,14 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Rejected</h5>
                         <XCircle className='text-accent' size={16} />
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>{orderDashboardData.rejected_orders}</h5>
+                    <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.rejected_orders}</h5>
                     <h5 className='text-sm text-error'>Cancelled</h5>
                 </div>
             </div>
 
             <div className='flex gap-4'>
                 <div className='flex-1'>
-                    <DashboardChart chartData={dashboardData.sales_trend}/>
+                    <DashboardChart chartData={posDashboardData.sales_trend}/>
                 </div>
                 <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full min-h-120'>
                     <h5 className='font-semibold'>Top Selling Products</h5>

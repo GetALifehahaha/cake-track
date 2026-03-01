@@ -24,6 +24,6 @@ router.register(r'business-details', BusinessSettingsView)
 
 urlpatterns = [
     path('', include(router.urls)), 
-    path('analytics/', DashboardAnalyticsView.as_view(), name="dashboard-analytics")
+    path('dashboard/', DashboardAnalyticsView.as_view(), name="dashboard-analytics")
 ]
 # + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
