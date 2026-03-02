@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const Dropdown = ({selection, value, variant="block", size="fit", options=[{Option: 'option'}], forPageFilter=false, onSelect}) => {
+const Dropdown = ({selection, value, variant="block", size="fit", options=[{Option: 'option'}], forPageFilter=false, onSelect, removeText="ALL"}) => {
 
     const variants = {
         outline: 'bg-main border-main-dark text-text/50',
@@ -36,7 +36,7 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
             </SelectTrigger>
             <SelectContent className='right-0'>
                 {listOptions}
-                <SelectItem value={null} className='text-black/60 font-medium'>Remove Filter</SelectItem>
+                <SelectItem value={null} className='text-black/60 font-medium'>{removeText}</SelectItem>
             </SelectContent>
         </Select>
     )

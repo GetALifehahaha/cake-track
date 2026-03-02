@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Title } from '@/components/atoms';
-import { ChevronLeft, ChevronRight, Plus, AlertCircle } from 'lucide-react';
-import { AddRecipeModal } from '@/components/organisms';
+import { ChevronLeft, ChevronRight, Plus, AlertCircle, EllipsisVertical, Edit } from 'lucide-react';
+import { AddRecipeModal, EditRecipeModal } from '@/components/organisms';
 import useRecipe from '@/hooks/useRecipe';
 import { Pagination } from '@/components/molecules';
 import Loading from '@/components/molecules/Loading';
@@ -11,10 +11,11 @@ import ViewRecipeModal from '@/components/organisms/recipe/ViewRecipeModal';
 const Recipe = () => {
 
     const { addToast } = useToast();
-    const { data, loading, error, postRecipe } = useRecipe();
+    const { data, loading, error, postRecipe, patchRecipe, deleteRecipe } = useRecipe();
     const [showAddRecipe, setShowAddRecipe] = useState(false);
 
     const [viewRecipe, setViewRecipe] = useState(null);
+    const [showEditRecipe, setShowEditRecipe] = useState(null);
     
     if (loading) return <Loading />
     if (error) return <h5>Error...</h5>
@@ -27,7 +28,7 @@ const Recipe = () => {
         setShowAddRecipe(!showAddRecipe);
     };
 
-    const handleAddRecipe = async (payload) => {
+    const addRecipe = async (payload) => {
         try {
             await postRecipe(payload);
             setShowAddRecipe(false);
@@ -36,6 +37,32 @@ const Recipe = () => {
             addToast("Failed to add new recipe", "error");
         }
     };
+
+    const handleShowEditRecipe = (value) => {
+        selectViewRecipe(null);
+        setShowEditRecipe(value);
+    }
+
+    const editRecipe = async (id, payload) => {
+        try {
+            await patchRecipe(id, payload);
+            setShowEditRecipe(null);
+            addToast("A recipe has been edited!");
+        } catch (err) {
+            addToast("Failed to edit recipe", "error");
+        }
+    }
+
+    const handleDeleteRecipe = async (id) => {
+        try {
+            await deleteRecipe(id);
+            setShowEditRecipe(null);
+            selectViewRecipe(null);
+            addToast("A recipe has been deleted!");
+        } catch (err) {
+            addToast("Failed to delete recipe", "error");
+        }
+    }
 
     const listRecipes = data.results?.map((recipe) => (
         <div 
@@ -77,9 +104,13 @@ const Recipe = () => {
                 <Pagination next={data.next} prev={data.prev}/>
             </div>
 
-            {showAddRecipe && <AddRecipeModal onConfirm={handleAddRecipe} onClose={handleSetShowAddRecipe}/>}
+            {showAddRecipe && <AddRecipeModal onConfirm={addRecipe} onClose={handleSetShowAddRecipe}/>}
 
-            <ViewRecipeModal recipe={viewRecipe} onClose={() => selectViewRecipe(null)} />
+            <ViewRecipeModal recipe={viewRecipe} onClose={() => selectViewRecipe(null)} onEdit={handleShowEditRecipe} onDelete={handleDeleteRecipe} />
+
+            {showEditRecipe &&
+            <EditRecipeModal recipe={showEditRecipe} onClose={() => handleShowEditRecipe(null)} onConfirm={editRecipe} />
+            }
         </div>
     );
 };

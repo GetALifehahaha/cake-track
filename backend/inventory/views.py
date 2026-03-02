@@ -118,9 +118,6 @@ class IngredientAllViewSet(viewsets.ModelViewSet):
     
     
 class RecipeViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows Recipes to be viewed, created, or cooked.
-    """
     queryset = Recipe.objects.all().order_by('name')
     serializer_class = RecipeSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]

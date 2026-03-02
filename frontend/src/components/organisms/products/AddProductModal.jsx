@@ -240,6 +240,7 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                                                 size='full'
                                                 options={categoryOptions}
                                                 onSelect={(value) => handleCategories(value, index)}
+                                                removeText='None'
                                             />
 
                                             {index === categories.length - 1 ? (

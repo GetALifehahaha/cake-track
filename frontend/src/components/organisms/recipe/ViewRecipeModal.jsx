@@ -1,66 +1,78 @@
 import React from 'react';
-import { Label, Button } from '../../atoms';
-import { ModalBody } from '../../molecules';
+import { Button } from '../../atoms';
+import { X, UtensilsCrossed } from 'lucide-react';
+import ConfirmationModal from '../ConfirmationModal';
+import { useState } from 'react';
+import { ModalBody } from '@/components/molecules';
 
-const ViewRecipeModal = ({ recipe, onClose, onEdit }) => {
+const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
     if (!recipe) return null;
+    const [confirmDelete, setConfirmDelete] = useState(false);
 
+    const handleConfirmDelete = (value) => {
+        setConfirmDelete(value);
+    }
     return (
-        <ModalBody title='Recipe Details' onClose={onClose} className='w-[60vw] h-[70vh]'>
-            <div className='flex flex-1 overflow-hidden h-[50vh]'>
-                {/* Left Column: Name and Instructions */}
-                <div className='basis-1/2 flex flex-col p-6 border-r border-border/50 bg-main-white'>
-                    <div className='flex flex-col gap-6 h-full'>
-                        <div>
-                            <Label text='Recipe Name' variant='modal' />
-                            <h3 className='text-lg font-semibold text-text mt-2'>{recipe.name}</h3>
+        <ModalBody className='w-[80vw] h-full max-h-[80vh]' title='Recipe Details' onClose={onClose}>
+                <div className="flex flex-1 overflow-hidden">
+                    <div className="w-1/2 flex flex-col p-8 bg-main-white overflow-y-auto">
+                        <div className="mb-6">
+                            <h4 className="text-[10px] font-bold text-text-light tracking-widest uppercase mb-2">Recipe Name</h4>
+                            <h3 className="text-xl font-medium text-text">{recipe.name}</h3>
                         </div>
                         
-                        <div className='flex-1 flex flex-col overflow-hidden'>
-                            <Label text='Instructions' variant='modal' />
-                            <div className='flex-1 overflow-y-auto mt-2 p-3 rounded-md bg-main-dark/10'>
-                                <p className='text-sm text-text/80 whitespace-pre-wrap'>
+                        <div className="flex flex-col flex-1">
+                            <h4 className="text-[10px] font-bold text-text-light tracking-widest uppercase mb-3">Instructions</h4>
+                            <div className="flex-1 bg-main p-5 rounded-xl border border-border/50">
+                                <p className="text-sm text-text/80 whitespace-pre-wrap leading-relaxed">
                                     {recipe.instructions || 'No instructions provided.'}
                                 </p>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Right Column: Ingredients List */}
-                <div className='basis-1/2 flex flex-col p-6 bg-accent-mute/25'>
-                    <Label text={`Ingredients Needed (${recipe.ingredients?.length || 0})`} variant='modal' />
-                    
-                    <div className='flex-1 overflow-y-auto flex flex-col gap-3 mt-4 pr-2'>
-                        {recipe.ingredients?.map((item) => (
-                            <div key={item.ingredient_id} className='flex items-center justify-between p-3 bg-main-white rounded-md shadow-sm border border-border/25'>
-                                <h5 className='flex-1 truncate font-medium text-sm'>{item.ingredient_name}</h5>
-                                
-                                <div className='flex flex-col items-end gap-1'>
-                                    <h5 className='text-[10px] uppercase font-bold text-text/50 tracking-wider'>Quantity</h5>
-                                    <h4 className='text-sm font-semibold'>
-                                        {item.amount_needed} <span className='text-xs font-normal text-text/50'>{item.ingredient_unit}</span>
-                                    </h4>
+                    <div className="w-1/2 flex flex-col p-8 bg-main/50 border-l border-border/50">
+                        <div className="flex items-center justify-between mb-6 shrink-0">
+                            <h4 className="text-[10px] font-bold text-text-light tracking-widest uppercase">Ingredients Needed</h4>
+                            <span className="bg-main-white border border-border/50 text-text text-[10px] py-1 px-3 rounded-full font-medium">
+                                {recipe.ingredients?.length || 0} Items
+                            </span>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+                            {recipe.ingredients?.map((item) => (
+                                <div key={item.ingredient_id} className="flex items-center justify-between p-4 bg-main-white rounded-xl shadow-sm border border-border/50">
+                                    <h5 className="flex-1 truncate font-medium text-sm text-text pr-4">{item.ingredient_name}</h5>
+                                    
+                                    <div className="flex items-baseline gap-1.5 shrink-0 bg-main px-3 py-1.5 rounded-lg border border-border/30">
+                                        <h4 className="text-sm font-semibold text-accent-dark">
+                                            {item.amount_needed}
+                                        </h4>
+                                        <span className="text-[10px] font-medium text-text-light">
+                                            {item.ingredient_unit}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
 
-                        {(!recipe.ingredients || recipe.ingredients.length === 0) && (
-                            <div className='flex items-center justify-center h-full text-text/50 text-sm'>
-                                No ingredients listed for this recipe.
-                            </div>
-                        )}
+                            {(!recipe.ingredients || recipe.ingredients.length === 0) && (
+                                <div className="flex items-center justify-center h-full text-text-light text-xs">
+                                    No ingredients listed for this recipe.
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Footer Actions */}
-            <div className='flex justify-end gap-2 p-4 border-t border-border/50 bg-main-white'>
-                <Button variant='modalOutline' text='Close' onClick={onClose} />
-                {onEdit && (
+                <div className="shrink-0 p-6 border-t border-border bg-main-white flex gap-2 justify-end items-center z-10">
+                    <Button variant='error' text='Delete Recipe' onClick={() => handleConfirmDelete(true)} />
+                    <Button variant='modalOutline' text='Close View' onClick={onClose} />
                     <Button variant='modalBlock' text='Edit Recipe' onClick={() => onEdit(recipe)} />
-                )}
-            </div>
+                </div>
+
+                {confirmDelete &&
+                    <ConfirmationModal title="Delete Recipe?" content="Are you sure you want to delete this recipe? This action cannot be undone." onConfirm={() => onDelete(recipe.id)} onReject={() => handleConfirmDelete(false)} />
+                }
         </ModalBody>
     );
 };

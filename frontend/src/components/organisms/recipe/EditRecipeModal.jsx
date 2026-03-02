@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ModalFeedbackCard } from '../../molecules';
 import { Button } from '../../atoms';
 import { X, UtensilsCrossed, Info, List, Search } from 'lucide-react';
@@ -6,7 +6,7 @@ import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import ConfirmationModal from '../ConfirmationModal';
 
-const AddRecipeModal = ({ onClose, onConfirm }) => {
+const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
     const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
@@ -16,8 +16,24 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
     const [feedback, setFeedback] = useState(null);
     const [confirmationModal, setConfirmationModal] = useState(false);
 
+    useEffect(() => {
+        if (recipe) {
+            setName(recipe.name || '');
+            setInstructions(recipe.instructions || '');
+            if (recipe.ingredients) {
+                const mappedIngredients = recipe.ingredients.map(item => ({
+                    ingredient_id: item.ingredient_id,
+                    ingredient_name: item.ingredient_name,
+                    amount_needed: item.amount_needed,
+                    unit: item.ingredient_unit 
+                }));
+                setSelectedIngredients(mappedIngredients);
+            }
+        }
+    }, [recipe]);
+
     if (ingredientLoading) return <Loading />;
-    if (ingredientError) return <h5>Error...</h5>;
+    if (ingredientError) return <h5>Error loading ingredients.</h5>;
 
     const toggleConfirmationModal = () => setConfirmationModal(prev => !prev);
 
@@ -118,9 +134,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                 amount_needed: Number.parseFloat(item.amount_needed || 0)
             }))
         };
-
-        console.log(payload)
-        await onConfirm(payload);
+        await onConfirm(recipe.id, payload);
     };
 
     const filteredIngredients = ingredientAll?.filter(ing => 
@@ -134,7 +148,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                 <div className="w-64 bg-accent-mute flex flex-col text-main-white p-6 shrink-0">
                     <div className="flex items-center gap-3 mb-12 mt-2 ml-2">
                         <UtensilsCrossed size={24} />
-                        <h2 className="text-lg font-semibold">Add Recipe</h2>
+                        <h2 className="text-lg font-semibold">Edit Recipe</h2>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -172,7 +186,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                         <div className="flex-1 overflow-y-auto p-12 flex flex-col">
                             <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
                                 <h2 className="text-2xl font-medium text-text mb-2">Basic Information</h2>
-                                <p className="text-sm text-text-light mb-10">Give your recipe a name and detailed instructions.</p>
+                                <p className="text-sm text-text-light mb-10">Update your recipe name and detailed instructions.</p>
 
                                 <div className="mb-8">
                                     <label className="block text-xs font-medium text-text mb-2">Recipe Name</label>
@@ -201,7 +215,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                     {step === 2 && (
                         <div className="flex-1 overflow-hidden p-12 flex flex-col">
                             <h2 className="text-2xl font-medium text-text mb-2">Ingredients</h2>
-                            <p className="text-sm text-text-light mb-8">Select ingredients and specify their measurements.</p>
+                            <p className="text-sm text-text-light mb-8">Update ingredients and specify their measurements.</p>
 
                             <div className="flex flex-1 gap-8 overflow-hidden">
                                 <div className="w-2/5 flex flex-col overflow-hidden">
@@ -281,7 +295,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                             {step === 1 ? (
                                 <Button variant="modalBlock" text="Next Step" onClick={handleNext} />
                             ) : (
-                                <Button variant="modalBlock" text="Save Recipe" onClick={confirmSubmit} />
+                                <Button variant="modalBlock" text="Update Recipe" onClick={confirmSubmit} />
                             )}
                         </div>
                     </div>
@@ -290,8 +304,8 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
 
             {confirmationModal &&
                 <ConfirmationModal 
-                    title="Adding recipe" 
-                    content="Are you sure you want to add this recipe?" 
+                    title="Updating recipe" 
+                    content="Are you sure you want to save these changes?" 
                     onConfirm={handleSubmit} 
                     onReject={toggleConfirmationModal}
                 />
@@ -300,4 +314,4 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
     );
 };
 
-export default AddRecipeModal;
+export default EditRecipeModal;

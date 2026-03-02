@@ -200,6 +200,38 @@ class RecipeSerializer(serializers.ModelSerializer):
                 amount_needed=item['amount_needed']
             )
         return recipe
+    
+    def update(self, instance, validated_data):
+        ingredients_data = validated_data.pop('recipe_ingredients', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if ingredients_data is not None:
+            existing_ingredients = {item.ingredient_id: item for item in instance.recipe_ingredients.all()}
+            incoming_ingredient_ids = [item['ingredient_id'] for item in ingredients_data]
+
+            for ingredient_id, recipe_ingredient in existing_ingredients.items():
+                if ingredient_id not in incoming_ingredient_ids:
+                    recipe_ingredient.delete()
+
+            for item in ingredients_data:
+                ingredient_id = item['ingredient_id']
+                amount_needed = item['amount_needed']
+
+                if ingredient_id in existing_ingredients:
+                    recipe_ingredient = existing_ingredients[ingredient_id]
+                    recipe_ingredient.amount_needed = amount_needed
+                    recipe_ingredient.save()
+                else:
+                    RecipeIngredient.objects.create(
+                        recipe=instance,
+                        ingredient_id=ingredient_id,
+                        amount_needed=amount_needed
+                    )
+
+        return instance
 
 
 class BulkRecipeCookSerializer(serializers.Serializer):
