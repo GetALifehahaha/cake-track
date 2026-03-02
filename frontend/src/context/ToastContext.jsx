@@ -18,10 +18,6 @@ export const ToastProvider = ({ children }) => {
         const id = Date.now()
 
         setToasts((prev) => [...prev, { id, message, type }]);
-        console.log({
-            message,
-            type
-        })
 
         setTimeout(() => {
             removeToast(id);

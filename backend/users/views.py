@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action
 
-from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer
+from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer
 from .models import OTP, PasswordResetToken
 
 from .permissions import IsAdmin, IsCashier
@@ -43,16 +43,18 @@ class UserViewSet(viewsets.ModelViewSet):
         
         return queryset
     
-    # @action(methods=['post'], permission_classes=[IsAuthenticated], detail=False, url_path='change-password')
-    # def change_password(self, request):
-    #     user = request.user
-    #     serializer = ChangePasswordSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-
-    #     user.set_password(serializer.validated_data['password'])
-    #     user.save()
-
-    #     return Response({"detail": "Password has been changed successfully"}, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['patch', 'put'], url_path='update-me')
+    def update_me(self, request):
+        serializer = UserUpdateSerializer(
+            request.user, 
+            data=request.data, 
+            partial=True, 
+            context={'request': request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
 class UserProfileView(generics.RetrieveUpdateAPIView):
@@ -61,6 +63,8 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def get(self, request, *args, **kwargs):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
+    
+    
     
     
 class GoogleAuthView(APIView):

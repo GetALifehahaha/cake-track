@@ -30,6 +30,19 @@ class UserSerializer(serializers.ModelSerializer):
         return user
     
 
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        
+    def validate_email(self, value):
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
+    
+
 class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField(required=True)
 
