@@ -228,187 +228,175 @@ class BusinessSettingsView(viewsets.ModelViewSet):
             'type': "error"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
 
-from datetime import datetime, timedelta
+from django.db.models import Sum, Q
+from django.db.models.functions import TruncDay, TruncMonth, TruncWeek, Coalesce
+from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
-import calendar
+from decimal import Decimal
+from datetime import datetime
 
-from collections import defaultdict
-from django.db.models.functions import TruncDay, TruncMonth
 
 class DashboardAnalyticsView(APIView):
     def get(self, request):
-        # Filters and Ranges
-        now = timezone.localtime()
+        frequency = request.query_params.get('frequency', 'daily')
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
 
-        frequency = request.query_params.get('frequency') or None
-        date_str = request.query_params.get('date') or  now.strftime("%Y-%m-%d")
-        month = request.query_params.get('month') or None
-        year = request.query_params.get('year') or None
-
+        all_transactions = Transaction.objects.all()
+        
         start_date = None
         end_date = None
 
-        print(frequency, date_str, month, year)
+        # 1️⃣ Independent Date Parsing and Filtering
+        if start_date_str:
+            parsed_start = parse_date(start_date_str)
+            if not parsed_start:
+                return Response({"detail": "Invalid start_date format. Use YYYY-MM-DD."}, status=400)
+            start_date = make_aware(datetime.combine(parsed_start, datetime.min.time()))
+            all_transactions = all_transactions.filter(created_at__gte=start_date)
 
-        if frequency == 'daily' and date_str:
-            day = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
-            start_date = day.replace(hour=0, minute=0, second=0)
-            end_date = day.replace(hour=23, minute=59, second=59)
+        if end_date_str:
+            parsed_end = parse_date(end_date_str)
+            if not parsed_end:
+                return Response({"detail": "Invalid end_date format. Use YYYY-MM-DD."}, status=400)
+            end_date = make_aware(datetime.combine(parsed_end, datetime.max.time()))
+            all_transactions = all_transactions.filter(created_at__lte=end_date)
 
-        elif frequency == 'weekly' and date_str:
-            day = make_aware(datetime.strptime(date_str, "%Y-%m-%d"))
-            start_date = day - timedelta(days=day.weekday())  # Monday
-            start_date = start_date.replace(hour=0, minute=0, second=0)
-            end_date = start_date + timedelta(days=6, hours=23, minutes=59, seconds=59)
+        if start_date and end_date and start_date > end_date:
+            return Response({"detail": "start_date cannot be after end_date."}, status=400)
 
-        elif frequency == 'monthly' and year and month:
-            year = int(year)
-            month = int(month)
-            last_day = calendar.monthrange(year, month)[1]
+        # 2️⃣ Base Queryset for Global Metrics
+        valid_transactions = all_transactions.filter(is_void=False)
+        void_transactions = all_transactions.filter(is_void=True)
 
-            start_date = make_aware(datetime(year, month, 1))
-            end_date = make_aware(datetime(year, month, last_day, 23, 59, 59))
-
-        # 1. Base Querysets
-        all_transactions = Transaction.objects.all()
-
-        if start_date and end_date:
-            all_transactions = all_transactions.filter(created_at__range=(start_date, end_date))
-
-        if frequency == 'daily':
-            trunc = TruncDay('transaction__created_at')
-            date_format = '%Y-%m-%d'
-
-        elif frequency == 'weekly':
-            date_format = '&Y-%W'
-
-        elif frequency == 'monthly':
-            trunc = TruncMonth('transaction__created_at')
-            date_format = '%Y-%m'
-
-
-        valid_transactions = all_transactions.filter(is_void=False).prefetch_related('transaction_items', 'discount')
-        void_transactions = all_transactions.filter(is_void=True).prefetch_related('transaction_items', 'discount')
-
-        # 2. Total Amount of Voided Transactions
         void_total = void_transactions.count()
-
-        # 3. Total Successful Transactions (Count)
         successful_count = valid_transactions.count()
 
-        # 4. Total Products Sold (Quantity)
-        products_sold_data = TransactionItem.objects.filter(
-            transaction__is_void=False
-        ).aggregate(total_qty=Sum('quantity'))
-        total_products_sold = products_sold_data['total_qty'] or 0
-
-        # 5. Average Daily Transactions
-        first_transaction = all_transactions.order_by('created_at').first()
-        if first_transaction:
-            days_active = (timezone.now() - first_transaction.created_at).days
-            days_active = days_active if days_active > 0 else 1
-            avg_daily = successful_count / days_active
+        # 3️⃣ Dynamic Days Calculation for Average
+        math_end = end_date if end_date else timezone.now()
+        
+        if start_date:
+            math_start = start_date
         else:
-            avg_daily = 0
+            first_txn = valid_transactions.order_by('created_at').first()
+            math_start = first_txn.created_at if first_txn else math_end
 
-        # 6. Total Revenue Generated
+        days = (math_end.date() - math_start.date()).days + 1
+        avg_daily = successful_count / days if days > 0 else 0
+
+        # 4️⃣ Top-Level Metrics
+        total_products_sold = (
+            TransactionItem.objects
+            .filter(transaction__in=valid_transactions)
+            .aggregate(total_qty=Sum('quantity'))['total_qty'] or 0
+        )
+
         total_revenue_generated = (
             valid_transactions.aggregate(total=Sum('net_total'))['total'] or 0
         )
 
-
-        # 7. Top 8 Selling Products
         top_products = (
             TransactionItem.objects
-            .filter(transaction__is_void=False)
+            .filter(transaction__in=valid_transactions)
             .values('product__name')
             .annotate(total_sold=Sum('quantity'))
             .order_by('-total_sold')[:8]
         )
 
-        # 8. Chart Data: Selling Trend Each Day
-        if frequency in ['daily', 'monthly']:
-            trend_data = (
-                TransactionItem.objects
-                .filter(transaction__is_void=False)
-                .annotate(period=trunc)
-                .values('period')
-                .annotate(amount=Sum('quantity'))
-                .order_by('period')
-            )
-        else:
-            qs = (
-                TransactionItem.objects
-                .filter(transaction__is_void=False)
-                .annotate(day=TruncDay('transaction__created_at'))
-                .values('day')
-                .annotate(amount=Sum('quantity'))
-                .order_by('day')
-            )
+        # 5️⃣ Sales Trend
+        if frequency == "monthly":
+            trunc = TruncMonth('transaction__created_at')
+        elif frequency == "weekly":
+            trunc = TruncWeek('transaction__created_at')
+        else: 
+            trunc = TruncDay('transaction__created_at')
 
-            weekly = defaultdict(int)
-            for row in qs:
-                week_start = row['day'] - timedelta(days=row['day'].weekday())
-                weekly[week_start] += row['amount']
+        trend_data = (
+            TransactionItem.objects.filter(transaction__in=valid_transactions)
+            .annotate(period=trunc)
+            .values('period')
+            .annotate(amount=Sum('quantity'))
+            .order_by('period')
+        )
 
-            trend_data = [
-                {"period": k, "amount": v}
-                for k, v in sorted(weekly.items())
-            ]
+        formatted_trend = [{"period": item["period"], "amount": item["amount"]} for item in trend_data]
 
-        
-        formatted_trend = [
-            {
-                "period": item['period'],
-                "amount": item['amount']
-            }
-            for item in trend_data
-        ]
-
-
-        # 9. Cashier Performance
-        now = timezone.now()
+        # 6️⃣ Cashier Performance
+        now = timezone.localtime()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        week_start = today_start - timedelta(days=now.weekday())
+        week_start = today_start - timedelta(days=today_start.weekday())
         month_start = today_start.replace(day=1)
 
-        cashier_stats = {}
-        for t in valid_transactions:
-            if not t.cashier:
-                continue
+        cashier_qs = (
+            valid_transactions.filter(cashier__isnull=False)
+            .values('cashier__id', 'cashier__first_name', 'cashier__last_name', 'cashier__username')
+            .annotate(total_revenue=Sum('net_total'))
+            .order_by('-total_revenue')
+        )
 
-            c_id = t.cashier.id
-            if c_id not in cashier_stats:
-                cashier_stats[c_id] = {
-                    "id": c_id,
-                    "name": t.cashier.get_full_name() or t.cashier.username,
-                    "daily_revenue": 0,
-                    "weekly_revenue": 0,
-                    "monthly_revenue": 0,
-                    "total_revenue": 0,
-                }
+        total_qs = (
+            valid_transactions
+            .values("cashier__id", "cashier__username", "cashier__first_name", "cashier__last_name")
+            .annotate(
+                total_revenue=Coalesce(Sum("net_total"), Decimal("0.00"))
+            )
+        )
 
-            amount = t.net_total
-            cashier_stats[c_id]["total_revenue"] += amount
-            if t.created_at >= today_start:
-                cashier_stats[c_id]["daily_revenue"] += amount
-            if t.created_at >= week_start:
-                cashier_stats[c_id]["weekly_revenue"] += amount
-            if t.created_at >= month_start:
-                cashier_stats[c_id]["monthly_revenue"] += amount
+        daily_qs = (
+            valid_transactions
+            .filter(created_at__gte=today_start)
+            .values("cashier__id")
+            .annotate(
+                daily_revenue=Coalesce(Sum("net_total"), Decimal("0.00"))
+            )
+        )
 
-        cashier_performance_list = list(cashier_stats.values())
+        weekly_qs = (
+            valid_transactions
+            .filter(created_at__gte=week_start)
+            .values("cashier__id")
+            .annotate(
+                weekly_revenue=Coalesce(Sum("net_total"), Decimal("0.00"))
+            )
+        )
 
-        # 10. Prepare Data
+        monthly_qs = (
+            valid_transactions
+            .filter(created_at__gte=month_start)
+            .values("cashier__id")
+            .annotate(
+                monthly_revenue=Coalesce(Sum("net_total"), Decimal("0.00"))
+            )
+        )
+
+        daily_map = {row["cashier__id"]: row["daily_revenue"] for row in daily_qs}
+        weekly_map = {row["cashier__id"]: row["weekly_revenue"] for row in weekly_qs}
+        monthly_map = {row["cashier__id"]: row["monthly_revenue"] for row in monthly_qs}
+
+        cashier_performance = []
+
+        for row in total_qs:
+            cashier_id = row["cashier__id"]
+
+            cashier_performance.append({
+                "id": cashier_id,
+                "name": f"{row['cashier__first_name']} {row['cashier__last_name']}".strip() 
+                        or row["cashier__username"],
+                "daily_revenue": float(daily_map.get(cashier_id, 0)),
+                "weekly_revenue": float(weekly_map.get(cashier_id, 0)),
+                "monthly_revenue": float(monthly_map.get(cashier_id, 0)),
+                "total_revenue": float(row["total_revenue"]),
+            })
+
         data = {
             "total_void_amount": void_total,
             "total_successful_transactions": successful_count,
             "total_products_sold": total_products_sold,
-            "avg_daily_transactions": round(avg_daily, 2),
-            "total_revenue_generated": round(total_revenue_generated, 2),  # <-- Added here
+            "total_revenue_generated": round(total_revenue_generated, 2),
             "top_selling_products": list(top_products),
             "sales_trend": formatted_trend,
-            "cashier_performance": cashier_performance_list,
+            "cashier_performance": cashier_performance,
+            "avg_daily_transactions": round(avg_daily, 2),
         }
 
         serializer = DashboardMetricsSerializer(data)

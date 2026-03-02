@@ -134,10 +134,38 @@ class OrderViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK
         )
 
+from django.utils.dateparse import parse_date
+from django.utils.timezone import make_aware
+from datetime import datetime
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 class DashboardView(APIView):
     def get(self, request):
-        # Base queryset
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+
         orders = Order.objects.all()
+
+        if start_date_str:
+            parsed_start = parse_date(start_date_str)
+            if not parsed_start:
+                return Response({"detail": "Invalid start_date format. Use YYYY-MM-DD."}, status=400)
+            
+            start_date = make_aware(datetime.combine(parsed_start, datetime.min.time()))
+            orders = orders.filter(created_at__gte=start_date)
+
+        if end_date_str:
+            parsed_end = parse_date(end_date_str)
+            if not parsed_end:
+                return Response({"detail": "Invalid end_date format. Use YYYY-MM-DD."}, status=400)
+            
+            end_date = make_aware(datetime.combine(parsed_end, datetime.max.time()))
+            orders = orders.filter(created_at__lte=end_date)
+
+        if start_date_str and end_date_str and parsed_start > parsed_end:
+            return Response({"detail": "start_date cannot be after end_date."}, status=400)
 
         data = {
             "total_orders": orders.count(),

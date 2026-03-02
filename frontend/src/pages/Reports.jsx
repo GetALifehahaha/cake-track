@@ -10,10 +10,13 @@ import { cn } from "@/utils/cn";
 import { useSearchParams } from "react-router-dom";
 import { DatePicker } from "@/components/molecules";
 import { formatDateForAPI } from "@/utils/date";
+import { useToast } from "@/context/ToastContext";
 
 jsPDF.API.autoTable = autoTable;
 
 const Reports = () => {
+
+    const {addToast} = useToast();
     
     const {
         posDashboardData,
@@ -38,8 +41,8 @@ const Reports = () => {
             params.frequency = frequency;
         }
 
-        if (startDate !== null) params.startDate = formatDateForAPI(startDate)
-        if (endDate !== null) params.endDate = formatDateForAPI(endDate)
+        if (startDate !== null) params.start_date = formatDateForAPI(startDate)
+        if (endDate !== null) params.end_date = formatDateForAPI(endDate)
 
         setSearchParams(params)
     }, [frequency, startDate, endDate])
@@ -165,12 +168,21 @@ const Reports = () => {
         setFrequency(value)
     }
 
-    const handleStartDate = (value) => setStartDate(value);
-    const handleEndDate = (value) => setEndDate(value);
-    const clearDates = () => {
-        handleStartDate(null);
-        handleEndDate(null);
-    }
+    const handleStartDate = (value) => {
+        if (endDate && new Date(value) > new Date(endDate)) {
+            addToast("Start date cannot be after the end date.", "error");
+            return;
+        }
+        setStartDate(value);
+    };
+
+    const handleEndDate = (value) => {
+        if (startDate && new Date(value) < new Date(startDate)) {
+            addToast("End date cannot be before the start date.", "error");
+            return;
+        }
+        setEndDate(value);
+    };
 
     // MAPS
 
@@ -201,10 +213,10 @@ const Reports = () => {
     const listCashiers = posDashboardData.cashier_performance.map((cashier, index) =>
         <div key={index} className='flex flex-row p-2.5 border-b border-b-border'>
             <h5 className={cashierRowStyle}>{cashier.name}</h5>
-            <h5 className={cashierRowStyle}>₱ {(cashier.daily_revenue).toFixed(2)}</h5>
-            <h5 className={cashierRowStyle}>₱ {(cashier.weekly_revenue).toFixed(2)}</h5>
-            <h5 className={cashierRowStyle}>₱ {(cashier.monthly_revenue).toFixed(2)}</h5>
-            <h5 className={cashierRowStyle}>₱ {(cashier.total_revenue).toFixed(2)}</h5>
+            <h5 className={cashierRowStyle}>₱ {(cashier.daily_revenue)}</h5>
+            <h5 className={cashierRowStyle}>₱ {(cashier.weekly_revenue)}</h5>
+            <h5 className={cashierRowStyle}>₱ {(cashier.monthly_revenue)}</h5>
+            <h5 className={cashierRowStyle}>₱ {(cashier.total_revenue)}</h5>
         </div>
     );
 
