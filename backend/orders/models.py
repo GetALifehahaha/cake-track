@@ -1,9 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 from inventory.models import Recipe
+from backend.utils import generate_id
 
 # Create your models here.
 class Order(models.Model):
+    id = models.CharField(primary_key=True, max_length=20, editable=False)
+
     recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
     comments = models.TextField(null=True, blank=True)
@@ -29,6 +32,13 @@ class Order(models.Model):
     
     reject_reason = models.TextField(null=True, blank=True)
     payment_source_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = generate_id("ORD")
+            while Order.objects.filter(id=self.id).exists():
+                self.id = generate_id("ORD")
+        super().save(*args, **kwargs)
     
 
 class OrderImage(models.Model):

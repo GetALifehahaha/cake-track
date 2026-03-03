@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 import random
 from django.db import models
 from django.utils import timezone
+from backend.utils import generate_id
 
 # Create your models here.
 
@@ -51,6 +52,8 @@ class ProductVariant(models.Model):
     
 
 class Transaction(models.Model):
+    id = models.CharField(primary_key=True, max_length=20, editable=False)
+
     cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="transactions")
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True)
     is_void = models.BooleanField(default=False)
@@ -79,6 +82,13 @@ class Transaction(models.Model):
     discount_amount = models.DecimalField(max_digits=11, decimal_places=2)
     net_total = models.DecimalField(max_digits=11, decimal_places=2)
     change = models.DecimalField(max_digits=11, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = generate_id("TRX")
+            while Transaction.objects.filter(id=self.id).exists():
+                self.id = generate_id("TRX")
+        super().save(*args, **kwargs)
 
     
 class TransactionItem(models.Model):
