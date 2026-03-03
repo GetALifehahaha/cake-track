@@ -1,11 +1,16 @@
 from rest_framework import serializers, validators
 from django.contrib.auth.models import User, Group
-from .models import OTP, UserProfile
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+
+from .models import (
+    OTP, 
+    UserProfile,
+    # Address,
+    )
 
 class UserSerializer(serializers.ModelSerializer):
     middle_name = serializers.SerializerMethodField()
@@ -118,14 +123,22 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         )
 
         return user
-        
+    
+
+# class AddressSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Address
+#         fields = '__all__'        
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     groups = serializers.StringRelatedField(many=True)
+    # addresses = AddressSerializer(many=True, read_only=True, blank=True)
     
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active']
+        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active', ]
+        # 'addresses'
         read_only_fields = ['id', 'username', 'groups', 'is_staff']
 
 class OTPSerializer(serializers.ModelSerializer):

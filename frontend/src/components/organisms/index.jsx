@@ -32,5 +32,5 @@ export { default as AddCakeModal } from './cakes/AddCakeModal'
 export { default as EditCakeModal } from './cakes/EditCakeModal'
 export { default as UnitModal } from './inventory/UnitModal'
 export { default as CakeArchivedModal } from './cakes/CakeArchivedModal'
-
+export { default as BlockedDates } from './orders/BlockedDates'
 

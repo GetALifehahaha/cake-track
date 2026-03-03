@@ -86,3 +86,12 @@ class Cake(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+class BlockedDate(models.Model):
+    date = models.DateField(unique=True)
+
+
+class OpeningTime(models.Model):
+    start_time = models.TimeField()
+    end_time = models.TimeField()

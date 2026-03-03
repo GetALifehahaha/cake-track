@@ -116,7 +116,7 @@ const AddCashierModal = ({onConfirm, onClose}) => {
     }
 
     const handleAddCashier = () => {
-        onConfirm({first_name: firstName, last_name: lastName, username: username, email: emailAddress, password: tempPassword});
+        onConfirm({first_name: firstName, middle_name: middleName, last_name: lastName, username: username, email: emailAddress, password: tempPassword});
     }
 
 

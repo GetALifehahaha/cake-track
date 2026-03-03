@@ -18,7 +18,7 @@ const Cashier = () => {
     const [prepCashier, setPrepCashier] = useState(null)
 
     if (loading) return <Loading />
-    if (error) return <h5>Error</h5>
+    // if (error) return <h5>Error</h5>
 
     const handleShowAddCashierModal = () => {
         setShowAddCashierModal(!showAddCashierModal)
@@ -30,16 +30,26 @@ const Cashier = () => {
 
     const addCashier = async (value) => {
         try {
-            await postCashier(value);
-            addToast('Cashier registered successfully', 'success');
-            refresh();
-        } catch (err) {
-            addToast('Failed to register cashier', 'error');
-            console.log(err);
-        } finally {
+            const response = await postCashier(value);
+            
+            if (response.status === 200 || response.status === 201) {
+                addToast('Cashier registered successfully', 'success');
+                refresh(); 
+            }
+
             handleShowAddCashierModal();
+        } catch (err) {
+            const errorData = err.response?.data;
+            
+            const usernameError = errorData?.username?.[0] || errorData?.username;
+            const emailError = errorData?.email?.[0] || errorData?.email;
+            const generalError = errorData?.detail || "An unexpected error occurred";
+
+            const errorMessage = usernameError || emailError || generalError;
+
+            addToast(`Failed to register cashier: ${errorMessage}`, 'error');
         }
-    }
+    };
 
     const handlePrepEditCashier = (value) => {
         setPrepCashier(value);
@@ -65,7 +75,7 @@ const Cashier = () => {
         handleShowEditCashierModal();
     }
 
-    const listCashiers = data.results.map((cashier, index) =>
+    const listCashiers = data?.results ? data.results.map((cashier, index) =>
         <div key={index} 
             className={clsx('p-2 flex flex-row cashiers-center text-text font-medium text-md text-center border-b-border border-b', 
             {'opacity-50': !cashier.is_active})}>
@@ -75,8 +85,8 @@ const Cashier = () => {
             <h5 className='flex-1'>{cashier.username}</h5>
             <h5 className='flex-1'>{cashier.email}</h5>
             <h5 className='flex-1'><Ellipsis size={18} className='mx-auto cursor-pointer' onClick={() => handlePrepEditCashier(cashier)} /></h5>
-        </div>
-    )
+        </div> 
+    ) : <p>No cashiers found.</p>;
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>

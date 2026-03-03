@@ -1,7 +1,6 @@
 from django.shortcuts import render
 
-# Create your views here.
-from rest_framework import permissions, viewsets, filters, status
+from rest_framework import permissions, viewsets, filters, status, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
@@ -16,14 +15,18 @@ from .serializers import (
     OrderBatchUpdateSerializer,
     DashboardSerializer,
     CakeSerializer,
-    CakeBatchUnarchiveSerializer
+    CakeBatchUnarchiveSerializer,
+    BlockedDateSerializer,
+    OpeningTimeSerializer
 )
 
 from .models import (
     CakeOrder,
     CupcakeOrder,
     Order,
-    Cake
+    Cake,
+    BlockedDate,
+    OpeningTime
 )
 
 from users.permissions import IsCashier, IsCustomerOrAdmin
@@ -218,3 +221,32 @@ class CakeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
+
+class BlockedDateView(APIView):
+    def get(self, request):
+        blocked_dates = BlockedDate.objects.all()
+        serializer = BlockedDateSerializer(blocked_dates, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = BlockedDateSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        dates_to_delete = request.data
+        print(dates_to_delete)
+
+        if not isinstance(dates_to_delete, list):
+            return Response({"error": "Expected a list of dates."}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count, _ = BlockedDate.objects.filter(date__in=dates_to_delete).delete()
+        return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
+    
+
+class OpeningTimeViewSet(viewsets.ModelViewSet):
+    queryset = OpeningTime.objects.all()
+    serializer_class = OpeningTimeSerializer
+    permission_classes = [permissions.AllowAny]

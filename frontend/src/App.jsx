@@ -13,6 +13,7 @@ import {
 	QueuePending,
 	QueueAccepted,
 	QueueCompleted,
+	QueueOrderAvailability,
 	Recipe,
 	BusinessDetails,
 	Cashier,
@@ -21,7 +22,7 @@ import {
 	QueueRejected,
 	ForgotPassword,
 	SetAccount,
-	Cakes
+	Cakes,
 } from './pages'
 import { ProtectedRoute } from './components/organisms'
 
@@ -43,6 +44,7 @@ const App = () => {
 						<Route path='ready' element={<QueueReady />} />
 						<Route path='completed' element={<QueueCompleted />} />
 						<Route path='rejected' element={<QueueRejected />} />
+						<Route path='availability' element={<QueueOrderAvailability />} />
 					</Route>
 					<Route path='/recipe' element={<Recipe />} />
 					<Route path='/cakes' element={<Cakes />} />

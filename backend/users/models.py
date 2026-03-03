@@ -23,3 +23,13 @@ class PasswordResetToken(models.Model):
     token = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
+
+
+class Address(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='locations')
+
+    street = models.CharField(max_length=100, blank=True, null=True)
+    barangay = models.CharField(max_length=100, blank=True, null=True)
+    province = models.CharField(max_length=100, blank=True, null=True)
+    zip_code = models.CharField(max_length=10, blank=True, null=True)
+    description = models.TextField()

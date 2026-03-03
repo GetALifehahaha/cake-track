@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake)
+from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime)
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -24,10 +24,8 @@ class OrderSerializer(serializers.ModelSerializer):
     cake_orders = CakeOrderSerializer()
     cupcake_orders = CupcakeOrderSerializer(required=False)
     
-    # This field will read the related images for GET requests
     order_images = OrderImageSerializer(many=True, read_only=True)
     
-    # This field accepts a list of strings (URLs) for POST requests
     uploaded_images = serializers.ListField(
         child=serializers.CharField(max_length=500),
         write_only=True,
@@ -132,3 +130,15 @@ class CakeBatchUnarchiveSerializer(serializers.Serializer):
         ids = self.validated_data['cake_ids']
         updated_count = Cake.objects.filter(id__in=ids).update(is_archived=False)
         return updated_count
+    
+
+class BlockedDateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlockedDate
+        fields = ['id', 'date']
+
+
+class OpeningTimeSerializer():
+    class Meta:
+        model = OpeningTime
+        field = '__all__'
