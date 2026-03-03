@@ -20,7 +20,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         
 
 class PaymentInitializeSerializers(serializers.Serializer):
-    order_id = serializers.IntegerField(
+    order_id = serializers.CharField(
         write_only=True,
         required=True,
         help_text='The ID of the Order to be paid.'
