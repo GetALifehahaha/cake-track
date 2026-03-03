@@ -25,8 +25,6 @@ class CreateUserView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def get_serializer_class(self):
-        print(f"User making request: {self.request.user}")
-        print(f"Is staff: {self.request.user.is_staff}")
 
         if self.request.user.is_staff:
             return CashierCreateSerializer
@@ -137,6 +135,10 @@ class GoogleAuthView(APIView):
 import random
 import secrets
 from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+import random
 
 class OTPViewSet(viewsets.ModelViewSet):
     queryset = OTP.objects.all()
@@ -149,7 +151,7 @@ class OTPViewSet(viewsets.ModelViewSet):
         if not email:
             return Response({'type': 'error', 'label': 'No Email', 'details': 'No email has been sent'}, status=status.HTTP_400_BAD_REQUEST)
 
-        random_otp = int(''.join(map(str, [random.randint(1, 6) for _ in range(6)])))
+        random_otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         user = None
         otp = None
 
@@ -159,28 +161,25 @@ class OTPViewSet(viewsets.ModelViewSet):
             pass
         
         if user:
-            try:
-                otp = OTP.objects.get(user__email=email)
-
-                otp.otp = random_otp
-                otp.is_valid = True
-                otp.expires_at=timezone.localtime() + timedelta(minutes=15)
-                otp.save()
-
-            except OTP.DoesNotExist:
-                otp = OTP.objects.create(
-                    user=user,
-                    otp=random_otp,
-                    is_valid=True,
-                    expires_at=timezone.localtime() + timedelta(minutes=15)
-                )
-                serializer = self.get_serializer(otp)
-                if serializer.is_valid():
-                    serializer.save()
+            otp_obj, created = OTP.objects.update_or_create(
+                user=user,
+                defaults={
+                    'otp': random_otp,
+                    'is_valid': True,
+                    'expires_at': timezone.now() + timedelta(minutes=15)
+                }
+            )
 
             subject = 'Your Password Reset OTP'
-            message = f'Your OTP for password reset is {random_otp}. It will expire in 15 minutes.'
-            response = send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
+            message = f"Your OTP for password reset is {random_otp}. It will expire in 15 minutes. If you didn't request this OTP, disregard this email."
+            
+            send_mail(
+                subject, 
+                message, 
+                settings.DEFAULT_FROM_EMAIL, 
+                [email],
+                fail_silently=False,
+            )
         
         return Response({'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
 
