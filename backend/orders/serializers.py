@@ -65,7 +65,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderBatchUpdateSerializer(serializers.Serializer):
     # GET all the IDs of the batch PATCH update 
     order_ids = serializers.ListField(
-        child=serializers.IntegerField(),
+        child=serializers.CharField(),
         allow_empty=False
     )
     
