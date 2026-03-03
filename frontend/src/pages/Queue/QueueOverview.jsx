@@ -180,8 +180,8 @@ const QueueOverview = () => {
 							<h5 className='text-success font-bold text-2xl'>{ingredientDashboard.summary.in_stock_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
-							<h5 className='text-text/50 font-semibold'>Running Low</h5>
-							<h5 className='text-warning font-bold text-2xl'>{ingredientDashboard.summary.running_low_count}</h5>
+							<h5 className='text-text/50 font-semibold'>Near Expiration</h5>
+							<h5 className='text-warning font-bold text-2xl'>{ingredientDashboard.summary.near_expiration_count}</h5>
 						</span>
 						<span className='flex flex-col justify-center items-center p-4'>
 							<h5 className='text-text/50 font-semibold'>Out of Stock</h5>
