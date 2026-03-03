@@ -1,10 +1,10 @@
 import React, {useState} from 'react';
-import { Title, Label } from '../atoms';
+import { Title, Label } from '../../atoms';
 import { X } from 'lucide-react';
 import { capitalize } from '@/utils/capitalize';
 import { formatCasing } from '@/utils/formatCasing';
 import { formatDateForDisplay } from '@/utils/date';
-import { PreviewImage } from '../molecules';
+import { PreviewImage } from '../../molecules';
 import { parseTimeString } from '@/utils/time';
 
 

@@ -16,7 +16,7 @@ const QueueAccepted = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
-	const [completeId, setCompleteId] = useState(-1);
+	const [completeId, setCompleteId] = useState(null);
 	const [pageNum, setPageNum] = useState(1);
 
 	if (loading) return <Loading />
@@ -45,13 +45,13 @@ const QueueAccepted = () => {
 	}
 
 	const completeOrder = async () => {
-		if (completeId == -1) return;
+		if (completeId === null) return;
 
 		try {
 			await patchOrder(completeId, { status: "ready" });
 
 			addToast("Order completed successfully");
-			setCompleteId(-1);
+			setCompleteId(null);
 		} catch (err) {
 			addToast("Failed to accept order.", "error")
 		}
@@ -89,7 +89,7 @@ const QueueAccepted = () => {
 				<OrderDetails orderDetails={orderDetails} onClose={() => setOrderDetails(null)} />
 			}
 
-			{completeId > -1 &&
+			{completeId &&
 				<ConfirmationModal title={"Accept Order?"} content={"Are you sure you want to accept this order?"} onConfirm={completeOrder} onReject={() => setCompleteId(-1)} />
 			}
 		</div>

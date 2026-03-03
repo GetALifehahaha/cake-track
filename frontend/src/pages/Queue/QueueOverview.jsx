@@ -16,7 +16,7 @@ const QueueOverview = () => {
 	const { ingredientDashboard, ingredientError, ingredientLoading } = useIngredient();
 	const navigate = useNavigate();
 
-	const [removeId, setRemoveId] = useState(-1);
+	const [removeId, setRemoveId] = useState(null);
 
 	if (loading || ingredientLoading) return <Loading />
 	if (error || ingredientError) return <h5>Error</h5>
@@ -73,7 +73,7 @@ const QueueOverview = () => {
 	}
 
 	const setOrderToReject = async (reason) => {
-		if (removeId == -1) return;
+		if (removeId == null) return;
 
 		try {
 			await patchOrder(removeId, {
@@ -85,7 +85,7 @@ const QueueOverview = () => {
 		} catch (err) {
 			addToast(`Error: ${err}`, "error")
 		} finally {
-			setRemoveId(-1)
+			setRemoveId(null)
 		}
 	}
 
@@ -96,7 +96,7 @@ const QueueOverview = () => {
 			<h5 className='basis-1/4 px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold text-center text-xs'>{capitalize(order.cake_orders.occasion)}</h5>
 			<h5 className='basis-1/4 text-right'>{parseDate(order.due_date)}</h5>
 			<div className='basis-1/4 flex items-center gap-2 justify-end'>
-				<InputRejectModalWrapper onReject={() => setRemoveId(-1)} onConfirm={setOrderToReject}>
+				<InputRejectModalWrapper onReject={() => setRemoveId(null)} onConfirm={setOrderToReject}>
 					<X className='text-red-500' onClick={() => setRemoveId(order.id)} size={18} />
 				</InputRejectModalWrapper>
 				<ConfirmationModalWrapper title='Accept order' content={`Confirm acceptance of Order #${order.id}. This action is irreversible and places the order into the active production schedule.`} onConfirm={() => setOrderToAccepted(order.id)}>

@@ -20,9 +20,9 @@ const QueuePending = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
-	const [showOptions, setShowOptions] = useState(-1);
-	const [prepAcceptId, setPrepAcceptId] = useState(-1);
-	const [prepRejectId, setPrepRejectId] = useState(-1);
+	const [showOptions, setShowOptions] = useState(null);
+	const [prepAcceptId, setPrepAcceptId] = useState(null);
+	const [prepRejectId, setPrepRejectId] = useState(null);
 	const [prepRejectAll, setPrepRejectAll] = useState(false);
 
 	if (loading) return <Loading />
@@ -40,13 +40,13 @@ const QueuePending = () => {
 	}
 
 	const acceptOrder = async () => {
-		if (prepAcceptId == -1) return;
+		if (prepAcceptId == null) return;
 
 		try {
 			await patchOrder(prepAcceptId, { status: "accepted" });
 
 			addToast("Order accepted successfully");
-			setPrepAcceptId(-1);
+			setPrepAcceptId(null);
 		} catch (err) {
 			addToast("Failed to accept order.", "error")
 		}
@@ -80,13 +80,13 @@ const QueuePending = () => {
 	}
 
 	const rejectOrder = async (rejectReason) => {
-		if (prepRejectId == -1) return;
+		if (prepRejectId == null) return;
 
 		try {
 			await patchOrder(prepRejectId, { "status": "rejected", "reject_reason": rejectReason });
 
 			addToast("Order declined successfully");
-			setPrepRejectId(-1);
+			setPrepRejectId(null);
 		} catch (err) {
 			addToast("Failed to decline order.", "error")
 		}
@@ -116,7 +116,7 @@ const QueuePending = () => {
 			{showOptions === cake.id &&
 				<div
 					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
-					onClick={(e) => { e.stopPropagation(); setShowOptions(0) }}
+					onClick={(e) => { e.stopPropagation(); setShowOptions(null) }}
 				>
 					<Button variant='success' text='ACCEPT' onClick={(e) => {e.stopPropagation(); setPrepAcceptId(cake.id)}} />
 					<Button variant='error' text='DECLINE' onClick={(e) => {e.stopPropagation(); setPrepRejectId(cake.id)}} />
@@ -197,12 +197,12 @@ const QueuePending = () => {
 				<OrderDetails orderDetails={orderDetails} onClose={handleShowOrderDetails} />
 			}
 
-			{prepAcceptId > 0 &&
-				<ConfirmationModal title={"Accept Order?"} content={"Are you sure you want to accept this order?"} onConfirm={acceptOrder} onReject={() => setPrepAcceptId(-1)} />
+			{prepAcceptId &&
+				<ConfirmationModal title={"Accept Order?"} content={"Are you sure you want to accept this order?"} onConfirm={acceptOrder} onReject={() => setPrepAcceptId(null)} />
 			}
 
-			{prepRejectId > 0 &&
-				<InputRejectModal onConfirm={rejectOrder} onReject={() => setPrepRejectId(-1)} />
+			{prepRejectId &&
+				<InputRejectModal onConfirm={rejectOrder} onReject={() => setPrepRejectId(null)} />
 			}
 
 			{prepRejectAll &&

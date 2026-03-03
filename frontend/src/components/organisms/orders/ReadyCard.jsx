@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Ellipsis } from 'lucide-react';
-import { Button } from '../atoms';
+import { Button } from '../../atoms';
 import { capitalize } from '@/utils/capitalize';
 
 const ReadyCard = ({ order, onComplete, onShowDetails }) => {
