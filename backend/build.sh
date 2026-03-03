@@ -23,9 +23,13 @@ if not User.objects.filter(username=username).exists():
     print(f"Superuser {username} created successfully.")
 else:
     print(f"Superuser {username} already exists.")
+END
 
+python manage.py shell << END
 from django.contrib.auth import get_user_model
 from users.models import UserProfile
+User = get_user_model()
+
 for user in User.objects.all():
     UserProfile.objects.get_or_create(user=user)
 END
