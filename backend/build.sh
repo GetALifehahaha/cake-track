@@ -8,6 +8,12 @@ pip install -r requirements.txt
 # Run migrations
 python manage.py migrate
 
+python manage.py dbshell << END
+DROP TABLE IF EXISTS users_userprofile CASCADE;
+DROP TABLE IF EXISTS auth_user CASCADE;
+END
+
+
 # Create superuser using a custom management command or shell script
 python manage.py shell << END
 from django.contrib.auth import get_user_model
@@ -25,14 +31,7 @@ else:
     print(f"Superuser {username} already exists.")
 END
 
-python manage.py shell << END
-from django.contrib.auth import get_user_model
-from users.models import UserProfile
-User = get_user_model()
 
-for user in User.objects.all():
-    UserProfile.objects.get_or_create(user=user)
-END
 
 # Collect static files
 python manage.py collectstatic --no-input
