@@ -14,8 +14,8 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 			{showOptions &&
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(false) }}>
-					<Button variant='success' text='READY FOR PICKUP' onClick={() => { onComplete(order.id); setShowOptions(false); }} />
-					<Button variant='error' text='CANCEL' onClick={() => { setShowOptions(false) }} />
+					<Button variant='success' text='READY FOR PICKUP' onClick={(e) => { e.stopPropagation(); onComplete(order.id); setShowOptions(false); }} />
+					<Button variant='error' text='CANCEL' onClick={(e) => { e.stopPropagation(); setShowOptions(false) }} />
 				</div>
 			}
 			<div className='flex justify-between items-center'>

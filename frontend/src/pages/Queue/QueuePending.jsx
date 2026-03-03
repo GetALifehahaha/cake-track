@@ -118,8 +118,8 @@ const QueuePending = () => {
 					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(0) }}
 				>
-					<Button variant='success' text='ACCEPT' onClick={() => setPrepAcceptId(cake.id)} />
-					<Button variant='error' text='DECLINE' onClick={() => setPrepRejectId(cake.id)} />
+					<Button variant='success' text='ACCEPT' onClick={(e) => {e.stopPropagation(); setPrepAcceptId(cake.id)}} />
+					<Button variant='error' text='DECLINE' onClick={(e) => {e.stopPropagation(); setPrepRejectId(cake.id)}} />
 				</div>
 			}
 
