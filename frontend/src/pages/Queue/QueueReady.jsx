@@ -90,7 +90,7 @@ const QueueAccepted = () => {
 			}
 
 			{completeId &&
-				<ConfirmationModal title={"Accept Order?"} content={"Are you sure you want to accept this order?"} onConfirm={completeOrder} onReject={() => setCompleteId(null)} />
+				<ConfirmationModal title={"Order Finished?"} content={"Are you sure you want to mark this order as finished?"} onConfirm={completeOrder} onReject={() => setCompleteId(null)} />
 			}
 		</div>
 	)

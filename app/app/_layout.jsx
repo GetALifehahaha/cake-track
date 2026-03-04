@@ -8,6 +8,7 @@ import { ToastProvider } from "@/context/ToastContext";
 import { View, ActivityIndicator } from "react-native";
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
+
 // Add this near your 
 configureReanimatedLogger({
   strict: false, // Disables the "Reading from `value` during component render" warning
@@ -22,6 +23,8 @@ const InitialLayout = () => {
   const router = useRouter();
 
   useEffect(() => {
+    console.log(process.env.EXPO_PUBLIC_API_URL);
+
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
