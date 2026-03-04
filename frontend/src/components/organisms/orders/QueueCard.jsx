@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from '../atoms';
+import { Button } from '@/components/atoms';
 import { Ellipsis } from 'lucide-react';
-import ConfirmationModalWrapper from './ConfirmationModalWrapper';
-import { InputRejectModalWrapper } from '.';
+import ConfirmationModalWrapper from '../ConfirmationModalWrapper';
+import { InputRejectModalWrapper } from '..';
 
 const QueueCard = ({ order, onAccept, onReject, onShowDetails }) => {
 

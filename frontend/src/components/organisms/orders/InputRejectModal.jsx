@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import ModalBody from '../molecules/ModalBody'
-import { Button, Title } from '../atoms';
-import ConfirmationModalWrapper from './ConfirmationModalWrapper';
-import { ModalFeedbackCard } from '../molecules';
+import { Button } from '@/components/atoms';
+import ConfirmationModalWrapper from '../ConfirmationModalWrapper';
+import { ModalFeedbackCard, ModalBody } from '@/components/molecules';
 
 const InputRejectModal = ({ onConfirm, onReject }) => {
 

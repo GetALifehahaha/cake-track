@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { Pagination, ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import { AddProductModal, ArchivedModal, DiscountModal, CategoryModal, EditProductModal} from '../components/organisms';
+import { AddProductModal, ArchivedModal, DiscountModal, CategoryModal, EditProductModal, ProductsSkeletonLoading} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
@@ -31,7 +31,7 @@ const Products = () => {
         setSearchParams(params)
     }, [filter])
 
-    if (productLoading || categoryLoading) return <Loading />
+    if (productLoading || categoryLoading) return <ProductsSkeletonLoading />
     if (productError) return <h5>Error loading product data</h5>
     if (categoryError) return <h5>Error loading category data</h5>
 

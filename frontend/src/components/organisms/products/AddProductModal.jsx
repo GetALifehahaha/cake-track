@@ -25,9 +25,9 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const [imagePreview, setImagePreview] = useState(null);
 
-    const [feedback, setFeedback] = useState("");
+    const [feedback, setFeedback] = useState(null);
 
-    const clearFeedback = () => setFeedback({})
+    const clearFeedback = () => setFeedback(null)
 
     const handleConfirmModal = async () => {
         setShowConfirmationModal(false);

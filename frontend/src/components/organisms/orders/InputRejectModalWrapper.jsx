@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import ModalBody from '../molecules/ModalBody'
-import { Button, Title } from '../atoms';
+import { Title, Button } from '@/components/atoms';
 import { X } from 'lucide-react';
-import ConfirmationModalWrapper from './ConfirmationModalWrapper';
+import { ModalBody } from '@/components/molecules';
+import ConfirmationModalWrapper from '../ConfirmationModalWrapper';
 
 const InputRejectModalWrapper = ({ children, onConfirm, onReject }) => {
 
