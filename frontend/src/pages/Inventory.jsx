@@ -7,6 +7,7 @@ import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
+import { InventorySkeleton } from '@/components/molecules/Skeletons';
 
 const Inventory = () => {
 
@@ -28,7 +29,7 @@ const Inventory = () => {
     const [showStockOutAllConfirmationModal, setShowStockOutAllConfirmationModal] = useState(false);
     const [showTransactionHistoryModal, setShowTransactionHistoryModal] = useState(false);
 
-    if (ingredientLoading) return <Loading />
+    if (ingredientLoading) return <InventorySkeleton />
     if (ingredientError) return <h5>Error</h5>
     
     

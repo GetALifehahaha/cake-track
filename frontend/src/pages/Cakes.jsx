@@ -6,6 +6,7 @@ import { AddCakeModal, EditCakeModal, CakeArchivedModal } from '../components/or
 import useCakes from '@/hooks/useCakes';
 import { useToast } from '@/context/ToastContext';
 import Loading from '@/components/molecules/Loading';
+import { CakesSkeleton } from '@/components/molecules/Skeletons';
 
 const Cakes = () => {
     const { addToast } = useToast();
@@ -24,7 +25,7 @@ const Cakes = () => {
     const [showEditCakeModal, setShowEditCakeModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
 
-    if (loading) return <Loading />;
+    if (loading) return <CakesSkeleton />;
     if (error) return <h5>Error loading cake data</h5>;
     
     const clear = () => {

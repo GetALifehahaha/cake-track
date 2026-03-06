@@ -7,6 +7,7 @@ import Loading from '@/components/molecules/Loading';
 import { Pagination } from '@/components/molecules';
 import { useToast } from '@/context/ToastContext';
 import clsx from 'clsx';
+import { CashierSkeleton } from '@/components/molecules/Skeletons';
 
 const Cashier = () => {
 
@@ -17,7 +18,7 @@ const Cashier = () => {
     const [showEditCashierModal, setShowEditCashierModal] = useState(false);
     const [prepCashier, setPrepCashier] = useState(null)
 
-    if (loading) return <Loading />
+    if (loading) return <CashierSkeleton />
     // if (error) return <h5>Error</h5>
 
     const handleShowAddCashierModal = () => {

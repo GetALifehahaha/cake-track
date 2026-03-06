@@ -7,6 +7,7 @@ import { ConfirmationModal } from '@/components/organisms';
 import { Eye, EyeClosed } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
+import { BusinessDetailsSkeleton } from '@/components/molecules/Skeletons';
 
 
 const BusinessDetails = () => {
@@ -117,7 +118,7 @@ const BusinessDetails = () => {
 
     // UI LOGIC
 
-    if (loading) return <Loading />
+    if (loading) return <BusinessDetailsSkeleton />
     if (error) return <h5>Error: {error}</h5> 
 
     return (

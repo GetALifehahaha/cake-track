@@ -7,6 +7,7 @@ import { Pagination } from '@/components/molecules';
 import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
 import ViewRecipeModal from '@/components/organisms/recipe/ViewRecipeModal';
+import { RecipeSkeleton } from '@/components/molecules/Skeletons';
 
 const Recipe = () => {
 
@@ -17,7 +18,7 @@ const Recipe = () => {
     const [viewRecipe, setViewRecipe] = useState(null);
     const [showEditRecipe, setShowEditRecipe] = useState(null);
     
-    if (loading) return <Loading />
+    if (loading) return <RecipeSkeleton />
     if (error) return <h5>Error...</h5>
 
     const selectViewRecipe = (recipe) => {

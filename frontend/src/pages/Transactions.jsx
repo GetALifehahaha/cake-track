@@ -10,6 +10,7 @@ import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { AuthContext } from '@/context/AuthContext';
 import { formatToDecimal } from '@/utils/formatToDecimal';
+import { TransactionsSkeleton } from '@/components/molecules/Skeletons';
 
 const Transactions = () => {
 
@@ -30,7 +31,7 @@ const Transactions = () => {
     const [transactionDetails, setTransactionDetails] = useState(null);
     const [showTransactionDetails, setShowTransactionDetails] = useState(false);
 
-    if (loading) return <Loading />
+    if (loading) return <TransactionsSkeleton />
     if (error) return <h5>Error loading transactions</h5>
 
     console.log(data)

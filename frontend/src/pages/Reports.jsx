@@ -11,6 +11,7 @@ import { useSearchParams } from "react-router-dom";
 import { DatePicker } from "@/components/molecules";
 import { formatDateForAPI } from "@/utils/date";
 import { useToast } from "@/context/ToastContext";
+import { ReportsSkeleton } from "@/components/molecules/Skeletons";
 
 jsPDF.API.autoTable = autoTable;
 
@@ -32,7 +33,6 @@ const Reports = () => {
     const [endDate, setEndDate] = useState(null);
 
     const [downloadModal, setDownloadModal] = useState(false);
-    const [openFilter, setOpenFilter] = useState(false);
 
     useEffect(() => {
         let params = {};
@@ -47,7 +47,7 @@ const Reports = () => {
         setSearchParams(params)
     }, [frequency, startDate, endDate])
     
-    if (loading) return <Loading />;
+    if (loading) return <ReportsSkeleton     />;
     if (error) return <h5>Error...</h5>;
 
     const months = [
