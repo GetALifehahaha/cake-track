@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-from rest_framework import status, viewsets, generics
+from rest_framework import status, viewsets, generics, filters
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
@@ -35,6 +35,9 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [DjangoModelPermissions, IsAdmin]
+
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'email', 'first_name', 'last_name']
     
     def get_queryset(self):
         queryset = User.objects.filter(groups__name="cashier")

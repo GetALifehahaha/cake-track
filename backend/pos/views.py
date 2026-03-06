@@ -118,10 +118,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = MediumPageSize
     
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = TransactionFilter
     
-    search_fields = ['cashier__username', 'payment_method']
+    search_fields = ['cashier__username', 'payment_method', 'id']
     ordering_fields = ['id', 'created_at', 'payment_method']
     ordering = ['-created_at']
 
@@ -135,15 +135,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         
-        # 1. Get the queryset (Today + Current Cashier)
         queryset = self.get_queryset()
-        
-        # # 2. FIX: Calculate sum in Python loop
-        # # Check 'is_void' to ensure we don't count voided transactions
-        # daily_revenue = sum(
-        #     t.net_total for t in queryset 
-        #     if not t.is_void and t.created_at is date.now()
-        # )
 
         manila_tz = pytz.timezone('Asia/Manila')
         today = timezone.now().astimezone(manila_tz)
@@ -155,7 +147,6 @@ class TransactionViewSet(viewsets.ModelViewSet):
             or 0
         )
         
-        # 3. Inject into response
         if isinstance(response.data, dict):
             response.data['daily_total_revenue'] = daily_revenue
             

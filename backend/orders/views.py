@@ -4,7 +4,6 @@ from rest_framework import permissions, viewsets, filters, status, generics
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
-from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -65,10 +64,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsCustomerOrAdmin]
     
-    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = OrderFilter
     
-    search_fields = ['id', 'customer__username']
+    search_fields = ['customer__username', '=id']
     ordering_fields = ['created_at', 'status']
     
     def get_queryset(self):

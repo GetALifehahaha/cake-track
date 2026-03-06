@@ -8,7 +8,7 @@ const Searchbar = ({onChange}) => {
     }
 
     return (
-        <div className='flex flex-row items-center gap-2 p-2 border-border border rounded-2xl '>
+        <div className='flex flex-row items-center gap-2 p-2 border-border border rounded-2xl flex-1'>
             <SearchIcon className='text-accent'/>
 
             <input type='text' onChange={(e) => handleOnChange(e.target.value)} placeholder='Search' className='accent-accent-mute placeholder:text-text-light focus:outline-none px-2 w-full'/>

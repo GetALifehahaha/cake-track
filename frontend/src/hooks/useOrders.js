@@ -18,12 +18,13 @@ export default function useOrder() {
         const raw = {
             status: currentFilter,
             created_at: currentParams.due_date,
+            q: currentParams.q
         };
 
         return Object.fromEntries(
             Object.entries(raw).filter(([, v]) => v && v !== 'null' && v !== 'undefined')
         );
-    }, [currentFilter, currentParams.due_date]);
+    }, [currentFilter, currentParams.due_date, currentParams.q]);
 
     const ordersQuery = useQueryFetch('orders', '/orders/orders/', apiParams);
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate('orders');

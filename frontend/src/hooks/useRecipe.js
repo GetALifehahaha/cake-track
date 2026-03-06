@@ -1,12 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RecipeApi } from '@/api/RecipeApi';
+import { useSearchParams } from 'react-router-dom';
 
 export default function useRecipe(params = {}){
     const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
+    const q = searchParams.get('q');
+
+    const apiParams = { ...params, ...(q ? { q } : {}) };
 
     const recipeQuery = useQuery({
-        queryKey: ['recipes', params],
-        queryFn: () => RecipeApi.fetchList(params),
+        queryKey: ['recipes', apiParams],
+        queryFn: () => RecipeApi.fetchList(apiParams),
         placeholderData: (previous) => previous,
     });
 

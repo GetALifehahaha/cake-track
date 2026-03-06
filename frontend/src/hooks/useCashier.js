@@ -1,12 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import  {CashierApi } from "@/api/CashierApi";
+import { useSearchParams } from "react-router-dom";
 
 export default function useCashier() {
     const queryClient = useQueryClient();
+    const [searchParams] = useSearchParams();
+    const q = searchParams.get('q');
+
+    const apiParams = { ...(q ? { q } : {}) };
 
     const cashiersQuery = useQuery({
-        queryKey: ['cashiers'],
-        queryFn: () => CashierApi.fetchList(),
+        queryKey: ['cashiers', apiParams],
+        queryFn: () => CashierApi.fetchList(apiParams),
         placeholderData: (previousData) => previousData,
     });
 

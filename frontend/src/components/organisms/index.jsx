@@ -35,3 +35,4 @@ export { default as CakeArchivedModal } from './cakes/CakeArchivedModal'
 export { default as BlockedDates } from './orders/BlockedDates'
 
 export { default as ProductsSkeletonLoading } from './products/ProductsSkeletonLoading'
+export { default as HomeSkeleton } from './pos/HomeSkeleton'

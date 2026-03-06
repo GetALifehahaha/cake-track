@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ModalFeedbackCard, Pagination, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -134,7 +134,7 @@ const Home = () => {
 
     // GUARDS
 
-    if (productLoading || categoryLoading || transactionLoading || discountLoading || businessLoading ) return <Loading />
+    if (productLoading || categoryLoading || transactionLoading || discountLoading || businessLoading ) return <HomeSkeleton />
     if (productError) return <h5>Error</h5>
     if (categoryError) return <h5>Error</h5>
     if (transactionError) return <h5>Error</h5>

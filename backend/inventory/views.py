@@ -45,6 +45,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
     @action(detail=False, methods=["post"], url_path="stock-out-expired")
     def stock_out_expired(self, request):
@@ -121,6 +123,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('name')
     serializer_class = RecipeSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
     # POST /api/recipes/cook/
     @action(detail=False, methods=['post'])

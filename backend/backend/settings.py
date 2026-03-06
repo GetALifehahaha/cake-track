@@ -45,6 +45,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter'
         ],
     "PAGE_SIZE": 100,
+    "SEARCH_PARAM": "q",
 }
 
 SIMPLE_JWT = {
