@@ -19,7 +19,7 @@ const Home = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
     const {data: productData, loading: productLoading, error: productError} = useProduct();
-    const { postTransaction, loading: transactionLoading, error: transactionError, transactionResponse } = useTransaction();
+    const { postTransaction, loading: transactionLoading, error: transactionError } = useTransaction();
     const {data: businessData, loading: businessLoading, error: businessError} = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
@@ -35,10 +35,10 @@ const Home = () => {
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [orderType, setOrderType] = useState("dine-in");
-    const [filter, setFilter] = useState();
+    const [filter, setFilter] = useState(); 
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
+    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(true);
     const [showClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
@@ -214,7 +214,7 @@ const Home = () => {
                 quantity: p.amount,
             }))
 
-            await postTransaction({
+            const res = await postTransaction({
                 is_void: false,
                 payment_method: "cash",
                 transaction_items: checkoutProductsPayload,
@@ -399,9 +399,9 @@ const Home = () => {
                 <PaymentModal totalPrice={netTotal} onConfirm={completePayment} onClose={() => setShowPaymentModal(false)}/>
             }
 
-            {showPaymentSuccessModal && transactionResponse &&
+            {showPaymentSuccessModal &&
                 <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} 
-                    transactionData={transactionResponse.data}
+                    // transactionData={transactionResponse.data}
                 />
             }
 
