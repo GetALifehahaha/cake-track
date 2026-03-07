@@ -122,131 +122,105 @@ const BusinessDetails = () => {
     if (error) return <h5>Error: {error}</h5> 
 
     return (
-        <div className='flex flex-row w-full h-full gap-8 mb-4'>
-            <div className='flex-1 flex flex-col gap-6'> 
-                <div className='p-6 rounded-sm bg-main-white shadow-sm'>
-                    <div className='flex items-center justify-between'>
-                        <Title text='Business Details' variant='block' />
-                        {(businessName != data?.business_name || address !== data?.address) &&
+    <div className='grid grid-cols-2 w-full h-full gap-4 mb-4'>
+        {/* LEFT COLUMN */}
+        <div className='flex flex-col gap-4'>
+            {/* Business Details + Credentials combined */}
+            <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='flex items-center justify-between'>
+                    <Title text='Business Details' variant='block' />
+                    {(businessName != data?.business_name || address !== data?.address || tin != data.tin) &&
                         <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
-                        }
-                    </div>
-
-                    <div className='mt-4'>
-                        <Label variant='small' text='Business Name' />
-                        <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={businessName} onChange={handleBusinessName}/>
-                    </div>
-                    <div className='mt-4'>
-                        <Label variant='small' text='Address' />
-                        <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={address} onChange={handleAddress}/>
-                    </div>
+                    }
                 </div>
-
-                <div className='p-6 rounded-sm bg-main-white shadow-sm'>
-                    <div className='flex items-center justify-between'>
-                        <Title text='Business Credentials' variant='block' />
-                        {tin != data.tin &&
-                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
-                        }
-                    </div>
-
-                    <div className='mt-4'>
-                        <Label variant='small' text='TIN' />
-                        <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={tin} onChange={handleTin}/>
-                    </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='Business Name' />
+                    <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={businessName} onChange={handleBusinessName}/>
                 </div>
-
-                <div className='p-6 rounded-sm bg-main-white shadow-sm'>
-                    <div className='flex items-center justify-between'>
-                        <Title text='Contact and Message' variant='block' />
-                        {(contactNumber != data?.contact_number || message != data?.message) &&
-                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
-                        }
-                    </div>
-
-                    <div className='mt-4'>
-                        <Label variant='small' text='Contact Number' />
-                        <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={contactNumber} onChange={handleContactNumber}/>
-                    </div>
-                    <div className='mt-4'>
-                        <Label variant='small' text='Message' />
-                        <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={message} onChange={handleMessage}/>
-                    </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='Address' />
+                    <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={address} onChange={handleAddress}/>
                 </div>
-                
-                <div className='flex gap-2'>
-                    <div className='p-6 rounded-sm bg-main-white shadow-sm w-fit'>
-                        <div className='flex items-center justify-between'>
-                            <Title text='Secret PIN' variant='block' />
-                            {secretPIN != data?.secret_pin &&
-                            <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
-                            }
-                        </div>
-                        <div className='mt-4'>
-                            <Label variant='small' text='POS PIN' />
-                                <div className='flex gap-2 items-center'>
-                                    {showSecretPIN ?
-                                    <input type='text' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={secretPIN} onChange={handleSecretPIN}/>
-                                        :
-                                    <input type='password' className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={secretPIN} onChange={handleSecretPIN}/>
-                                    }
-                                    <button onClick={toggleShowSecretPIN}>
-                                        {showSecretPIN ?
-                                        <EyeClosed />
-                                        :
-                                        <Eye />
-                                        }
-                                    </button>
-                                </div>
-                        </div>
-                    </div>
-                    <div className='p-6 rounded-sm bg-main-white shadow-sm w-full'>
-                        <div className='flex items-center justify-between'>
-                            <Title text='Personal Information' variant='block' />
-                            {(firstName !== user?.first_name || lastName !== user?.last_name || email !== user?.email) && (
-                                <Button text='Save Changes' size='small' onClick={updateAccountDetails} />
-                            )}
-                        </div>
-
-                        <div className='flex gap-4 mt-4'>
-                            <div className='flex-1'>
-                                <Label variant='small' text='First Name' />
-                                <input 
-                                    type='text' 
-                                    className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' 
-                                    value={firstName} 
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                />
-                            </div>
-                            <div className='flex-1'>
-                                <Label variant='small' text='Last Name' />
-                                <input 
-                                    type='text' 
-                                    className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' 
-                                    value={lastName} 
-                                    onChange={(e) => setLastName(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className='mt-4'>
-                            <Label variant='small' text='Email Address' />
-                            <input 
-                                type='email' 
-                                className='mt-1 px-4 py-1 border border-border rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </div>
-                    </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='TIN' />
+                    <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={tin} onChange={handleTin}/>
                 </div>
             </div>
 
-            {showConfirmationModal &&
-                <ConfirmationModal title="Edit Business Details" content="Are you sure you want to change the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />
-            }
+            {/* Secret PIN */}
+            <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='flex items-center justify-between'>
+                    <Title text='Secret PIN' variant='block' />
+                    {secretPIN != data?.secret_pin &&
+                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
+                    }
+                </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='POS PIN' />
+                    <div className='flex gap-2 items-center justify-between'>
+                        {showSecretPIN ?
+                            <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-1/2' value={secretPIN} onChange={handleSecretPIN}/>
+                            :
+                            <input type='password' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-1/2' value={secretPIN} onChange={handleSecretPIN}/>
+                        }
+                        <button onClick={toggleShowSecretPIN}>
+                            {showSecretPIN ? <EyeClosed /> : <Eye />}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-    )
+
+        {/* RIGHT COLUMN */}
+        <div className='flex flex-col gap-4'>
+            {/* Contact and Message */}
+            <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='flex items-center justify-between'>
+                    <Title text='Contact and Message' variant='block' />
+                    {(contactNumber != data?.contact_number || message != data?.message) &&
+                        <Button text='Save' size='small' onClick={toggleConfirmationModal}/>
+                    }
+                </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='Contact Number' />
+                    <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={contactNumber} onChange={handleContactNumber}/>
+                </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='Message' />
+                    <textarea className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full resize-none' rows={3} value={message} onChange={handleMessage}/>
+                </div>
+            </div>
+
+            {/* Personal Information */}
+            <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='flex items-center justify-between'>
+                    <Title text='Personal Information' variant='block' />
+                    {(firstName !== user?.first_name || lastName !== user?.last_name || email !== user?.email) && (
+                        <Button text='Save Changes' size='small' onClick={updateAccountDetails} />
+                    )}
+                </div>
+                <div className='flex gap-4 mt-4'>
+                    <div className='flex-1'>
+                        <Label variant='small' text='First Name' />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} onChange={(e) => setFirstName(e.target.value)}/>
+                    </div>
+                    <div className='flex-1'>
+                        <Label variant='small' text='Last Name' />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} onChange={(e) => setLastName(e.target.value)}/>
+                    </div>
+                </div>
+                <div className='mt-4'>
+                    <Label variant='small' text='Email Address' />
+                    <input type='email' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={email} onChange={(e) => setEmail(e.target.value)}/>
+                </div>
+            </div>
+        </div>
+
+        {showConfirmationModal &&
+            <ConfirmationModal title="Edit Business Details" content="Are you sure you want to change the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />
+        }
+    </div>
+)
 }
 
 export default BusinessDetails;

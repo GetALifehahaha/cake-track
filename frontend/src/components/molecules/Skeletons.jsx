@@ -15,71 +15,67 @@ const Bone = ({ className = '' }) => (
 // BusinessDetails Skeleton
 // ─────────────────────────────────────────────────────────────────────────────
 export const BusinessDetailsSkeleton = () => (
-  <div className="flex flex-row w-full h-full gap-8 mb-4">
-    <div className="flex-1 flex flex-col gap-6">
-
-      {/* Business Details card */}
-      <div className="p-6 rounded-sm bg-main-white shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <Bone className="h-5 w-40" />
-          <Bone className="h-7 w-16 rounded-md" />
-        </div>
-        <Bone className="h-3 w-24 mb-2" />
-        <Bone className="h-8 w-full rounded-md mb-4" />
-        <Bone className="h-3 w-20 mb-2" />
-        <Bone className="h-8 w-full rounded-md" />
-      </div>
-
-      {/* Business Credentials card */}
-      <div className="p-6 rounded-sm bg-main-white shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <Bone className="h-5 w-44" />
-        </div>
-        <Bone className="h-3 w-10 mb-2" />
-        <Bone className="h-8 w-full rounded-md" />
-      </div>
-
-      {/* Contact and Message card */}
-      <div className="p-6 rounded-sm bg-main-white shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <Bone className="h-5 w-48" />
-        </div>
-        <Bone className="h-3 w-32 mb-2" />
-        <Bone className="h-8 w-full rounded-md mb-4" />
-        <Bone className="h-3 w-20 mb-2" />
-        <Bone className="h-8 w-full rounded-md" />
-      </div>
-
-      {/* Secret PIN + Personal Info row */}
-      <div className="flex gap-2">
-        <div className="p-6 rounded-sm bg-main-white shadow-sm w-fit min-w-52">
-          <Bone className="h-5 w-24 mb-4" />
-          <Bone className="h-3 w-16 mb-2" />
-          <div className="flex gap-2 items-center">
-            <Bone className="h-8 w-36 rounded-md" />
-            <Bone className="h-6 w-6 rounded-full" />
-          </div>
-        </div>
-        <div className="p-6 rounded-sm bg-main-white shadow-sm flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <Bone className="h-5 w-44" />
-          </div>
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1">
+  <div className="grid grid-cols-2 w-full h-full gap-4 mb-4">
+      {/* LEFT COLUMN */}
+      <div className="flex flex-col gap-4">
+          {/* Business Details + TIN combined */}
+          <div className="p-6 rounded-sm bg-main-white shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                  <Bone className="h-5 w-40" />
+              </div>
+              <Bone className="h-3 w-24 mb-2" />
+              <Bone className="h-8 w-full rounded-md mb-4" />
               <Bone className="h-3 w-20 mb-2" />
+              <Bone className="h-8 w-full rounded-md mb-4" />
+              <Bone className="h-3 w-10 mb-2" />
               <Bone className="h-8 w-full rounded-md" />
-            </div>
-            <div className="flex-1">
-              <Bone className="h-3 w-20 mb-2" />
-              <Bone className="h-8 w-full rounded-md" />
-            </div>
           </div>
-          <Bone className="h-3 w-28 mb-2" />
-          <Bone className="h-8 w-full rounded-md" />
-        </div>
+
+          {/* Secret PIN */}
+          <div className="p-6 rounded-sm bg-main-white shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                  <Bone className="h-5 w-24" />
+              </div>
+              <Bone className="h-3 w-16 mb-2" />
+              <div className="flex gap-2 items-center">
+                  <Bone className="h-8 flex-1 rounded-md" />
+                  <Bone className="h-6 w-6 rounded-full" />
+              </div>
+          </div>
       </div>
 
-    </div>
+      {/* RIGHT COLUMN */}
+      <div className="flex flex-col gap-4">
+          {/* Contact and Message */}
+          <div className="p-6 rounded-sm bg-main-white shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                  <Bone className="h-5 w-48" />
+              </div>
+              <Bone className="h-3 w-32 mb-2" />
+              <Bone className="h-8 w-full rounded-md mb-4" />
+              <Bone className="h-3 w-20 mb-2" />
+              <Bone className="h-20 w-full rounded-md" />
+          </div>
+
+          {/* Personal Information */}
+          <div className="p-6 rounded-sm bg-main-white shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                  <Bone className="h-5 w-44" />
+              </div>
+              <div className="flex gap-4 mb-4">
+                  <div className="flex-1">
+                      <Bone className="h-3 w-20 mb-2" />
+                      <Bone className="h-8 w-full rounded-md" />
+                  </div>
+                  <div className="flex-1">
+                      <Bone className="h-3 w-20 mb-2" />
+                      <Bone className="h-8 w-full rounded-md" />
+                  </div>
+              </div>
+              <Bone className="h-3 w-28 mb-2" />
+              <Bone className="h-8 w-full rounded-md" />
+          </div>
+      </div>
   </div>
 );
 
