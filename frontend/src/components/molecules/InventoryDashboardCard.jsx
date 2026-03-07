@@ -1,7 +1,11 @@
 import React from 'react';
-import { CheckCircle } from 'lucide-react';
+import { cn } from '@/utils/cn';
+import { useSearchParams } from 'react-router-dom';
 
-const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon, amount=0, variant="success"}) => {
+const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon, amount=0, variant="success", onClick, type}) => {
+    const [searchParams] = useSearchParams();
+
+    const currentFilter = searchParams.get('filter')
 
     const bgVariants = {
         success: 'bg-success',
@@ -44,9 +48,10 @@ const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon,
     }
 
     return (
-        <div className={`bg-main-white p-6 border ${borderVariants[variant]} rounded-lg flex flex-1 flex-row gap-8 items-center relative
-        before:content-[""] before:w-1 before:h-full before:left-0 before:top-0 before:-translate-x-full before:rounded-l-full ${beforeBgVariants[variant]} before:absolute
-        `}>
+        <div className={cn(`bg-main-white p-6 border ${borderVariants[variant]} rounded-lg flex flex-1 flex-row gap-8 items-center relative
+        before:content-[""] before:w-1 before:h-full before:left-0 before:top-0 before:-translate-x-full before:rounded-l-full transition ${beforeBgVariants[variant]} before:absolute
+        `, currentFilter == type && '-translate-y-2')}
+        onClick={() => onClick(currentFilter == type ? null : type)}>
             <div className={`p-3 rounded-md h-fit ${softBgVariants[variant]}`}>
                 <Icon size={28} className={`${textVariants[variant]}`} />
             </div>

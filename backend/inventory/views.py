@@ -46,7 +46,37 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+
+    def get_queryset(self):
+
+        filter = self.request.query_params.get('filter')
+
+        today = timezone.now().date()
+
+        if filter == 'available':
+            return Ingredient.objects.filter(total_stock__gt=0).distinct()
+
+        elif filter == 'out_of_stock':
+            return Ingredient.objects.exclude(total_stock__gt=0)
+
+        elif filter == 'near_expiration':
+            seven_days = today + timedelta(days=7)
+
+            return Ingredient.objects.filter(
+                transactions__transaction_type='in',
+                transactions__remaining_amount__gt=0,
+                transactions__expiration_date__gt=today,
+                transactions__expiration_date__lte=seven_days
+            ).distinct()
+
+        elif filter == 'expired':
+            return Ingredient.objects.filter(
+                transactions__transaction_type='in',
+                transactions__remaining_amount__gt=0,
+                transactions__expiration_date__lte=today
+            ).distinct()
+
+        return Ingredient.objects.all()
 
     @action(detail=False, methods=["post"], url_path="stock-out-expired")
     def stock_out_expired(self, request):

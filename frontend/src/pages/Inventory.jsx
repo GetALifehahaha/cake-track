@@ -8,10 +8,12 @@ import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
 import { InventorySkeleton } from '@/components/molecules/Skeletons';
+import { useSearchParams } from 'react-router-dom';
 
 const Inventory = () => {
 
     const { addToast } = useToast();
+    const [searchParams, setSearchParams] = useSearchParams();
     const {ingredientData, 
         ingredientDashboard, 
         ingredientError, 
@@ -28,6 +30,7 @@ const Inventory = () => {
     const [showUnitsModal, setShowUnitsModal] = useState(false);
     const [showStockOutAllConfirmationModal, setShowStockOutAllConfirmationModal] = useState(false);
     const [showTransactionHistoryModal, setShowTransactionHistoryModal] = useState(false);
+
 
     if (ingredientLoading) return <InventorySkeleton />
     if (ingredientError) return <h5>Error</h5>
@@ -118,6 +121,15 @@ const Inventory = () => {
         return "normal";
     };
 
+    const setFilter = (filter) => {
+        const params = new URLSearchParams(searchParams);
+
+        if (filter == null) params.delete('filter') 
+        else params.set('filter', filter);
+
+        setSearchParams(params);
+    }
+
 
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
@@ -154,8 +166,6 @@ const Inventory = () => {
                     <div className='p-2 px-12 flex flex-col gap-2'>
                         <h5 className='text-sm font-medium text-text/50 mb-4'>Batch Details</h5>
 
-                        {/* <h5 className='flex-1'>Remaining Amount</h5>
-                        <h5 className='flex-1'>Expiration Date</h5> */}
                         {item.batches.map((batch, batchIndex) => {
                             const status = getBatchStatus(batch.expiration_date);
 
@@ -194,10 +204,38 @@ const Inventory = () => {
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
             <div className='h-fit w-full flex gap-4'>
-                <InventoryDashboardCard title='IN STOCK' subtitle='AVAILABLE' icon={CheckCircle2} variant='success' amount={ingredientDashboard.summary.in_stock_count} />
-                <InventoryDashboardCard title='OUT OF STOCK' subtitle='URGENT' icon={XCircle} variant='error' amount={ingredientDashboard.summary.out_of_stock_count} />
-                <InventoryDashboardCard title='NEAR EXPIRATION' subtitle='ATTENTION' icon={CircleAlert} variant='warning' amount={ingredientDashboard.summary.near_expiration_count} />
-                <InventoryDashboardCard title='EXPIRED' subtitle='REVIEW' icon={Clock9} variant='none' amount={ingredientDashboard.summary.expired_count} />
+                <InventoryDashboardCard 
+                    title='IN STOCK' 
+                    subtitle='AVAILABLE' 
+                    icon={CheckCircle2} 
+                    variant='success' 
+                    amount={ingredientDashboard.summary.in_stock_count} 
+                    onClick={setFilter} 
+                    type={'available'}/>
+                <InventoryDashboardCard 
+                    title='OUT OF STOCK' 
+                    subtitle='URGENT' 
+                    icon={XCircle} 
+                    variant='error'
+                    amount={ingredientDashboard.summary.out_of_stock_count} 
+                    onClick={setFilter} 
+                    type={'out_of_stock'}/>
+                <InventoryDashboardCard 
+                    title='NEAR EXPIRATION' 
+                    subtitle='ATTENTION' 
+                    icon={CircleAlert} 
+                    variant='warning' 
+                    amount={ingredientDashboard.summary.near_expiration_count} 
+                    onClick={setFilter} 
+                    type={'near_expiration'}/>
+                <InventoryDashboardCard 
+                    title='EXPIRED' 
+                    subtitle='REVIEW' 
+                    icon={Clock9} 
+                    variant='none' 
+                    amount={ingredientDashboard.summary.expired_count} 
+                    onClick={setFilter} 
+                    type={'expired'}/>
             </div>
 
             <div className=''>
