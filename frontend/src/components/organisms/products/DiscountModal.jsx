@@ -5,6 +5,7 @@ import { ModalFeedbackCard } from '../../molecules';
 import { ConfirmationModal } from '..';
 import { Plus, Pen, Trash } from 'lucide-react'
 import useDiscount from '@/hooks/useDiscount'
+import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 
 const DiscountModal = ({onClose}) => {
 
@@ -20,7 +21,7 @@ const DiscountModal = ({onClose}) => {
         refresh();
     }, [discountResponse])
 
-    if (discountLoading) return <h5>Loading discount...</h5>
+    if (discountLoading) return <CRUDModalSkeleton title='Archived Products' subtitle='View and manage your archived products. You can restore or permanently delete them' onClose={onClose} />
     if (discountError) return <h5>Error loading discount...</h5>
 
     const resetFeedback = () => setFeedback();

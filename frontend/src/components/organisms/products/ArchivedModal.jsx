@@ -5,6 +5,7 @@ import { ModalBody, ProductCard } from '../../molecules';
 import useProduct from '@/hooks/useProduct';
 import ConfirmationModal from '../ConfirmationModal';
 import Loading from '../../molecules/Loading';
+import { ArchivesSkeleton } from '@/components/molecules/Skeletons';
 
 const ArchivedModal = ({onRestore, onClose}) => {
 
@@ -12,7 +13,7 @@ const ArchivedModal = ({onRestore, onClose}) => {
     const {data: productData, loading: productLoading, error: productError} = useProduct({isArchived: true});
     const [showConfirmation, setShowConfirmation] = useState(false);
 
-    if (productLoading) return <Loading />
+    if (productLoading) return <ArchivesSkeleton title='Archived Products' subtitle='View and manage your archived products. You can restore or permanently delete them' onClose={onClose} />
     if (productError) return <h5>Error loading product data</h5>
 
     

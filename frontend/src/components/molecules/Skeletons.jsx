@@ -7,6 +7,8 @@
 // Or simply use Tailwind's `animate-pulse` + `bg-main-dark/20` as shown below.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import ModalBody from "./ModalBody";
+
 const Bone = ({ className = '' }) => (
   <div className={`animate-pulse bg-main-dark/20 rounded-md ${className}`} />
 );
@@ -603,3 +605,64 @@ export const ReportsSkeleton = () => (
     </div>
   </div>
 );
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Category, Discount, and Unit Skeleton  (generic — adapt once Reports.jsx is implemented)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const CRUDModalSkeleton = ({title, subtitle, onClose}) => 
+<ModalBody className='w-[40vw]' title={title} subtitle={subtitle} onClose={onClose}>
+    <div className='flex flex-col gap-2 w-full'>
+
+        {/* Add New Section */}
+        <div className="flex flex-col gap-2">
+            <Bone className="h-4 w-32" />
+            <div className="flex gap-2">
+                <Bone className="flex-2 h-9 rounded-md" />
+                <Bone className="flex-1 h-9 rounded-md" />
+                <Bone className="h-9 w-16 rounded-md" />
+            </div>
+        </div>
+
+        {/* List Section */}
+        <Bone className="h-4 w-36 mt-2" />
+        <div className='flex flex-col gap-2'>
+            {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white">
+                    <div className="flex-1 flex gap-2">
+                        <Bone className="h-4 w-28" />
+                        <Bone className="h-4 w-12" />
+                    </div>
+                    <Bone className="h-8 w-16 rounded-md" />
+                    <Bone className="h-8 w-16 rounded-md" />
+                </div>
+            ))}
+        </div>
+
+    </div>
+</ModalBody>
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Archives (Product + Cake) Skeleton  (generic — adapt once Reports.jsx is implemented)
+// ─────────────
+
+export const ArchivesSkeleton = ({title, subtitle, onClose}) => 
+<ModalBody title={title} subtitle={subtitle} onClose={() => onClose(false)}>
+    <div className='grid grid-cols-6 gap-4 max-h-120 overflow-y-auto p-2'>
+        {[...Array(12)].map((_, i) => (
+            <div key={i} className='flex flex-col gap-4 px-2 py-2 rounded-4xl shadow-md shadow-black/15 min-h-60 bg-main-white'>
+                <Bone className='aspect-square h-40 rounded-3xl' />
+                <div className='text-center mt-auto'>
+                    <Bone className='h-3 w-20 mx-auto' />
+                </div>
+            </div>
+        ))}
+    </div>
+
+    <span className='ml-auto flex gap-2'>
+        <Bone className='h-9 w-16 rounded-md' />
+        <Bone className='h-9 w-20 rounded-md' />
+    </span>
+</ModalBody>

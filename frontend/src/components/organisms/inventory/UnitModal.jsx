@@ -5,6 +5,7 @@ import { ModalFeedbackCard } from '../../molecules';
 import { ConfirmationModal } from '..';
 import { Plus, Pen, Trash } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
+import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 
 const UnitModal = ({ onClose }) => {
     const { data: unitData, loading: unitLoading, error: unitError, postUnit, refresh, deleteUnit } = useUnits();
@@ -19,7 +20,7 @@ const UnitModal = ({ onClose }) => {
         refresh();
     }, []);
 
-    if (unitLoading) return <h5>Loading units...</h5>;
+    if (unitLoading) return <CRUDModalSkeleton title='Manage Units' subtitle='Add, edit, or delete units for your inventory' onClose={onClose} />
     if (unitError) return <h5>Error loading units...</h5>;
 
     const resetFeedback = () => setFeedback('');

@@ -5,6 +5,7 @@ import { ModalFeedbackCard } from '../../molecules';
 import {ConfirmationModal} from '..';
 import { Plus, Pen, Trash, X, Check } from 'lucide-react'
 import useCategory from '@/hooks/useCategory'
+import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 
 const CategoryModal = ({onClose}) => {
 
@@ -20,7 +21,7 @@ const CategoryModal = ({onClose}) => {
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState();
     const [prepDeleteId, setPrepDeleteId] = useState(null);
 
-    if (categoryLoading) return <h5>Loading categories...</h5>
+    if (categoryLoading) return <CRUDModalSkeleton title='Manage Categories' subtitle='Add, edit, or delete categories for organizing your products' onClose={onClose} />
     if (categoryError) return <h5>Error loading categories...</h5>
 
     const resetFeedback = () => {
