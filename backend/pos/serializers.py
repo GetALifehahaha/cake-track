@@ -139,19 +139,17 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['discount', 'payment_method', 'transaction_items', 'is_void', 'paid_amount']
+        fields = ['discount', 'payment_method', 'transaction_items', 'is_void', 'paid_amount', 'order_type']
         extra_kwargs = {
             "discount": {"required": False, "allow_null": True},
         }
         
     def create(self, validated_data):
-        print(validated_data)
-
         items_data = validated_data.pop('transaction_items')
         validated_data['cashier'] = self.context['request'].user
 
         gross_total = sum(
-            Decimal(item['product_variant'].price) * item['quantity'] # ! item.product_variant.price
+            Decimal(item['product_variant'].price) * item['quantity'] 
             for item in items_data
         )
 

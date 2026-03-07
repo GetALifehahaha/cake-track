@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import IntegrityError, models
 from django.contrib.auth.models import User
 import random
 from django.db import models
@@ -71,12 +71,8 @@ class Transaction(models.Model):
         ('other', 'Other')
     ]
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='cash')
-    
-    ORDER_TYPE = [
-        ('dine-in', 'Dine IN'),
-        ('take-out', 'Take OUT')
-    ]
-    order_type = models.CharField(max_length=10, choices=ORDER_TYPE, default='dine-in')
+
+    order_type = models.CharField(max_length=10, default='dine-in')
 
     gross_total = models.DecimalField(max_digits=11, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=11, decimal_places=2)
@@ -85,10 +81,15 @@ class Transaction(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.id:
-            self.id = generate_id("TRX")
-            while Transaction.objects.filter(id=self.id).exists():
-                self.id = generate_id("TRX")
-        super().save(*args, **kwargs)
+            while True:
+                try:
+                    self.id = generate_id("TRX")
+                    super().save(*args, **kwargs)
+                    break
+                except IntegrityError:
+                    continue
+        else:
+            super().save(*args, **kwargs)
 
     
 class TransactionItem(models.Model):

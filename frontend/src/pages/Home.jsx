@@ -38,7 +38,7 @@ const Home = () => {
     const [filter, setFilter] = useState(); 
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(true);
+    const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
     const [showClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
@@ -214,9 +214,10 @@ const Home = () => {
                 quantity: p.amount,
             }))
 
-            const res = await postTransaction({
+            await postTransaction({
                 is_void: false,
                 payment_method: "cash",
+                order_type: orderType,
                 transaction_items: checkoutProductsPayload,
                 paid_amount: parseFloat(value),
                 discount: discount,
