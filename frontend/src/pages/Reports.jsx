@@ -35,17 +35,16 @@ const Reports = () => {
     const [downloadModal, setDownloadModal] = useState(false);
 
     useEffect(() => {
-        let params = {};
+        const params = new URLSearchParams(searchParams);
 
-        if (frequency !== undefined && frequency !== null && frequency !== '') {
-            params.frequency = frequency;
-        }
+        if (startDate == null) params.delete('start_date');
+        else params.set('start_date', formatDateForAPI(startDate));
 
-        if (startDate !== null) params.start_date = formatDateForAPI(startDate)
-        if (endDate !== null) params.end_date = formatDateForAPI(endDate)
+        if (endDate == null) params.delete('end_date');
+        else params.set('end_date', formatDateForAPI(endDate));
 
-        setSearchParams(params)
-    }, [frequency, startDate, endDate])
+        setSearchParams(params);
+    }, [startDate, endDate])
     
     if (loading) return <ReportsSkeleton     />;
     if (error) return <h5>Error...</h5>;
@@ -177,6 +176,11 @@ const Reports = () => {
     };
 
     const handleEndDate = (value) => {
+        if (value == null) {
+            setEndDate(null);
+            return;
+        }
+
         if (startDate && new Date(value) < new Date(startDate)) {
             addToast("End date cannot be before the start date.", "error");
             return;
@@ -222,22 +226,7 @@ const Reports = () => {
 
     return (
         <div className='flex-1 flex p-2 gap-6 w-full h-full flex-col pb-8'>
-            <button 
-                onClick={() => setDownloadModal(true)}
-                className='p-2.5 w-fit rounded-md bg-main-white border border-border flex flex-row items-center gap-2 text-sm font-medium cursor-pointer hover:bg-main-dark text-text/50 ml-auto'>
-                Download Report
-                <Download size={18} />
-            </button>
-            <div className="flex gap-2 bg-white p-4 rounded-sm shadow-sm w-fit">
-                <div>
-                    <h5 className="text-xs font-semibold text-text/50 mb-2">Report Type</h5>
-                    <div className="flex gap-2">
-                        <Button text="Daily" onClick={() => handleFrequency('daily')} className={cn("rounded-sm text-xs font-semibold py-2 px-4 bg-white text-accent-mute shadow-md border-none", frequency === "daily" && 'bg-accent text-white')}/>
-                        <Button text="Weekly" onClick={() => handleFrequency('weekly')} className={cn("rounded-sm text-xs font-semibold py-2 px-4 bg-white text-accent-mute shadow-md border-none", frequency === "weekly" && 'bg-accent text-white')}/>
-                        <Button text="Monthly" onClick={() => handleFrequency('monthly')} className={cn("rounded-sm text-xs font-semibold py-2 px-4 bg-white text-accent-mute shadow-md border-none", frequency === "monthly" && 'bg-accent text-white')}/>
-                    </div>
-                </div>
-                
+            <div className="flex flex-row gap-2 w-full">
                 <div className="flex gap-2">
                     <div className="">
                         <h5 className="text-xs font-semibold text-text/50 mb-1">Start Date</h5>
@@ -258,6 +247,7 @@ const Reports = () => {
                         </div>
                     </div>
                 </div>
+                <Button text="Download Report" size="small" variant="outline" icon={Download} onClick={() => setDownloadModal(true)} className="ml-auto"/>
             </div>
 
             {/* Existing POS dashboards */}
@@ -352,9 +342,12 @@ const Reports = () => {
                 <div className='flex-1'>
                     <DashboardChart chartData={posDashboardData.sales_trend}/>
                 </div>
-                <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full min-h-120'>
+                <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full '>
                     <h5 className='font-semibold'>Top Selling Products</h5>
-                    {topSellingProducts}
+
+                    <div className="max-h-160 overflow-y-auto py-4 px-2 flex flex-col gap-2">
+                        {topSellingProducts}
+                    </div>
                 </div>
             </div>
 

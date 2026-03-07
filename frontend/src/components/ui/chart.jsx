@@ -54,7 +54,8 @@ const ChartStyle = ({
   id,
   config
 }) => {
-  const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color)
+  const configMap = config ?? {}
+  const colorConfig = Object.entries(configMap).filter(([, config]) => config.theme || config.color)
 
   if (!colorConfig.length) {
     return null
@@ -157,6 +158,18 @@ function ChartTooltipContent({
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
             const indicatorColor = color || item.payload.fill || item.color
 
+            const rawDate =
+              item.payload?.period ??
+              item.payload?.date ??
+              item.payload?.name ??
+              item.name ??
+              ""
+            const dateString = rawDate
+              ? new Date(rawDate).toLocaleDateString()
+              : ""
+            const formattedValue =
+              item.value != null ? item.value.toLocaleString() : ""
+
             return (
               <div
                 key={item.dataKey}
@@ -193,17 +206,11 @@ function ChartTooltipContent({
                         "flex flex-1 justify-between leading-none",
                         nestLabel ? "items-end" : "items-center"
                       )}>
-                      <div className="grid gap-1.5">
+                      <div className="grid gap-1">
                         {nestLabel ? tooltipLabel : null}
-                        <span className="text-muted-foreground">
-                          {itemConfig?.label || item.name}
-                        </span>
+                        <span className="text-muted-foreground">Date: <strong>{dateString}</strong></span>
+                        <span className="text-muted-foreground">Amount: <strong>{formattedValue}</strong></span>
                       </div>
-                      {item.value && (
-                        <span className="text-foreground font-mono font-medium tabular-nums">
-                          {item.value.toLocaleString()}
-                        </span>
-                      )}
                     </div>
                   </>
                 )}
@@ -272,6 +279,8 @@ function getPayloadConfigFromPayload(
   payload,
   key
 ) {
+  const configMap = config ?? {}
+
   if (typeof payload !== "object" || payload === null) {
     return undefined
   }
@@ -298,9 +307,9 @@ function getPayloadConfigFromPayload(
     configLabelKey = payloadPayload[key]
   }
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key];
+  return configLabelKey in configMap
+    ? configMap[configLabelKey]
+    : configMap[key];
 }
 
 export {

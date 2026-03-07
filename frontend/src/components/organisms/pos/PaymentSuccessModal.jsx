@@ -114,7 +114,7 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                                     <tr key={index}>
                                         <td className="align-top py-1 text-center">{item.quantity}</td>
                                         {/* break-words ensures long cake names don't push the price off paper */}
-                                        <td className="align-top py-1 pr-1 break-words leading-tight">
+                                        <td className="align-top py-1 pr-1 leading-tight">
                                             {item.product.name}
                                         </td>
                                         <td className="align-top py-1 text-right whitespace-nowrap">
