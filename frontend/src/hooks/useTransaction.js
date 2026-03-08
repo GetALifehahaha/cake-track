@@ -57,10 +57,16 @@ export default function useTransaction() {
                 const data = await create(API_ENDPOINTS.TRANSACTIONS, params);
                 return { source: "server", data };
             } catch (err) {
-                if (!err?.offline) throw err;
+                // Catch network timeouts or disconnects explicitly
+                const isNetworkError = err.message === "Network Error" || err.code === "ERR_NETWORK" || !err.response;
+                
+                if (!isNetworkError) {
+                    throw err; 
+                }
             }
         }
 
+        // Fallback to local storage if offline or if a network error occurs
         const local_id = await saveTransaction(params);
         await refreshUnsyncedCount();
         return { source: "local", local_id };

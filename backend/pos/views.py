@@ -44,7 +44,7 @@ from .models import (Discount,
 from users.permissions import IsAdmin, IsCashier
 
 class MediumPageSize(PageNumberPagination):
-    page_size = 14
+    page_size = 20
     max_page_size = 100
     
 
@@ -107,6 +107,13 @@ class ProductViewSet(viewsets.ModelViewSet):
             {updated: updated},
             status=status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=["get"])
+    def get_all(self, request):
+        queryset = Product.objects.all()
+        self.pagination_class = None
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
 
 class TransactionViewSet(viewsets.ModelViewSet):
