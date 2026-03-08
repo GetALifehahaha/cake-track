@@ -99,7 +99,7 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        activation_link = f"{settings.FRONTEND_URL}setAccount?uid={uid}&token={token}"
+        activation_link = f"{settings.FRONTEND_URL}/setAccount?uid={uid}&token={token}"
 
         subject = 'Activate Your Cashier Account'
         

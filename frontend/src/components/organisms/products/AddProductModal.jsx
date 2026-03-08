@@ -264,10 +264,13 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Variants' />
-                            <div className="flex flex-col gap-2 w-full">
+                            <div className="flex flex-col gap-2 w-full max-h-40 overflow-auto">
+                                <div className='flex items-center gap-2 flex-1'>
+                                    <h5 className='text-xs font-medium flex-1'>Label</h5>
+                                    <h5 className='text-xs font-medium flex-1 -ml-12'>Price</h5>
+                                </div>  
                                 {variants.map(({label, price}, index) => (
                                     <div className='flex items-center gap-2 flex-1'>
-                                        
                                         <input
                                             type="text"
                                             value={label}
