@@ -1,0 +1,28 @@
+const API_ENDPOINTS = {
+    BUSINESS_DETAILS: "/pos/business-details/",
+    CAKES: "/orders/cakes/",
+    CAKES_UNARCHIVE: "/orders/cakes/unarchive/",
+    USERS: "/users/",
+    USERS_REGISTER: "/users/user/register/",
+    USERS_ACTIVATE: "/users/user/activate/",
+    CATEGORIES: "/pos/categories/",
+    DISCOUNTS: "/pos/discounts/",
+    INGREDIENTS: "/inventory/ingredients/",
+    INGREDIENTS_ALL: "/inventory/ingredients-all/",
+    INGREDIENTS_DASHBOARD: "/inventory/dashboard/",
+    INGREDIENTS_STOCK_OUT_EXPIRED: "/inventory/ingredients/stock-out-expired/",
+    INVENTORY_TRANSACTIONS: "/inventory/transactions/",
+    ORDERS: "/orders/orders/",
+    ORDERS_BATCH_UPDATE: "/orders/orders/batch-update/",
+    BLOCKED_DATES: "/orders/blocked-dates/",
+    PRODUCTS: "/pos/products/",
+    PRODUCTS_UNARCHIVE: "/pos/products/unarchive/",
+    RECIPES: "/inventory/recipes/",
+    SIZES: "/pos/sizes/",
+    TRANSACTIONS: "/pos/transactions/",
+    UNITS: "/inventory/units/",
+    POS_DASHBOARD: "/pos/dashboard/",
+    ORDERS_DASHBOARD: "/orders/dashboard/",
+};
+
+export default API_ENDPOINTS;

@@ -1,74 +1,31 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import  {CashierApi } from "@/api/CashierApi";
+import { useMemo } from "react";
+import API_ENDPOINTS from "@/api/endpoints";
 import { useSearchParams } from "react-router-dom";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useCashier() {
-    const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
     const q = searchParams.get('q');
 
-    const apiParams = { ...(q ? { q } : {}) };
-
-    const cashiersQuery = useQuery({
-        queryKey: ['cashiers', apiParams],
-        queryFn: () => CashierApi.fetchList(apiParams),
-        placeholderData: (previousData) => previousData,
-    });
-
-    
-
-    const onSuccessValidate = () => {
-        queryClient.invalidateQueries({queryKey: ['cashiers']})
-    }
-
-    const createMutation = useMutation({
-        mutationFn: (params) => CashierApi.createCashier(params),
-        onSuccess: onSuccessValidate
-    })
-
-    const updateMutation = useMutation({
-        mutationFn: ({id, params}) => CashierApi.update(id, params),
-        onSuccess: onSuccessValidate
-    })
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => CashierApi.delete(id),
-        onSuccess: onSuccessValidate
-    })
-
-    const activateAccountMutation = useMutation({
-        mutationFn: (data) => CashierApi.activateAccount(data),
-        onSuccess: onSuccessValidate
-    })
+    const apiParams = useMemo(() => ({ ...(q ? { q } : {}) }), [q]);
+    const cashiersQuery = useQueryFetch("cashiers", API_ENDPOINTS.USERS, apiParams);
+    const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate("cashiers");
 
     return {
         data: cashiersQuery.data || [],
 
-        loading: cashiersQuery.isPending || 
-                createMutation.isPending || 
-                updateMutation.isPending || 
-                deleteMutation.isPending,
+        loading: cashiersQuery.isPending || mutateLoading,
 
-        error: cashiersQuery.error || 
-                createMutation.error || 
-                updateMutation.error || 
-                deleteMutation.error,
+        error: cashiersQuery.error || mutateError,
 
-        postCashier: async (params) => {
-            return createMutation.mutateAsync(params)
-        },
+        postCashier: (params) => create(API_ENDPOINTS.USERS_REGISTER, params),
 
-        patchCashier: async (id, params) => {
-            return updateMutation.mutateAsync({id, params})
-        },
+        patchCashier: (id, params) => update(`${API_ENDPOINTS.USERS}${id}/`, params),
 
-        deleteCashier: async (id) => {
-            return deleteMutation.mutateAsync(id)
-        },
+        deleteCashier: (id) => remove(`${API_ENDPOINTS.USERS}${id}/`),
 
-        activateAccount: async (data) => {
-            return activateAccountMutation.mutateAsync(data)
-        },
+        activateAccount: (data) => create(API_ENDPOINTS.USERS_ACTIVATE, data),
 
         refresh: () => cashiersQuery.refetch(),
     }

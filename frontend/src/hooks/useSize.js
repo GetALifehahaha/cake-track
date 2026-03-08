@@ -1,80 +1,25 @@
-import { useState, useEffect } from "react";
-import SizeApi from "../api/SizeApi";
-import { useParams, useSearchParams } from "react-router-dom";
+import API_ENDPOINTS from "@/api/endpoints";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useSize() {
-    const [sizeResponse, setSizeResponse] = useState();
-    const [sizeData, setSizeData] = useState([]);
-    const [sizeLoading, setSizeLoading] = useState(true);
-    const [sizeError, setSizeError] = useState(null);
+    const sizeQuery = useQueryFetch("sizes", API_ENDPOINTS.SIZES);
+    const { create, update, remove, loading: mutateLoading, error: mutateError, response } =
+        useMutate("sizes");
 
-    const fetchSizes = async () => {
-        setSizeLoading(true);
-        try {
-            const data = await SizeApi();
-            setSizeData(data);
-        } catch (err) {
-            setSizeError({ status: "error", detail: "Failed to read size." });
-        } finally {
-            setSizeLoading(false);
-        }
-    };
-
-    const postSize = async (params) => {
-        setSizeLoading(true);
-        try {
-            await SizeApi(params, null, "POST");
-            setSizeResponse({ status: "success", detail: "Size created successfully." });
-        } catch (err) {
-            setSizeError({ status: "error", detail: "Failed to create size." });
-            setSizeResponse(null);
-        } finally {
-            setSizeLoading(false);
-        }
-    };
-
-    const patchSize = async (id, params) => {
-        setSizeLoading(true);
-        try {
-            await SizeApi(params, id, "PATCH");
-            setSizeResponse({ status: "success", detail: "Size edited successfully." });
-            fetchSizes();
-        } catch (err) {
-            setSizeError({ status: "error", detail: "Failed to edit size." });
-            setSizeResponse(null);
-        } finally {
-            setSizeLoading(false);
-        }
-    };
-
-    const deleteSize = async (id) => {
-        setSizeLoading(true);
-        try {
-            await SizeApi(null, id, "DELETE");
-            setSizeResponse({ status: "success", detail: "Size deleted successfully." });
-        } catch (err) {
-            setSizeError({ status: "error", detail: "Failed to delete size." });
-            setSizeResponse(null);
-        } finally {
-            setSizeLoading(false);
-        }
-    };
-
-    const refresh = () => fetchSizes();
-
-    useEffect(() => {
-        fetchSizes();
-    }, []);
+    const rawError = sizeQuery.error || mutateError;
 
     return {
-        sizeData,
-        sizeResponse,
-        sizeLoading,
-        sizeError,
-        fetchSizes,
-        postSize,
-        patchSize,
-        deleteSize,
-        refresh
+        sizeData: sizeQuery.data || [],
+        sizeResponse: response || null,
+        sizeLoading: sizeQuery.isPending || mutateLoading,
+        sizeError: rawError
+            ? { status: "error", detail: rawError.message || "Failed to process size." }
+            : null,
+        fetchSizes: () => sizeQuery.refetch(),
+        postSize: (params) => create(API_ENDPOINTS.SIZES, params),
+        patchSize: (id, params) => update(`${API_ENDPOINTS.SIZES}${id}/`, params),
+        deleteSize: (id) => remove(`${API_ENDPOINTS.SIZES}${id}/`),
+        refresh: () => sizeQuery.refetch(),
     };
 }

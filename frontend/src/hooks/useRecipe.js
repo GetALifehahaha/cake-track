@@ -1,37 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { RecipeApi } from '@/api/RecipeApi';
+import API_ENDPOINTS from "@/api/endpoints";
 import { useSearchParams } from 'react-router-dom';
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useRecipe(params = {}){
-    const queryClient = useQueryClient();
     const [searchParams] = useSearchParams();
     const q = searchParams.get('q');
 
     const apiParams = { ...params, ...(q ? { q } : {}) };
 
-    const recipeQuery = useQuery({
-        queryKey: ['recipes', apiParams],
-        queryFn: () => RecipeApi.fetchList(apiParams),
-        placeholderData: (previous) => previous,
-    });
-
-    const onSuccessInvalidate = () =>
-        queryClient.invalidateQueries({ queryKey: ['recipes'] });
-
-    const createMutation = useMutation({
-        mutationFn: (data) => RecipeApi.create(data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => RecipeApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => RecipeApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
+    const recipeQuery = useQueryFetch("recipes", API_ENDPOINTS.RECIPES, apiParams);
+    const { create, update, remove, loading: mutateLoading, error: mutateError } =
+        useMutate("recipes");
 
     return {
         // Automatically extracts results if the API is paginated
@@ -39,19 +19,13 @@ export default function useRecipe(params = {}){
 
         loading:
             recipeQuery.isPending ||
-            createMutation.isPending ||
-            updateMutation.isPending ||
-            deleteMutation.isPending,
+            mutateLoading,
 
-        error:
-            recipeQuery.error ||
-            createMutation.error ||
-            updateMutation.error ||
-            deleteMutation.error,
+        error: recipeQuery.error || mutateError,
 
-        postRecipe: async (data) => createMutation.mutateAsync(data),
-        patchRecipe: async (id, data) => updateMutation.mutateAsync({ id, data }),
-        deleteRecipe: async (id) => deleteMutation.mutateAsync(id),
+        postRecipe: (data) => create(API_ENDPOINTS.RECIPES, data),
+        patchRecipe: (id, data) => update(`${API_ENDPOINTS.RECIPES}${id}/`, data),
+        deleteRecipe: (id) => remove(`${API_ENDPOINTS.RECIPES}${id}/`),
         refresh: () => recipeQuery.refetch(),
     };
 };

@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import useQueryFetch from './useQueryFetch'
 import { useMemo } from "react";
+import API_ENDPOINTS from "@/api/endpoints";
 
 export default function useDashboard() {
     
@@ -11,9 +12,9 @@ export default function useDashboard() {
         end_date: searchParams.get('end_date') || undefined,
     }), [searchParams]);
 
-    const posDashboardQuery = useQueryFetch('pos-dashboard', '/pos/dashboard/', params);
+    const posDashboardQuery = useQueryFetch('pos-dashboard', API_ENDPOINTS.POS_DASHBOARD, params);
 
-    const ordersDashboardQuery = useQueryFetch('orders-dashboard', '/orders/dashboard/', params);
+    const ordersDashboardQuery = useQueryFetch('orders-dashboard', API_ENDPOINTS.ORDERS_DASHBOARD, params);
 
     return {
         /* POS Dashboard */

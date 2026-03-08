@@ -1,56 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CategoryApi } from "../api/CategoryApi";
+import API_ENDPOINTS from "@/api/endpoints";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useCategory() {
-    const queryClient = useQueryClient();
-
-    const categoryQuery = useQuery({
-        queryKey: ['categories'],
-        queryFn: () => CategoryApi.fetchList(),
-        placeholderData: (previous) => previous,
-    });
-
-    const onSuccessInvalidate = () =>
-        queryClient.invalidateQueries({ queryKey: ['categories'] });
-
-    const createMutation = useMutation({
-        mutationFn: (params) => CategoryApi.create(params),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => CategoryApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => CategoryApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
+    const categoryQuery = useQueryFetch("categories", API_ENDPOINTS.CATEGORIES);
+    const { create, update, remove, loading: mutateLoading, error: mutateError, response } =
+        useMutate("categories");
 
     return {
         categoryData: categoryQuery.data || [],
         
-        categoryLoading:
-            categoryQuery.isPending ||
-            createMutation.isPending ||
-            updateMutation.isPending ||
-            deleteMutation.isPending,
+        categoryLoading: categoryQuery.isPending || mutateLoading,
 
-        categoryError:
-            categoryQuery.error ||
-            createMutation.error ||
-            updateMutation.error ||
-            deleteMutation.error,
+        categoryError: categoryQuery.error || mutateError,
 
-        categoryResponse: createMutation.data || updateMutation.data || deleteMutation.data,
+        categoryResponse: response,
 
         fetchCategories: () => categoryQuery.refetch(),
         refresh: () => categoryQuery.refetch(),
         
-        postCategory: async (params) => createMutation.mutateAsync(params),
-        patchCategory: async (id, data) => updateMutation.mutateAsync({ id, data }),
-        deleteCategory: async (id) => deleteMutation.mutateAsync(id),
-        updateCategory: async (id, data) => updateMutation.mutateAsync({ id, data }),
+        postCategory: (params) => create(API_ENDPOINTS.CATEGORIES, params),
+        patchCategory: (id, data) => update(`${API_ENDPOINTS.CATEGORIES}${id}/`, data),
+        deleteCategory: (id) => remove(`${API_ENDPOINTS.CATEGORIES}${id}/`),
+        updateCategory: (id, data) => update(`${API_ENDPOINTS.CATEGORIES}${id}/`, data),
     };
 }

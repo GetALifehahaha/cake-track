@@ -1,5 +1,6 @@
 import { useLocation, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
+import API_ENDPOINTS from "@/api/endpoints";
 import useQueryFetch from "./useQueryFetch";
 import useMutate from "./useMutate";
 
@@ -26,11 +27,16 @@ export default function useOrder() {
         );
     }, [currentFilter, currentParams.due_date, currentParams.q]);
 
-    const ordersQuery = useQueryFetch('orders', '/orders/orders/', apiParams);
+    const ordersQuery = useQueryFetch('orders', API_ENDPOINTS.ORDERS, apiParams);
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate('orders');
 
-    const blockedDatesQuery = useQueryFetch('blocked-dates', '/orders/blocked-dates/');
-    const { create: blockDates, remove: unblockDates, loading: blockedMutateLoading, error: blockedMutateError } = useMutate('blocked-dates');
+    const blockedDatesQuery = useQueryFetch('blocked-dates', API_ENDPOINTS.BLOCKED_DATES);
+    const {
+        create: createBlockedDates,
+        remove: deleteBlockedDates,
+        loading: blockedMutateLoading,
+        error: blockedMutateError,
+    } = useMutate('blocked-dates');
 
     return {
         data: ordersQuery.data || [],
@@ -38,10 +44,10 @@ export default function useOrder() {
         loading: ordersQuery.isPending || mutateLoading,
         error:   ordersQuery.error   || mutateError,
 
-        postOrder:         (params)     => create('/orders/orders/', params),
-        patchOrder:        (id, params) => update(`/orders/orders/${id}/`, params),
-        batchUpdateOrders: (params)     => create('/orders/orders/batch-update/', params),
-        deleteOrder:       (id)         => remove(`/orders/orders/${id}/`),
+        postOrder:         (params)     => create(API_ENDPOINTS.ORDERS, params),
+        patchOrder:        (id, params) => update(`${API_ENDPOINTS.ORDERS}${id}/`, params),
+        batchUpdateOrders: (params)     => create(API_ENDPOINTS.ORDERS_BATCH_UPDATE, params),
+        deleteOrder:       (id)         => remove(`${API_ENDPOINTS.ORDERS}${id}/`),
 
         refresh: () => ordersQuery.refetch(),
 
@@ -49,8 +55,8 @@ export default function useOrder() {
         blockedDatesLoading: blockedDatesQuery.isPending || blockedMutateLoading,
         blockedDatesError:   blockedDatesQuery.error    || blockedMutateError,
 
-        blockDates:   (dates) => blockDates('/orders/blocked-dates/', dates.map(date => ({ date }))),
-        // unblockDates: (id) => console.log({dates: id}),
-        unblockDates: (id) => unblockDates('/orders/blocked-dates/', {data: id}),
+        blockDates: (dates) =>
+            createBlockedDates(API_ENDPOINTS.BLOCKED_DATES, dates.map((date) => ({ date }))),
+        unblockDates: (id) => deleteBlockedDates(API_ENDPOINTS.BLOCKED_DATES, { data: id }),
     };
 }

@@ -1,59 +1,24 @@
-import { useMemo } from "react";
-import { BusinessDetailsApi } from "@/api/BusinessDetailsApi";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import API_ENDPOINTS from "@/api/endpoints";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useBusinessDetails() {
-    const queryClient = useQueryClient();
-
-    const businessDetailsQuery = useQuery({
-        queryKey: ['business-details'],
-        queryFn: () => BusinessDetailsApi.fetchList(),
-        placeholderData: (previous) => previous
-    });
-
-    const onSuccessInvalidate = () =>
-        queryClient.invalidateQueries({ queryKey: ['business-details'] });
-
-    const createMutation = useMutation({
-        mutationFn: (data) => BusinessDetailsApi.create(data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => BusinessDetailsApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => BusinessDetailsApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
+    const businessDetailsQuery = useQueryFetch("business-details", API_ENDPOINTS.BUSINESS_DETAILS);
+    const { create, update, remove, loading: mutateLoading, error: mutateError } =
+        useMutate("business-details");
 
     return {
         data: businessDetailsQuery.data || [],
 
-        loading:
-            businessDetailsQuery.isPending ||
-            createMutation.isPending ||
-            updateMutation.isPending ||
-            deleteMutation.isPending,
+        loading: businessDetailsQuery.isPending || mutateLoading,
 
-        error:
-            businessDetailsQuery.error ||
-            createMutation.error ||
-            updateMutation.error ||
-            deleteMutation.error,
+        error: businessDetailsQuery.error || mutateError,
 
-        postBusinessDetails: async (params) => {
-            return createMutation.mutateAsync(params);
-        },
+        postBusinessDetails: (params) => create(API_ENDPOINTS.BUSINESS_DETAILS, params),
 
-        patchBusinessDetails: async (id, data) => {
-            return updateMutation.mutateAsync({ id, data });
-        },
+        patchBusinessDetails: (id, data) =>
+            update(`${API_ENDPOINTS.BUSINESS_DETAILS}${id}/`, data),
 
-        deleteBusinessDetails: async (id) => {
-            return deleteMutation.mutateAsync(id);
-        },
+        deleteBusinessDetails: (id) => remove(`${API_ENDPOINTS.BUSINESS_DETAILS}${id}/`),
     };
 }

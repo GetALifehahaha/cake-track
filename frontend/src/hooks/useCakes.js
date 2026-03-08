@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { CakeApi } from "@/api/CakeApi";
+import API_ENDPOINTS from "@/api/endpoints";
 import { useSearchParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useCakes({ isArchived = false } = {}) {
     const [searchParams] = useSearchParams();
-    const queryClient = useQueryClient();
 
     const apiParams = useMemo(() => {
         const params = Object.fromEntries(searchParams.entries());
@@ -15,65 +15,23 @@ export default function useCakes({ isArchived = false } = {}) {
         return params;
     }, [searchParams, isArchived]);
 
-    const cakesQuery = useQuery({
-        queryKey: ['cakes', JSON.stringify(apiParams)],
-        queryFn: () => CakeApi.fetchList(apiParams),
-        placeholderData: (previous) => previous
-    });
-
-    const onSuccessInvalidate = () =>
-        queryClient.invalidateQueries({ queryKey: ['cakes'] });
-
-    const createMutation = useMutation({
-        mutationFn: (data) => CakeApi.create(data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => CakeApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => CakeApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const batchUnarchiveMutation = useMutation({
-        mutationFn: (params) => CakeApi.batchUnarchive(params),
-        onSuccess: onSuccessInvalidate,
-    });
+    const cakesQuery = useQueryFetch("cakes", API_ENDPOINTS.CAKES, apiParams);
+    const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate("cakes");
 
     return {
         data: cakesQuery.data || [],
 
-        loading:
-            cakesQuery.isPending ||
-            createMutation.isPending ||
-            updateMutation.isPending ||
-            deleteMutation.isPending,
+        loading: cakesQuery.isPending || mutateLoading,
 
-        error:
-            cakesQuery.error ||
-            createMutation.error ||
-            updateMutation.error ||
-            deleteMutation.error,
+        error: cakesQuery.error || mutateError,
 
-        postCake: async (params) => {
-            return createMutation.mutateAsync(params);
-        },
+        postCake: (params) => create(API_ENDPOINTS.CAKES, params),
 
-        patchCake: async (id, data) => {
-            return updateMutation.mutateAsync({ id, data });
-        },
+        patchCake: (id, data) => update(`${API_ENDPOINTS.CAKES}${id}/`, data),
 
-        deleteCake: async (id) => {
-            return deleteMutation.mutateAsync(id);
-        },
+        deleteCake: (id) => remove(`${API_ENDPOINTS.CAKES}${id}/`),
 
-        batchUnarchiveCake: async (data) => {
-            return batchUnarchiveMutation.mutateAsync(data);
-        },
+        batchUnarchiveCake: (data) => create(API_ENDPOINTS.CAKES_UNARCHIVE, data),
 
         refresh: () => cakesQuery.refetch()
     };

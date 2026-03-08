@@ -1,41 +1,69 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/api";
 
-const useMutate = (key) => {
+const useMutate = (key, options = {}) => {
     const queryClient = useQueryClient();
+    const { invalidateKeys = [] } = options;
 
-    const invalidate = () =>
-        queryClient.invalidateQueries({ queryKey: [key] });
+    const normalizedInvalidateKeys = (invalidateKeys.length ? invalidateKeys : [key]).map(
+        (queryKey) => (Array.isArray(queryKey) ? queryKey : [queryKey]),
+    );
+
+    const invalidate = async () => {
+        await Promise.all(
+            normalizedInvalidateKeys.map((queryKey) =>
+                queryClient.invalidateQueries({ queryKey }),
+            ),
+        );
+    };
 
     const createMutation = useMutation({
-        mutationFn: ({ url, data }) => api.post(url, data).then(res => res.data),
+        mutationFn: ({ url, data, config }) =>
+            api.post(url, data, config).then((res) => res.data),
         onSuccess: invalidate,
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ url, data }) => api.patch(url, data).then(res => res.data),
+        mutationFn: ({ url, data, config }) =>
+            api.patch(url, data, config).then((res) => res.data),
         onSuccess: invalidate,
     });
 
     const deleteMutation = useMutation({
-        mutationFn: ({ url }) => api.delete(url).then(res => res.data),
+        mutationFn: ({ url, config }) => api.delete(url, config).then((res) => res.data),
+        onSuccess: invalidate,
+    });
+
+    const requestMutation = useMutation({
+        mutationFn: ({ method, url, data, config }) =>
+            api({ method, url, data, ...(config || {}) }).then((res) => res.data),
         onSuccess: invalidate,
     });
 
     return {
-        create: (url, data) => createMutation.mutateAsync({ url, data }),
-        update: (url, data) => updateMutation.mutateAsync({ url, data }),
-        remove: (url) => deleteMutation.mutateAsync({ url }),
+        create: (url, data, config) => createMutation.mutateAsync({ url, data, config }),
+        update: (url, data, config) => updateMutation.mutateAsync({ url, data, config }),
+        remove: (url, config) => deleteMutation.mutateAsync({ url, config }),
+        request: (method, url, data, config) =>
+            requestMutation.mutateAsync({ method, url, data, config }),
 
         loading:
             createMutation.isPending ||
             updateMutation.isPending ||
-            deleteMutation.isPending,
+            deleteMutation.isPending ||
+            requestMutation.isPending,
 
         error:
             createMutation.error ||
             updateMutation.error ||
-            deleteMutation.error,
+            deleteMutation.error ||
+            requestMutation.error,
+
+        response:
+            createMutation.data ||
+            updateMutation.data ||
+            deleteMutation.data ||
+            requestMutation.data,
     };
 };
 

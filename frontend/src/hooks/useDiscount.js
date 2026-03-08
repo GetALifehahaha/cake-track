@@ -1,55 +1,26 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DiscountApi } from "../api/DiscountApi";
+import API_ENDPOINTS from "@/api/endpoints";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useDiscount() {
-    const queryClient = useQueryClient();
-
-    const discountQuery = useQuery({
-        queryKey: ['discounts'],
-        queryFn: () => DiscountApi.fetchList(),
-        placeholderData: (previous) => previous,
-    });
-
-    const onSuccessInvalidate = () =>
-        queryClient.invalidateQueries({ queryKey: ['discounts'] });
-
-    const createMutation = useMutation({
-        mutationFn: (params) => DiscountApi.create(params),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => DiscountApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => DiscountApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
+    const discountQuery = useQueryFetch("discounts", API_ENDPOINTS.DISCOUNTS);
+    const { create, update, remove, loading: mutateLoading, error: mutateError, response } =
+        useMutate("discounts");
 
     return {
         discountData: discountQuery.data || [],
 
-        discountLoading:
-            discountQuery.isPending ||
-            createMutation.isPending ||
-            updateMutation.isPending ||
-            deleteMutation.isPending,
+        discountLoading: discountQuery.isPending || mutateLoading,
 
-        discountError:
-            discountQuery.error ||
-            createMutation.error ||
-            updateMutation.error ||
-            deleteMutation.error,
+        discountError: discountQuery.error || mutateError,
         
-        discountResponse: createMutation.data || updateMutation.data || deleteMutation.data,
+        discountResponse: response,
 
         fetchDiscounts: () => discountQuery.refetch(),
         refresh: () => discountQuery.refetch(),
 
-        postDiscount: async (params) => createMutation.mutateAsync(params),
-        patchDiscount: async (id, data) => updateMutation.mutateAsync({ id, data }),
-        deleteDiscount: async (id) => deleteMutation.mutateAsync(id),
+        postDiscount: (params) => create(API_ENDPOINTS.DISCOUNTS, params),
+        patchDiscount: (id, data) => update(`${API_ENDPOINTS.DISCOUNTS}${id}/`, data),
+        deleteDiscount: (id) => remove(`${API_ENDPOINTS.DISCOUNTS}${id}/`),
     };
 }

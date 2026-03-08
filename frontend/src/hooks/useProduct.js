@@ -1,11 +1,11 @@
     import { useMemo } from "react";
-    import { ProductApi } from "@/api/ProductApi";
-    import { useParams, useSearchParams } from "react-router-dom";
-    import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+    import API_ENDPOINTS from "@/api/endpoints";
+    import { useSearchParams } from "react-router-dom";
+    import useMutate from "./useMutate";
+    import useQueryFetch from "./useQueryFetch";
 
     export default function useProduct({isArchived=false} = {}) {
         const [searchParams] = useSearchParams();
-        const queryClient = useQueryClient();
 
         const apiParams = useMemo(() => {
             const params = Object.fromEntries(searchParams.entries());
@@ -15,56 +15,23 @@
             return params;
         }, [searchParams, isArchived]);
 
-        const productQuery = useQuery({
-            queryKey: ['products', JSON.stringify(apiParams)],
-            queryFn: () => ProductApi.fetchList(apiParams),
-            placeholderData: (previous) => previous
-        })
-
-        const onSuccessInvalidate = () => queryClient.invalidateQueries({queryKey: ['products']});
-
-        const createMutation = useMutation({
-            mutationFn: (data) => ProductApi.create(data),
-            onSuccess: onSuccessInvalidate,
-        })
-
-        const updateMutation = useMutation({
-            mutationFn: ({id, data}) => ProductApi.update(id, data),
-            onSuccess: onSuccessInvalidate,
-        })
-
-        const deleteMutation = useMutation({
-            mutationFn: (id) => ProductApi.delete(id),
-            onSuccess: onSuccessInvalidate,
-        })
-
-        const batchUnarchiveMutation = useMutation({
-            mutationFn: (params) => ProductApi.batchUnarchive(params),
-            onSuccess: onSuccessInvalidate,
-        })
+        const productQuery = useQueryFetch("products", API_ENDPOINTS.PRODUCTS, apiParams);
+        const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate("products");
 
         return {
             data: productQuery?.data || [],
 
-            loading: productQuery.isPending || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+            loading: productQuery.isPending || mutateLoading,
 
-            error: productQuery.error || createMutation.error || updateMutation.error || deleteMutation.error,
+            error: productQuery.error || mutateError,
 
-            postProduct: async (params) => {
-                return createMutation.mutateAsync(params);
-            },
+            postProduct: (params) => create(API_ENDPOINTS.PRODUCTS, params),
 
-            patchProduct: async (id, data) => {
-                return updateMutation.mutateAsync({id, data});
-            },
+            patchProduct: (id, data) => update(`${API_ENDPOINTS.PRODUCTS}${id}/`, data),
 
-            batchUnarchiveProduct: async (data) => {
-                return batchUnarchiveMutation.mutateAsync(data)
-            },
+            batchUnarchiveProduct: (data) => create(API_ENDPOINTS.PRODUCTS_UNARCHIVE, data),
 
-            deleteProduct: async (id) => {
-                return deleteMutation.mutateAsync(id);
-            },
+            deleteProduct: (id) => remove(`${API_ENDPOINTS.PRODUCTS}${id}/`),
 
             refresh: () => productQuery.refetch()
         }

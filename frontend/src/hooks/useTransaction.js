@@ -1,57 +1,32 @@
 import { useMemo } from "react";
-import { TransactionApi } from "../api/TransactionApi";
 import { useSearchParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import API_ENDPOINTS from "@/api/endpoints";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useTransaction() {
     const [searchParams] = useSearchParams();
-    const queryClient = useQueryClient();
 
     const apiParams = useMemo(() => {
         return Object.fromEntries(searchParams.entries());
     }, [searchParams]);
 
-    const transactionQuery = useQuery({
-        queryKey: ['transactions', JSON.stringify(apiParams)],
-        queryFn: () => TransactionApi.fetchList(apiParams),
-        placeholderData: (previous) => previous
-    });
-
-    const onSuccessInvalidate = () => queryClient.invalidateQueries({queryKey: ['transactions']});
-
-    const createMutation = useMutation({
-        mutationFn: (data) => TransactionApi.create(data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({id, data}) => TransactionApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => TransactionApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
+    const transactionQuery = useQueryFetch("transactions", API_ENDPOINTS.TRANSACTIONS, apiParams);
+    const { create, update, remove, loading: mutateLoading, error: mutateError } =
+        useMutate("transactions");
 
     return {
         data: transactionQuery?.data || [],
 
-        loading: transactionQuery.isPending || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+        loading: transactionQuery.isPending || mutateLoading,
 
-        error: transactionQuery.error || createMutation.error || updateMutation.error || deleteMutation.error,
+        error: transactionQuery.error || mutateError,
 
-        postTransaction: async (params) => {
-            return createMutation.mutateAsync(params);
-        },
+        postTransaction: (params) => create(API_ENDPOINTS.TRANSACTIONS, params),
 
-        patchTransaction: async (id, data) => {
-            return updateMutation.mutateAsync({id, data});
-        },
+        patchTransaction: (id, data) => update(`${API_ENDPOINTS.TRANSACTIONS}${id}/`, data),
 
-        deleteTransaction: async (id) => {
-            return deleteMutation.mutateAsync(id);
-        },
+        deleteTransaction: (id) => remove(`${API_ENDPOINTS.TRANSACTIONS}${id}/`),
 
         refresh: () => transactionQuery.refetch()
     };

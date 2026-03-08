@@ -1,51 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UnitApi } from '@/api/UnitApi';
+import API_ENDPOINTS from "@/api/endpoints";
+import useMutate from "./useMutate";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useUnits(){
-    const queryClient = useQueryClient();
-
-    const unitsQuery = useQuery({
-        queryKey: ['units'],
-        queryFn: () => UnitApi.fetchList(),
-        placeholderData: (previous) => previous,
-    });
-
-    const onSuccessInvalidate = () =>
-        queryClient.invalidateQueries({ queryKey: ['units'] });
-
-    const createMutation = useMutation({
-        mutationFn: (data) => UnitApi.create(data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => UnitApi.update(id, data),
-        onSuccess: onSuccessInvalidate,
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: (id) => UnitApi.delete(id),
-        onSuccess: onSuccessInvalidate,
-    });
+    const unitsQuery = useQueryFetch("units", API_ENDPOINTS.UNITS);
+    const { create, update, remove, loading: mutateLoading, error: mutateError } =
+        useMutate("units");
 
     return {
         data: unitsQuery.data || [],
 
-        loading:
-            unitsQuery.isPending ||
-            createMutation.isPending ||
-            updateMutation.isPending ||
-            deleteMutation.isPending,
+        loading: unitsQuery.isPending || mutateLoading,
 
-        error:
-            unitsQuery.error ||
-            createMutation.error ||
-            updateMutation.error ||
-            deleteMutation.error,
+        error: unitsQuery.error || mutateError,
 
-        postUnit: async (params) => createMutation.mutateAsync(params),
-        patchUnit: async (id, data) => updateMutation.mutateAsync({ id, data }),
-        deleteUnit: async (id) => deleteMutation.mutateAsync(id),
+        postUnit: (params) => create(API_ENDPOINTS.UNITS, params),
+        patchUnit: (id, data) => update(`${API_ENDPOINTS.UNITS}${id}/`, data),
+        deleteUnit: (id) => remove(`${API_ENDPOINTS.UNITS}${id}/`),
         refresh: () => unitsQuery.refetch(),
     };
 };
