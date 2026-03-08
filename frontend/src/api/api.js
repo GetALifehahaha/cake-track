@@ -51,7 +51,7 @@ api.interceptors.response.use(
             } 
 
             if (isRefreshing) {
-                return newPromise((resolve, reject) => {
+                return new Promise((resolve, reject) => {
                     pendingQueue.push({resolve, reject})
                 }).then(newToken => {
                     request.headers.Authorization = `Bearer ${newToken}`
@@ -87,7 +87,7 @@ api.interceptors.response.use(
 
                 processPendingQueue(null, access);
 
-                request.headers.ACCESS_TOKEN = `Bearer ${access}`
+                request.headers.Authorization = `Bearer ${access}`
                 return api(request)
 
             } catch (error) {

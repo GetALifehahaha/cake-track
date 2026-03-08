@@ -32,15 +32,17 @@ export const openDB = () => {
     })   
 };
 
-export const saveTransaction = async (transaction) => {
+export const saveTransaction = async (transactions) => {
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_TRANSACTIONS, 'readwrite');
         const store = transaction.objectStore(STORE_TRANSACTIONS)
 
+        const plain = JSON.parse(JSON.stringify(transactions));
+
         const record = {
-            ...transaction,
+            ...plain,
             synced: false,
             created_at: new Date().toISOString(),
             synced_at: null,
@@ -64,16 +66,26 @@ export const getTransactions = async (filter = 'all') => {
 
         let req;
 
-        if (filter === 'unsynced') {
-            req = store.index('synced').getAll(IDBKeyRange.only(false));
-        } else if (filter === 'synced') {
-            req = store.index('synced').getAll(IDBKeyRange.only(true));
+        if (filter === 'unsynced' || filter === 'synced') {
+            req = store.getAll();
         } else {
             req = store.getAll();
         }
 
 
-        req.onsuccess = () => resolve(req.result);
+        req.onsuccess = () => {
+            if (filter === 'unsynced') {
+                resolve(req.result.filter((item) => item.synced === false));
+                return;
+            }
+
+            if (filter === 'synced') {
+                resolve(req.result.filter((item) => item.synced === true));
+                return;
+            }
+
+            resolve(req.result);
+        };
         req.onerror = (event) => reject(event.target.error);
     });
 }
@@ -140,10 +152,13 @@ export const countUnsynced = async () => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_TRANSACTIONS, 'readonly');
         const store = transaction.objectStore(STORE_TRANSACTIONS);
+        
+        const req = store.getAll();
 
-        const req = store.index('synced').count(IDBKeyRange.only(false));
-
-        req.onsucces = () => resolve(req.result);
+        req.onsuccess = () => {
+            const unsyncedCount = req.result.filter((item) => item.synced === false).length;
+            resolve(unsyncedCount);
+        };
         req.onerror = () => reject(req.error);
     })
 }

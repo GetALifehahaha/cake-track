@@ -13,8 +13,8 @@ export const useOfflineStatus = ({ onComeOnLine, onGoOffLine}) => {
     const onComeOnLineRef = useRef(onComeOnLine);
     const onGoOffLineRef = useRef(onGoOffLine);
 
-    useEffect(() => { onComeOnLineRef.current =- onComeOnLine;}, [onComeOnLine]);
-    useEffect(() => { onGoOffLineRef.current =- onGoOffLine;}, [onGoOffLine]);
+    useEffect(() => { onComeOnLineRef.current = onComeOnLine;}, [onComeOnLine]);
+    useEffect(() => { onGoOffLineRef.current = onGoOffLine;}, [onGoOffLine]);
 
     useEffect(() => {
         const handleOnline = () => {

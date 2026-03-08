@@ -4,6 +4,7 @@ import api from '@/api/api'
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from './ToastContext'
+import { isSessionValid, refreshTokenMinutesRemaining } from '@/utils/tokenUtils'
 
 export const AuthContext = createContext();
 
@@ -15,17 +16,51 @@ export const AuthProvider = ({children}) => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    const [sessionMinutesRemaining, setSessionMinutesRemaining] = useState(refreshTokenMinutesRemaining());
+    const sessionWarning = isAuthorized && sessionMinutesRemaining > 0 && sessionMinutesRemaining < 60
+
+
     useEffect(() => {
         auth().finally(() => setLoading(false));
     }, []);
 
-    const auth = async () => {
-        try {
-            await getUserData();
-            setIsAuthorized(true);
-        } catch (err) {
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSessionMinutesRemaining(refreshTokenMinutesRemaining())
+        }, 60000);
+
+        return () => clearInterval(interval)
+    })
+
+    useEffect(() => {
+        const handleForcedLogout = () => {
             setUser(null);
             setIsAuthorized(false);
+            addToast("Your session has expired. Please log in again.", "info");
+            navigate('/login');
+        }
+
+        window.addEventListener('auth:logout', handleForcedLogout);
+        return () => window.removeEventListener('auth:logout', handleForcedLogout);
+    }, [navigate])
+
+    const auth = async () => {
+
+        if (!navigator.onLine) {
+            if (isSessionValid()) {
+                setIsAuthorized(true);
+            } else {
+                setUser(null);
+                setIsAuthorized(false);
+            }
+        } else {
+            try {
+                await getUserData();
+                setIsAuthorized(true);
+            } catch (err) {
+                setUser(null);
+                setIsAuthorized(false);
+            }
         }
     }
 
@@ -119,7 +154,8 @@ export const AuthProvider = ({children}) => {
     }
 
     return (
-        <AuthContext.Provider value={{user, getUserData, isAuthorized, setUser, login, googleLogin, register, setIsAuthorized, loading, logout}}>
+        <AuthContext.Provider value={{user, getUserData, isAuthorized, setUser, login, googleLogin, register, setIsAuthorized, loading, logout, sessionMinutesRemaining, sessionWarning}}>
+            {sessionWarning && <div className="w-full bg-warning-fill/20 text-warning-text text-xs font-medium text-center py-1.5 px-4">Your session will expire in {sessionMinutesRemaining} minutes. Connect to an internet connection and sync your offline transactions before it expires.</div>}
             {children}
         </AuthContext.Provider>
     )

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ModalFeedbackCard, Pagination, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton, SyncStatusBar } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -19,7 +19,11 @@ const Home = () => {
 
     const [searchParams, setSearchParams] = useSearchParams();
     const {data: productData, loading: productLoading, error: productError} = useProduct();
-    const { postTransaction, loading: transactionLoading, error: transactionError } = useTransaction();
+    const {
+        postTransaction,
+        loading: transactionLoading,
+        error: transactionError,
+    } = useTransaction();
     const {data: businessData, loading: businessLoading, error: businessError} = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
@@ -122,9 +126,9 @@ const Home = () => {
         setNetTotal(grossTotal - grossTotal * discountValue);
     }, [grossTotal, discountValue, discount])
 
-    useMemo(() => {
-        setActualAccessCode(businessData.secret_pin)
-    }, [])
+    useEffect(() => {
+        setActualAccessCode(businessData?.secret_pin)
+    }, [businessData?.secret_pin])
 
     useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(checkoutProducts));
@@ -276,7 +280,9 @@ const Home = () => {
             onToggle={handleRemoveProductFromCheckout} />
     )
 
-    const listProduct = productData.results.map((product) =>
+    const productResults = Array.isArray(productData?.results) ? productData.results : [];
+
+    const listProduct = productResults.map((product) =>
         <ProductCard
             product={product}
             key={product.id}
@@ -316,7 +322,7 @@ const Home = () => {
                 </div>
 
                 {/* Product Section */}
-                {productData.results.length == 0 ?
+                {productResults.length == 0 ?
                     <div className='flex justify-center items-center h-full'>
                         <h5 className='text-sm font-medium text-text/50'>
                             No products to show

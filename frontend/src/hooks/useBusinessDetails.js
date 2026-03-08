@@ -1,18 +1,38 @@
+import { useEffect, useState } from "react";
 import API_ENDPOINTS from "@/api/endpoints";
 import useMutate from "./useMutate";
 import useQueryFetch from "./useQueryFetch";
 
 export default function useBusinessDetails() {
-    const businessDetailsQuery = useQueryFetch("business-details", API_ENDPOINTS.BUSINESS_DETAILS);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    useEffect(() => {
+        const on = () => setIsOnline(true);
+        const off = () => setIsOnline(false);
+
+        window.addEventListener("online", on);
+        window.addEventListener("offline", off);
+
+        return () => {
+            window.removeEventListener("online", on);
+            window.removeEventListener("offline", off);
+        };
+    }, []);
+
+    const businessDetailsQuery = useQueryFetch(
+        "business-details",
+        isOnline ? API_ENDPOINTS.BUSINESS_DETAILS : null,
+        {}
+    );
     const { create, update, remove, loading: mutateLoading, error: mutateError } =
         useMutate("business-details");
 
     return {
-        data: businessDetailsQuery.data || [],
+        data: businessDetailsQuery.data || {},
 
-        loading: businessDetailsQuery.isPending || mutateLoading,
+        loading: isOnline ? (businessDetailsQuery.isPending || mutateLoading) : false,
 
-        error: businessDetailsQuery.error || mutateError,
+        error: isOnline ? (businessDetailsQuery.error || mutateError) : mutateError,
 
         postBusinessDetails: (params) => create(API_ENDPOINTS.BUSINESS_DETAILS, params),
 
