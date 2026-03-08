@@ -96,6 +96,8 @@ api.interceptors.response.use(
                 localStorage.removeItem(ACCESS_TOKEN)
                 localStorage.removeItem(REFRESH_TOKEN)
                 return Promise.reject(error)
+            } finally {
+                isRefreshing = false;
             }
         }
 
