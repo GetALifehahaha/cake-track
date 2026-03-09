@@ -116,7 +116,7 @@ const Inventory = () => {
 
         const diffInDays = (expiry - today) / (1000 * 60 * 60 * 24);
 
-        if (diffInDays < 0) return "expired";
+        if (diffInDays <= 0) return "expired";
         if (diffInDays <= 7) return "near";
         return "normal";
     };

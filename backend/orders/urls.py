@@ -7,7 +7,8 @@ from .views import (
     CupcakeOrderViewSet,
     DashboardView,
     CakeViewSet,
-    BlockedDateView
+    BlockedDateView,
+    OpeningTimeView,
 )
 
 routers = DefaultRouter()
@@ -19,5 +20,6 @@ routers.register(r'cakes', CakeViewSet)
 urlpatterns = [
     path('', include(routers.urls)),
     path('dashboard/', DashboardView.as_view(), name="dashboard-analytics"),
-    path('blocked-dates/', BlockedDateView.as_view(), name="blocked-dates")
+    path('blocked-dates/', BlockedDateView.as_view(), name="blocked-dates"),
+    path('opening-time/', OpeningTimeView.as_view(), name="opening-time"),
 ]

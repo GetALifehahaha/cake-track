@@ -17,7 +17,7 @@ const Queue = () => {
 		{ label: "Ready for Pickup", path: '/ready', icon: SmileIcon },
 		{ label: "Completed", path: '/completed', icon: ClipboardCheck },
 		{ label: "Rejected", path: '/rejected', icon: XCircle },
-		// { label: "Order Availability", path: '/availability', icon: Calendar },
+		{ label: "Order Availability", path: '/availability', icon: Calendar },
 	]
 
 	// dummy data

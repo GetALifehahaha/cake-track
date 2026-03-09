@@ -21,14 +21,12 @@ export default function useProduct({isArchived=false} = {}) {
         queryKey: ["products", apiParams],
         queryFn: async () => {
             const page = parseInt(apiParams.page || 1);
-            const limit = 15; // Set your preferred page limit
+            const limit = 15;
             const category = apiParams.categories__name;
             const q = apiParams.q;
 
             if (navigator.onLine) {
                 try {
-                    // Fetch all products without pagination to cache them. 
-                    // Adjust limit parameter to ensure you grab the entire catalog.
                     const response = await api.get('/pos/products/get_all/');
                     const allProducts = response.data.results || response.data;
                     await saveAllProducts(allProducts);
@@ -37,8 +35,7 @@ export default function useProduct({isArchived=false} = {}) {
                 }
             }
 
-            // Always serve from the local IndexedDB cache to guarantee offline availability and fast local pagination
-            return await getLocalProducts({ page, limit, category, q });
+            return await getLocalProducts({ page, limit, category, q, isArchived });
         },
         staleTime: 5 * 60 * 1000
     });

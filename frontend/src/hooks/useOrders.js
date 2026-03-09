@@ -13,7 +13,7 @@ export default function useOrder() {
     [searchParams]);
 
     const lastPart = location.pathname.split('/').filter(Boolean).pop();
-    const currentFilter = lastPart === 'queue' ? null : lastPart;
+    const currentFilter = lastPart === 'cake-orders' ? null : lastPart;
 
     const apiParams = useMemo(() => {
         const raw = {
@@ -56,7 +56,7 @@ export default function useOrder() {
         blockedDatesError:   blockedDatesQuery.error    || blockedMutateError,
 
         blockDates: (dates) =>
-            createBlockedDates(API_ENDPOINTS.BLOCKED_DATES, dates.map((date) => ({ date }))),
+        createBlockedDates(API_ENDPOINTS.BLOCKED_DATES, dates.map((date) => ({ date }))),
         unblockDates: (id) => deleteBlockedDates(API_ENDPOINTS.BLOCKED_DATES, { data: id }),
     };
 }

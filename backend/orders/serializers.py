@@ -138,7 +138,7 @@ class BlockedDateSerializer(serializers.ModelSerializer):
         fields = ['id', 'date']
 
 
-class OpeningTimeSerializer():
+class OpeningTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpeningTime
-        field = '__all__'
+        fields = ['id', 'start_time', 'end_time', 'open_days']

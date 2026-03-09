@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
-import { CartesianGrid, Dot, Line, LineChart } from "recharts"
+import { CartesianGrid, Dot, Line, LineChart, XAxis } from "recharts"
 import { cn } from "@/lib/utils"
 
 import {
@@ -24,6 +24,7 @@ import { Button } from "@/components/atoms"
 const DashboardChart = ({chartData}) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [frequency, setFrequency] = useState("daily")
+	
 
 	const handleFrequency = (value) => {
 		setFrequency(value)
@@ -36,6 +37,24 @@ const DashboardChart = ({chartData}) => {
 
         setSearchParams(params);
 	}, [frequency])
+
+	const formatXAxis = (value) => {
+		const d = new Date(value);
+
+		if (frequency === "daily") {
+			return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+		}
+
+		if (frequency === "weekly") {
+			return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+		}
+
+		if (frequency === "monthly") {
+			return d.toLocaleDateString(undefined, { month: "short" });
+		}
+
+		return value;
+	};
 
 	return (
 		<Card className="border-none bg-main-white shadow-md">
@@ -84,7 +103,14 @@ const DashboardChart = ({chartData}) => {
 							right: 24,
 						}}
 					>
-						<CartesianGrid vertical={false} />
+						<CartesianGrid vertical={true} />
+						<XAxis
+							dataKey="period"
+							tickFormatter={formatXAxis}
+							tick={{ fontSize: 12 }}
+							axisLine={false}
+							tickLine={false}
+						/>
 
 						<ChartTooltip
 							cursor={false}

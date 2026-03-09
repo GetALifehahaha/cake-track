@@ -3,7 +3,7 @@ import { ModalBody } from "@/components/molecules"
 import MiniCalendar from "./MiniCalendar"
 import { X } from "lucide-react"
 
-const BlockedDates = ({ onClose, onConfirm }) => {
+const BlockedDates = ({ onClose, onConfirm, existingDates = [] }) => {
 	const [selectedDates, setSelectedDates] = useState([])
 
 	const toggleDate = (key) => {
@@ -15,7 +15,7 @@ const BlockedDates = ({ onClose, onConfirm }) => {
 	return (
 		<ModalBody title="Block Dates" subtitle="Select one or more dates to block from order availability." onClose={onClose} className='max-w-[60vw] max-h-[90vh]'>
 
-			<MiniCalendar selectedDates={selectedDates} onToggleDate={toggleDate} />
+			<MiniCalendar selectedDates={selectedDates} disabledDates={existingDates} onToggleDate={toggleDate} />
 
 			<div className='flex gap-2 mt-5'>
 				<button

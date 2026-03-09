@@ -190,7 +190,7 @@ export const saveAllProducts = async (products) => {
     });
 };
 
-export const getLocalProducts = async ({ page = 1, limit = 10, category, q } = {}) => {
+export const getLocalProducts = async ({ page = 1, limit = 10, category, q, isArchived = false } = {}) => {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(STORE_PRODUCTS, 'readonly');
@@ -200,9 +200,14 @@ export const getLocalProducts = async ({ page = 1, limit = 10, category, q } = {
         request.onsuccess = () => {
             let results = request.result;
 
+            // Filter by archived status
+            results = results.filter(p => !!p.is_archived === isArchived);
+
             if (category) {
-                // Adjust this matching logic based on your exact category payload structure
-                results = results.filter(p => p.category === category || p.categories__name === category);
+                results = results.filter(p =>
+                    Array.isArray(p.categories) &&
+                    p.categories.some(c => c.name === category)
+                );
             }
 
             if (q) {

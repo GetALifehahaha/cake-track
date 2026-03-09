@@ -90,7 +90,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
         expired_batches = Transaction.objects.filter(
             transaction_type='in',
-            expiration_date__lt=today,
+            expiration_date__lte=today,
             remaining_amount__gt=0
         ).select_related("ingredient")
 
@@ -192,7 +192,7 @@ class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
 
         expired_batches = Transaction.objects.filter(
             transaction_type='in',
-            expiration_date__lt=today,
+            expiration_date__lte=today,
             remaining_amount__gt=0
         )
 

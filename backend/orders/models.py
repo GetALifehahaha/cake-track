@@ -93,5 +93,11 @@ class BlockedDate(models.Model):
 
 
 class OpeningTime(models.Model):
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.TimeField(default='08:00')
+    end_time = models.TimeField(default='17:00')
+    open_days = models.JSONField(default=list)
+
+    def save(self, *args, **kwargs):
+        # Enforce singleton — always use pk=1
+        self.pk = 1
+        super().save(*args, **kwargs)

@@ -236,16 +236,41 @@ class BlockedDateView(APIView):
 
     def delete(self, request):
         dates_to_delete = request.data
-        print(dates_to_delete)
 
         if not isinstance(dates_to_delete, list):
-            return Response({"error": "Expected a list of dates."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Expected a list of IDs."}, status=status.HTTP_400_BAD_REQUEST)
 
-        deleted_count, _ = BlockedDate.objects.filter(date__in=dates_to_delete).delete()
-        return Response({"deleted": deleted_count}, status=status.HTTP_204_NO_CONTENT)
-    
+        # Validate all values are integers
+        try:
+            ids = [int(i) for i in dates_to_delete]
+        except (TypeError, ValueError):
+            return Response({"error": "All values must be integer IDs."}, status=status.HTTP_400_BAD_REQUEST)
 
-class OpeningTimeViewSet(viewsets.ModelViewSet):
-    queryset = OpeningTime.objects.all()
-    serializer_class = OpeningTimeSerializer
+        deleted_count, _ = BlockedDate.objects.filter(id__in=ids).delete()
+        return Response({"deleted": deleted_count}, status=status.HTTP_200_OK)
+
+
+class OpeningTimeView(APIView):
     permission_classes = [permissions.AllowAny]
+
+    _defaults = {
+        'start_time': '08:00',
+        'end_time': '17:00',
+        'open_days': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    }
+
+    def _get_instance(self):
+        instance, _ = OpeningTime.objects.get_or_create(pk=1, defaults=self._defaults)
+        return instance
+
+    def get(self, request):
+        serializer = OpeningTimeSerializer(self._get_instance())
+        return Response(serializer.data)
+
+    def patch(self, request):
+        instance = self._get_instance()
+        serializer = OpeningTimeSerializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -23,13 +23,18 @@ const Products = () => {
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-    useEffect(() => {
-        let params = new URLSearchParams();
-        
-        if (filter) params.set('categories__name', filter)
+    const handleSetFilter = (value) => {
+        setSearchParams(prevParams => {
+            if (value) {
+                prevParams.set('categories__name', value);
+            } else {
+                prevParams.delete('categories__name');
+            }
+            return prevParams;
+        });
 
-        setSearchParams(params)
-    }, [filter])
+        setFilter(value)
+    };
 
     if (productLoading || categoryLoading) return <ProductsSkeletonLoading />
     if (productError) return <h5>Error loading product data</h5>
@@ -118,7 +123,7 @@ const Products = () => {
         <div className='flex flex-col gap-8'>
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center'>
-                    <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={setFilter} options={categoryOptions} size='regular' />
+                    <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={handleSetFilter} options={categoryOptions} size='regular' />
                         <div className='mx-1    ' />
                     <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                 </div>

@@ -1,24 +1,20 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { X, Plus, Trash2, Clock, CalendarOff, Edit2 } from 'lucide-react'
 import { Title } from '../../components/atoms'
 import { useToast } from '@/context/ToastContext'
 import { formatTime } from '../../utils/formatTime.js'
-import { BlockedDates, ConfirmationModal } from '@/components/organisms'
+import { BlockedDates, ClosingHoursModal, ConfirmationModal } from '@/components/organisms'
 import { isDatePast } from '@/utils/isDatePast'
 import { formatDisplayDate } from '@/utils/formatDisplayDate'
 import useOrder from '@/hooks/useOrders'
+import useOperatingHours from '@/hooks/useOperatingHours'
 import Loading from '@/components/molecules/Loading'
 
 const QueueOrderAvailability = () => {
 	const { addToast } = useToast()
 
-	const {blockedDates, blockDates, unblockDates, blockedDatesLoading, blockedDatesError} = useOrder();
-
-	const [closingHours, setClosingHours] = useState({
-		open: '08:00',
-		close: '17:00',
-		days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-	})
+	const { blockedDates, blockDates, unblockDates, blockedDatesLoading, blockedDatesError } = useOrder()
+	const { operatingHours, loading: hoursLoading, updateOperatingHours } = useOperatingHours()
 
 	const [selectedDates, setSelectedDates] = useState([])
 	const [showBlockModal, setShowBlockModal] = useState(false)
@@ -43,67 +39,53 @@ const QueueOrderAvailability = () => {
 		: [...upcomingDates, ...pastDates]
 
 	const handleBlockDates = async (dates) => {
-	try {
-		const response = await blockDates(dates)
-
-		if (response.status === 200 || response.status === 201) {
-			const newDates = dates.filter(d => !blockedDates.includes(d))
+		try {
+			await blockDates(dates)
 			setShowBlockModal(false)
-			addToast(`${newDates.length} date(s) blocked successfully`, 'success')
+			addToast(`${dates.length} date(s) blocked successfully`, 'success')
+		} catch (err) {
+			const errorData = err.response?.data
+			const dateError = errorData?.dates?.[0] || errorData?.dates
+			const generalError = errorData?.detail || 'An unexpected error occurred'
+			addToast(`Failed to block dates: ${dateError || generalError}`, 'error')
 		}
-	} catch (err) {
-		const errorData = err.response?.data
-
-		const dateError = errorData?.dates?.[0] || errorData?.dates
-		const generalError = errorData?.detail || "An unexpected error occurred"
-
-		const errorMessage = dateError || generalError
-
-		addToast(`Failed to block dates: ${errorMessage}`, 'error')
 	}
-}
 
-	const handleSaveHours = (hours) => {
-		setClosingHours(hours)
-		setShowHoursModal(false)
-		addToast('Operating hours updated successfully')
+	const handleSaveHours = async (hours) => {
+		try {
+			await updateOperatingHours(hours)
+			setShowHoursModal(false)
+			addToast('Operating hours updated successfully', 'success')
+		} catch (err) {
+			addToast('Failed to update operating hours', 'error')
+		}
 	}
 
 	const handleDeleteSelected = async () => {
 		try {
-			console.log(selectedDates)
-			const response = await unblockDates([...selectedDates])
-
-			if (response.status === 200 || response.status === 204) {
-
-				setSelectedDates([])
-				setShowDeleteModal(false)
-
-				addToast('Selected dates unblocked', 'success')
-			}
+			await unblockDates([...selectedDates])
+			setSelectedDates([])
+			setShowDeleteModal(false)
+			addToast('Selected dates unblocked', 'success')
 		} catch (err) {
 			const errorData = err.response?.data
-
 			const dateError = errorData?.dates?.[0] || errorData?.dates
-			const generalError = errorData?.detail || "An unexpected error occurred"
-
-			const errorMessage = dateError || generalError
-
-			addToast(`Failed to unblock dates: ${errorMessage}`, 'error')
+			const generalError = errorData?.detail || 'An unexpected error occurred'
+			addToast(`Failed to unblock dates: ${dateError || generalError}`, 'error')
 		}
 	}
 
-	const toggleSelectDate = (date) => {
+	const toggleSelectDate = (dateItem) => {
 		setSelectedDates(prev =>
-			prev.includes(date) ? prev.filter(d => d !== date.id) : [...prev, date.id]
+			prev.includes(dateItem.id) ? prev.filter(id => id !== dateItem.id) : [...prev, dateItem.id]
 		)
 	}
 
 	const toggleSelectAll = () => {
-		setSelectedDates(selectedDates.length === displayDates.length ? [] : [...displayDates])
+		setSelectedDates(selectedDates.length === displayDates.length ? [] : displayDates.map(d => d.id))
 	}
 
-	if (blockedDatesLoading) return <Loading />
+	if (blockedDatesLoading || hoursLoading) return <Loading />
 	if (blockedDatesError) return <h5>Error...</h5>
 
 	return (
@@ -134,7 +116,7 @@ const QueueOrderAvailability = () => {
 						<div className='flex items-center justify-between p-3 bg-main-dark/30 rounded-lg'>
 							<span className='text-xs text-text/50 font-medium'>Hours</span>
 							<span className='text-sm font-semibold text-text'>
-								{formatTime(closingHours.open)} – {formatTime(closingHours.close)}
+								{formatTime(operatingHours?.start_time)} – {formatTime(operatingHours?.end_time)}
 							</span>
 						</div>
 						<div>
@@ -145,7 +127,7 @@ const QueueOrderAvailability = () => {
 										key={day}
 										className={`
 											text-xs px-2.5 py-0.5 rounded-full font-medium border
-											${closingHours.days.includes(day)
+											${operatingHours?.open_days?.includes(day)
 												? 'bg-accent-mute/10 text-accent-mute border-accent-mute/20'
 												: 'bg-transparent text-text/25 border-border/50'}
 										`}
@@ -254,7 +236,7 @@ const QueueOrderAvailability = () => {
 					) : (
 						displayDates.map(({id, date}, i) => {
 							const past = isDatePast(date)
-							const isChecked = selectedDates.includes(date)
+							const isChecked = selectedDates.includes(id)
 
 							return (
 								<div
@@ -297,7 +279,7 @@ const QueueOrderAvailability = () => {
 										<button
 											onClick={(e) => {
 												e.stopPropagation()
-												setSelectedDates([{id, date}])
+												setSelectedDates([id])
 												setShowDeleteModal(true)
 											}}
 											className='p-1.5 rounded-lg hover:bg-error/10 text-text/30 hover:text-error transition-colors cursor-pointer'
@@ -317,6 +299,7 @@ const QueueOrderAvailability = () => {
 				<BlockedDates
 					onClose={() => setShowBlockModal(false)}
 					onConfirm={handleBlockDates}
+					existingDates={blockedDates.map(d => d.date)}
 				/>
 			)}
 
@@ -324,7 +307,7 @@ const QueueOrderAvailability = () => {
 				<ClosingHoursModal
 					onClose={() => setShowHoursModal(false)}
 					onConfirm={handleSaveHours}
-					current={closingHours}
+					current={operatingHours}
 				/>
 			)}
 

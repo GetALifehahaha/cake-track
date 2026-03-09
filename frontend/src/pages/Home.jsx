@@ -64,10 +64,16 @@ const Home = () => {
     }
 
     const handleSetFilter = (value) => {
-        setFilter(filter => {
-            if (filter == value) return null;
-            return value
-        })
+        setSearchParams(prevParams => {
+            if (value) {
+                prevParams.set('categories__name', value);
+            } else {
+                prevParams.delete('categories__name');
+            }
+            return prevParams;
+        });
+
+        setFilter(value)
     };
 
     const handleSetOrderType = (value) => setOrderType(value);
@@ -103,14 +109,6 @@ const Home = () => {
     }
 
     // USE EFFECTS AND MEMOS
-
-    useEffect(() => {
-        let params = new URLSearchParams();
-
-        if (filter) params.set('categories__name', filter)
-
-        setSearchParams(params)
-    }, [filter])
 
     useMemo(() => {
         setGrossTotal(() => {

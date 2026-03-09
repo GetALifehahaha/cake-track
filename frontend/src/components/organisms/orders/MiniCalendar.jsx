@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
-const MiniCalendar = ({ selectedDates = [], onToggleDate }) => {
+const MiniCalendar = ({ selectedDates = [], disabledDates = [], onToggleDate }) => {
 	const today = new Date()
 	const [viewYear, setViewYear] = useState(today.getFullYear())
 	const [viewMonth, setViewMonth] = useState(today.getMonth())
@@ -52,15 +52,19 @@ const MiniCalendar = ({ selectedDates = [], onToggleDate }) => {
 					const key = toKey(viewYear, viewMonth, day)
 					const isSelected = selectedDates.includes(key)
 					const isPast = new Date(viewYear, viewMonth, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+					const isAlreadyBlocked = disabledDates.includes(key)
+					const isDisabled = isPast || isAlreadyBlocked
 
 					return (
 						<button
 							key={i}
-							disabled={isPast}
+							disabled={isDisabled}
 							onClick={() => onToggleDate(key)}
+							title={isAlreadyBlocked ? 'Already blocked' : undefined}
 							className={`
 								aspect-square w-full text-xs rounded-lg font-medium transition-all
-								${isPast ? 'text-text/20 cursor-not-allowed' : 'cursor-pointer hover:bg-main-dark/50'}
+								${isDisabled ? 'text-text/20 cursor-not-allowed' : 'cursor-pointer hover:bg-main-dark/50'}
+								${isAlreadyBlocked ? 'bg-error/10 line-through' : ''}
 								${isSelected ? 'bg-accent-mute text-white hover:bg-accent-mute/80' : 'text-text'}
 							`}
 						>

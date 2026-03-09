@@ -33,6 +33,7 @@ export { default as EditCakeModal } from './cakes/EditCakeModal'
 export { default as UnitModal } from './inventory/UnitModal'
 export { default as CakeArchivedModal } from './cakes/CakeArchivedModal'
 export { default as BlockedDates } from './orders/BlockedDates'
+export { default as ClosingHoursModal } from './orders/ClosingHoursModal'
 export { default as SyncStatusBar } from './SyncStatusBar'
 
 export { default as ProductsSkeletonLoading } from './products/ProductsSkeletonLoading'
