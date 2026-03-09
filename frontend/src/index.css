@@ -10,6 +10,10 @@
     font-display: swap;
 }
 
+html {
+    font-size: 90%;
+}
+
 *{
     font-family: "Jakarta Sans";
 }
