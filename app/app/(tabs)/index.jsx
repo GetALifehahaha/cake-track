@@ -2,6 +2,7 @@ import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackg
 import React, { useState, useContext, useEffect } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'
+import { OpeningContext } from '@/context/OpeningContext'
 import Carousel from 'react-native-reanimated-carousel';
 import { Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -12,6 +13,7 @@ const { width } = Dimensions.get('window');
 
 export default function Index() {
     const { user, loading } = useContext(AuthContext)
+    const { openingTime, blockedDates, loading: loadingOpening } = useContext(OpeningContext)
 
     // --- DATA ---
     const [cakes, setCakes] = useState([]);
@@ -78,7 +80,7 @@ export default function Index() {
     ]
 
 
-    if (loading) return (
+    if (loading || loadingOpening) return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#8B5A3C" />
         </View>

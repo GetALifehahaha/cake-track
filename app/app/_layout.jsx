@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { OpeningProvider } from "@/context/OpeningContext";
 import { View, ActivityIndicator } from "react-native";
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
@@ -112,9 +113,11 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <CartProvider>
-            <InitialLayout />
-          </CartProvider>
+          <OpeningProvider>
+            <CartProvider>
+              <InitialLayout />
+            </CartProvider>
+          </OpeningProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
