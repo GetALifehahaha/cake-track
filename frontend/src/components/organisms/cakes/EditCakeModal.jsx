@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button, Label, Title } from '@/components/atoms';
+import { Button, Label } from '@/components/atoms';
 import { X, Upload, Loader2 } from 'lucide-react';
-import { ModalFeedbackCard } from '@/components/molecules';
+import { ModalBody, ModalFeedbackCard } from '@/components/molecules';
 import { ConfirmationModal } from '../';
 import {
     CLOUDINARY_CLOUD_NAME,
@@ -153,13 +153,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
 
 
     return (
-        <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-10'>
-            <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
-
-                <div className="flex justify-between items-center w-full">
-                    <Title variant='modal' text='Edit Cake' />
-                    <X size={16} className='text-text cursor-pointer' onClick={onClose} />
-                </div>
+        <ModalBody title='Edit Cake' onClose={onClose}>
 
                 <div className='flex gap-8'>
 
@@ -282,8 +276,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                         onConfirm={handleArchive} />
                 }
 
-            </div>
-        </div>
+        </ModalBody>
     );
 };
 

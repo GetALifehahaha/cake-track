@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Title, Label, Dropdown, Button } from '../atoms';
-import { ModalFeedbackCard } from '../molecules';
+import { Label, Dropdown, Button } from '../atoms';
+import { ModalBody, ModalFeedbackCard } from '../molecules';
 import { Minus, Plus, X } from 'lucide-react';
 
 const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
@@ -75,12 +75,7 @@ const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
     )
 
     return (
-        <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-10'>
-            <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] max-h-[80vh] flex flex-col gap-10'>
-                <div className='flex justify-between items-center w-full'>
-                    <Title variant='modal' text='Edit Item' />
-                    <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
-                </div>
+        <ModalBody title='Edit Recipe' onClose={onClose}>
                 <div className='flex flex-col gap-4'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Recipe Name'/>
@@ -120,8 +115,7 @@ const EditRecipeModal = ({recipe, onConfirm, onClose, onDelete}) => {
                         <Button variant='modalBlock' size='modalSize' text='Save' onClick={handleConfirm}/>
                     </div>
                 </div>
-            </div>
-        </div>
+        </ModalBody>
     )
 }
 

@@ -16,6 +16,12 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
     const [search, setSearch] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [confirmationModal, setConfirmationModal] = useState(false);
+    const [closing, setClosing] = useState(false);
+
+    const handleClose = () => {
+        setClosing(true);
+        setTimeout(() => onClose(), 150);
+    };
 
     useEffect(() => {
         if (recipe) {
@@ -34,7 +40,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         }
     }, [recipe]);
 
-    if (1) return <RecipeModalSkeleton onClose={onClose} />
+    if (ingredientLoading) return <RecipeModalSkeleton onClose={onClose} />
     if (ingredientError) return <h5>Error loading ingredients.</h5>;
 
     const toggleConfirmationModal = () => setConfirmationModal(prev => !prev);
@@ -144,8 +150,8 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
     ) || [];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-8">
-            <div className="flex w-full max-w-7xl h-[85vh] bg-main-white rounded-2xl shadow-2xl overflow-hidden relative">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-8 ${!closing ? 'animate-in fade-in duration-150' : 'animate-out fade-out duration-150 fill-mode-forwards'}`}>
+            <div className={`flex w-full max-w-7xl h-[85vh] bg-main-white rounded-2xl shadow-2xl overflow-hidden relative ${!closing ? 'animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-150' : 'animate-out fade-out zoom-out-95 slide-out-to-bottom-3 duration-150 fill-mode-forwards'}`}>
                 
                 <div className="w-64 bg-accent-mute flex flex-col text-main-white p-6 shrink-0">
                     <div className="flex items-center gap-3 mb-12 mt-2 ml-2">
@@ -180,7 +186,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                 </div>
 
                 <div className="flex-1 flex flex-col relative overflow-hidden">
-                    <button onClick={onClose} className="absolute top-6 right-6 text-text-light hover:text-text transition-colors z-10">
+                    <button onClick={handleClose} className="absolute top-6 right-6 text-text-light hover:text-text transition-colors z-10">
                         <X size={24} />
                     </button>
 
@@ -283,7 +289,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
 
                     <div className="shrink-0 border-t border-border p-6 flex items-center justify-between bg-main-white z-10">
                         <div className="w-1/3">
-                            <button onClick={onClose} className="text-text-light hover:text-text font-medium text-xs transition-colors">
+                            <button onClick={handleClose} className="text-text-light hover:text-text font-medium text-xs transition-colors">
                                 Discard Changes
                             </button>
                         </div>
