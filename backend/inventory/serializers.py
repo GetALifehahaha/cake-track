@@ -165,12 +165,17 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     Used when viewing a recipe to see what's inside it.
     """
     ingredient_name = serializers.CharField(source='ingredient.name', read_only=True)
-    ingredient_unit = serializers.CharField(source='ingredient.unit', read_only=True)
+    ingredient_unit = serializers.CharField(source='ingredient.unit.abbreviation', read_only=True)
+    ingredient_stock = serializers.DecimalField(source='ingredient.total_stock', max_digits=11, decimal_places=2, read_only=True)
+    is_missing = serializers.SerializerMethodField()
     ingredient_id = serializers.IntegerField()
 
     class Meta:
         model = RecipeIngredient
-        fields = ['ingredient_id', 'ingredient_name', 'amount_needed', 'ingredient_unit']
+        fields = ['ingredient_id', 'ingredient_name', 'amount_needed', 'ingredient_unit', 'ingredient_stock', 'is_missing']
+
+    def get_is_missing(self, obj):
+        return obj.ingredient.total_stock < obj.amount_needed
         
 
 

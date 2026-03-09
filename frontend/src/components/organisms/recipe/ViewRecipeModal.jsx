@@ -4,6 +4,7 @@ import { X, UtensilsCrossed } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 import { useState } from 'react';
 import { ModalBody } from '@/components/molecules';
+import { cn } from '@/utils/cn';
 
 const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
     if (!recipe) return null;
@@ -40,20 +41,32 @@ const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
                         </div>
                         
                         <div className="flex-1 overflow-y-auto pr-2 space-y-3">
-                            {recipe.ingredients?.map((item) => (
-                                <div key={item.ingredient_id} className="flex items-center justify-between p-4 bg-main-white rounded-xl shadow-sm border border-border/50">
-                                    <h5 className="flex-1 truncate font-medium text-sm text-text pr-4">{item.ingredient_name}</h5>
+                            {recipe.ingredients?.map((item) => {
+                                const isMissing = item.is_missing ?? Number(item.ingredient_stock) < Number(item.amount_needed);
+
+                                return (
+                                <div
+                                    key={item.ingredient_id}
+                                    className={cn(
+                                        'flex items-center justify-between p-4 bg-main-white rounded-xl shadow-sm border border-border/50 transition',
+                                        isMissing && 'bg-error-fill/35 border-error/60'
+                                    )}
+                                >
+                                    <h5 className={cn('flex-1 truncate font-medium text-sm text-text pr-4', isMissing && 'text-error')}>
+                                        {item.ingredient_name}
+                                    </h5>
                                     
-                                    <div className="flex items-baseline gap-1.5 shrink-0 bg-main px-3 py-1.5 rounded-lg border border-border/30">
-                                        <h4 className="text-sm font-semibold text-accent-dark">
+                                    <div className={cn('flex items-baseline gap-1.5 shrink-0 bg-main px-3 py-1.5 rounded-lg border border-border/30', isMissing && 'border-error/40 bg-main-white')}>
+                                        <h4 className={cn('text-sm font-semibold text-accent-dark', isMissing && 'text-error')}>
                                             {item.amount_needed}
                                         </h4>
-                                        <span className="text-[10px] font-medium text-text-light">
+                                        <span className={cn('text-[10px] font-medium text-text-light', isMissing && 'text-error')}>
                                             {item.ingredient_unit}
                                         </span>
                                     </div>
                                 </div>
-                            ))}
+                                )
+                            })}
 
                             {(!recipe.ingredients || recipe.ingredients.length === 0) && (
                                 <div className="flex items-center justify-center h-full text-text-light text-xs">

@@ -21,6 +21,8 @@ const Recipe = () => {
     if (loading) return <RecipeSkeleton />
     if (error) return <h5>Error...</h5>
 
+    console.log(data)
+
     const selectViewRecipe = (recipe) => {
         setViewRecipe(recipe)
     }

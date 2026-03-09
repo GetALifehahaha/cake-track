@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import ModalBody from "./ModalBody";
+import { X } from "lucide-react";
 
 const Bone = ({ className = '' }) => (
   <div className={`animate-pulse bg-main-dark/20 rounded-md ${className}`} />
@@ -767,3 +768,54 @@ export const InventoryInOutSkeleton = ({onClose}) =>
         <Bone className='h-9 w-28 rounded-md' />
     </div>
   </ModalBody>
+
+
+export const RecipeModalSkeleton = ({onClose}) => 
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-8">
+      <div className="flex w-full max-w-7xl h-[85vh] bg-main-white rounded-2xl shadow-2xl overflow-hidden relative">
+
+          {/* Sidebar */}
+          <div className="w-64 bg-accent-mute flex flex-col p-6 shrink-0">
+              <div className="flex items-center gap-3 mb-12 mt-2 ml-2">
+                  <Bone className="h-6 w-6 rounded-md" />
+                  <Bone className="h-5 w-24" />
+              </div>
+              <div className="flex flex-col gap-2">
+                  <Bone className="h-10 w-full rounded-xl" />
+                  <Bone className="h-10 w-full rounded-xl" />
+              </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <button onClick={onClose} className="absolute top-6 right-6 text-text-light hover:text-text transition-colors z-10">
+                <X size={24} />
+            </button>
+              <div className="flex-1 overflow-y-auto p-12 flex flex-col">
+                  <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
+                      <Bone className="h-7 w-48 mb-2" />
+                      <Bone className="h-3 w-72 mb-10" />
+
+                      <div className="mb-8">
+                          <Bone className="h-3 w-24 mb-2" />
+                          <Bone className="h-12 w-full rounded-xl" />
+                      </div>
+
+                      <div className="flex-1 flex flex-col min-h-[300px]">
+                          <Bone className="h-3 w-24 mb-2" />
+                          <Bone className="flex-1 w-full rounded-xl min-h-[300px]" />
+                      </div>
+                  </div>
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-border p-6 flex items-center justify-between bg-main-white">
+                  <Bone className="h-3 w-28" />
+                  <div className="flex items-center gap-3">
+                      <Bone className="h-9 w-24 rounded-md" />
+                      <Bone className="h-9 w-28 rounded-md" />
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>

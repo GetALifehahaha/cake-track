@@ -5,6 +5,7 @@ import { X, UtensilsCrossed, Info, List, Search } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import ConfirmationModal from '../ConfirmationModal';
+import { RecipeModalSkeleton } from '@/components/molecules/Skeletons';
 
 const AddRecipeModal = ({ onClose, onConfirm }) => {
     const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
@@ -16,7 +17,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
     const [feedback, setFeedback] = useState(null);
     const [confirmationModal, setConfirmationModal] = useState(false);
 
-    if (ingredientLoading) return <Loading />;
+    if (ingredientLoading) return <RecipeModalSkeleton onClose={onClose} />;
     if (ingredientError) return <h5>Error...</h5>;
 
     const toggleConfirmationModal = () => setConfirmationModal(prev => !prev);
@@ -217,13 +218,14 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                                     </div>
                                     <div className="flex-1 overflow-y-auto pr-2 space-y-3 pb-4">
                                         {filteredIngredients.map(ing => (
+                                            console.log(ing),
                                             <div 
                                                 key={ing.id} 
                                                 onClick={() => handleAddIngredient(ing)} 
                                                 className="p-4 rounded-xl border border-border bg-main-white cursor-pointer hover:border-accent hover:shadow-sm transition-all flex flex-col gap-1"
                                             >
                                                 <h5 className="font-medium text-sm text-text">{ing.name}</h5>
-                                                <p className="text-[10px] text-text-light">Stock: {ing.stock || 0} {ing.unit?.abbreviation}</p>
+                                                <p className="text-[10px] text-text-light">Stock: {ing?.total_stock || 0} {ing?.unit?.abbreviation}</p>
                                             </div>
                                         ))}
                                         {filteredIngredients.length === 0 && (
@@ -246,7 +248,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                                                         onChange={(e) => handleUpdateAmount(index, e)}
                                                         className="w-14 px-2 py-1.5 bg-main rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-accent text-center" 
                                                     />
-                                                    <span className="text-[10px] text-text-light w-8">{item.unit}</span>
+                                                    <span className="text-[10px] text-text-light w-8">{item?.unit?.abbreviation}</span>
                                                 </div>
                                                 <button onClick={() => handleRemoveIngredient(index)} className="p-1.5 text-text-light hover:text-error transition-colors">
                                                     <X size={14} />

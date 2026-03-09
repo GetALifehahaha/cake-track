@@ -5,6 +5,7 @@ import { X, UtensilsCrossed, Info, List, Search } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import ConfirmationModal from '../ConfirmationModal';
+import { RecipeModalSkeleton } from '@/components/molecules/Skeletons';
 
 const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
     const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
@@ -20,19 +21,20 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         if (recipe) {
             setName(recipe.name || '');
             setInstructions(recipe.instructions || '');
+            console.log(recipe.ingredients);
             if (recipe.ingredients) {
                 const mappedIngredients = recipe.ingredients.map(item => ({
                     ingredient_id: item.ingredient_id,
                     ingredient_name: item.ingredient_name,
                     amount_needed: item.amount_needed,
-                    unit: item.ingredient_unit 
+                    unit: item.ingredient_unit
                 }));
                 setSelectedIngredients(mappedIngredients);
             }
         }
     }, [recipe]);
 
-    if (ingredientLoading) return <Loading />;
+    if (1) return <RecipeModalSkeleton onClose={onClose} />
     if (ingredientError) return <h5>Error loading ingredients.</h5>;
 
     const toggleConfirmationModal = () => setConfirmationModal(prev => !prev);
@@ -237,7 +239,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                                 className="p-4 rounded-xl border border-border bg-main-white cursor-pointer hover:border-accent hover:shadow-sm transition-all flex flex-col gap-1"
                                             >
                                                 <h5 className="font-medium text-sm text-text">{ing.name}</h5>
-                                                <p className="text-[10px] text-text-light">Stock: {ing.stock || 0} {ing.unit?.abbreviation}</p>
+                                                <p className="text-[10px] text-text-light">Stock: {ing?.total_stock || 0} {ing.unit?.abbreviation}</p>
                                             </div>
                                         ))}
                                         {filteredIngredients.length === 0 && (
@@ -250,6 +252,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                     <h4 className="text-[10px] font-bold text-text-light tracking-widest uppercase mb-5 shrink-0 pl-1">Measurements</h4>
                                     <div className="flex-1 overflow-y-auto space-y-2 pr-2 pb-4">
                                         {selectedIngredients.map((item, index) => (
+                                            console.log(item),
                                             <div key={index} className="flex items-center gap-2 p-2 bg-main-white rounded-lg shadow-sm border border-border/50">
                                                 <h5 className="flex-1 font-medium text-xs text-text truncate pl-2">{item.ingredient_name}</h5>
                                                 <div className="flex items-center gap-1.5">
@@ -260,7 +263,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                                         onChange={(e) => handleUpdateAmount(index, e)}
                                                         className="w-14 px-2 py-1.5 bg-main rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-accent text-center" 
                                                     />
-                                                    <span className="text-[10px] text-text-light w-8">{item.unit}</span>
+                                                    <span className="text-[10px] text-text-light w-8">{item?.unit?.abbreviation}</span>
                                                 </div>
                                                 <button onClick={() => handleRemoveIngredient(index)} className="p-1.5 text-text-light hover:text-error transition-colors">
                                                     <X size={14} />
