@@ -25,7 +25,10 @@ const Sidebar = () => {
             key={label}
             to={link}
             className={({ isActive }) => ((isActive) ? navStyle + activeNavStyle : navStyle + inactiveNavStyle)}>
-            <Icon width={24} /> <h5 className={navText}>{label}</h5>
+            <div className="w-6 flex justify-center">
+                <Icon size={24} />
+            </div>
+            <h5 className={navText}>{label}</h5>
         </NavLink>
     );
 
@@ -34,24 +37,31 @@ const Sidebar = () => {
     }
 
     return (
-        <div className='bg-main-white border-border border-r-2 px-2 py-2 w-fit flex flex-col'>
+        <div
+            className={`
+                bg-main-white border-border border-r-2 px-2 py-2
+                flex flex-col overflow-hidden
+                transition-all duration-300
+                ${expanded ? 'w-64' : 'w-20'}
+            `}
+        >
             <button onClick={handleSetExpanded} className={navStyle + 'font-extrabold text-sm'}>
                 <Menu size={28} />
-                <div className={navText + `text-lg`}>
-                    <h5 className='text-accent font-extrabold'>Cake</h5>
-                    <h5 className=' text-accent-dark font-extrabold'>Track</h5>
-                </div>
+                {expanded && (
+                    <div className={navText + ' text-lg'}>
+                        <h5 className='text-accent font-extrabold'>Cake</h5>
+                        <h5 className='text-accent-dark font-extrabold'>Track</h5>
+                    </div>
+                )}
             </button>
 
             <div className='mt-16'>
                 {listSidebar}
             </div>
 
-            <div
-                className={navStyle + inactiveNavStyle + 'mt-auto'}
-                onClick={logout}
-            >
-                <LogOut /> <h5 className={navText}>LOG OUT</h5>
+            <div className={navStyle + inactiveNavStyle + ' mt-auto'} onClick={logout}>
+                <LogOut />
+                {expanded && <h5 className={navText}>LOG OUT</h5>}
             </div>
         </div>
     )
