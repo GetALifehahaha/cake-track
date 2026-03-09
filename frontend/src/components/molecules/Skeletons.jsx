@@ -666,3 +666,104 @@ export const ArchivesSkeleton = ({title, subtitle, onClose}) =>
         <Bone className='h-9 w-20 rounded-md' />
     </span>
 </ModalBody>
+
+
+export const EditInventorySkeleton = ({onClose}) => 
+  <ModalBody title='Edit Inventory Item' subtitle='Modify the product by editing in the detail below or delete the current product.' onClose={onClose}>
+    <div className='flex flex-row gap-8'>
+        <div className='flex-1 flex flex-col gap-2'>
+            <div className='flex flex-col gap-2'>
+                <Bone className='h-3 w-20' />
+                <Bone className='h-9 w-full rounded-sm' />
+            </div>
+            <div className='flex flex-col gap-2'>
+                <Bone className='h-3 w-10' />
+                <Bone className='h-9 w-full rounded-sm' />
+            </div>
+        </div>
+    </div>
+
+    <div className='flex gap-4 mt-4 ml-auto'>
+        <Bone className='h-9 w-20 rounded-md' />
+        <Bone className='h-9 w-16 rounded-md' />
+    </div>
+  </ModalBody>
+
+
+export const AddInventoryItemSkeleton = ({onClose}) => 
+  <ModalBody title='Add New Item' onClose={onClose}>
+    <div className='flex flex-col gap-4'>
+        <div className='flex flex-col gap-2'>
+            <Bone className='h-3 w-12' />
+            <Bone className='h-9 w-full rounded-sm' />
+        </div>
+
+        <div className='flex items-center gap-4'>
+            <div className='flex-1 flex flex-col gap-2'>
+                <Bone className='h-3 w-16' />
+                <Bone className='h-9 w-full rounded-sm' />
+            </div>
+            <div className='flex-1 flex flex-col gap-2'>
+                <Bone className='h-3 w-10' />
+                <Bone className='h-9 w-full rounded-sm' />
+            </div>
+        </div>
+
+        <div className='flex flex-col gap-2'>
+            <Bone className='h-3 w-24' />
+            <Bone className='h-9 w-full rounded-sm' />
+        </div>
+
+        <div className='flex flex-col gap-2'>
+            <Bone className='h-3 w-24' />
+            <Bone className='h-9 w-full rounded-sm' />
+        </div>
+
+        <div className='flex gap-4 mt-4 ml-auto'>
+            <Bone className='h-9 w-20 rounded-md' />
+            <Bone className='h-9 w-24 rounded-md' />
+        </div>
+    </div>
+  </ModalBody>
+
+
+export const InventoryInOutSkeleton = ({onClose}) => 
+  <ModalBody title='Inventory Management' onClose={onClose} className='w-[90vw] h-[90vh]'>
+    <div className='flex flex-1 overflow-hidden max-h-[90vh] bg-accent-mute/25'>
+        {/* Left Panel */}
+        <div className='basis-1/4 flex flex-col'>
+            <div className='px-6 py-4 h-16 flex items-center gap-2'>
+                <div className='h-full w-1 rounded-full bg-accent-text' />
+                <Bone className='h-4 w-36' />
+            </div>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+                <Bone className='h-9 w-full rounded-md mb-6' />
+                <div className='flex flex-col gap-2'>
+                    {[...Array(8)].map((_, i) => (
+                        <Bone key={i} className='h-10 w-full rounded-md' />
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {/* Right Panel */}
+        <div className='flex-1 flex flex-col bg-white'>
+            <div className='px-6 py-4'>
+                <Bone className='h-4 w-40' />
+            </div>
+            <div className='flex-1 overflow-y-auto px-6 py-4'>
+                <div className='grid gap-4'>
+                    {[...Array(4)].map((_, i) => (
+                        <Bone key={i} className='h-16 w-full rounded-md' />
+                    ))}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {/* Footer */}
+    <div className='flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50'>
+        <Bone className='h-9 w-20 rounded-md' />
+        <Bone className='h-9 w-28 rounded-md' />
+    </div>
+  </ModalBody>

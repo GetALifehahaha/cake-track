@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Title, Label, Button, Dropdown } from '../../atoms';
-import { DatePicker, ModalFeedbackCard } from '../../molecules';
+import { DatePicker, ModalBody, ModalFeedbackCard } from '../../molecules';
 import { X } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 import useUnits from '@/hooks/useUnits';
+import { AddInventoryItemSkeleton } from '@/components/molecules/Skeletons';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
@@ -25,7 +26,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
         }
     }, [modalFeedbackContent])
 
-    if (loading) return <h5>Loading Units</h5>
+    if (loading) return <AddInventoryItemSkeleton onClose={onClose} />
     if (error) return <h5>Error loading units</h5>
 
     const unitSelection = units.map(unit => ({
@@ -76,58 +77,51 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     const handleSetCloseConfirm = () => setShowConfirm(false);
 
     return (
-        <div className='absolute bg-black/10 backdrop-blur-sm top-0 left-0 w-full h-screen flex justify-center items-center z-10'>
-            <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] flex flex-col gap-10'>
-                <div className='flex justify-between items-center w-full'>
-                    <Title variant='modal' text='Add New Item' />
-                    <X size={16} className='text-text cursor-pointer' onClick={onClose}/>
+        <ModalBody title='Add New Item' onClose={onClose}>
+            <div className='flex flex-col gap-4'>
+                <div className='flex flex-col gap-2'>
+                    <Label variant='modal' text='Name'/>
+                    <input type='text' placeholder='Enter item name' value={name} onChange={(e) => handleName(e)} 
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
                 </div>
 
-                <div className='flex flex-col gap-4'>
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Name'/>
-                        <input type='text' placeholder='Enter item name' value={name} onChange={(e) => handleName(e)} 
+                <div className='flex items-center gap-4'>
+                    <div className='flex-1 flex flex-col gap-2'>
+                        <Label variant='modal' text='Amount'/>
+                        <input type='text' placeholder='Enter amount' value={amount} onChange={(e) => handleAmount(e)} 
                                 className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
                     </div>
 
-                    <div className='flex items-center gap-4'>
-                        <div className='flex-1 flex flex-col gap-2'>
-                            <Label variant='modal' text='Amount'/>
-                            <input type='text' placeholder='Enter amount' value={amount} onChange={(e) => handleAmount(e)} 
-                                    className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
-                        </div>
-
-                        <div className='flex-1 flex flex-col gap-2'>
-                            <Label variant='modal' text='Unit'/>
-                            <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
-                        </div>
-                    </div>
-
                     <div className='flex-1 flex flex-col gap-2'>
-                        <Label variant='modal' text='Purchase Date'/>
-                        <DatePicker selected={purchaseDate} onSelect={setPurchaseDate} />
+                        <Label variant='modal' text='Unit'/>
+                        <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
                     </div>
+                </div>
 
-                    <div className='flex-1 flex flex-col gap-2'>
-                        <Label variant='modal' text='Expiration Date'/>
-                        <DatePicker selected={expirationDate} onSelect={setExpirationDate} />
-                    </div>
+                <div className='flex-1 flex flex-col gap-2'>
+                    <Label variant='modal' text='Purchase Date'/>
+                    <DatePicker selected={purchaseDate} onSelect={setPurchaseDate} />
+                </div>
 
-                    { showModalFeedback &&
-                        <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
-                    }
+                <div className='flex-1 flex flex-col gap-2'>
+                    <Label variant='modal' text='Expiration Date'/>
+                    <DatePicker selected={expirationDate} onSelect={setExpirationDate} />
+                </div>
 
-                    <div className='flex gap-4 mt-4 ml-auto'>
-                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
-                        <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleSetShowConfirm}/>
-                    </div>
+                { showModalFeedback &&
+                    <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
+                }
+
+                <div className='flex gap-4 mt-4 ml-auto'>
+                    <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
+                    <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleSetShowConfirm}/>
                 </div>
             </div>
 
             {showConfirm &&
                 <ConfirmationModal title={"Add Item?"} content={"Are you sure you want to add this item?"} onReject={handleSetCloseConfirm} onConfirm={handleConfirm} />
             }
-        </div>
+        </ModalBody>
     )
 }
 

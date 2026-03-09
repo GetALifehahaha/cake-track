@@ -9,6 +9,7 @@ import useInventoryTransaction from '@/hooks/useInventoryTransaction';
 import Loading from '../../molecules/Loading';
 import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
+import { InventoryInOutSkeleton } from '@/components/molecules/Skeletons';
 
 const InventoryInOut = ({ onConfirm, onClose }) => {
 
@@ -19,7 +20,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [search, setSearch] = useState('');
 	
-	if (ingredientLoading || inventoryTransactionLoading) return <Loading />
+	if (ingredientLoading || inventoryTransactionLoading) return <InventoryInOutSkeleton onClose={onClose} />
 	if (ingredientError) return <h5>Error</h5>
 	if (inventoryTransactionError) return <h5>Error</h5>
 

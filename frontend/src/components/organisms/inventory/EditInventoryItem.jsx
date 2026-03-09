@@ -4,6 +4,7 @@ import { ModalFeedbackCard, DatePicker, ModalBody } from '../../molecules';
 import ConfirmationModal from '../ConfirmationModal';
 import { X } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
+import { EditInventorySkeleton } from '@/components/molecules/Skeletons';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const {data: units, loading, error} = useUnits()
@@ -24,7 +25,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         }))
     }, [units])
 
-    if (loading) return <h5>Loading Units</h5>
+    if (loading) return <EditInventorySkeleton onClose={onClose} />
     if (error) return <h5>Error loading units</h5>
 
     const handleName = (e) => {
