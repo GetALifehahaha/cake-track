@@ -1,5 +1,5 @@
 const DB_NAME = 'cake-track-db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE_TRANSACTIONS = 'transactions';
 const STORE_PRODUCTS = 'products'; // Add this line
 
@@ -29,6 +29,10 @@ export const openDB = () => {
             }
             if (!db.objectStoreNames.contains('discounts')) {
                 db.createObjectStore('discounts', { keyPath: 'id' });
+            }
+
+            if (!db.objectStoreNames.contains('business_settings')) {
+                db.createObjectStore('business_settings', { keyPath: 'id' });
             }
         }
 
@@ -277,4 +281,46 @@ export const getLocalDiscounts = async () => {
         request.onsuccess = () => resolve(request.result);
         request.onerror = (event) => reject(event.target.error);
     });
+};
+
+// --- Business Settings (singleton, id=1) ---
+
+const hashPin = async (pin) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(String(pin));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+export const saveBusinessSettings = async (settings) => {
+    const db = await openDB();
+    const hashed = await hashPin(settings.secret_pin);
+    const record = { ...settings, id: 1, secret_pin_hash: hashed };
+    delete record.secret_pin; // never store plaintext pin
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction('business_settings', 'readwrite');
+        const store = transaction.objectStore('business_settings');
+        store.put(record);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+};
+
+export const getLocalBusinessSettings = async () => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction('business_settings', 'readonly');
+        const store = transaction.objectStore('business_settings');
+        const request = store.get(1);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = (event) => reject(event.target.error);
+    });
+};
+
+export const verifyPinOffline = async (inputPin) => {
+    const settings = await getLocalBusinessSettings();
+    if (!settings || !settings.secret_pin_hash) return false;
+    const inputHash = await hashPin(inputPin);
+    return inputHash === settings.secret_pin_hash;
 };

@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import API_ENDPOINTS from '@/api/endpoints'
 import api from '@/api/api'
 import { useToast } from './ToastContext'
+import { useAuth } from './AuthContext'
 
 export const OpeningContext = createContext();
 
@@ -26,6 +27,7 @@ export const OpeningProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const { addToast } = useToast()
+  const { isAuthorized } = useAuth()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -48,8 +50,12 @@ export const OpeningProvider = ({ children }) => {
   }, [addToast])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isAuthorized) {
+      fetchData()
+    } else {
+      setLoading(false)
+    }
+  }, [fetchData, isAuthorized])
 
   const parseTimeToMinutes = (timeStr) => {
     if (!timeStr) return null

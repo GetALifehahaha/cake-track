@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import { Button, Dropdown, Label, Title } from '../../atoms';
-import { X, Plus, Upload, Loader2, Minus, Variable } from 'lucide-react'
+import { X, Plus, Upload, Loader2, Minus, Variable, Check } from 'lucide-react'
 import { ModalBody, ModalFeedbackCard } from '../../molecules';
 import { ConfirmationModal } from '..';
 import {
@@ -8,11 +8,17 @@ import {
     CLOUDINARY_UPLOAD_PRESET,
 } from "@/api/constants";
 import { cn } from '@/utils/cn';
+import useCategory from '@/hooks/useCategory';
 
-const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
+const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, onClose}) => {
+
+    const { postCategory, refresh: refreshCategories } = useCategory();
 
     const [productName, setProductName] = useState("");
     const [categories, setCategories] = useState([{ id: "" }]);
+    const [categoryOptions, setCategoryOptions] = useState(initialCategoryOptions);
+    const [creatingCategoryIndex, setCreatingCategoryIndex] = useState(null);
+    const [newCategoryName, setNewCategoryName] = useState("");
 
     const [variants, setVariants] = useState([
         {label: "", price: 0}
@@ -149,16 +155,33 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
 
     const handleCategoryCount = (method, index = null) => {
         setCategories(prev => {
-            if (method === "plus") {
-                return [...prev, { id: "" }];
-            }
-
             if (method === "minus" && index !== null) {
                 return prev.filter((_, idx) => idx !== index);
             }
 
             return prev;
         });
+    };
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        try {
+            const result = await postCategory({ name: newCategoryName });
+            await refreshCategories();
+            const newId = result?.data?.id || result?.id;
+            if (newId) {
+                setCategoryOptions(prev => [...prev, { key: newCategoryName, value: newId }]);
+                setCategories(prev => {
+                    const updated = [...prev];
+                    updated[creatingCategoryIndex] = { id: newId };
+                    return updated;
+                });
+            }
+            setNewCategoryName("");
+            setCreatingCategoryIndex(null);
+        } catch (err) {
+            console.error("Failed to create category", err);
+        }
     };
 
     const updatePrice = (index, e) => {
@@ -233,30 +256,48 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                                 <div className='flex flex-col gap-2 max-h-40 overflow-auto'>
                                     {categories.map(({ id }, index) => (
                                         <div key={index} className='flex gap-2 items-center'>
-                                            <Dropdown
-                                                variant='modal'
-                                                value={id}
-                                                selection="Select category"
-                                                size='full'
-                                                options={categoryOptions}
-                                                onSelect={(value) => handleCategories(value, index)}
-                                                removeText='None'
-                                            />
-
-                                            {index === categories.length - 1 ? (
-                                                <Button
-                                                    variant='icon'
-                                                    text=''
-                                                    icon={Plus}
-                                                    onClick={() => handleCategoryCount("plus")}
-                                                />
+                                            {creatingCategoryIndex === index ? (
+                                                <>
+                                                    <input
+                                                        type='text'
+                                                        value={newCategoryName}
+                                                        onChange={(e) => { if (e.target.value.length <= 50) setNewCategoryName(e.target.value) }}
+                                                        placeholder='New category name'
+                                                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none flex-1'
+                                                        autoFocus
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
+                                                    />
+                                                    <Button variant='icon' text='' icon={Check} onClick={handleCreateCategory} />
+                                                    <Button variant='icon' text='' icon={X} onClick={() => { setCreatingCategoryIndex(null); setNewCategoryName(""); }} />
+                                                </>
                                             ) : (
-                                                <Button
-                                                    variant='icon'
-                                                    text=''
-                                                    icon={Minus}
-                                                    onClick={() => handleCategoryCount("minus", index)}
-                                                />
+                                                <>
+                                                    <Dropdown
+                                                        variant='modal'
+                                                        value={id}
+                                                        selection="Select category"
+                                                        size='full'
+                                                        options={categoryOptions}
+                                                        onSelect={(value) => handleCategories(value, index)}
+                                                        removeText='None'
+                                                    />
+
+                                                    {index === categories.length - 1 ? (
+                                                        <Button
+                                                            variant='icon'
+                                                            text=''
+                                                            icon={Plus}
+                                                            onClick={() => setCreatingCategoryIndex(index)}
+                                                        />
+                                                    ) : categories.length > 1 && (
+                                                        <Button
+                                                            variant='icon'
+                                                            text=''
+                                                            icon={Minus}
+                                                            onClick={() => handleCategoryCount("minus", index)}
+                                                        />
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     ))}
@@ -305,17 +346,19 @@ const AddProductModal = ({categoryOptions, onConfirm, onClose}) => {
                     <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
                 }
                 <div className='flex gap-4 ml-auto'>
-                    {loading ?
+                    {creatingCategoryIndex !== null ? (
+                        <span className='text-text/50 text-sm italic'>Complete category creation or press X to cancel</span>
+                    ) : loading ? (
                         <div className='flex flex-row items-center gap-2'>
                             <Loader2 size={18} className='animate-spin text-accent' />
                             <h5 className='text-accent-mute font-medium text-md'>Loading</h5>
                         </div>
-                        :
+                    ) : (
                         <>
                             <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose} />
                             <Button variant='modalBlock' size='base' text='Add Item' onClick={handleSetShowConfirmationModal} />
                         </>
-                    }
+                    )}
                 </div>
 
                 {showConfirmationModal &&

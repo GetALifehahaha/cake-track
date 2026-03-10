@@ -53,3 +53,10 @@ class PayMongoWrapper:
         response = requests.post(url, json=payload, headers=self._get_headers())
         response.raise_for_status()
         return response.json()['data']
+
+    def get_source(self, source_id):
+        """Retrieve a source to check its current status."""
+        url = f"{self.BASE_URL}/sources/{source_id}"
+        response = requests.get(url, headers=self._get_headers())
+        response.raise_for_status()
+        return response.json()['data']

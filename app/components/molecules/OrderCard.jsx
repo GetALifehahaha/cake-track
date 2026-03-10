@@ -8,6 +8,8 @@ import { router } from 'expo-router'
 const OrderCard = ({ order }) => {
 
     const statusVariants = {
+        unpaid: "text-orange-600 bg-orange-100 border-orange-200",
+
         pending: "text-secondary-light bg-secondary-light/10 border-secondary-light",
         
         rejected: "text-red-600 bg-red-100 border-red-200",

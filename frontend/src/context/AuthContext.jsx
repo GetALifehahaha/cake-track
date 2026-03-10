@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext} from 'react'
+import React, { createContext, useState, useEffect, useContext, useRef} from 'react'
 import {jwtDecode} from 'jwt-decode'
 import api from '@/api/api'
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants'
@@ -15,6 +15,7 @@ export const AuthProvider = ({children}) => {
     const [isAuthorized, setIsAuthorized] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const wasAuthorizedRef = useRef(false);
 
     const [sessionMinutesRemaining, setSessionMinutesRemaining] = useState(refreshTokenMinutesRemaining());
     const sessionWarning = isAuthorized && sessionMinutesRemaining > 0 && sessionMinutesRemaining < 60
@@ -23,6 +24,12 @@ export const AuthProvider = ({children}) => {
     useEffect(() => {
         auth().finally(() => setLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (isAuthorized) {
+            wasAuthorizedRef.current = true;
+        }
+    }, [isAuthorized]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -34,9 +41,13 @@ export const AuthProvider = ({children}) => {
 
     useEffect(() => {
         const handleForcedLogout = () => {
+            const wasLoggedIn = wasAuthorizedRef.current;
             setUser(null);
             setIsAuthorized(false);
-            addToast("Your session has expired. Please log in again.", "info");
+            wasAuthorizedRef.current = false;
+            if (wasLoggedIn) {
+                addToast("Your session has expired. Please log in again.", "info");
+            }
             navigate('/login');
         }
 

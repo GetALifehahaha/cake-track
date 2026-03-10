@@ -47,13 +47,13 @@ const Checkout = () => {
         }
 
         const cleanedNumber = phoneNumber.replace(/[\s-]/g, '');
-        const phoneRegex = /^\+63\d{10}$/;
+        const phoneRegex = /^(\+63\d{10}|09\d{9})$/;
 
         if (!phoneNumber.trim()) {
             showToast("Please enter your contact number", 'error');
             return false;
         } else if (!phoneRegex.test(cleanedNumber.trim())) {
-            showToast("Number must start with +63 followed by 10 digits", 'error');
+            showToast("Number must start with +63 or 09 (e.g. +639123456789 or 09123456789)", 'error');
             return false;
         }
 
@@ -106,8 +106,8 @@ const Checkout = () => {
             }
         } catch (error) {
             console.error("Payment Error:", error.response?.data || error.message);
-            showToast("Error initiating payment. Please check your connection.", "error");
-            router.push('/orderSuccess'); // Fallback to success page if payment gateway fails to init
+            showToast("Error initiating payment. You can retry from your orders.", "error");
+            router.replace('/(tabs)/orders');
         }
     };
 
@@ -134,7 +134,6 @@ const Checkout = () => {
                 address: address,
                 due_date: formattedDate,
                 pickup_time: formattedTime,
-                status: "pending",
                 cake_orders: {
                     occasion: "pre-made",
                     shape: "pre-made",
@@ -242,7 +241,7 @@ const Checkout = () => {
                             <FormLabel text={"Email"} />
                             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={email} onChangeText={setEmail} placeholder='juan@example.com' />
                             <FormLabel text={"Phone Number"} />
-                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={setPhoneNumber} placeholder='+63 912 345 6789' />
+                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={setPhoneNumber} placeholder='+639123456789 or 09123456789' maxLength={18} />
                             
                             <FormLabel text={"Pickup Date"} />
                             <DatePicker onSelectDate={setDueDate} />

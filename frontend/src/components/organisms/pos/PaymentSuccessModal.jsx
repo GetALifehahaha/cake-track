@@ -3,7 +3,7 @@ import { Title, Label, Button } from '../../atoms';
 import { CheckCircle, X, LucidePrinter, Download } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 
-const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transactionData }) => {
+const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transactionData, businessData }) => {
 
     const contentRef = useRef(null);
 
@@ -81,13 +81,12 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                     <div className='w-[58mm] p-1 flex flex-col justify-between'>
 
                         <h5 className="text-center font-bold text-sm mb-1 uppercase leading-tight">
-                            Michelle's Cakes and Cafe
+                            {businessData?.business_name || "Michelle's Cakes and Cafe"}
                         </h5>
 
                         <div className="text-center text-[10px] mb-2 border-b border-black pb-2 leading-tight">
-                            <div className="mb-1">Boalan, Zamboanga City</div>
-                            <div>TIN: 123-456-789-000</div>
-                            <div>Permit: ATP-2025-56789</div>
+                            <div className="mb-1">{businessData?.address || ''}</div>
+                            <div>TIN: {businessData?.tin || ''}</div>
                         </div>
 
                         <div className="font-medium text-[10px] mb-2 leading-tight">
@@ -160,8 +159,8 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
 
                         <div className="text-center text-[10px] space-y-1 mb-2 mt-2">
                             <div>System-Generated Receipt</div>
-                            <div>+63 966 443 1581</div>
-                            <div className="font-bold">Thank you!</div>
+                            {businessData?.contact_number && <div>{businessData.contact_number}</div>}
+                            {businessData?.message && <div className="font-bold">{businessData.message}</div>}
                         </div>
 
                         <div className="text-center text-[9px] italic opacity-70">

@@ -43,6 +43,9 @@ class OrderSerializer(serializers.ModelSerializer):
         
         
     def create(self, validated_data):
+        # Prevent clients from setting status on creation — always use model default ('unpaid')
+        validated_data.pop('status', None)
+        
         cake_data = validated_data.pop('cake_orders')
         cupcake_data = validated_data.pop('cupcake_orders', None)
         recipe = validated_data.pop('recipe', None)

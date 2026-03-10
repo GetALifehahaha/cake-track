@@ -1,20 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '../../atoms';
 import { Download, Printer, X, LayoutList, ReceiptText } from 'lucide-react';
 import { formatToDecimal } from '@/utils/formatToDecimal';
 import useBusinessDetails from '@/hooks/useBusinessDetails';
 import Loading from '@/components/molecules/Loading';
+import { useReactToPrint } from 'react-to-print';
 
 const TransactionDetails = ({ transactionDetail, onClose }) => {
     const { data, loading, error } = useBusinessDetails();
     const [isReceiptView, setIsReceiptView] = useState(!transactionDetail.is_void);
+    const printRef = useRef(null);
+
+    const handlePrint = useReactToPrint({
+        contentRef: printRef,
+        documentTitle: `Transaction-${transactionDetail?.display_id || transactionDetail?.id}`,
+    });
+
+    const handleDownload = () => {
+        // Use the browser print dialog with "Save as PDF" destination
+        const printWindow = window.open('', '_blank');
+        if (!printWindow || !printRef.current) return;
+
+        const content = printRef.current.innerHTML;
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Transaction-${transactionDetail?.display_id || transactionDetail?.id}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { padding: 8px 4px; text-align: left; }
+                        th { border-bottom: 1px solid #ccc; }
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                        .font-bold { font-weight: bold; }
+                        .border-t { border-top: 1px solid #ccc; }
+                    </style>
+                </head>
+                <body>${content}</body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+        printWindow.close();
+    };
 
     if (loading) return <Loading />;
     if (error) return <h5>Error</h5>;
-
-    const downloadPdf = async () => {
-        window.print();
-    };
 
     const renderReceiptView = () => (
         <div className='max-h-[80vh] overflow-y-auto mx-auto p-6 text-sm w-md flex flex-col justify-between'>
@@ -151,9 +183,11 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
 
     return (
         <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex flex-col justify-center items-center z-10'>
-            <div id="receipt" className={`relative bg-main-white shadow-sm transition-all duration-300 rounded-lg ${showReceiptView ? 'w-md' : 'w-[800px]'}`}>
+            <div className={`relative bg-main-white shadow-sm transition-all duration-300 rounded-lg ${showReceiptView ? 'w-md' : 'w-[800px]'}`}>
                 
-                {showReceiptView ? renderReceiptView() : renderCleanView()}
+                <div ref={printRef}>
+                    {showReceiptView ? renderReceiptView() : renderCleanView()}
+                </div>
 
                 <div className='absolute top-0 -right-2 translate-x-full p-2 w-fit flex-col bg-main-white rounded-md shadow-md shadow-black/25 flex justify-between items-center gap-4'>
                     <Button text='' variant='modalOutline' size='fit' icon={X} onClick={onClose} />
@@ -166,8 +200,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                             onClick={() => setIsReceiptView(!isReceiptView)} 
                         />
                     )}
-                    <Button text='' variant='modalOutline' size='fit' icon={Printer} />
-                    <Button text='' variant='modalBlock' size='fit' icon={Download} onClick={downloadPdf} />
+                    <Button text='' variant='modalOutline' size='fit' icon={Printer} onClick={handlePrint} />
+                    <Button text='' variant='modalBlock' size='fit' icon={Download} onClick={handleDownload} />
                 </div>
             </div>
         </div>

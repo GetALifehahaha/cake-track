@@ -24,7 +24,7 @@ const Home = () => {
         loading: transactionLoading,
         error: transactionError,
     } = useTransaction();
-    const {data: businessData, loading: businessLoading, error: businessError} = useBusinessDetails();
+    const {data: businessData, loading: businessLoading, error: businessError, verifyPinOffline} = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
     const [checkoutProducts, setCheckoutProducts] = useState(() => {
@@ -194,8 +194,16 @@ const Home = () => {
     }
 
     
-    const confirmAccessCode = () => {
-        if (accessCode != actualAccessCode) {
+    const confirmAccessCode = async () => {
+        let isValid = false;
+
+        if (navigator.onLine && actualAccessCode) {
+            isValid = accessCode == actualAccessCode;
+        } else {
+            isValid = await verifyPinOffline(accessCode);
+        }
+
+        if (!isValid) {
             setModalFeedbackContent({
                 type: "error",
                 label: "Wrong Access Code",
@@ -405,7 +413,7 @@ const Home = () => {
             }
 
             {showPaymentSuccessModal &&
-                <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} 
+                <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} businessData={businessData}
                     // transactionData={transactionResponse.data}
                 />
             }

@@ -158,10 +158,7 @@ class OTPViewSet(viewsets.ModelViewSet):
         user = None
         otp = None
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            pass
+        user = User.objects.filter(email=email).first()
         
         if user:
             otp_obj, created = OTP.objects.update_or_create(
@@ -198,7 +195,7 @@ class VerifyOTPViewSet(viewsets.ModelViewSet):
 
         try:
             otp = OTP.objects.get(otp=received_otp, user__email__iexact=email)
-            user = User.objects.get(email=email)
+            user = otp.user
 
             if not otp.is_valid:
                 return Response({'type': 'error', 'label': 'Invalid OTP', 'details': 'The OTP you have sent is no longer valid. Please request another OTP'}, status=status.HTTP_400_BAD_REQUEST)
@@ -243,7 +240,10 @@ class ChangePasswordViaToken(viewsets.ModelViewSet):
             if token.expires_at < timezone.localtime():
                 return Response({'type': 'error', 'label': 'Expired Token', 'details': 'Your token has expired. Please redo the process carefully'}, status=status.HTTP_400_BAD_REQUEST)
 
-            user = User.objects.get(email=email)
+            user = User.objects.filter(email=email).first()
+
+            if not user:
+                return Response({'type': 'error', 'label': 'User Not Found', 'details': 'No user found with that email.'}, status=status.HTTP_400_BAD_REQUEST)
 
             if token.user != user:
                 return Response({'type': 'error', 'label': 'Token Mismatch', 'details': 'This token does not belong to the specified user.'}, status=status.HTTP_400_BAD_REQUEST)

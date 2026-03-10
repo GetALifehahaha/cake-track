@@ -1,13 +1,18 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft } from 'lucide-react-native';
-import { capitalize } from '@/utils/capitalize'; // Ensure this path is correct
+import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, CreditCard } from 'lucide-react-native';
+import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
+import { useToast } from '@/context/ToastContext';
+import api from '@/api/api';
+import { useState } from 'react';
 
 const OrderDetails = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { showToast } = useToast();
+    const [repaying, setRepaying] = useState(false);
     const { width } = Dimensions.get('window');
     const imageSize = (width - 32 - 16) / 3;
 
@@ -61,11 +66,32 @@ const OrderDetails = () => {
     const cupcakesFrosting = order.cupcake_orders?.frosting || "";
 
     const handleImagePress = (imgUri) => {
-        // Navigate to the new preview stack/page
         router.push({
             pathname: '/imagePreview',
             params: { uri: imgUri }
         });
+    };
+
+    const handleRepay = async () => {
+        if (repaying) return;
+        setRepaying(true);
+        try {
+            showToast("Initiating GCash payment...", "info");
+            const response = await api.post('/payment/repay/', { order_id: order.id });
+            const { checkout_url } = response.data;
+
+            if (checkout_url) {
+                router.push({
+                    pathname: '/paymentScreen',
+                    params: { checkoutUrl: checkout_url, orderId: order.id }
+                });
+            }
+        } catch (error) {
+            console.error("Repay Error:", error.response?.data || error.message);
+            showToast(error.response?.data?.error || "Failed to initiate repayment.", "error");
+        } finally {
+            setRepaying(false);
+        }
     };
 
     return (
@@ -85,12 +111,30 @@ const OrderDetails = () => {
 
                     <View className='flex-col gap-2 p-4 bg-white rounded-xl border justify-center border-secondary-light w-full'>
                         <View>
-                            <Text className={`${order.status === "rejected" ? 'text-red-400' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(order.status).toUpperCase()}</Text>
+                            <Text className={`${order.status === "rejected" ? 'text-red-400' : order.status === "unpaid" ? 'text-orange-500' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(order.status).toUpperCase()}</Text>
                         </View>
                         {order.reject_reason &&
                             <Text className='text-secondary-strong text-md font-bold'>{order.reject_reason}</Text>
                         }
                     </View>
+
+                    {/* Repay Button for Unpaid Orders */}
+                    {order.status === 'unpaid' && (
+                        <TouchableOpacity
+                            onPress={handleRepay}
+                            disabled={repaying}
+                            className='flex-row items-center justify-center gap-2 p-4 bg-orange-500 rounded-xl w-full active:opacity-80'
+                        >
+                            {repaying ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <CreditCard size={20} color="white" />
+                            )}
+                            <Text className='text-white text-lg font-bold'>
+                                {repaying ? 'Processing...' : 'Pay Now — ₱500.00'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
                             <Cake style={{ color: '#A67C52' }} />

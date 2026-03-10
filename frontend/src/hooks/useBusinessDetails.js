@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import API_ENDPOINTS from "@/api/endpoints";
 import useMutate from "./useMutate";
 import useQueryFetch from "./useQueryFetch";
+import { saveBusinessSettings, getLocalBusinessSettings, verifyPinOffline } from "@/services/db";
 
 export default function useBusinessDetails() {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [offlineData, setOfflineData] = useState(null);
+    const [offlineLoading, setOfflineLoading] = useState(!navigator.onLine);
 
     useEffect(() => {
         const on = () => setIsOnline(true);
@@ -19,18 +22,39 @@ export default function useBusinessDetails() {
         };
     }, []);
 
+    // Load from IDB when offline
+    useEffect(() => {
+        if (!isOnline) {
+            setOfflineLoading(true);
+            getLocalBusinessSettings()
+                .then((data) => setOfflineData(data))
+                .catch(() => setOfflineData(null))
+                .finally(() => setOfflineLoading(false));
+        }
+    }, [isOnline]);
+
     const businessDetailsQuery = useQueryFetch(
         "business-details",
         isOnline ? API_ENDPOINTS.BUSINESS_DETAILS : null,
         {}
     );
+
+    // Save to IDB whenever we get fresh data from the server
+    useEffect(() => {
+        if (isOnline && businessDetailsQuery.data && !businessDetailsQuery.isPending) {
+            saveBusinessSettings(businessDetailsQuery.data).catch(console.error);
+        }
+    }, [isOnline, businessDetailsQuery.data, businessDetailsQuery.isPending]);
+
     const { create, update, remove, loading: mutateLoading, error: mutateError } =
         useMutate("business-details");
 
-    return {
-        data: businessDetailsQuery.data || {},
+    const resolvedData = isOnline ? businessDetailsQuery.data : offlineData;
 
-        loading: isOnline ? (businessDetailsQuery.isPending || mutateLoading) : false,
+    return {
+        data: resolvedData || {},
+
+        loading: isOnline ? (businessDetailsQuery.isPending || mutateLoading) : offlineLoading,
 
         error: isOnline ? (businessDetailsQuery.error || mutateError) : mutateError,
 
@@ -40,5 +64,7 @@ export default function useBusinessDetails() {
             update(`${API_ENDPOINTS.BUSINESS_DETAILS}${id}/`, data),
 
         deleteBusinessDetails: (id) => remove(`${API_ENDPOINTS.BUSINESS_DETAILS}${id}/`),
+
+        verifyPinOffline,
     };
 }

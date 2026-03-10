@@ -233,6 +233,10 @@ const LoginSignup = ({ method }) => {
 									<Text className='text-center font-semibold text-white'>LOGIN</Text>
 								</TouchableOpacity>
 								}
+
+								<TouchableOpacity className='mt-3' onPress={() => router.push('/(auth)/forgotPassword')}>
+									<Text className='text-center text-secondary-light font-medium'>Forgot Password?</Text>
+								</TouchableOpacity>
 							</View>
 						}
 

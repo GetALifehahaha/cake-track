@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, View, Text } from 'react-native';
 
 const FILTER_OPTIONS = [
+    { label: 'Unpaid', value: 'unpaid' },
     { label: 'Pending', value: 'pending' },
     { label: 'Accepted', value: 'accepted' },
     { label: 'Ready For Pickup', value: 'ready' },
@@ -72,6 +73,9 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                                     let statusColor = 'text-gray-600'; // Default fallback
 
                                     switch (option.value) {
+                                        case 'unpaid':
+                                            statusColor = 'text-orange-500';
+                                            break;
                                         case 'pending':
                                             statusColor = 'text-secondary-light';
                                             break;

@@ -271,7 +271,6 @@ const CustomOrders = () => {
                 address: address,
                 due_date: formattedDate,
                 pickup_time: formattedTime,
-                status: "pending",
                 cake_orders: cakeData,
                 ...((hasCupcakes && !personallyDesign) && {
                     cupcake_orders: {
@@ -410,13 +409,13 @@ const CustomOrders = () => {
                 }
 
                 const cleanedNumber = contactNumber.replace(/[\s-]/g, '');
-                const phoneRegex = /^\+63\d{10}$/;
+                const phoneRegex = /^(\+63\d{10}|09\d{9})$/;
 
                 if (!contactNumber.trim()) {
                     showToast("Please enter your contact number", 'error');
                     return false;
                 } else if (!phoneRegex.test(cleanedNumber.trim())) {
-                    showToast("Number must start with +63 followed by 10 digits", 'error');
+                    showToast("Number must start with +63 or 09 (e.g. +639123456789 or 09123456789)", 'error');
                     return false;
                 }
 
@@ -579,10 +578,8 @@ const CustomOrders = () => {
             }
         } catch (error) {
             console.error("Payment Error:", error.response?.data || error.message);
-            showToast("Error initiating payment. Please check your connection.", "error");
-            // Optional: Redirect to order success even if payment fails initiation, 
-            // allowing them to pay later from an Order History page?
-            // router.push('/orderSuccess'); 
+            showToast("Error initiating payment. You can retry from your orders.", "error");
+            router.replace('/(tabs)/orders');
         }
     };
 

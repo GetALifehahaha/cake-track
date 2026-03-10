@@ -25,7 +25,7 @@ export const OpeningProvider = ({ children }) => {
         } catch (err) {
             console.error('Failed to load opening hours / blocked dates', err);
             setError(err);
-            showToast?.('Failed to load opening/availability data', 'error');
+            // showToast?.('Failed to load opening/availability data', 'error');
         } finally {
             setLoading(false);
         }

@@ -6,6 +6,7 @@ import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import ConfirmationModal from '../ConfirmationModal';
 import { RecipeModalSkeleton } from '@/components/molecules/Skeletons';
+import { getUnitOptions, getDefaultRecipeUnit, toStorageUnit, smartDisplay } from '@/utils/unitConversion';
 
 const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
     const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
@@ -29,12 +30,18 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
             setInstructions(recipe.instructions || '');
             console.log(recipe.ingredients);
             if (recipe.ingredients) {
-                const mappedIngredients = recipe.ingredients.map(item => ({
-                    ingredient_id: item.ingredient_id,
-                    ingredient_name: item.ingredient_name,
-                    amount_needed: item.amount_needed,
-                    unit: item.ingredient_unit
-                }));
+                const mappedIngredients = recipe.ingredients.map(item => {
+                    const storageUnit = item.ingredient_unit || '';
+                    const display = smartDisplay(item.amount_needed, storageUnit);
+                    return {
+                        ingredient_id: item.ingredient_id,
+                        ingredient_name: item.ingredient_name,
+                        amount_needed: display.value,
+                        storage_unit: storageUnit,
+                        display_unit: display.unit,
+                        unit_options: getUnitOptions(storageUnit),
+                    };
+                });
                 setSelectedIngredients(mappedIngredients);
             }
         }
@@ -107,10 +114,18 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
 
     const handleAddIngredient = (ingredient) => {
         if (selectedIngredients.some(item => item.ingredient_id === ingredient.id)) return;
+        const storageUnit = ingredient.unit?.abbreviation || '';
         
         setSelectedIngredients(prev => [
             ...prev, 
-            { ingredient_id: ingredient.id, ingredient_name: ingredient.name, amount_needed: '', unit: ingredient.unit?.abbreviation || '' }
+            { 
+                ingredient_id: ingredient.id, 
+                ingredient_name: ingredient.name, 
+                amount_needed: '', 
+                storage_unit: storageUnit,
+                display_unit: getDefaultRecipeUnit(storageUnit),
+                unit_options: getUnitOptions(storageUnit),
+            }
         ]);
     };
 
@@ -128,6 +143,15 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         setSelectedIngredients(updated);
     };
 
+    const handleToggleUnit = (index) => {
+        setSelectedIngredients(prev => prev.map((item, i) => {
+            if (i !== index || item.unit_options.length <= 1) return item;
+            const currentIdx = item.unit_options.findIndex(o => o.value === item.display_unit);
+            const nextIdx = (currentIdx + 1) % item.unit_options.length;
+            return { ...item, display_unit: item.unit_options[nextIdx].value, amount_needed: '' };
+        }));
+    };
+
     const confirmSubmit = () => {
         if (!validateStep2()) return;
         toggleConfirmationModal();
@@ -139,7 +163,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
             instructions,
             ingredients: selectedIngredients.map(item => ({
                 ingredient_id: item.ingredient_id,
-                amount_needed: Number.parseFloat(item.amount_needed || 0)
+                amount_needed: parseFloat(toStorageUnit(item.amount_needed || 0, item.display_unit).toFixed(4))
             }))
         };
         await onConfirm(recipe.id, payload);
@@ -258,7 +282,6 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                     <h4 className="text-[10px] font-bold text-text-light tracking-widest uppercase mb-5 shrink-0 pl-1">Measurements</h4>
                                     <div className="flex-1 overflow-y-auto space-y-2 pr-2 pb-4">
                                         {selectedIngredients.map((item, index) => (
-                                            console.log(item),
                                             <div key={index} className="flex items-center gap-2 p-2 bg-main-white rounded-lg shadow-sm border border-border/50">
                                                 <h5 className="flex-1 font-medium text-xs text-text truncate pl-2">{item.ingredient_name}</h5>
                                                 <div className="flex items-center gap-1.5">
@@ -269,7 +292,14 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                                         onChange={(e) => handleUpdateAmount(index, e)}
                                                         className="w-14 px-2 py-1.5 bg-main rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-accent text-center" 
                                                     />
-                                                    <span className="text-[10px] text-text-light w-8">{item?.unit?.abbreviation}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleToggleUnit(index)}
+                                                        className={`text-[10px] font-medium w-8 text-center rounded px-1 py-0.5 transition-colors ${item.unit_options?.length > 1 ? 'text-accent cursor-pointer hover:bg-accent/10' : 'text-text-light cursor-default'}`}
+                                                        title={item.unit_options?.length > 1 ? 'Click to toggle unit' : ''}
+                                                    >
+                                                        {item.display_unit}
+                                                    </button>
                                                 </div>
                                                 <button onClick={() => handleRemoveIngredient(index)} className="p-1.5 text-text-light hover:text-error transition-colors">
                                                     <X size={14} />

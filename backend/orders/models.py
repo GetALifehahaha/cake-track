@@ -13,7 +13,7 @@ class Order(models.Model):
     image = models.CharField(max_length=500, blank=True, null=True)
     full_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15)
+    phone_number = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
     
     ORDER_STATUS = [

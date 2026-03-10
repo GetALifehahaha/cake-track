@@ -5,6 +5,7 @@ import ConfirmationModal from '../ConfirmationModal';
 import { useState } from 'react';
 import { ModalBody } from '@/components/molecules';
 import { cn } from '@/utils/cn';
+import { smartDisplay } from '@/utils/unitConversion';
 
 const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
     if (!recipe) return null;
@@ -43,6 +44,7 @@ const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
                         <div className="flex-1 overflow-y-auto pr-2 space-y-3">
                             {recipe.ingredients?.map((item) => {
                                 const isMissing = item.is_missing ?? Number(item.ingredient_stock) < Number(item.amount_needed);
+                                const display = smartDisplay(item.amount_needed, item.ingredient_unit);
 
                                 return (
                                 <div
@@ -58,10 +60,10 @@ const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
                                     
                                     <div className={cn('flex items-baseline gap-1.5 shrink-0 bg-main px-3 py-1.5 rounded-lg border border-border/30', isMissing && 'border-error/40 bg-main-white')}>
                                         <h4 className={cn('text-sm font-semibold text-accent-dark', isMissing && 'text-error')}>
-                                            {item.amount_needed}
+                                            {display.value}
                                         </h4>
                                         <span className={cn('text-[10px] font-medium text-text-light', isMissing && 'text-error')}>
-                                            {item.ingredient_unit}
+                                            {display.unit}
                                         </span>
                                     </div>
                                 </div>
