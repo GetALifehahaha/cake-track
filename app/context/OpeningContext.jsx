@@ -46,21 +46,31 @@ export const OpeningProvider = ({ children }) => {
 
     const dateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
+    // Convert any date input to a YYYY-MM-DD string without timezone shifts
+    const toDateStr = (val) => {
+        if (!val) return null;
+        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+        if (val instanceof Date) {
+            return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`;
+        }
+        // ISO string or other format — extract date part
+        return String(val).split('T')[0];
+    };
+
     const isDateInBlocked = (date) => {
         if (!blockedDates || !blockedDates.length) return false;
-        const target = dateOnly(new Date(date));
+        const target = toDateStr(date);
+        if (!target) return false;
         for (const bd of blockedDates) {
             if (!bd) continue;
             if (typeof bd === 'string') {
-                const bdDate = dateOnly(new Date(bd));
-                if (+bdDate === +target) return true;
+                if (toDateStr(bd) === target) return true;
             } else if (bd.start_date || bd.end_date || bd.start || bd.end) {
-                const start = dateOnly(new Date(bd.start_date ?? bd.start));
-                const end = dateOnly(new Date(bd.end_date ?? bd.end ?? bd.start_date));
-                if (+start <= +target && +target <= +end) return true;
+                const start = toDateStr(bd.start_date ?? bd.start);
+                const end = toDateStr(bd.end_date ?? bd.end ?? bd.start_date);
+                if (start && end && target >= start && target <= end) return true;
             } else if (bd.date) {
-                const bdDate = dateOnly(new Date(bd.date));
-                if (+bdDate === +target) return true;
+                if (toDateStr(bd.date) === target) return true;
             }
         }
         return false;

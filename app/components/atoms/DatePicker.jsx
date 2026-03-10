@@ -19,27 +19,45 @@ const DatePicker = ({ onSelectDate }) => {
         const map = {};
         if (!blockedDates || !blockedDates.length) return map;
 
-        const dateOnly = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        // Work with YYYY-MM-DD strings to avoid timezone shifts
+        const toDateStr = (val) => {
+            if (!val) return null;
+            // If already a YYYY-MM-DD string, use it directly
+            if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+            // Otherwise extract the date part (handles ISO strings like "2026-03-30T00:00:00Z")
+            const str = typeof val === 'string' ? val : val.toISOString();
+            return str.split('T')[0];
+        };
 
-        const addDateKey = (d) => {
-            const iso = d.toISOString().split('T')[0];
-            map[iso] = { disabled: true, disableTouchEvent: true, marked: true, selected: false };
-        }
+        const addDay = (dateStr) => {
+            // Increment a YYYY-MM-DD string by one day without timezone issues
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const next = new Date(y, m - 1, d + 1); // local date arithmetic
+            return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+        };
+
+        const markDisabled = (dateStr) => {
+            map[dateStr] = { disabled: true, disableTouchEvent: true, marked: true, selected: false };
+        };
 
         for (const bd of blockedDates) {
             if (!bd) continue;
             if (typeof bd === 'string') {
-                const d = new Date(bd);
-                addDateKey(dateOnly(d));
+                const ds = toDateStr(bd);
+                if (ds) markDisabled(ds);
             } else if (bd.start_date || bd.end_date || bd.start || bd.end) {
-                const start = new Date(bd.start_date ?? bd.start);
-                const end = new Date(bd.end_date ?? bd.end ?? bd.start_date);
-                for (let d = dateOnly(start); +d <= +dateOnly(end); d.setDate(d.getDate() + 1)) {
-                    addDateKey(new Date(d));
+                const startStr = toDateStr(bd.start_date ?? bd.start);
+                const endStr = toDateStr(bd.end_date ?? bd.end ?? bd.start_date);
+                if (startStr && endStr) {
+                    let cur = startStr;
+                    while (cur <= endStr) {
+                        markDisabled(cur);
+                        cur = addDay(cur);
+                    }
                 }
             } else if (bd.date) {
-                const d = new Date(bd.date);
-                addDateKey(dateOnly(d));
+                const ds = toDateStr(bd.date);
+                if (ds) markDisabled(ds);
             }
         }
 

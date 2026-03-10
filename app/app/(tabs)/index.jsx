@@ -67,17 +67,17 @@ export default function Index() {
     ];
 
     // --- NEW DATA FOR ADS & BEST SELLERS ---
-    const promotions = [
-        { id: 1, title: "Wedding Bundle", discount: "20% OFF", bg: require('@/assets/images/carousel-backgrounds/carousel-1.png') },
-        { id: 2, title: "Cupcake Party", discount: "Buy 1 Get 1", bg: require('@/assets/images/carousel-backgrounds/carousel-2.png') },
-        { id: 3, title: "Coffee Pair", discount: "₱50 OFF", bg: require('@/assets/images/carousel-backgrounds/carousel-3.png') },
-    ]
+    // const promotions = [
+    //     { id: 1, title: "Wedding Bundle", discount: "20% OFF", bg: require('@/assets/images/carousel-backgrounds/carousel-1.png') },
+    //     { id: 2, title: "Cupcake Party", discount: "Buy 1 Get 1", bg: require('@/assets/images/carousel-backgrounds/carousel-2.png') },
+    //     { id: 3, title: "Coffee Pair", discount: "₱50 OFF", bg: require('@/assets/images/carousel-backgrounds/carousel-3.png') },
+    // ]
 
-    const bestSellers = [
-        { name: "Chocolate Moist Cake", price: "₱800", rating: 4.9, image: require('@/assets/images/premade-cakes/chocolate-cake.png') },
-        { name: "Strawberry Cake", price: "₱700", rating: 4.8, image: require('@/assets/images/premade-cakes/strawberry.png') },
-        { name: "Mocha Cake", price: "₱750", rating: 4.7, image: require('@/assets/images/premade-cakes/mocha.png') },
-    ]
+    // const bestSellers = [
+    //     { name: "Chocolate Moist Cake", price: "₱800", rating: 4.9, image: require('@/assets/images/premade-cakes/chocolate-cake.png') },
+    //     { name: "Strawberry Cake", price: "₱700", rating: 4.8, image: require('@/assets/images/premade-cakes/strawberry.png') },
+    //     { name: "Mocha Cake", price: "₱750", rating: 4.7, image: require('@/assets/images/premade-cakes/mocha.png') },
+    // ]
 
 
     if (loading || loadingOpening) return (
@@ -210,11 +210,10 @@ export default function Index() {
                             </TouchableOpacity>
                         </View>
                         
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+                        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
                             {promotions.map((promo, index) => (
                                 <TouchableOpacity key={index} className='w-72 h-36 rounded-2xl overflow-hidden relative shadow-sm'>
                                     <ImageBackground source={promo.bg} className='w-full h-full justify-center px-6' resizeMode='cover'>
-                                        {/* Dark overlay for readability */}
                                         <View className='absolute inset-0 bg-black/20' /> 
                                         
                                         <View className='bg-red-500 self-start px-2 py-1 rounded-md mb-2'>
@@ -228,7 +227,7 @@ export default function Index() {
                                     </ImageBackground>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </ScrollView> */}
                     </View>
 
                     {/* 2. Best Sellers (New Carousel) */}
@@ -239,7 +238,7 @@ export default function Index() {
                         </View>
                         <Text className='px-6 text-gray-500 text-xs mb-4'>Customer favorites you can't miss</Text>
 
-                        <Carousel
+                        {/* <Carousel
                             loop={true}
                             width={width}
                             height={240}
@@ -254,12 +253,10 @@ export default function Index() {
                                 <View className="flex-1 justify-center items-center">
                                     <View className="w-full h-full bg-white rounded-3xl p-4 flex-row items-center shadow-sm border border-gray-100">
                                         
-                                        {/* Left: Image */}
                                         <View className='w-1/2 h-full justify-center items-center'>
                                             <Image source={item.image} className='w-32 h-32' resizeMode='contain' />
                                         </View>
 
-                                        {/* Right: Info */}
                                         <View className='w-1/2 h-full justify-center pr-2'>
                                             <View className='flex-row items-center gap-1 mb-1'>
                                                 <Star size={14} color="#FBBF24" fill="#FBBF24" />
@@ -276,7 +273,7 @@ export default function Index() {
                                     </View>
                                 </View>
                             )}
-                        />
+                        /> */}
                     </View>
                     
                 </View>

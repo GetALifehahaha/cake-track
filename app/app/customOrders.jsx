@@ -6,7 +6,7 @@ import React from 'react'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
-import cakeImages from './cakeImages';
+import { CAKE_ASSETS as cakeImages } from './cakeImages';
 import {
     AddonPage,
     CakeDetailPage,
@@ -24,7 +24,6 @@ import ConfirmModal from '@/components/organisms/ConfirmModal';
 import useOrder from '@/hooks/useOrder';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
-import { parseTimeString } from '@/utils/time';
 
 // Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -37,7 +36,7 @@ const CustomOrders = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { showToast } = useToast();
     const { loading, error, postOrder } = useOrder();
-    const [customDisplay, setCustomDisplay] = useState("");
+    const [customLayers, setCustomLayers] = useState([]);
     const [page, setPage] = useState(1);
     const [maxPage, setMaxPage] = useState(11);
     const [personallyDesign, setPersonallyDesign] = useState(false);
@@ -82,39 +81,109 @@ const CustomOrders = () => {
         'Confirm'
     ]
 
+
+    // Map dropdown values to cakeImages asset keys
+    // (Dropdown already sends 'choco'/'straw' directly, so map is identity fallback)
+    const fillingKeyMap = {
+        choco: 'choco',
+        straw: 'straw',
+        frosting: 'frosting',
+        chocolate: 'choco',
+        strawberry: 'straw',
+    };
+
     useEffect(() => {
-        if (!shape && !tier) return;
+        if (!shape || !tier || shape === 'other') {
+            setCustomLayers([]);
+            return;
+        }
 
-        // 1. Grab the specific Tier object (e.g., Round -> 1)
-        const tierObj = cakeImages?.[shape || "round"]?.[tier || 1];
+        const assets = cakeImages[shape];
+        if (!assets) {
+            setCustomLayers([]);
+            return;
+        }
 
-        // 2. Determine if we have a coating and a decoration
-        const hasCoating = coatingColor && coatingColor !== "none";
-        const hasDecoration = border && border !== "none";
+        // Each "tier" image is a full-cake illustration.
+        // tier1 = single-tier cake, tier2 = two-tier (overlays tier1), tier3 = three-tier (overlays tier1+2).
+        // Fillings, drips, pipings are also full-cake overlays at specific positions.
+        // Correct stacking: bases → fillings → borders → sprinkles (all sequential, NOT interleaved).
 
-        let img;
+        const tierKeys = {
+            1: ['tier1'],
+            2: ['tier1', 'tier2'],
+            3: ['tier1', 'tier2', 'tier3'],
+        };
 
-        if (!hasCoating) {
-            // CASE A: No Coating -> Show Base Flavor + Filling
-            // Path: round.1.chocolate.frosting
-            img = tierObj?.[baseFlavor || "vanilla"]?.[filling || "none"];
-        } else {
-            // CASE B: Coating is Active
-            if (hasDecoration) {
-                // CASE B-1: Coating + Decoration (Drip/Piping)
-                // Path: round.1.coating.black.drip.red
-                img = tierObj?.coating?.[coatingColor]?.[border]?.[borderColor || "white"];
-            } else {
-                // CASE B-2: Coating Only (No Decoration)
-                // Path: round.1.coating.black.none
-                img = tierObj?.coating?.[coatingColor]?.none;
+        const positionKeys = {
+            1: ['bottom'],
+            2: ['bottom', 'middle'],
+            3: ['bottom', 'middle', 'top'],
+        };
+
+        const tierKeyList = tierKeys[tier] || ['tier1'];
+        const positions = positionKeys[tier] || ['bottom'];
+
+        let newLayers = [];
+
+        if (page === 2 || page === 3) {
+            // Pages 2-3: Yellow base + optional filling preview
+            // Push all bases first
+            tierKeyList.forEach(tierKey => {
+                const base = assets.bases?.[tierKey]?.yellow;
+                if (base) newLayers.push(base);
+            });
+
+            // Page 3 only: show fillings on top of all bases
+            if (page === 3 && filling) {
+                const fillKey = fillingKeyMap[filling] || filling;
+                positions.forEach(pos => {
+                    const fill = assets.fillings?.[pos]?.[fillKey];
+                    if (fill) newLayers.push(fill);
+                });
+            }
+
+        } else if (page >= 4) {
+            // Page 4+: Coating color replaces yellow. Fillings are hidden by coating.
+            const activeCoating = coatingColor || 'yellow';
+
+            // 1. All bases
+            tierKeyList.forEach(tierKey => {
+                const base = assets.bases?.[tierKey]?.[activeCoating];
+                if (base) newLayers.push(base);
+            });
+
+            // 2. Borders (piping or drip) — on top of all bases
+            if (border) {
+                if (border === 'piping' && borderColor) {
+                    // Round: pipings per tier; Sheet: no piping assets exist
+                    tierKeyList.forEach(tierKey => {
+                        const pipe = assets.pipings?.[tierKey]?.[borderColor];
+                        if (pipe) newLayers.push(pipe);
+                    });
+                } else if (border === 'drip' && borderColor) {
+                    // Sheet: drips per position (bottom/middle/top)
+                    if (shape === 'sheet') {
+                        positions.forEach(pos => {
+                            const drip = assets.drips?.[pos]?.[borderColor];
+                            if (drip) newLayers.push(drip);
+                        });
+                    }
+                    // Round: no drip border assets
+                }
+            }
+
+            // 3. Sprinkles — on top of everything
+            if (page >= 5 && toppings === 'sprinkles') {
+                const topTierKey = tierKeyList[tierKeyList.length - 1];
+                const sprinkle = assets.sprinkles?.pipe?.[topTierKey];
+                if (sprinkle) newLayers.push(sprinkle);
             }
         }
 
-        // 3. Pass 'img' to your Image component
+        setCustomLayers(newLayers);
+    }, [page, shape, tier, filling, coatingColor, border, borderColor, toppings]);
 
-        setCustomDisplay(img);
-    }, [shape, tier, baseFlavor, filling, coatingColor, border, borderColor]);
 
 
     if (!user) {
@@ -139,14 +208,14 @@ const CustomOrders = () => {
 
             let imagesToUpload = [...images];
 
-            if (!personallyDesign && customDisplay) {
-                // Resolve the local asset ID (e.g., "1") to a real URI (e.g., "http://.../assets/cake.png")
-                const asset = Image.resolveAssetSource(customDisplay);
-                if (asset.uri) {
-                    // Prepend it so it becomes the 'main' image
-                    imagesToUpload.unshift(asset.uri);
-                }
-            }
+            // if (!personallyDesign && customDisplay) {
+            //     // Resolve the local asset ID (e.g., "1") to a real URI (e.g., "http://.../assets/cake.png")
+            //     const asset = Image.resolveAssetSource(customDisplay);
+            //     if (asset.uri) {
+            //         // Prepend it so it becomes the 'main' image
+            //         imagesToUpload.unshift(asset.uri);
+            //     }
+            // }
 
             // 1. Upload Image if it exists
             if (imagesToUpload.length > 0) {
@@ -183,13 +252,17 @@ const CustomOrders = () => {
                 message: messageType === "none" ? "" : message,
             };
 
+            // Format dates for Django (YYYY-MM-DD and HH:MM:SS)
+            const formattedDate = dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate;
+            const formattedTime = pickupTime instanceof Date ? pickupTime.toTimeString().split(' ')[0] : pickupTime;
+
             const payload = {
                 full_name: fullName,
                 email: email,
                 phone_number: contactNumber,
                 address: address,
-                due_date: dueDate,
-                pickup_time: pickupTime,
+                due_date: formattedDate,
+                pickup_time: formattedTime,
                 status: "pending",
                 cake_orders: cakeData,
                 ...((hasCupcakes && !personallyDesign) && {
@@ -239,12 +312,72 @@ const CustomOrders = () => {
                 }
                 return true;
 
-            // ... Cases 2 through 7 remain the same ...
-            // Since we skip them, this validation won't trigger, which is what we want.
+            case 2: // Form (Shape & Tier)
+                if (!shape) {
+                    showToast("Please select a cake shape", 'error');
+                    return false;
+                } else if (shape === "other" && !specifyShape) {
+                    showToast("Please specify your cake shape", 'error');
+                    return false;
+                }
+                if (!tier) {
+                    showToast("Please select a cake tier", 'error');
+                    return false;
+                }
+                return true;
+
+            case 3: // Flavors
+                if (!baseFlavor) {
+                    showToast("Please select a base flavor", 'error');
+                    return false;
+                }
+                if (!filling) {
+                    showToast("Please select a filling", 'error');
+                    return false;
+                }
+                return true;
+
+            case 4: // Coating
+                if (!coatingColor) {
+                    showToast("Please select a coating color", 'error');
+                    return false;
+                }
+                return true;
+
+            case 5: // Add-ons
+                return true;
+
+            case 6: // Message
+                if (messageType === "") {
+                    showToast("Please select a message type", 'error');
+                    return false;
+                }
+                if (messageType !== "none" && (!message || message.trim() === "")) {
+                    showToast("Please enter your message", 'error');
+                    return false;
+                }
+                return true;
+
+            case 7: // Cupcakes
+                if (hasCupcakes) {
+                    if (!cupcakesCount || parseInt(cupcakesCount) <= 0) {
+                        showToast("Please enter the number of cupcakes", 'error');
+                        return false;
+                    }
+                    if (!cupcakesFrosting) {
+                        showToast("Please select a cupcake frosting", 'error');
+                        return false;
+                    }
+                }
+                return true;
 
             case 8: // Comments + Due Date
                 if (!dueDate) {
                     showToast("Please select a pickup date for your order", 'error');
+                    return false;
+                }
+                if (!pickupTime) {
+                    showToast("Please select a pickup time for your order", 'error');
                     return false;
                 }
                 // If personally designing, force them to add a comment describing the cake
@@ -263,12 +396,37 @@ const CustomOrders = () => {
                 return true;
 
             case 10: // Information
-                // ... (Keep existing validation logic for Page 10) ...
                 if (!fullName.trim()) {
                     showToast("Please enter your full name", 'error');
                     return false;
                 }
-                // ... (rest of contact validation) ...
+
+                const cleanedNumber = contactNumber.replace(/[\s-]/g, '');
+                const phoneRegex = /^\+63\d{10}$/;
+
+                if (!contactNumber.trim()) {
+                    showToast("Please enter your contact number", 'error');
+                    return false;
+                } else if (!phoneRegex.test(cleanedNumber.trim())) {
+                    showToast("Number must start with +63 followed by 10 digits", 'error');
+                    return false;
+                }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (!email.trim()) {
+                    showToast("Please enter your email address", 'error');
+                    return false;
+                } else if (!emailRegex.test(email.trim())) {
+                    showToast("Please enter a valid email address", 'error');
+                    return false;
+                }
+
+                if (!address.trim()) {
+                    showToast("Please enter your address", 'error');
+                    return false;
+                }
+
                 if (!agreeToTOC) {
                     showToast("You must agree to the Terms and Conditions to proceed", 'error');
                     return false;
@@ -289,14 +447,6 @@ const CustomOrders = () => {
                     // Skip Pages 2-7 (Form, Flavors, Coating, Addons, Message, Cupcakes)
                     // Jump straight to Page 8 (Comments/Due Date)
                     setPage(8);
-                }
-                // --- EXISTING LOGIC: Skip Pages 4-5 if designing manually but using builder ---
-                else if (!personallyDesign && page === 3 && personallyDesign) {
-                    // Note: This 'else if' condition in your original code might be conflicting 
-                    // depending on how you used 'personallyDesign' variable previously. 
-                    // Based on your new request, if personallyDesign is true, we skip everything.
-                    // So we likely don't need this specific block anymore, but I'll leave standard flow:
-                    setPage(page + 1);
                 }
                 else {
                     setPage(page + 1);
@@ -404,7 +554,7 @@ const CustomOrders = () => {
             const payload = { order_id: orderId };
             
             // Call Backend to get Checkout URL
-            const response = await api.post(`${process.env.EXPO_PUBLIC_API_URL}/payment/initiate/`, payload);
+            const response = await api.post(`/payment/initiate/`, payload);
             const { checkout_url } = response.data;
 
             if (checkout_url) {
@@ -458,22 +608,28 @@ const CustomOrders = () => {
                     {/* IMAGE CONTAINER */}
                     <View style={{ height: SCREEN_HEIGHT * 0.35 }} className="w-full items-center justify-center p-4">
                         <View className='aspect-square h-[90%] bg-main-form rounded-lg justify-center items-center shadow-sm'>
-                            {personallyDesign ? 
-                            (
+                            {personallyDesign ? (
                                 <View className="items-center">
                                     <Text className='text-sm font-semibold text-gray-300'>CUSTOM DESIGN</Text>
                                     <Text className='text-xs text-gray-400'>Please upload reference on Page 9</Text>
                                 </View>
                             ) : (
-                                // Existing Logic for Builder
-                                shape === "other" ?
+                                shape === "other" ? (
                                     <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
-                                    :
-                                    customDisplay ? (
-                                        <Image source={customDisplay} style={{ width: 200, height: 200 }} resizeMode="contain" />
-                                    ) : (
-                                        <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
-                                    )
+                                ) : customLayers.length > 0 ? (
+                                    <View style={{ width: 200, height: 200 }}>
+                                        {customLayers.map((layerSource, index) => (
+                                            <Image 
+                                                key={index} 
+                                                source={layerSource} 
+                                                style={{ width: '100%', height: '100%', position: 'absolute' }} 
+                                                resizeMode="contain" 
+                                            />
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
+                                )
                             )}
                         </View>
                     </View>
@@ -744,9 +900,9 @@ const CustomOrders = () => {
                                                 </Text>
                                             </View>
                                             <View className='w-[48%] p-4 bg-white rounded-lg'>
-                                                <Text className='text-gray-400 text-xs mb-1'>Pickup Date</Text>
+                                                <Text className='text-gray-400 text-xs mb-1'>Pickup Time</Text>
                                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                                    {pickupTime ? pickupTime : 'None'}
+                                                    {pickupTime ? (pickupTime instanceof Date ? pickupTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : pickupTime) : 'None'}
                                                 </Text>
                                             </View>
                                         </View>
