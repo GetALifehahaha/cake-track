@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
 import { CAKE_ASSETS as cakeImages } from './cakeImages';
@@ -33,6 +33,7 @@ const CustomOrders = () => {
     const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME
 
     const { user, loading: userLoading } = useContext(AuthContext);
+    const { selectedAddress } = useLocalSearchParams();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { showToast } = useToast();
     const { loading, error, postOrder } = useOrder();
@@ -91,6 +92,13 @@ const CustomOrders = () => {
         chocolate: 'choco',
         strawberry: 'straw',
     };
+
+    // Listen for address selected from locationPicker
+    useEffect(() => {
+        if (selectedAddress) {
+            setAddress(selectedAddress);
+        }
+    }, [selectedAddress]);
 
     useEffect(() => {
         if (!shape || !tier || shape === 'other') {

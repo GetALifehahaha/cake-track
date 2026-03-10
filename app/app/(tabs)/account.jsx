@@ -3,7 +3,7 @@ import React, { useContext } from 'react'
 import { AuthContext } from '@/context/AuthContext'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { LogOut, Mail, User } from 'lucide-react-native'
+import { LogOut, Mail, User, MapPin } from 'lucide-react-native'
 import ConfirmModal from '@/components/organisms/ConfirmModal'
 
 const Account = () => {
@@ -49,6 +49,19 @@ const Account = () => {
                 {user?.email}
               </Text>
             </View>
+
+            <TouchableOpacity
+              className='mt-6 w-full bg-secondary-light/10 border border-secondary-light/30 flex-row gap-3 items-center p-3 rounded-xl'
+              onPress={() => router.push('/locations')}
+            >
+              <View className='bg-secondary-light p-2 rounded-full'>
+                <MapPin size={18} color="white" />
+              </View>
+              <View className='flex-1'>
+                <Text className='text-primary font-bold text-base'>My Locations</Text>
+                <Text className='text-secondary-light text-xs'>Manage your saved addresses</Text>
+              </View>
+            </TouchableOpacity>
 
             <ConfirmModal details={"Are you sure you want to logout?"} onConfirm={logout} >
               <View className='mt-8 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg'>

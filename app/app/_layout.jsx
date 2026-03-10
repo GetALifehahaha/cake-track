@@ -104,6 +104,27 @@ const InitialLayout = () => {
           animation: 'slide_from_bottom'
         }}
       />
+      <Stack.Screen
+        name="locations"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="locationForm"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
+      <Stack.Screen
+        name="locationPicker"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom'
+        }}
+      />
     </Stack>
   )
 }

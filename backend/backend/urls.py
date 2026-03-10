@@ -21,10 +21,11 @@ from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 
-from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView, OTPViewSet, VerifyOTPViewSet, ChangePasswordViaToken, ActivateAccountView
+from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView, OTPViewSet, VerifyOTPViewSet, ChangePasswordViaToken, ActivateAccountView, AddressViewSet
 
 router = DefaultRouter()
 router.register('users', UserViewSet, basename="cashiers")
+router.register('addresses', AddressViewSet, basename="addresses")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -10,8 +10,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action
 
-from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer
-from .models import OTP, PasswordResetToken
+from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer, AddressSerializer
+from .models import OTP, PasswordResetToken, Address
 
 from .permissions import IsAdmin, IsCashier
 
@@ -305,3 +305,14 @@ class ActivateAccountView(APIView):
             "details": "Activation link is invalid or has expired.",
             "type": "error"
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddressViewSet(viewsets.ModelViewSet):
+    serializer_class = AddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

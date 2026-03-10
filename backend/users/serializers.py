@@ -9,7 +9,7 @@ from django.contrib.auth.tokens import default_token_generator
 from .models import (
     OTP, 
     UserProfile,
-    # Address,
+    Address,
     )
 
 class UserSerializer(serializers.ModelSerializer):
@@ -125,20 +125,20 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         return user
     
 
-# class AddressSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Address
-#         fields = '__all__'        
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['id', 'user', 'street', 'barangay', 'province', 'zip_code', 'description']
+        read_only_fields = ['user']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     groups = serializers.StringRelatedField(many=True)
-    # addresses = AddressSerializer(many=True, read_only=True, blank=True)
+    locations = AddressSerializer(many=True, read_only=True)
     
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active', ]
-        # 'addresses'
+        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active', 'locations']
         read_only_fields = ['id', 'username', 'groups', 'is_staff']
 
 class OTPSerializer(serializers.ModelSerializer):
