@@ -1,11 +1,29 @@
 import React, { useEffect, useRef } from 'react';
 import { Title, Label, Button } from '../../atoms';
-import { CheckCircle, X, LucidePrinter, Download } from 'lucide-react';
+import { CheckCircle, X, LucidePrinter } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 
 const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transactionData, businessData }) => {
 
     const contentRef = useRef(null);
+
+    const toAmount = (value, fallback = 0) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    const formatMoney = (value, fallback = 0) =>
+        toAmount(value, fallback).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const createdAt = transactionData?.created_at ? new Date(transactionData.created_at) : null;
+    const hasValidDate = createdAt && !Number.isNaN(createdAt.getTime());
+
+    const grossTotal = toAmount(transactionData?.gross_total, toAmount(totalAmount, 0));
+    const netTotal = toAmount(transactionData?.net_total, toAmount(totalAmount, 0));
+    const paidAmount = toAmount(transactionData?.paid_amount, toAmount(amountReceived, 0));
+    const vatAmount = grossTotal * 0.12;
+    const changeAmount = toAmount(transactionData?.change, paidAmount - netTotal);
+    const transactionId = transactionData?.display_id || transactionData?.id || 'N/A';
 
     const handlePrint = useReactToPrint({
         contentRef: contentRef,
@@ -31,17 +49,17 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                 <div>
                     <div className='flex flex-row items-center justify-between'>
                         <Label variant='modal' text='Total Amount:' />
-                        <h5>₱ {Number(totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
+                        <h5>₱ {formatMoney(netTotal)}</h5>
                     </div>
                     <div className='flex flex-row items-center justify-between'>
                         <Label variant='modal' text='Amount Received:' />
-                        <h5>₱ {Number(amountReceived).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
+                        <h5>₱ {formatMoney(paidAmount)}</h5>
                     </div>
                 </div>
 
                 <div className='text-success flex flex-row items-center justify-between'>
                     <h5 className='font-medium text-md'>Change:</h5>
-                    <h5>₱ {Number(amountReceived - totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
+                    <h5>₱ {formatMoney(changeAmount)}</h5>
                 </div>
 
                 <div className='flex gap-4'>
@@ -87,16 +105,17 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                         <div className="text-center text-[10px] mb-2 border-b border-black pb-2 leading-tight">
                             <div className="mb-1">{businessData?.address || ''}</div>
                             <div>TIN: {businessData?.tin || ''}</div>
+                            <div>Txn ID: {transactionId}</div>
                         </div>
 
                         <div className="font-medium text-[10px] mb-2 leading-tight">
-                            <div>Cashier: {transactionData?.cashier?.first_name}</div>
-                            <div>Mode: {transactionData?.order_type === "dine-in" ? 'DINE IN' : 'TAKE OUT'}</div>
+                            <div>Cashier: {transactionData?.cashier?.first_name || 'N/A'}</div>
+                            <div>Mode: {transactionData?.order_type ? (transactionData.order_type === "dine-in" ? 'DINE IN' : 'TAKE OUT') : 'N/A'}</div>
                         </div>
 
                         <div className="flex justify-between text-[10px] mb-2">
-                            <span>{new Date(transactionData?.created_at).toLocaleDateString()}</span>
-                            <span>{new Date(transactionData?.created_at).toLocaleTimeString()}</span>
+                            <span>{hasValidDate ? createdAt.toLocaleDateString() : 'N/A'}</span>
+                            <span>{hasValidDate ? createdAt.toLocaleTimeString() : 'N/A'}</span>
                         </div>
 
                         {/* Table: Compact Layout */}
@@ -114,10 +133,10 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                                         <td className="align-top py-1 text-center">{item.quantity}</td>
                                         {/* break-words ensures long cake names don't push the price off paper */}
                                         <td className="align-top py-1 pr-1 leading-tight">
-                                            {item.product.name}
+                                            {item.product?.name || item.name || 'Item'}
                                         </td>
                                         <td className="align-top py-1 text-right whitespace-nowrap">
-                                            {Number(item.subtotal || item.price).toFixed(2)}
+                                            {formatMoney((toAmount(item?.product_variant?.price, toAmount(item?.price, 0))) * toAmount(item?.quantity, 0))}
                                         </td>
                                     </tr>
                                 ))}
@@ -127,33 +146,33 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                         <div className="text-[10px] space-y-1 mb-2 border-t border-dashed border-black pt-2">
                             <div className="flex justify-between">
                                 <span>Subtotal:</span>
-                                <span>{Number(transactionData?.gross_total).toFixed(2)}</span>
+                                <span>{formatMoney(grossTotal)}</span>
                             </div>
                             
                             {transactionData?.discount_id && (
                                 <div className="flex justify-between">
                                     <span>Disc ({transactionData.discount?.name}):</span>
-                                    <span>-{Number(transactionData.gross_total - transactionData.net_total).toFixed(2)}</span>
+                                    <span>-{formatMoney(grossTotal - netTotal)}</span>
                                 </div>
                             )}
                             
                             <div className="flex justify-between">
                                 <span>VAT (12%):</span>
-                                <span>{Number(transactionData?.gross_total * 0.12).toFixed(2)}</span>
+                                <span>{formatMoney(vatAmount)}</span>
                             </div>
 
                             <div className="flex justify-between font-bold text-xs pt-1 mt-1 border-t border-black">
                                 <span>Total:</span>
-                                <span>{Number(transactionData?.net_total).toFixed(2)}</span>
+                                <span>{formatMoney(netTotal)}</span>
                             </div>
 
                             <div className="flex justify-between pt-1">
                                 <span>Cash:</span>
-                                <span>{Number(transactionData?.paid_amount).toFixed(2)}</span>
+                                <span>{formatMoney(paidAmount)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Change:</span>
-                                <span>{Number(transactionData?.change || (transactionData?.paid_amount - transactionData?.net_total)).toFixed(2)}</span>
+                                <span>{formatMoney(changeAmount)}</span>
                             </div>
                         </div>
 

@@ -11,6 +11,24 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
     const [isReceiptView, setIsReceiptView] = useState(!transactionDetail?.is_void);
     const printRef = useRef(null);
 
+    const toAmount = (value, fallback = 0) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    const formatMoney = (value, fallback = 0) =>
+        toAmount(value, fallback).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const createdAt = transactionDetail?.created_at ? new Date(transactionDetail.created_at) : null;
+    const hasValidDate = createdAt && !Number.isNaN(createdAt.getTime());
+
+    const grossTotal = toAmount(transactionDetail?.gross_total, 0);
+    const netTotal = toAmount(transactionDetail?.net_total, 0);
+    const paidAmount = toAmount(transactionDetail?.paid_amount, 0);
+    const vatAmount = grossTotal * 0.12;
+    const changeAmount = toAmount(transactionDetail?.change, paidAmount - netTotal);
+    const transactionId = transactionDetail?.display_id || transactionDetail?.id || 'N/A';
+
     const handlePrint = useReactToPrint({
         contentRef: printRef,
         documentTitle: `Transaction-${transactionDetail?.display_id || transactionDetail?.id}`,
@@ -50,68 +68,81 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
 
     const renderReceiptView = () => (
         <div className='max-h-[80vh] overflow-y-auto mx-auto p-6 text-sm w-md flex flex-col justify-between'>
-            <h5 className="text-center text-text font-bold text-lg mb-2 ">
-                {data?.business_name}
+            <h5 className="text-center text-text font-bold text-lg mb-2 uppercase">
+                {data?.business_name || "MY BUSINESS"}
             </h5>
 
-            <div className="text-center text-text/50 text-sm mb-4 space-y-0.5 border-b border-b-main-dark pb-8">
-                <h5>{data?.address}</h5>
-                <h5>TIN: {data?.tin}</h5>
-                <h5>Permit No: ATP-2025-56789</h5>
+            <div className="text-center text-text/50 text-sm mb-4 space-y-0.5 border-b border-b-main-dark pb-4">
+                <h5>{data?.address || ''}</h5>
+                <h5>TIN: {data?.tin || ''}</h5>
+                <h5>Transaction ID: {transactionId}</h5>
             </div>
 
             <div className="text-text font-medium text-sm mb-2 space-y-0.5">
-                <h5>Cashier: {transactionDetail.cashier?.first_name} {transactionDetail.cashier?.last_name} </h5>
-                <h5>Serving Mode: {transactionDetail?.order_type === "dine-in" ? 'DINE IN' : 'TAKE OUT'}</h5>
+                <h5>Cashier: {transactionDetail?.cashier?.first_name || 'N/A'} {transactionDetail?.cashier?.last_name || ''}</h5>
+                <h5>Mode: {transactionDetail?.order_type ? (transactionDetail.order_type === "dine-in" ? 'DINE IN' : 'TAKE OUT') : 'N/A'}</h5>
             </div>
 
             <div className="flex text-text text-sm mb-4">
-                <h5 className='text-text/50'>Date & Time:</h5>
-                <h5 className='ml-auto mr-4'>{transactionDetail?.created_at ? new Date(transactionDetail.created_at).toLocaleDateString() : ''}</h5>
-                <h5>{transactionDetail?.created_at ? new Date(transactionDetail.created_at).toLocaleTimeString() : ''}</h5>
+                <h5 className='ml-auto mr-4'>{hasValidDate ? createdAt.toLocaleDateString() : 'N/A'}</h5>
+                <h5>{hasValidDate ? createdAt.toLocaleTimeString() : 'N/A'}</h5>
             </div>
 
-            <table className="w-full text-text text-sm mb-4 ">
+            <table className="w-full text-text text-sm mb-4">
                 <thead>
                     <tr className="border-b border-text/20">
-                        <th className="text-left py-1 font-semibold">Quantity</th>
-                        <th className="text-left py-1 font-semibold">Name</th>
-                        <th className="text-right py-1 font-semibold">Amount</th>
+                        <th className="text-left py-1 font-semibold">Qty</th>
+                        <th className="text-left py-1 font-semibold">Item</th>
+                        <th className="text-right py-1 font-semibold">Amt</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {transactionDetail.transaction_items?.map((item, index) =>
+                    {transactionDetail?.transaction_items?.map((item, index) =>
                         <tr key={index}>
-                            <td className="py-2 text-center">{item.quantity}</td>
-                            <td className="py-2">{item.product?.name} - {item.product_variant?.label}</td>
-                            <td className="text-right py-2">{((item.product_variant?.price ?? 0) * item.quantity).toFixed(2)}</td>
+                            <td className="py-2 text-center">{toAmount(item?.quantity, 0)}</td>
+                            <td className="py-2">{item?.product?.name || item?.name || 'Item'}</td>
+                            <td className="text-right py-2">{formatMoney(toAmount(item?.product_variant?.price, toAmount(item?.price, 0)) * toAmount(item?.quantity, 0))}</td>
                         </tr>
                     )}
                 </tbody>
             </table>
 
-            <div className="text-sm space-y-1 mb-4">
-                {transactionDetail.discount &&
-                    <div className="flex justify-between text-text/50">
-                        <h5>Discount:</h5>
-                        <h5>{transactionDetail.discount?.name}: {(transactionDetail.discount?.rate ?? 0) * 100}%</h5>
+            <div className="text-sm space-y-1 mb-4 border-t border-dashed border-text/30 pt-2">
+                <div className="flex justify-between text-text/70">
+                    <h5>Subtotal:</h5>
+                    <h5>{formatMoney(grossTotal)}</h5>
+                </div>
+                {transactionDetail?.discount && (
+                    <div className="flex justify-between text-text/70">
+                        <h5>Disc ({transactionDetail?.discount?.name || 'Discount'}):</h5>
+                        <h5>-{formatMoney(grossTotal - netTotal)}</h5>
                     </div>
-                }
-                <div className="flex justify-between font-bold text-base pt-1 text-text">
+                )}
+                <div className="flex justify-between text-text/70">
+                    <h5>VAT (12%):</h5>
+                    <h5>{formatMoney(vatAmount)}</h5>
+                </div>
+                <div className="flex justify-between font-bold text-base pt-1 text-text border-t border-text/20 mt-1">
                     <h5>Total:</h5>
-                    <h5>₱ {formatToDecimal(transactionDetail?.net_total)}</h5>
+                    <h5>₱ {formatMoney(netTotal)}</h5>
+                </div>
+                <div className="flex justify-between text-text/80">
+                    <h5>Cash:</h5>
+                    <h5>{formatMoney(paidAmount)}</h5>
+                </div>
+                <div className="flex justify-between text-text/80">
+                    <h5>Change:</h5>
+                    <h5>{formatMoney(changeAmount)}</h5>
                 </div>
             </div>
 
             <div className="text-center text-text text-sm space-y-1 mb-3">
                 <h5>System-Generated Receipt</h5>
-                <h5>Contact us: {data?.contact_number}</h5>
-                <h5>{data?.message}</h5>
+                <h5>{data?.contact_number || ''}</h5>
+                <h5>{data?.message || ''}</h5>
             </div>
 
-            <h5 className="text-center text-text text-sm italic">
-                This is not an official receipt
-            </h5>
+            <h5 className="text-center text-text text-sm italic">Not an official receipt</h5>
         </div>
     );
 
@@ -130,11 +161,11 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
             <div className="grid grid-cols-2 gap-6 mb-8 bg-black/5 p-4 rounded-lg">
                 <div>
                     <p className="text-text/50 text-xs uppercase tracking-wider mb-1">Cashier</p>
-                    <p className="font-semibold text-text">{transactionDetail.cashier?.first_name} {transactionDetail.cashier?.last_name}</p>
+                    <p className="font-semibold text-text">{transactionDetail?.cashier?.first_name} {transactionDetail?.cashier?.last_name}</p>
                 </div>
                 <div>
                     <p className="text-text/50 text-xs uppercase tracking-wider mb-1">Serving Mode</p>
-                    <p className="font-semibold text-text uppercase">{transactionDetail.order_type?.replace('-', ' ')}</p>
+                    <p className="font-semibold text-text uppercase">{transactionDetail?.order_type?.replace('-', ' ')}</p>
                 </div>
             </div>
 
@@ -148,7 +179,7 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                    {transactionDetail.transaction_items?.map((item, index) => (
+                    {transactionDetail?.transaction_items?.map((item, index) => (
                         <tr key={index} className="text-text">
                             <td className="p-3">
                                 <p className="font-medium">{item.product?.name}</p>
@@ -164,7 +195,7 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
 
             <div className="flex justify-end mt-auto">
                 <div className="w-1/2 md:w-1/3 space-y-2 text-sm text-text">
-                    {transactionDetail.discount && (
+                    {transactionDetail?.discount && (
                         <div className="flex justify-between">
                             <span className="text-text/50">Discount ({transactionDetail.discount?.name})</span>
                             <span className="text-error">- {(transactionDetail.discount?.rate ?? 0) * 100}%</span>

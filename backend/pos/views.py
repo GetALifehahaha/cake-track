@@ -138,6 +138,15 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return TransactionCreateSerializer
         return TransactionSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        transaction = serializer.save()
+
+        output_serializer = TransactionSerializer(transaction, context=self.get_serializer_context())
+        headers = self.get_success_headers(output_serializer.data)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)

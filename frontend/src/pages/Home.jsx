@@ -38,6 +38,7 @@ const Home = () => {
     const [discountValue, setDiscountValue] = useState(0);
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
+    const [completedTransaction, setCompletedTransaction] = useState(null);
     const [orderType, setOrderType] = useState("dine-in");
     const [filter, setFilter] = useState(); 
 
@@ -101,6 +102,7 @@ const Home = () => {
 
     const handleTogglePaymentSuccessModal = () => {
         removeAllProducts();
+        setCompletedTransaction(null);
         setShowPaymentSuccessModal(!showPaymentSuccessModal);
     }
 
@@ -257,7 +259,7 @@ const Home = () => {
                 quantity: p.amount,
             }))
 
-            await postTransaction({
+            const transactionResponse = await postTransaction({
                 is_void: false,
                 payment_method: "cash",
                 order_type: orderType,
@@ -266,7 +268,8 @@ const Home = () => {
                 discount: discount,
             })
 
-            setReceivedPayment(value);
+            setCompletedTransaction(transactionResponse?.data ?? null);
+            setReceivedPayment(transactionResponse?.data?.paid_amount ?? parsedValue);
             setShowPaymentSuccessModal(true);
             removeAllProducts();
 
@@ -465,8 +468,8 @@ const Home = () => {
             }
 
             {showPaymentSuccessModal &&
-                <PaymentSuccessModal totalAmount={netTotal} amountReceived={receivedPayment} onClose={handleTogglePaymentSuccessModal} businessData={businessData}
-                    // transactionData={transactionResponse.data}
+                <PaymentSuccessModal totalAmount={completedTransaction?.net_total ?? netTotal} amountReceived={completedTransaction?.paid_amount ?? receivedPayment} onClose={handleTogglePaymentSuccessModal} businessData={businessData}
+                    transactionData={completedTransaction}
                 />
             }
 
