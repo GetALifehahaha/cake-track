@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Title, Label, Button, Dropdown } from '../../atoms';
 import { DatePicker, ModalBody, ModalFeedbackCard } from '../../molecules';
-import { X } from 'lucide-react';
+import { X, Plus, Check } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 import useUnits from '@/hooks/useUnits';
 import { AddInventoryItemSkeleton } from '@/components/molecules/Skeletons';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
-    const {data: units, loading, error} = useUnits()
+    const {data: units, loading, error, postUnit, refresh} = useUnits()
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);
     const [unit, setUnit] = useState(null);
+    const [creatingUnit, setCreatingUnit] = useState(false);
+    const [newUnitName, setNewUnitName] = useState('');
+    const [newUnitAbbreviation, setNewUnitAbbreviation] = useState('');
     const [purchaseDate, setPurchaseDate] = useState();
     const [expirationDate, setExpirationDate] = useState();
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
@@ -61,6 +64,33 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
         setUnit(value)
     }
 
+    const handleCreateUnit = async () => {
+        if (!newUnitName.trim()) {
+            setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Unit name is required.`});
+            return;
+        }
+
+        try {
+            const created = await postUnit({
+                name: newUnitName.trim(),
+                abbreviation: newUnitAbbreviation.trim(),
+            });
+
+            await refresh();
+            const newId = created?.data?.id || created?.id;
+            if (newId) {
+                setUnit(newId);
+            }
+
+            setCreatingUnit(false);
+            setNewUnitName('');
+            setNewUnitAbbreviation('');
+        } catch (err) {
+            const details = err?.response?.data?.name?.[0] || err?.response?.data?.detail || 'Failed to create unit.';
+            setModalFeedbackContent({type: "error", label: "Create Unit Failed", details});
+        }
+    }
+
     const handleSetShowConfirm = () => {
         if (!name || !amount || !unit || !purchaseDate || !expirationDate) {
             setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
@@ -94,7 +124,31 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
                     <div className='flex-1 flex flex-col gap-2'>
                         <Label variant='modal' text='Unit'/>
-                        <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
+                        {creatingUnit ? (
+                            <div className='flex gap-2'>
+                                <input
+                                    type='text'
+                                    value={newUnitName}
+                                    placeholder='Unit name (e.g., Kilogram)'
+                                    className='flex-1 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
+                                    onChange={(e) => e.target.value.length <= 20 && setNewUnitName(e.target.value)}
+                                />
+                                <input
+                                    type='text'
+                                    value={newUnitAbbreviation}
+                                    placeholder='Abbr (e.g., kg)'
+                                    className='w-28 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
+                                    onChange={(e) => e.target.value.length <= 5 && setNewUnitAbbreviation(e.target.value)}
+                                />
+                                <Button variant='icon' text='' icon={Check} onClick={handleCreateUnit} />
+                                <Button variant='icon' text='' icon={X} onClick={() => { setCreatingUnit(false); setNewUnitName(''); setNewUnitAbbreviation(''); }} />
+                            </div>
+                        ) : (
+                            <div className='flex gap-2 items-center'>
+                                <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
+                                <Button variant='icon' text='' icon={Plus} onClick={() => setCreatingUnit(true)} />
+                            </div>
+                        )}
                     </div>
                 </div>
 
