@@ -1,7 +1,7 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, CreditCard } from 'lucide-react-native';
+import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, CreditCard, XCircle } from 'lucide-react-native';
 import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
 import { useToast } from '@/context/ToastContext';
@@ -13,6 +13,8 @@ const OrderDetails = () => {
     const params = useLocalSearchParams();
     const { showToast } = useToast();
     const [repaying, setRepaying] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
+    const [orderStatus, setOrderStatus] = useState(null);
     const { width } = Dimensions.get('window');
     const imageSize = (width - 32 - 16) / 3;
 
@@ -24,6 +26,9 @@ const OrderDetails = () => {
     } catch (e) {
         console.error("Error parsing order data", e);
     }
+
+    // Use local state so UI updates immediately after cancel
+    const currentStatus = orderStatus ?? order.status;
 
     // 2. Destructure the API data to match the variable names in your JSX
     // We handle potential null values safely here
@@ -100,6 +105,21 @@ const OrderDetails = () => {
         }
     };
 
+    const handleCancel = async () => {
+        if (cancelling) return;
+        setCancelling(true);
+        try {
+            await api.post(`/orders/orders/${order.id}/cancel/`);
+            setOrderStatus('cancelled');
+            showToast("Order cancelled successfully.", "success");
+        } catch (error) {
+            console.error("Cancel Error:", error.response?.data || error.message);
+            showToast(error.response?.data?.error || "Failed to cancel order.", "error");
+        } finally {
+            setCancelling(false);
+        }
+    };
+
     return (
         <SafeAreaView className='flex-1 bg-[#F5F5F5]'>
             {/* Header with Back Button */}
@@ -117,7 +137,7 @@ const OrderDetails = () => {
 
                     <View className='flex-col gap-2 p-4 bg-white rounded-xl border justify-center border-secondary-light w-full'>
                         <View>
-                            <Text className={`${order.status === "rejected" ? 'text-red-400' : order.status === "unpaid" ? 'text-orange-500' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(order.status).toUpperCase()}</Text>
+                            <Text className={`${currentStatus === "rejected" ? 'text-red-400' : currentStatus === "cancelled" ? 'text-red-400' : currentStatus === "unpaid" ? 'text-orange-500' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(currentStatus).toUpperCase()}</Text>
                         </View>
                         {order.reject_reason &&
                             <Text className='text-secondary-strong text-md font-bold'>{order.reject_reason}</Text>
@@ -125,7 +145,7 @@ const OrderDetails = () => {
                     </View>
 
                     {/* Repay Button for Unpaid Orders */}
-                    {order.status === 'unpaid' && (
+                    {currentStatus === 'unpaid' && (
                         <TouchableOpacity
                             onPress={handleRepay}
                             disabled={repaying}
@@ -138,6 +158,24 @@ const OrderDetails = () => {
                             )}
                             <Text className='text-white text-lg font-bold'>
                                 {repaying ? 'Processing...' : `Pay Now — ₱${repayAmount.toFixed(2)}`}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Cancel Button for Unpaid Orders */}
+                    {currentStatus === 'unpaid' && (
+                        <TouchableOpacity
+                            onPress={handleCancel}
+                            disabled={cancelling}
+                            className='flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80'
+                        >
+                            {cancelling ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <XCircle size={20} color="white" />
+                            )}
+                            <Text className='text-white text-lg font-bold'>
+                                {cancelling ? 'Cancelling...' : 'Cancel Order'}
                             </Text>
                         </TouchableOpacity>
                     )}

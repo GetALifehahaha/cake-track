@@ -13,6 +13,7 @@ const OrderCard = ({ order }) => {
         pending: "text-secondary-light bg-secondary-light/10 border-secondary-light",
         
         rejected: "text-red-600 bg-red-100 border-red-200",
+        cancelled: "text-red-600 bg-red-100 border-red-200",
         
         // Handle both 'ready' and 'ready_for_pickup' just in case
         ready: "text-yellow-700 bg-yellow-100 border-yellow-200",

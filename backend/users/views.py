@@ -64,6 +64,22 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     def get(self, request, *args, **kwargs):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
+
+    def patch(self, request, *args, **kwargs):
+        serializer = UserUpdateSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            # Return the full profile so the client can update its state
+            return Response(UserProfileSerializer(request.user).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, *args, **kwargs):
+        return self.patch(request, *args, **kwargs)
     
     
     

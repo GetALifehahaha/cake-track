@@ -178,6 +178,7 @@ export const AuthProvider = ({ children }) => {
             googleLogin,
             register,
             logout,
+            getUserData,
             ensureAuthenticated // <--- Exporting the new helper
         }}>
             {children}

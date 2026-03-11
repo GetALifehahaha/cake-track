@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Plus, Check } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import LocationApi from '@/api/LocationApi';
+import { locationStore } from '@/utils/locationStore';
 import { AuthContext } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -13,7 +14,7 @@ const LocationPicker = () => {
     const router = useRouter();
     const { user } = useContext(AuthContext);
     const { showToast } = useToast();
-    const { currentAddress, returnTo } = useLocalSearchParams();
+    const { currentAddress } = useLocalSearchParams();
 
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -47,12 +48,10 @@ const LocationPicker = () => {
 
     const handleSelect = (loc) => {
         const fullAddress = formatAddress(loc);
-        // Navigate back to the originating page with the selected address
-        if (returnTo) {
-            router.navigate({ pathname: returnTo, params: { selectedAddress: fullAddress } });
-        } else {
-            router.back();
-        }
+        // Store the selected address and go back to the previous screen.
+        // Using router.back() preserves the calling screen's state (e.g. form page).
+        locationStore.setAddress(fullAddress);
+        router.back();
     };
 
     return (

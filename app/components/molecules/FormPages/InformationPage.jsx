@@ -4,7 +4,7 @@ import { MapPin } from 'lucide-react-native';
 import Checkbox from '@/components/atoms/Checkbox';
 import FormLabel from '@/components/atoms/FormLabel';
 
-const InformationPage = ({ fullName, setFullName, address, setAddress, email, setEmail, contactNumber, setContactNumber, agreeToTOC, setAgreeToTOC, returnTo }) => {
+const InformationPage = ({ fullName, setFullName, address, setAddress, email, setEmail, contactNumber, setContactNumber, agreeToTOC, setAgreeToTOC }) => {
     const router = useRouter();
 
     return (
@@ -18,7 +18,7 @@ const InformationPage = ({ fullName, setFullName, address, setAddress, email, se
                 <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={address} onChangeText={setAddress} placeholder='123 Main St. City, Province' />
                 <TouchableOpacity
                     className='flex-row items-center gap-2 mt-2 px-3 py-2 rounded-lg bg-secondary-light/10 border border-secondary-light/30 self-start'
-                    onPress={() => router.push({ pathname: '/locationPicker', params: { currentAddress: address, returnTo: returnTo || '/customOrders' } })}
+                    onPress={() => router.push({ pathname: '/locationPicker', params: { currentAddress: address } })}
                 >
                     <MapPin size={16} style={{ color: '#8B5A3C' }} />
                     <Text className='text-primary font-medium text-sm'>Pick from saved locations</Text>
@@ -30,7 +30,7 @@ const InformationPage = ({ fullName, setFullName, address, setAddress, email, se
             </View>
             <View>
                 <FormLabel text={"Phone Number"} />
-                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={setContactNumber} placeholder='+639123456789 or 09123456789' maxLength={18} />
+                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={setContactNumber} placeholder='Enter your phone number' maxLength={18} />
             </View>
             <View className='flex-row mt-2 gap-4 px-4 py-4 rounded-lg border border-secondary-light items-center'>
                 <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />

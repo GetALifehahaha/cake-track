@@ -203,8 +203,9 @@ const LoginSignup = ({ method }) => {
 									<Text className=''>Username</Text>
 								</View>
 								<TextInput
-									className='px-2 py-4 mb-4 border border-secondary-light rounded-md'
+									className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black'
 									placeholder='Enter your username'
+									placeholderTextColor="#9ca3af"
 									autoCapitalize="none"
 									value={username}
 									onChangeText={setUsername}
@@ -216,7 +217,7 @@ const LoginSignup = ({ method }) => {
 								</View>
 
 								<View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
-									<TextInput className='flex-1' placeholder="Enter password" secureTextEntry={!showPassword}
+									<TextInput className='flex-1 text-black' placeholder="Enter password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
 										value={password} onChangeText={setPassword} />
 									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
 										{showPassword ? <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} />}
@@ -265,33 +266,33 @@ const LoginSignup = ({ method }) => {
 									<Mail style={{ color: "#BE9B7B" }} size={16} />
 									<Text className=''>First Name</Text>
 								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your first name' value={firstName} onChangeText={setFirstName} />
+								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your first name' placeholderTextColor="#9ca3af" value={firstName} onChangeText={setFirstName} />
 
 								{/* ... rest of signup form inputs ... */}
 								<View className='flex-row gap-2 items-center'>
 									<Mail style={{ color: "#BE9B7B" }} size={16} />
 									<Text className=''>Last Name</Text>
 								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your last name' value={lastName} onChangeText={setLastName} />
+								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your last name' placeholderTextColor="#9ca3af" value={lastName} onChangeText={setLastName} />
 
 								<View className='flex-row gap-2 items-center'>
 									<Mail style={{ color: "#BE9B7B" }} size={16} />
 									<Text className=''>Email Address</Text>
 								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your email address' value={emailAddress} onChangeText={setEmailAddress} autoCapitalize="none" />
+								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your email address' placeholderTextColor="#9ca3af" value={emailAddress} onChangeText={setEmailAddress} autoCapitalize="none" />
 
 								<View className='flex-row gap-2 items-center'>
 									<User2Icon style={{ color: "#BE9B7B" }} size={16} />
 									<Text className=''>Username</Text>
 								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md' placeholder='Enter your username' value={username} onChangeText={setUsername} autoCapitalize="none" />
+								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your username' placeholderTextColor="#9ca3af" value={username} onChangeText={setUsername} autoCapitalize="none" />
 
 								<View className='flex-row gap-2 items-center'>
 									<Lock style={{ color: "#BE9B7B" }} size={16} />
 									<Text className=''>Password</Text>
 								</View>
 								<View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
-									<TextInput className='flex-1' placeholder="Enter password" secureTextEntry={!showPassword}
+									<TextInput className='flex-1 text-black' placeholder="Enter password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
 										value={password} onChangeText={setPassword} />
 									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
 										{showPassword ? <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} />}
@@ -303,7 +304,7 @@ const LoginSignup = ({ method }) => {
 									<Text className=''>Confirm Password</Text>
 								</View>
 								<View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
-									<TextInput className='flex-1' placeholder="Re-enter your password" secureTextEntry={!showPassword}
+									<TextInput className='flex-1 text-black' placeholder="Re-enter your password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
 										value={confirmPassword} onChangeText={setConfirmPassword} />
 									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
 										{showPassword ? <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} />}

@@ -208,8 +208,9 @@ const ForgotPassword = () => {
                                     <Text>Email Address</Text>
                                 </View>
                                 <TextInput
-                                    className='px-3 py-4 border border-secondary-light rounded-md'
+                                    className='px-3 py-4 border border-secondary-light rounded-md text-black'
                                     placeholder='Enter your email address'
+                                    placeholderTextColor="#9ca3af"
                                     keyboardType='email-address'
                                     autoCapitalize='none'
                                     value={email}
@@ -254,8 +255,9 @@ const ForgotPassword = () => {
                                     <Text>OTP Code</Text>
                                 </View>
                                 <TextInput
-                                    className='px-3 py-4 border border-secondary-light rounded-md text-center text-xl tracking-[8px] font-bold'
+                                    className='px-3 py-4 border border-secondary-light rounded-md text-center text-xl tracking-[8px] font-bold text-black'
                                     placeholder='000000'
+                                    placeholderTextColor="#9ca3af"
                                     keyboardType='number-pad'
                                     value={otp}
                                     onChangeText={(text) => {
@@ -303,8 +305,9 @@ const ForgotPassword = () => {
                                 </View>
                                 <View className='px-3 py-1 border border-secondary-light rounded-md flex-row items-center'>
                                     <TextInput
-                                        className='flex-1 py-3'
+                                        className='flex-1 py-3 text-black'
                                         placeholder='Enter new password'
+                                        placeholderTextColor="#9ca3af"
                                         secureTextEntry={!showPassword}
                                         value={newPassword}
                                         onChangeText={setNewPassword}
@@ -320,8 +323,9 @@ const ForgotPassword = () => {
                                 </View>
                                 <View className='px-3 py-1 border border-secondary-light rounded-md flex-row items-center'>
                                     <TextInput
-                                        className='flex-1 py-3'
+                                        className='flex-1 py-3 text-black'
                                         placeholder='Re-enter new password'
+                                        placeholderTextColor="#9ca3af"
                                         secureTextEntry={!showPassword}
                                         value={confirmPassword}
                                         onChangeText={setConfirmPassword}

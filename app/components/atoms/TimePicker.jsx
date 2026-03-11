@@ -8,8 +8,17 @@ import { useToast } from '@/context/ToastContext';
 const TimePicker = ({ onSelectTime }) => {
     const [open, setOpen] = useState(false);
     const [time, setTime] = useState(null);
-    const { openingTime, isOrderingAllowed } = useOpening();
+    const { openingTime } = useOpening();
     const { showToast } = useToast();
+
+    const parseTimeToMinutes = (timeStr) => {
+        if (!timeStr) return null;
+        const parts = String(timeStr).split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || '0', 10);
+        if (Number.isNaN(h) || Number.isNaN(m)) return null;
+        return h * 60 + m;
+    };
 
     const formatToAmPm = (hhmm) => {
         if (!hhmm) return '';
@@ -29,13 +38,32 @@ const TimePicker = ({ onSelectTime }) => {
         return `${openFormatted} - ${closeFormatted}`;
     }
 
+    /**
+     * Validate only the TIME portion against business hours.
+     * Date / blocked-date validation is handled separately by the DatePicker.
+     */
+    const isTimeWithinBusinessHours = (selectedDate) => {
+        if (!openingTime) return true; // no opening config → allow any time
+
+        const openStr = openingTime.open ?? openingTime.opening_time ?? openingTime.start ?? openingTime.start_time;
+        const closeStr = openingTime.close ?? openingTime.closing_time ?? openingTime.end ?? openingTime.end_time;
+        const openM = parseTimeToMinutes(openStr);
+        const closeM = parseTimeToMinutes(closeStr);
+        if (openM == null || closeM == null) return true;
+
+        const minutes = selectedDate.getHours() * 60 + selectedDate.getMinutes();
+
+        // Handle overnight ranges (e.g. 22:00 – 06:00)
+        if (closeM <= openM) {
+            return minutes >= openM || minutes < closeM;
+        }
+
+        return minutes >= openM && minutes < closeM;
+    };
+
     const handleChange = (_, selectedTime) => {
         if (selectedTime) {
-            // Validate with opening hours (use current date for comparison)
-            const nowDate = new Date();
-            const candidate = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), selectedTime.getHours(), selectedTime.getMinutes());
-
-            if (isOrderingAllowed && !isOrderingAllowed(candidate)) {
+            if (!isTimeWithinBusinessHours(selectedTime)) {
                 showToast?.(`Selected time is outside business hours (${getAllowedRangeString()})`, 'error');
                 // Do not set time if invalid
             } else {
@@ -66,7 +94,7 @@ const TimePicker = ({ onSelectTime }) => {
             {open && (
                 <Modal transparent animationType="slide">
                     <View className="flex-1 bg-black/30 justify-center">
-                        <View className="bg-white mx-4 rounded-lg overflow-hidden">
+                        {/* <View className="bg-white mx-4 rounded-lg overflow-hidden">
 
                             <View className="flex-row items-center justify-between p-3 border-b">
                                 <Text className="font-semibold text-lg">Select Time</Text>
@@ -75,13 +103,13 @@ const TimePicker = ({ onSelectTime }) => {
                                 </TouchableOpacity>
                             </View>
 
-                                    <DateTimePicker
-                                        mode="time"
-                                        value={new Date()}
-                                        onChange={handleChange}
-                                        is24Hour={false} // show AM/PM
-                                    />
-                        </View>
+                        </View> */}
+                        <DateTimePicker
+                            mode="time"
+                            value={new Date()}
+                            onChange={handleChange}
+                            is24Hour={false} // show AM/PM
+                        />
                     </View>
                 </Modal>
             )}

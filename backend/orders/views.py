@@ -119,6 +119,21 @@ class OrderViewSet(viewsets.ModelViewSet):
                     payment_type='full_payment',
                 )
         
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        order = self.get_object()
+
+        # Only the customer who owns the order (or staff) can cancel
+        if not request.user.is_staff and order.customer != request.user:
+            return Response({"error": "You do not have permission to cancel this order."}, status=status.HTTP_403_FORBIDDEN)
+
+        if order.status != 'unpaid':
+            return Response({"error": "Only unpaid orders can be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.status = 'cancelled'
+        order.save()
+        return Response({"message": "Order cancelled successfully."}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post'], url_path='batch-update')
     def batch_update(self, request):
         updated_count = 0

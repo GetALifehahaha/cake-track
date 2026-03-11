@@ -84,15 +84,15 @@ const Orders = () => {
 
 	return (
 		<SafeAreaView className='flex-1 bg-[#F5F5F5]'>
-			<View className='flex-row p-6 gap-2'>
+			<View className='flex-row p-6 gap-2 items-center'>
 				<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 rounded-full' />
 
 				<View className='flex-1'>
 					<View className='flex-row'>
-						<Text className='text-primary font-semibold text-2xl'>Cake</Text>
-						<Text className='text-secondary-strong font-semibold text-2xl'>Track</Text>
+						<Text className='text-primary font-semibold text-xl'>Cake</Text>
+						<Text className='text-secondary-strong font-semibold text-xl'>Track</Text>
 					</View>
-					<Text className='text-gray-500 font-bold text-lg'>Order Dashboard</Text>
+					<Text className='text-gray-500 font-bold text-md'>Order Dashboard</Text>
 				</View>
 
 				{/* Dynamic Stats Board */}

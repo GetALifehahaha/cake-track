@@ -9,6 +9,7 @@ const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
             <Dropdown
                 items={[
                     { label: 'Sprinkles', value: 'sprinkles' },
+                    { label: 'None', value: 'none' },
                 ]}
                 placeholder={"Select toppings"}
                 onChangeValue={setToppings}
@@ -22,6 +23,7 @@ const AddonPage = ({ toppings, setToppings, addOn, setAddOn }) => (
             <Dropdown
                 items={[
                     { label: 'Candle', value: 'candle' },
+                    { label: 'None', value: 'none' },
                 ]}
                 placeholder={"Select add-on"}
                 onChangeValue={setAddOn}

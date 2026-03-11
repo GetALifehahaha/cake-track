@@ -23,6 +23,7 @@ class Order(models.Model):
         ('rejected', 'Rejected'),
         ('ready', 'Ready'),
         ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
     ]
     
     created_at = models.DateTimeField(auto_now_add=True)

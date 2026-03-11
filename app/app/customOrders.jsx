@@ -1,12 +1,14 @@
 import './global.css';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
 import { CAKE_ASSETS as cakeImages } from './cakeImages';
+import { locationStore } from '@/utils/locationStore';
 import {
     AddonPage,
     CakeDetailPage,
@@ -33,7 +35,6 @@ const CustomOrders = () => {
     const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME
 
     const { user, loading: userLoading } = useContext(AuthContext);
-    const { selectedAddress } = useLocalSearchParams();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { showToast } = useToast();
     const { loading, error, postOrder } = useOrder();
@@ -93,12 +94,15 @@ const CustomOrders = () => {
         strawberry: 'straw',
     };
 
-    // Listen for address selected from locationPicker
-    useEffect(() => {
-        if (selectedAddress) {
-            setAddress(selectedAddress);
-        }
-    }, [selectedAddress]);
+    // Listen for address selected from locationPicker (via locationStore)
+    useFocusEffect(
+        useCallback(() => {
+            const addr = locationStore.consumeAddress();
+            if (addr) {
+                setAddress(addr);
+            }
+        }, [])
+    );
 
     useEffect(() => {
         if (!shape || !tier || shape === 'other') {
@@ -112,79 +116,49 @@ const CustomOrders = () => {
             return;
         }
 
-        // Each "tier" image is a full-cake illustration.
-        // tier1 = single-tier cake, tier2 = two-tier (overlays tier1), tier3 = three-tier (overlays tier1+2).
-        // Fillings, drips, pipings are also full-cake overlays at specific positions.
-        // Correct stacking: bases → fillings → borders → sprinkles (all sequential, NOT interleaved).
+        // Each "tier" image is a COMPLETE cake at that tier level.
+        // tier1 = 1-tier cake, tier2 = 2-tier cake (already includes bottom+middle),
+        // tier3 = 3-tier cake (already includes bottom+middle+top).
+        // So we only need ONE image per category (base, filling, piping, sprinkle)
+        // matching the selected tier — no position-based stacking needed.
 
-        const tierKeys = {
-            1: ['tier1'],
-            2: ['tier1', 'tier2'],
-            3: ['tier1', 'tier2', 'tier3'],
-        };
-
-        const positionKeys = {
-            1: ['bottom'],
-            2: ['bottom', 'middle'],
-            3: ['bottom', 'middle', 'top'],
-        };
-
-        const tierKeyList = tierKeys[tier] || ['tier1'];
-        const positions = positionKeys[tier] || ['bottom'];
+        const tierKey = `tier${tier}`; // e.g. 'tier1', 'tier2', 'tier3'
 
         let newLayers = [];
 
         if (page === 2 || page === 3) {
             // Pages 2-3: Yellow base + optional filling preview
-            // Push all bases first
-            tierKeyList.forEach(tierKey => {
-                const base = assets.bases?.[tierKey]?.yellow;
-                if (base) newLayers.push(base);
-            });
+            const base = assets.bases?.[tierKey]?.yellow;
+            if (base) newLayers.push(base);
 
-            // Page 3 only: show fillings on top of all bases
+            // Page 3 only: show filling on top of base
             if (page === 3 && filling) {
                 const fillKey = fillingKeyMap[filling] || filling;
-                positions.forEach(pos => {
-                    const fill = assets.fillings?.[pos]?.[fillKey];
-                    if (fill) newLayers.push(fill);
-                });
+                const fill = assets.fillings?.[tierKey]?.[fillKey];
+                if (fill) newLayers.push(fill);
             }
 
         } else if (page >= 4) {
             // Page 4+: Coating color replaces yellow. Fillings are hidden by coating.
             const activeCoating = coatingColor || 'yellow';
 
-            // 1. All bases
-            tierKeyList.forEach(tierKey => {
-                const base = assets.bases?.[tierKey]?.[activeCoating];
-                if (base) newLayers.push(base);
-            });
+            // 1. Base for the selected tier
+            const base = assets.bases?.[tierKey]?.[activeCoating];
+            if (base) newLayers.push(base);
 
-            // 2. Borders (piping or drip) — on top of all bases
+            // 2. Borders (piping or drip) — on top of the base
             if (border) {
                 if (border === 'piping' && borderColor) {
-                    // Round: pipings per tier; Sheet: no piping assets exist
-                    tierKeyList.forEach(tierKey => {
-                        const pipe = assets.pipings?.[tierKey]?.[borderColor];
-                        if (pipe) newLayers.push(pipe);
-                    });
-                } else if (border === 'drip' && borderColor) {
-                    // Sheet: drips per position (bottom/middle/top)
-                    if (shape === 'sheet') {
-                        positions.forEach(pos => {
-                            const drip = assets.drips?.[pos]?.[borderColor];
-                            if (drip) newLayers.push(drip);
-                        });
-                    }
-                    // Round: no drip border assets
+                    const pipe = assets.pipings?.[tierKey]?.[borderColor];
+                    if (pipe) newLayers.push(pipe);
                 }
+                // drips/ border overlay folder is currently empty — piping overlays only for now
             }
 
-            // 3. Sprinkles — on top of everything
+            // 3. Sprinkles — variant matches the border type (drip or pipe)
             if (page >= 5 && toppings === 'sprinkles') {
-                const topTierKey = tierKeyList[tierKeyList.length - 1];
-                const sprinkle = assets.sprinkles?.pipe?.[topTierKey];
+                const sprinkleVariant = border === 'drip' ? 'drip' : 'pipe';
+                const sprinkle = assets.sprinkles?.[sprinkleVariant]?.[tierKey];
                 if (sprinkle) newLayers.push(sprinkle);
             }
         }
