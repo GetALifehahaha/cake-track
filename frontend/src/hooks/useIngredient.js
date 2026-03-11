@@ -24,6 +24,7 @@ export default function useIngredient() {
                 ["ingredient-fetch-all"],
                 ["ingredient-dashboard"],
                 ["inventory-transactions"],
+                ["recipes"],
             ],
         },
     );

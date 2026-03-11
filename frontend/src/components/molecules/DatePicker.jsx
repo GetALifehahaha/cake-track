@@ -25,7 +25,7 @@ const DatePicker = ({ selected, onSelect, className }) => {
           <CalendarIcon className="ml-auto" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-main border-main-dark">
+      <PopoverContent side="bottom" align="start" avoidCollisions={false} className="w-auto p-0 bg-main border-main-dark">
         <Calendar className="" mode="single" selected={selected} onSelect={(value) => onSelect(value)} />
       </PopoverContent>
     </Popover>

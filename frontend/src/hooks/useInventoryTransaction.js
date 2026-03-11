@@ -14,6 +14,7 @@ export default function useInventoryTransaction() {
                 ["ingredient-fetch-all"],
                 ["ingredient-dashboard"],
                 ["inventory-transactions"],
+                ["recipes"],
             ],
         });
 
