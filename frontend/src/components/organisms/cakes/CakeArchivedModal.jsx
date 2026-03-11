@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../atoms';
-import { ModalBody, ProductCard } from '../../molecules';
+import { ModalBody, ProductCard, ModalErrorState } from '../../molecules';
 import useCakes from '@/hooks/useCakes';
 import ConfirmationModal from '../ConfirmationModal'; // Assuming this exists based on context
 import Loading from '../../molecules/Loading';
@@ -8,11 +8,11 @@ import { ArchivesSkeleton } from '@/components/molecules/Skeletons';
 
 const CakeArchivedModal = ({ onRestore, onClose }) => {
     const [selectedId, setSelectedId] = useState([]);
-    const { data: cakeData, loading: cakeLoading, error: cakeError } = useCakes({ isArchived: true });
+    const { data: cakeData, loading: cakeLoading, error: cakeError, refresh } = useCakes({ isArchived: true });
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     if (cakeLoading) return <ArchivesSkeleton title='Archived Cakes' subtitle='View and manage your archived cakes. You can restore or permanently delete them' onClose={onClose} />
-    if (cakeError) return <h5>Error loading archived cakes</h5>;
+    if (cakeError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load archived cakes' details='Unable to fetch archived cakes right now.' />;
 
     const handleSetSelectedId = (id) => {
         if (selectedId.some((select) => select === id)) {

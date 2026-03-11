@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ModalFeedbackCard } from '../../molecules';
+import { ModalFeedbackCard, ModalErrorState } from '../../molecules';
 import { Button } from '../../atoms';
 import { X, UtensilsCrossed, Info, List, Search } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
@@ -9,7 +9,7 @@ import { RecipeModalSkeleton } from '@/components/molecules/Skeletons';
 import { getUnitOptions, getDefaultRecipeUnit, toStorageUnit } from '@/utils/unitConversion';
 
 const AddRecipeModal = ({ onClose, onConfirm }) => {
-    const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
+    const { ingredientAll, ingredientLoading, ingredientError, refresh } = useIngredient();
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
     const [instructions, setInstructions] = useState('');
@@ -25,7 +25,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
     };
 
     if (ingredientLoading) return <RecipeModalSkeleton onClose={onClose} />;
-    if (ingredientError) return <h5>Error...</h5>;
+    if (ingredientError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load ingredients' details='Unable to load ingredients for recipe creation.' />;
 
     const toggleConfirmationModal = () => setConfirmationModal(prev => !prev);
 

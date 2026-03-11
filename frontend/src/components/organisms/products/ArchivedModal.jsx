@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Label, Title } from '../../atoms';
 import { X } from 'lucide-react';
-import { ModalBody, ProductCard } from '../../molecules';
+import { ModalBody, ProductCard, ModalErrorState } from '../../molecules';
 import useProduct from '@/hooks/useProduct';
 import ConfirmationModal from '../ConfirmationModal';
 import Loading from '../../molecules/Loading';
@@ -10,11 +10,11 @@ import { ArchivesSkeleton } from '@/components/molecules/Skeletons';
 const ArchivedModal = ({onRestore, onClose}) => {
 
     const [selectedId, setSelectedId] = useState([]);
-    const {data: productData, loading: productLoading, error: productError} = useProduct({isArchived: true});
+    const {data: productData, loading: productLoading, error: productError, refresh} = useProduct({isArchived: true});
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     if (productLoading) return <ArchivesSkeleton title='Archived Products' subtitle='View and manage your archived products. You can restore or permanently delete them' onClose={onClose} />
-    if (productError) return <h5>Error loading product data</h5>
+    if (productError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load archived products' details='Unable to fetch archived products right now.' />
 
     
     const handleSetSelectedId = (id) => {

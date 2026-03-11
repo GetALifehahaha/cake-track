@@ -4,6 +4,7 @@ import { Download, Printer, X, LayoutList, ReceiptText } from 'lucide-react';
 import { formatToDecimal } from '@/utils/formatToDecimal';
 import useBusinessDetails from '@/hooks/useBusinessDetails';
 import Loading from '@/components/molecules/Loading';
+import { ModalErrorState } from '@/components/molecules';
 import { useReactToPrint } from 'react-to-print';
 
 const TransactionDetails = ({ transactionDetail, onClose }) => {
@@ -64,7 +65,7 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
     };
 
     if (loading) return <Loading />;
-    if (error) return <h5>Error</h5>;
+    if (error) return <ModalErrorState onClose={onClose} title='Failed to load transaction details' details='Unable to load required business details for this transaction.' />;
 
     const renderReceiptView = () => (
         <div className='max-h-[80vh] overflow-y-auto mx-auto p-6 text-sm w-md flex flex-col justify-between'>
