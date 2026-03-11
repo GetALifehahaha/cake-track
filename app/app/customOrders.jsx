@@ -1,5 +1,5 @@
 import './global.css';
-import { useContext, useEffect, useState, useCallback } from 'react';
+import { useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
@@ -7,6 +7,7 @@ import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
+import { captureRef } from 'react-native-view-shot';
 import { CAKE_ASSETS as cakeImages } from './cakeImages';
 import { locationStore } from '@/utils/locationStore';
 import {
@@ -68,6 +69,9 @@ const CustomOrders = () => {
     const [email, setEmail] = useState(user?.email || '');
     const [contactNumber, setContactNumber] = useState('');
     const [agreeToTOC, setAgreeToTOC] = useState(false);
+
+    // Ref to capture the cake preview as a single image
+    const cakePreviewRef = useRef();
 
     const pageTitles = [
         'Cake Details',
@@ -151,8 +155,10 @@ const CustomOrders = () => {
                 if (border === 'piping' && borderColor) {
                     const pipe = assets.pipings?.[tierKey]?.[borderColor];
                     if (pipe) newLayers.push(pipe);
+                } else if (border === 'drip' && borderColor) {
+                    const drip = assets.drips?.[tierKey]?.[borderColor];
+                    if (drip) newLayers.push(drip);
                 }
-                // drips/ border overlay folder is currently empty — piping overlays only for now
             }
 
             // 3. Sprinkles — variant matches the border type (drip or pipe)
@@ -190,14 +196,19 @@ const CustomOrders = () => {
 
             let imagesToUpload = [...images];
 
-            // if (!personallyDesign && customDisplay) {
-            //     // Resolve the local asset ID (e.g., "1") to a real URI (e.g., "http://.../assets/cake.png")
-            //     const asset = Image.resolveAssetSource(customDisplay);
-            //     if (asset.uri) {
-            //         // Prepend it so it becomes the 'main' image
-            //         imagesToUpload.unshift(asset.uri);
-            //     }
-            // }
+            // Capture the layered cake preview as a single image
+            if (!personallyDesign && customLayers.length > 0 && cakePreviewRef.current) {
+                try {
+                    const cakeUri = await captureRef(cakePreviewRef, {
+                        format: 'png',
+                        quality: 1,
+                    });
+                    // Prepend the cake preview so it becomes the main/first image
+                    imagesToUpload.unshift(cakeUri);
+                } catch (captureErr) {
+                    console.warn('Could not capture cake preview:', captureErr);
+                }
+            }
 
             // 1. Upload Image if it exists
             if (imagesToUpload.length > 0) {
@@ -596,7 +607,7 @@ const CustomOrders = () => {
                                 shape === "other" ? (
                                     <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
                                 ) : customLayers.length > 0 ? (
-                                    <View style={{ width: 200, height: 200 }}>
+                                    <View ref={cakePreviewRef} collapsable={false} style={{ width: 200, height: 200 }}>
                                         {customLayers.map((layerSource, index) => (
                                             <Image 
                                                 key={index} 

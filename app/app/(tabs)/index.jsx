@@ -6,7 +6,7 @@ import { OpeningContext } from '@/context/OpeningContext'
 import Carousel from 'react-native-reanimated-carousel';
 import { Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import { Star, ArrowRight, TrendingUp } from 'lucide-react-native'; // Ensure you have lucide-react-native installed
+import { Star, ArrowRight, TrendingUp } from 'lucide-react-native';
 import api from '@/api/api';
 
 const { width } = Dimensions.get('window');
@@ -15,7 +15,6 @@ export default function Index() {
     const { user, loading } = useContext(AuthContext)
     const { openingTime, blockedDates, loading: loadingOpening } = useContext(OpeningContext)
 
-    // --- DATA ---
     const [cakes, setCakes] = useState([]);
     const [loadingCakes, setLoadingCakes] = useState(true);
 
@@ -23,7 +22,6 @@ export default function Index() {
         const fetchCakes = async () => {
             try {
                 const response = await api.get('/orders/cakes/');
-                // Check if backend returns paginated results or a plain array
                 const data = response.data.results || response.data;
                 setCakes(data);
             } catch (error) {
@@ -66,19 +64,13 @@ export default function Index() {
         }
     ];
 
-    // --- NEW DATA FOR ADS & BEST SELLERS ---
-    // const promotions = [
-    //     { id: 1, title: "Wedding Bundle", discount: "20% OFF", bg: require('@/assets/images/carousel-backgrounds/carousel-1.png') },
-    //     { id: 2, title: "Cupcake Party", discount: "Buy 1 Get 1", bg: require('@/assets/images/carousel-backgrounds/carousel-2.png') },
-    //     { id: 3, title: "Coffee Pair", discount: "₱50 OFF", bg: require('@/assets/images/carousel-backgrounds/carousel-3.png') },
-    // ]
-
-    // const bestSellers = [
-    //     { name: "Chocolate Moist Cake", price: "₱800", rating: 4.9, image: require('@/assets/images/premade-cakes/chocolate-cake.png') },
-    //     { name: "Strawberry Cake", price: "₱700", rating: 4.8, image: require('@/assets/images/premade-cakes/strawberry.png') },
-    //     { name: "Mocha Cake", price: "₱750", rating: 4.7, image: require('@/assets/images/premade-cakes/mocha.png') },
-    // ]
-
+    // const customBanners = [
+    //     { id: 1, image: require('@/assets/images/banners/banner1.png') },
+    //     { id: 2, image: require('@/assets/images/banners/banner2.png') },
+    //     { id: 3, image: require('@/assets/images/banners/banner3.png') },
+    //     { id: 4, image: require('@/assets/images/banners/banner4.png') },
+    //     { id: 5, image: require('@/assets/images/banners/banner5.png') },
+    // ];
 
     if (loading || loadingOpening) return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -89,12 +81,14 @@ export default function Index() {
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
             <View className='bg-[#8B5A3C] flex-1'>
-                <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>Greetings, {!user && 'Guest'} {user?.first_name || ''} {user?.last_name || ''}</Text>
+                <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
+                    Greetings, {!user && 'Guest'} {user?.first_name || ''} {user?.last_name || ''}
+                </Text>
                 <View className='bg-white w-full mt-auto rounded-t-[2rem] min-h-screen'>
                     
-                    {/* Header (UNCHANGED) */}
+                    {/* Header */}
                     <View className='p-6 w-full flex-row gap-2 items-center'>
-                        <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 ' />
+                        <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-square w-16 h-16 ' />
                         <View className=''>
                             <Text className='text-[#474747] text-3xl font-bold'>Michelle's Cake & Cafe</Text>
                             <View className='flex-row'>
@@ -104,7 +98,7 @@ export default function Index() {
                         </View>
                     </View>
 
-                    {/* Carousel (UNCHANGED) */}
+                    {/* Carousel */}
                     <View className="items-center justify-center mt-4">
                         <Carousel
                             loop={true}
@@ -156,7 +150,7 @@ export default function Index() {
                         />
                     </View>
 
-                    {/* Premade Cakes (UNCHANGED) */}
+                    {/* Premade Cakes */}
                     <View className='relative mb-4'>
                         <Text className='font-extrabold text-lg px-6 py-4 text-[#8B5A3C]'>
                             Pre-made Cakes
@@ -199,81 +193,107 @@ export default function Index() {
                         />
                     </View>
 
-                    {/* --- START OF MODIFIED SECTIONS --- */}
+                    {/* Best Creations Banners */}
+                    {/* <View className='px-6 mb-10'>
+                        {customBanners.map((banner) => (
+                            <TouchableOpacity 
+                                key={banner.id} 
+                                className='w-full h-40 mb-4 rounded-2xl overflow-hidden shadow-sm border border-gray-100'
+                                activeOpacity={0.9}
+                                onPress={() => router.push('/customOrders')}
+                            >
+                                <Image source={banner.image} className='w-full h-full' resizeMode='cover' />
+                            </TouchableOpacity>
+                        ))}
+                    </View> */}
 
-                    {/* 1. More Ads (Now "Promotions") */}
-                    <View className='bg-[#FFFBF0] py-6 my-4'>
-                        <View className='flex-row items-center justify-between px-6 mb-4'>
-                            <Text className='font-extrabold text-lg text-[#8B5A3C]'>Hot Deals!</Text>
-                            <TouchableOpacity>
-                                <Text className='text-[#BE9B7B] text-xs font-bold'>See All</Text>
+                    {/* Best Creations Banners (Hardcoded Temporarily) */}
+                    <View className='mb-10 mt-4'>
+                        <View className='flex-row justify-between items-center px-6 mb-4'>
+                            <Text className='font-extrabold text-lg text-black'>Best Creations!</Text>
+                            <TouchableOpacity onPress={() => router.push('/customOrders')}>
+                                <Text className='text-[#8B5A3C] font-bold text-sm'>Customize Now</Text>
                             </TouchableOpacity>
                         </View>
-                        
-                        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-                            {promotions.map((promo, index) => (
-                                <TouchableOpacity key={index} className='w-72 h-36 rounded-2xl overflow-hidden relative shadow-sm'>
-                                    <ImageBackground source={promo.bg} className='w-full h-full justify-center px-6' resizeMode='cover'>
-                                        <View className='absolute inset-0 bg-black/20' /> 
-                                        
-                                        <View className='bg-red-500 self-start px-2 py-1 rounded-md mb-2'>
-                                            <Text className='text-white text-[10px] font-bold'>{promo.discount}</Text>
-                                        </View>
-                                        <Text className='text-white font-bold text-xl'>{promo.title}</Text>
-                                        <View className='flex-row items-center mt-2'>
-                                            <Text className='text-white font-medium text-xs mr-1'>Claim Offer</Text>
-                                            <ArrowRight size={12} color="white" />
-                                        </View>
-                                    </ImageBackground>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView> */}
+
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
+                            {/* Card 1: All Occasions */}
+                            <TouchableOpacity className='w-80 h-48 bg-[#FAF6F0] rounded-2xl p-6 justify-center shadow-sm border border-gray-100' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
+                                <Text className='text-[#8B5A3C] font-bold text-xs mb-2'>Customize Now!</Text>
+                                <Text className='text-[#6B4423] font-extrabold text-xl leading-tight w-2/3'>Customize Cakes For All Occasions</Text>
+                                <Text className='text-gray-500 text-xs mt-2 w-2/3'>Make every occasion special with custom cake designs</Text>
+                                <View className='bg-[#6B4423] py-2 px-6 rounded-full self-start mt-4'>
+                                    <Text className='text-white font-bold text-xs'>Order Now</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Card 2: Debut */}
+                            <TouchableOpacity className='w-80 h-48 bg-[#F2D8D8] rounded-2xl p-6 justify-center shadow-sm border border-gray-100 items-end text-right' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
+                                <Text className='text-white font-bold text-xs mb-1'>Celebrate every Debut!</Text>
+                                <Text className='text-[#A31621] font-extrabold text-xl'>Elegant. Memorable.</Text>
+                                <Text className='text-[#D93843] font-bold text-lg italic'>Made for her alone!</Text>
+                                <Text className='text-gray-600 text-xs mt-1'>Make it unforgettable!</Text>
+                                <View className='bg-[#E57A74] py-2 px-6 rounded-full mt-4'>
+                                    <Text className='text-white font-bold text-xs'>Customize Now</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Card 3: Birthday */}
+                            <TouchableOpacity className='w-80 h-48 bg-[#D3E3FD] rounded-2xl p-6 justify-center shadow-sm border border-gray-100' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
+                                <Text className='text-white font-bold text-xs mb-2'>Birthday Surprises!</Text>
+                                <Text className='text-[#0B3A9A] font-extrabold text-2xl leading-tight'>Celebrate loud</Text>
+                                <Text className='text-[#4B7BF5] font-extrabold text-2xl leading-tight'>Slice proud</Text>
+                                <Text className='text-gray-600 text-xs mt-2'>For every wish, at every age.</Text>
+                                <View className='bg-[#7FA9F6] py-2 px-6 rounded-full self-start mt-4'>
+                                    <Text className='text-white font-bold text-xs'>Order Now</Text>
+                                </View>
+                            </TouchableOpacity>
+                            
+                            {/* Card 4: Christening */}
+                            <TouchableOpacity className='w-80 h-48 bg-[#FAD9DE] rounded-2xl p-6 justify-center shadow-sm border border-gray-100 items-end' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
+                                <Text className='text-white font-bold text-xs mb-2'>Christenings!</Text>
+                                <Text className='text-white font-extrabold text-xl'>A Blessed Welcome</Text>
+                                <Text className='text-[#F4C974] font-bold text-lg italic'>For the little Blessing</Text>
+                                <Text className='text-[#9C5A63] text-xs mt-2'>Order a Christening Cake!</Text>
+                                <View className='bg-[#F19692] py-2 px-6 rounded-full mt-4'>
+                                    <Text className='text-white font-bold text-xs'>Customize Now</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Card 5: Graduation */}
+                            <TouchableOpacity className='w-80 h-48 bg-[#FDF0D5] rounded-2xl p-6 justify-center shadow-sm border border-gray-100' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
+                                <Text className='text-[#A37B00] font-bold text-xs mb-2'>Graduation here we are!</Text>
+                                <Text className='text-[#F2B007] font-extrabold text-2xl'>A Milestone</Text>
+                                <Text className='text-black font-extrabold text-2xl'>To Remember...</Text>
+                                <Text className='text-black font-bold text-xs mt-2'>Cheers to the journey!</Text>
+                                <View className='bg-[#F2B007] py-2 px-6 rounded-full self-start mt-4'>
+                                    <Text className='text-white font-bold text-xs'>Order Now</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
 
-                    {/* 2. Best Sellers (New Carousel) */}
-                    <View className='mb-20'>
-                        <View className='flex-row items-center px-6 mb-2 gap-2'>
-                            <Text className='font-extrabold text-lg text-[#8B5A3C]'>Best Sellers</Text>
-                            <TrendingUp size={20} color="#8B5A3C" />
+                    {/* Footer */}
+                    <View className='bg-[#F9F9F9] px-6 py-8 border-t border-gray-200'>
+                        <Text className='font-bold text-lg text-[#474747] mb-2'>Michelle's Cake & Cafe</Text>
+                        <Text className='text-gray-500 text-xs mb-6'>Making your sweet moments unforgettable with custom and pre-made cakes baked with love.</Text>
+                        
+                        <View className='flex-row flex-wrap justify-between'>
+                            <View className='w-1/2 mb-4'>
+                                <Text className='font-bold text-[#8B5A3C] mb-3'>Support</Text>
+                                <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Contact Us</Text></TouchableOpacity>
+                                <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>FAQ</Text></TouchableOpacity>
+                                <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Track Order</Text></TouchableOpacity>
+                            </View>
+                            <View className='w-1/2 mb-4'>
+                                <Text className='font-bold text-[#8B5A3C] mb-3'>Company</Text>
+                                <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>About Us</Text></TouchableOpacity>
+                                <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Terms of Service</Text></TouchableOpacity>
+                                <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity>
+                            </View>
                         </View>
-                        <Text className='px-6 text-gray-500 text-xs mb-4'>Customer favorites you can't miss</Text>
-
-                        {/* <Carousel
-                            loop={true}
-                            width={width}
-                            height={240}
-                            data={bestSellers}
-                            scrollAnimationDuration={800}
-                            mode="parallax"
-                            modeConfig={{
-                                parallaxScrollingScale: 0.9,
-                                parallaxScrollingOffset: 60,
-                            }}
-                            renderItem={({ item }) => (
-                                <View className="flex-1 justify-center items-center">
-                                    <View className="w-full h-full bg-white rounded-3xl p-4 flex-row items-center shadow-sm border border-gray-100">
-                                        
-                                        <View className='w-1/2 h-full justify-center items-center'>
-                                            <Image source={item.image} className='w-32 h-32' resizeMode='contain' />
-                                        </View>
-
-                                        <View className='w-1/2 h-full justify-center pr-2'>
-                                            <View className='flex-row items-center gap-1 mb-1'>
-                                                <Star size={14} color="#FBBF24" fill="#FBBF24" />
-                                                <Text className='text-xs font-bold text-gray-600'>{item.rating} (200+)</Text>
-                                            </View>
-                                            
-                                            <Text className='font-bold text-lg text-[#4A4A4A] mb-1 leading-5'>{item.name}</Text>
-                                            <Text className='font-extrabold text-xl text-[#8B5A3C] mb-3'>{item.price}</Text>
-
-                                            <TouchableOpacity className='bg-[#8B5A3C] py-2 px-4 rounded-full self-start' onPress={() => router.push('/cakeOrders')}>
-                                                <Text className='text-white font-bold text-xs'>Add to Cart</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                </View>
-                            )}
-                        /> */}
+                        
+                        <Text className='text-center text-gray-400 text-[10px] mt-8'>© 2026 Michelle's Cake & Cafe. All rights reserved.</Text>
                     </View>
                     
                 </View>

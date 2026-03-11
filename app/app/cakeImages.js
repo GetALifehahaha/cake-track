@@ -109,7 +109,20 @@ export const CAKE_ASSETS = {
         straw: require('../assets/cakes/sheet/fillings/tier 3/straw.png'),
       },
     },
-    // drips/ folder is currently empty — add entries here when assets are added
+    drips: {
+      tier1: {
+        black: require('../assets/cakes/sheet/drips/tier 1/black.png'),
+        white: require('../assets/cakes/sheet/drips/tier 1/white.png'),
+      },
+      tier2: {
+        black: require('../assets/cakes/sheet/drips/tier 2/black.png'),
+        white: require('../assets/cakes/sheet/drips/tier 2/white.png'),
+      },
+      tier3: {
+        black: require('../assets/cakes/sheet/drips/tier 3/black.png'),
+        white: require('../assets/cakes/sheet/drips/tier 3/white.png'),
+      },
+    },
     sprinkles: {
       drip: {
         tier1: require('../assets/cakes/sheet/sprinkles/drip/Drip TIER 1 S.png'),
