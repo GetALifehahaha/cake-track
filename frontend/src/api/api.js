@@ -8,6 +8,14 @@ const api = axios.create({
     baseURL: url
 })
 
+const PUBLIC_AUTH_PATHS = ['/login', '/forgotPassword', '/setAccount'];
+
+const isOnPublicAuthPage = () => {
+    if (typeof window === 'undefined') return false;
+    const currentPath = window.location?.pathname || '';
+    return PUBLIC_AUTH_PATHS.some(path => currentPath.startsWith(path));
+}
+
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem(ACCESS_TOKEN)
@@ -45,7 +53,9 @@ api.interceptors.response.use(
                 if (isSessionValid()) {
                     return Promise.reject({offline: true, message: "Device is currently offline. Activating offline mode..."})
                 } else {
-                    window.dispatchEvent(new CustomEvent('auth:logout'))
+                    if (!isOnPublicAuthPage()) {
+                        window.dispatchEvent(new CustomEvent('auth:logout'))
+                    }
                     return Promise.reject({sessionExpired: true})
                 }
             } 
@@ -68,7 +78,9 @@ api.interceptors.response.use(
             if (!refresh || isTokenExpired(refresh, 0)) {
                 localStorage.removeItem(ACCESS_TOKEN)
                 localStorage.removeItem(REFRESH_TOKEN)
-                window.dispatchEvent(new CustomEvent('auth:logout'))
+                if (!isOnPublicAuthPage()) {
+                    window.dispatchEvent(new CustomEvent('auth:logout'))
+                }
                 isRefreshing = false;
                 return Promise.reject(error)
             }
@@ -92,7 +104,9 @@ api.interceptors.response.use(
 
             } catch (error) {
                 processPendingQueue(error, null);
-                window.dispatchEvent(new CustomEvent('auth:logout'))
+                if (!isOnPublicAuthPage()) {
+                    window.dispatchEvent(new CustomEvent('auth:logout'))
+                }
                 localStorage.removeItem(ACCESS_TOKEN)
                 localStorage.removeItem(REFRESH_TOKEN)
                 return Promise.reject(error)
