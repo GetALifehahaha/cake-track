@@ -5,10 +5,12 @@ import useMutate from "./useMutate";
 import useQueryFetch from "./useQueryFetch";
 import { saveTransaction, getTransactions, markSynced, markSyncError, countUnsynced } from "@/services/db";
 import api from "@/api/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function useTransaction() {
     const [searchParams] = useSearchParams();
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const { user } = useAuth();
 
     useEffect(() => {
         const on = () => setIsOnline(true);
@@ -27,12 +29,13 @@ export default function useTransaction() {
     }, [searchParams]);
 
     const transactionQuery = useQueryFetch(
-        "transactions",
+        ["transactions", user?.id ?? "guest"],
         isOnline ? API_ENDPOINTS.TRANSACTIONS : null,
-        apiParams
+        apiParams,
+        { keepPreviousData: false }
     );
     const { create, update, remove, loading: mutateLoading, error: mutateError } =
-        useMutate("transactions");
+        useMutate(["transactions", user?.id ?? "guest"]);
 
     const [unsyncedCount, setUnsyncedCount] = useState(0);
     const [isSyncing, setIsSyncing] = useState(false);

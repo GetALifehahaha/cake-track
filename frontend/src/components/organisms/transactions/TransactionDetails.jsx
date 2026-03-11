@@ -200,8 +200,12 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                             onClick={() => setIsReceiptView(!isReceiptView)} 
                         />
                     )}
-                    <Button text='' variant='modalOutline' size='fit' icon={Printer} onClick={handlePrint} />
-                    <Button text='' variant='modalBlock' size='fit' icon={Download} onClick={handleDownload} />
+                    {!transactionDetail?.is_void && (
+                        <Button text='' variant='modalOutline' size='fit' icon={Printer} onClick={handlePrint} />
+                    )}
+                    {!transactionDetail?.is_void && (
+                        <Button text='' variant='modalBlock' size='fit' icon={Download} onClick={handleDownload} />
+                    )}
                 </div>
             </div>
         </div>

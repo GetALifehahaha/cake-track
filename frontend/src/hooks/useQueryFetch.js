@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
 
-const useQueryFetch = (key, url, params) => {
+const useQueryFetch = (key, url, params, options = {}) => {
+    const { keepPreviousData = true } = options;
+    const normalizedKey = Array.isArray(key) ? key : [key];
+
     return useQuery({
-        queryKey: [key, {params}],
+        queryKey: [...normalizedKey, { params }],
         queryFn: () => api.get(url, { params }).then(res => res.data),
-        placeholderData: previousData => previousData,
+        placeholderData: keepPreviousData ? (previousData => previousData) : undefined,
         staleTime: 10 * 60 * 1000
     });
 }

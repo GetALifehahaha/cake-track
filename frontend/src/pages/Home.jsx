@@ -218,6 +218,39 @@ const Home = () => {
 
     const completePayment = async (value) => {
         if (value) {
+            // Validation
+            if (!checkoutProducts || checkoutProducts.length === 0) {
+                setModalFeedbackContent({ type: "error", label: "No Items", details: "Add at least one product before completing a transaction." });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            const invalidItem = checkoutProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
+            if (invalidItem) {
+                setModalFeedbackContent({ type: "error", label: "Invalid Item", details: `Item "${invalidItem.name || 'Unknown'}" is missing required details (variant or quantity).` });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            if (!orderType) {
+                setModalFeedbackContent({ type: "error", label: "Missing Order Type", details: "Please select an order type (Dine In or Take Out) before proceeding." });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            const parsedValue = parseFloat(value);
+            if (isNaN(parsedValue) || parsedValue <= 0) {
+                setModalFeedbackContent({ type: "error", label: "Invalid Payment", details: "Please enter a valid payment amount." });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            if (parsedValue < netTotal) {
+                setModalFeedbackContent({ type: "error", label: "Insufficient Payment", details: "The payment amount is less than the total due." });
+                setShowModalFeedback(true);
+                return;
+            }
+
             const checkoutProductsPayload = checkoutProducts.map(p => ({
                 product: p.id,
                 product_variant: p.variant_id,
@@ -229,7 +262,7 @@ const Home = () => {
                 payment_method: "cash",
                 order_type: orderType,
                 transaction_items: checkoutProductsPayload,
-                paid_amount: parseFloat(value),
+                paid_amount: parsedValue,
                 discount: discount,
             })
 
@@ -252,6 +285,25 @@ const Home = () => {
     }
 
     const voidPayment = async () => {
+        if (!voidProducts || voidProducts.length === 0) {
+            setModalFeedbackContent({ type: "error", label: "No Items", details: "Select at least one item to void." });
+            setShowModalFeedback(true);
+            return;
+        }
+
+        const invalidVoidItem = voidProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
+        if (invalidVoidItem) {
+            setModalFeedbackContent({ type: "error", label: "Invalid Item", details: `Item "${invalidVoidItem.name || 'Unknown'}" is missing required details and cannot be voided.` });
+            setShowModalFeedback(true);
+            return;
+        }
+
+        if (!orderType) {
+            setModalFeedbackContent({ type: "error", label: "Missing Order Type", details: "Order type is missing. Cannot process the void." });
+            setShowModalFeedback(true);
+            return;
+        }
+
         const voidProductsPayload = voidProducts.map(p => ({
             product: p.id,
             product_variant: p.variant_id,
