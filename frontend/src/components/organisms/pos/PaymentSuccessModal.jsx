@@ -23,7 +23,7 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
     const paidAmount = toAmount(transactionData?.paid_amount, toAmount(amountReceived, 0));
     const vatAmount = grossTotal * 0.12;
     const changeAmount = toAmount(transactionData?.change, paidAmount - netTotal);
-    const transactionId = transactionData?.display_id || transactionData?.id || 'N/A';
+    const transactionId = transactionData?.is_local ? '' : (transactionData?.display_id || transactionData?.id || '');
 
     const handlePrint = useReactToPrint({
         contentRef: contentRef,

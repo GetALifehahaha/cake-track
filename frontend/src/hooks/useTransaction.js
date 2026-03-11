@@ -70,9 +70,19 @@ export default function useTransaction() {
         }
 
         // Fallback to local storage if offline or if a network error occurs
+        const created_at = new Date().toISOString();
         const local_id = await saveTransaction(params);
         await refreshUnsyncedCount();
-        return { source: "local", local_id };
+        return {
+            source: "local",
+            local_id,
+            data: {
+                ...params,
+                id: local_id,
+                local_id,
+                created_at,
+            },
+        };
     };
 
     const syncOfflineTransactions = async () => {

@@ -9,6 +9,7 @@ import useTransaction from '@/hooks/useTransaction'
 import useCategory from '@/hooks/useCategory'
 import useDiscount from '@/hooks/useDiscount'
 import { useToast } from '@/context/ToastContext'
+import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/utils/cn'
 import Modal from '@/components/molecules/Modal'
 import useBusinessDetails from '@/hooks/useBusinessDetails'
@@ -16,6 +17,7 @@ import useBusinessDetails from '@/hooks/useBusinessDetails'
 const Home = () => {
 
     const { addToast } = useToast();
+    const { user } = useAuth();
 
     const [searchParams, setSearchParams] = useSearchParams();
     const {data: productData, loading: productLoading, error: productError} = useProduct();
@@ -259,6 +261,8 @@ const Home = () => {
                 quantity: p.amount,
             }))
 
+            const selectedDiscount = discountData.find(d => d.id === discount);
+
             const transactionResponse = await postTransaction({
                 is_void: false,
                 payment_method: "cash",
@@ -268,7 +272,38 @@ const Home = () => {
                 discount: discount,
             })
 
-            setCompletedTransaction(transactionResponse?.data ?? null);
+            const localReceiptTransaction = {
+                id: null,
+                display_id: '',
+                is_local: true,
+                created_at: transactionResponse?.data?.created_at || new Date().toISOString(),
+                is_void: false,
+                payment_method: "cash",
+                order_type: orderType,
+                gross_total: grossTotal,
+                net_total: netTotal,
+                paid_amount: parsedValue,
+                change: parsedValue - netTotal,
+                discount: selectedDiscount || null,
+                cashier: {
+                    first_name: user?.first_name || '',
+                    last_name: user?.last_name || '',
+                },
+                transaction_items: checkoutProducts.map(p => ({
+                    quantity: p.amount,
+                    product: {
+                        id: p.id,
+                        name: p.name,
+                    },
+                    product_variant: {
+                        id: p.variant_id,
+                        label: p.label,
+                        price: p.price,
+                    },
+                })),
+            };
+
+            setCompletedTransaction(transactionResponse?.source === "server" ? (transactionResponse?.data ?? null) : localReceiptTransaction);
             setReceivedPayment(transactionResponse?.data?.paid_amount ?? parsedValue);
             setShowPaymentSuccessModal(true);
             removeAllProducts();
