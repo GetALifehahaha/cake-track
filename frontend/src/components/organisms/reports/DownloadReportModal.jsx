@@ -16,6 +16,7 @@ const DownloadReportModal = ({ onConfirm, onClose }) => {
         rejected: false,
 
         products_sold_trend: false,
+        revenue_trend: false,
         top_selling_products: false,
 
         cashier_data: false
@@ -26,7 +27,7 @@ const DownloadReportModal = ({ onConfirm, onClose }) => {
     const groups = {
         sales_data: ['voided_transactions', 'total_transactions', 'products_sold', 'avg_daily_orders', 'total_revenue'],
         order_status: ['total_orders', 'pending', 'completed', 'rejected'],
-        products_data: ['products_sold_trend', 'top_selling_products'],
+        products_data: ['products_sold_trend', 'revenue_trend', 'top_selling_products'],
         cashier_data: ['cashier_data'],
     };
 

@@ -129,6 +129,16 @@ const Reports = () => {
             csvContent += "\n";
         }
 
+        // --- Revenue Trend ---
+        if (selected.includes('revenue_trend')) {
+            csvContent += "Revenue Trend\n";
+            csvContent += "Date,Revenue\n";
+            posDashboardData.revenue_trend.forEach(t => {
+            csvContent += `${t.period},${t.amount}\n`;
+            });
+            csvContent += "\n";
+        }
+
         // --- Orders Dashboard ---
         if (selected.some(key => ['total_orders','pending','completed','rejected'].includes(key))) {
             csvContent += "Orders Dashboard\n";
@@ -340,12 +350,12 @@ const Reports = () => {
 
             <div className='flex gap-4'>
                 <div className='flex-1'>
-                    <DashboardChart chartData={posDashboardData.sales_trend}/>
+                    <DashboardChart salesData={posDashboardData.sales_trend} revenueData={posDashboardData.revenue_trend}/>
                 </div>
                 <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full '>
                     <h5 className='font-semibold'>Top Selling Products</h5>
 
-                    <div className="max-h-160 overflow-y-auto py-4 px-2 flex flex-col gap-2">
+                    <div className="overflow-y-auto py-4 px-2 flex flex-col gap-2">
                         {topSellingProducts}
                     </div>
                 </div>

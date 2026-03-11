@@ -68,82 +68,89 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
     if (error) return <ModalErrorState onClose={onClose} title='Failed to load transaction details' details='Unable to load required business details for this transaction.' />;
 
     const renderReceiptView = () => (
-        <div className='max-h-[80vh] overflow-y-auto mx-auto p-6 text-sm w-md flex flex-col justify-between'>
-            <h5 className="text-center text-text font-bold text-lg mb-2 uppercase">
+        <div className='max-h-[80vh] overflow-y-auto mx-auto p-6 text-sm w-md flex flex-col justify-between' style={{ fontFamily: "'Courier New', Courier, monospace" }}>
+            
+            {/* Header */}
+            <h5 className="text-center text-text font-bold text-lg mb-0.5 uppercase leading-tight">
                 {data?.business_name || "MY BUSINESS"}
             </h5>
-
-            <div className="text-center text-text/50 text-sm mb-4 space-y-0.5 border-b border-b-main-dark pb-4">
-                <h5>{data?.address || ''}</h5>
-                <h5>TIN: {data?.tin || ''}</h5>
-                <h5>Transaction ID: {transactionId}</h5>
+            <div className="text-center text-text/50 text-xs leading-tight">
+                <div>{data?.address || ''}</div>
+                <div>TIN: {data?.tin || ''}</div>
             </div>
 
-            <div className="text-text font-medium text-sm mb-2 space-y-0.5">
-                <h5>Cashier: {transactionDetail?.cashier?.first_name || 'N/A'} {transactionDetail?.cashier?.last_name || ''}</h5>
-                <h5>Mode: {transactionDetail?.order_type ? (transactionDetail.order_type === "dine-in" ? 'DINE IN' : 'TAKE OUT') : 'N/A'}</h5>
+            {/* Separator */}
+            <div className="text-text/30 text-center text-xs my-2" style={{ letterSpacing: '1px' }}>{'='.repeat(40)}</div>
+
+            {/* Date & Time */}
+            <div className="flex justify-between text-text text-xs mb-2">
+                <span>{hasValidDate ? createdAt.toLocaleDateString() : 'N/A'}</span>
+                <span>{hasValidDate ? createdAt.toLocaleTimeString() : 'N/A'}</span>
             </div>
 
-            <div className="flex text-text text-sm mb-4">
-                <h5 className='ml-auto mr-4'>{hasValidDate ? createdAt.toLocaleDateString() : 'N/A'}</h5>
-                <h5>{hasValidDate ? createdAt.toLocaleTimeString() : 'N/A'}</h5>
+            {/* Items Header */}
+            <div className="text-xs text-text font-semibold flex justify-between border-b border-dashed border-text/30 pb-1 mb-1">
+                <span className="w-8">Qty</span>
+                <span className="flex-1 pl-1">Item</span>
+                <span className="text-right">Amt</span>
             </div>
 
-            <table className="w-full text-text text-sm mb-4">
-                <thead>
-                    <tr className="border-b border-text/20">
-                        <th className="text-left py-1 font-semibold">Qty</th>
-                        <th className="text-left py-1 font-semibold">Item</th>
-                        <th className="text-right py-1 font-semibold">Amt</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {transactionDetail?.transaction_items?.map((item, index) =>
-                        <tr key={index}>
-                            <td className="py-2 text-center">{toAmount(item?.quantity, 0)}</td>
-                            <td className="py-2">{item?.product?.name || item?.name || 'Item'}</td>
-                            <td className="text-right py-2">{formatMoney(toAmount(item?.product_variant?.price, toAmount(item?.price, 0)) * toAmount(item?.quantity, 0))}</td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+            {/* Items */}
+            {transactionDetail?.transaction_items?.map((item, index) =>
+                <div key={index} className="text-xs text-text flex justify-between leading-tight py-1">
+                    <span className="w-8 text-center">{toAmount(item?.quantity, 0)}</span>
+                    <span className="flex-1 pl-1 pr-2">{item?.product?.name || item?.name || 'Item'}</span>
+                    <span className="text-right whitespace-nowrap">{formatMoney(toAmount(item?.product_variant?.price, toAmount(item?.price, 0)) * toAmount(item?.quantity, 0))}</span>
+                </div>
+            )}
 
-            <div className="text-sm space-y-1 mb-4 border-t border-dashed border-text/30 pt-2">
-                <div className="flex justify-between text-text/70">
-                    <h5>Subtotal:</h5>
-                    <h5>{formatMoney(grossTotal)}</h5>
+            {/* Dashed separator */}
+            <div className="text-text/30 text-center text-xs my-2" style={{ letterSpacing: '1px' }}>{'- '.repeat(20)}</div>
+
+            {/* Totals */}
+            <div className="text-xs text-text/70 space-y-1">
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>{formatMoney(grossTotal)}</span>
                 </div>
                 {transactionDetail?.discount && (
-                    <div className="flex justify-between text-text/70">
-                        <h5>Disc ({transactionDetail?.discount?.name || 'Discount'}):</h5>
-                        <h5>-{formatMoney(grossTotal - netTotal)}</h5>
+                    <div className="flex justify-between">
+                        <span>Disc ({transactionDetail?.discount?.name || 'Discount'}):</span>
+                        <span>-{formatMoney(grossTotal - netTotal)}</span>
                     </div>
                 )}
-                <div className="flex justify-between text-text/70">
-                    <h5>VAT (12%):</h5>
-                    <h5>{formatMoney(vatAmount)}</h5>
-                </div>
-                <div className="flex justify-between font-bold text-base pt-1 text-text border-t border-text/20 mt-1">
-                    <h5>Total:</h5>
-                    <h5>₱ {formatMoney(netTotal)}</h5>
-                </div>
-                <div className="flex justify-between text-text/80">
-                    <h5>Cash:</h5>
-                    <h5>{formatMoney(paidAmount)}</h5>
-                </div>
-                <div className="flex justify-between text-text/80">
-                    <h5>Change:</h5>
-                    <h5>{formatMoney(changeAmount)}</h5>
+                <div className="flex justify-between">
+                    <span>VAT (12%):</span>
+                    <span>{formatMoney(vatAmount)}</span>
                 </div>
             </div>
 
-            <div className="text-center text-text text-sm space-y-1 mb-3">
-                <h5>System-Generated Receipt</h5>
-                <h5>{data?.contact_number || ''}</h5>
-                <h5>{data?.message || ''}</h5>
+            {/* Total line separator */}
+            <div className="border-t border-text/30 my-2"></div>
+
+            <div className="text-xs space-y-1">
+                <div className="flex justify-between font-bold text-text text-sm">
+                    <span>Total:</span>
+                    <span>{formatMoney(netTotal)}</span>
+                </div>
+                <div className="flex justify-between text-text/80">
+                    <span>Cash:</span>
+                    <span>{formatMoney(paidAmount)}</span>
+                </div>
+                <div className="flex justify-between text-text/80">
+                    <span>Change:</span>
+                    <span>{formatMoney(changeAmount)}</span>
+                </div>
             </div>
 
-            <h5 className="text-center text-text text-sm italic">Not an official receipt</h5>
+            {/* Footer */}
+            <div className="text-center text-text text-xs mt-4 space-y-0.5">
+                <div>System-Generated Receipt</div>
+                <div>{data?.contact_number || ''}</div>
+                {data?.message && <div className="font-bold">{data.message}</div>}
+            </div>
+
+            <div className="text-center text-text/50 text-xs italic mt-2">Not an official receipt</div>
         </div>
     );
 

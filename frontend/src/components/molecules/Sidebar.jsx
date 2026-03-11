@@ -3,6 +3,7 @@ import { SidebarConfig } from '../../config/SidebarConfig'
 import { NavLink } from 'react-router-dom'
 import { Menu, LogOut } from 'lucide-react'
 import { AuthContext } from '@/context/AuthContext'
+import { ConfirmationModal } from '@/components/organisms'
 
 const Sidebar = () => {
 
@@ -14,6 +15,7 @@ const Sidebar = () => {
     const filteredSidebar = SidebarConfig.filter((item) => item.allowedRoles.includes(isAdmin ? 'admin' : role))
 
     const [expanded, setExpanded] = useState(true);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const navStyle = 'text-sm flex flex-row cursor-pointer gap-6 px-4 py-2 rounded-sm hover:bg-main-dark items-center relative font-medium ';
     const navText = expanded ? 'flex ' : 'hidden ';
@@ -59,10 +61,21 @@ const Sidebar = () => {
                 {listSidebar}
             </div>
 
-            <div className={navStyle + inactiveNavStyle + ' mt-auto'} onClick={logout}>
+            <div className={navStyle + inactiveNavStyle + ' mt-auto'} onClick={() => setShowLogoutModal(true)}>
                 <LogOut />
                 {expanded && <h5 className={navText}>LOG OUT</h5>}
             </div>
+
+            {showLogoutModal && 
+                <ConfirmationModal
+                    title="Log Out"
+                    content="Are you sure you want to log out?"
+                    confirmText="Log Out"
+                    cancelText="Cancel"
+                    onConfirm={logout}
+                    onReject={() => setShowLogoutModal(false)}
+                />
+            }
         </div>
     )
 }

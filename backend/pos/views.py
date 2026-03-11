@@ -336,7 +336,7 @@ class DashboardAnalyticsView(APIView):
             .filter(transaction__in=valid_transactions)
             .values('product__name')
             .annotate(total_sold=Sum('quantity'))
-            .order_by('-total_sold')[:8]
+            .order_by('-total_sold')[:16]
         )
 
         # 5️⃣ Sales Trend
@@ -356,6 +356,27 @@ class DashboardAnalyticsView(APIView):
         )
 
         formatted_trend = [{"period": item["period"], "amount": item["amount"]} for item in trend_data]
+
+        # 5b️⃣ Revenue Trend (same grouping as sales trend, but sums net_total)
+        if frequency == "monthly":
+            rev_trunc = TruncMonth('created_at')
+        elif frequency == "weekly":
+            rev_trunc = TruncWeek('created_at')
+        else:
+            rev_trunc = TruncDay('created_at')
+
+        revenue_trend_data = (
+            valid_transactions
+            .annotate(period=rev_trunc)
+            .values('period')
+            .annotate(amount=Coalesce(Sum('net_total'), Decimal('0.00')))
+            .order_by('period')
+        )
+
+        formatted_revenue_trend = [
+            {"period": item["period"], "amount": float(item["amount"])}
+            for item in revenue_trend_data
+        ]
 
         # 6️⃣ Cashier Performance
         now = timezone.localtime()
@@ -431,6 +452,7 @@ class DashboardAnalyticsView(APIView):
             "total_revenue_generated": round(total_revenue_generated, 2),
             "top_selling_products": list(top_products),
             "sales_trend": formatted_trend,
+            "revenue_trend": formatted_revenue_trend,
             "cashier_performance": cashier_performance,
             "avg_daily_transactions": round(avg_daily, 2),
         }
