@@ -47,6 +47,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     filter_backends = [filters.SearchFilter]
 
+    search_fields = ['name']
+
     def get_queryset(self):
 
         filter = self.request.query_params.get('filter')

@@ -6,6 +6,18 @@ from rest_framework.serializers import ValidationError
 from datetime import timezone
 
 class UnitSerializer(serializers.ModelSerializer):
+    def validate_name(self, value):
+        normalized_name = value.strip()
+
+        queryset = Unit.objects.filter(name__iexact=normalized_name)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError("A unit with this name already exists.")
+
+        return normalized_name
+
     class Meta:
         model = Unit
         fields = ['id', 'name', 'abbreviation']
@@ -120,6 +132,18 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'batches']
+
+    def validate_name(self, value):
+        normalized_name = value.strip()
+
+        queryset = Ingredient.objects.filter(name__iexact=normalized_name)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError("An ingredient with this name already exists.")
+
+        return normalized_name
         
     def get_batches(self, obj):
         queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')

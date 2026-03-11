@@ -28,7 +28,14 @@ const Layout = () => {
         syncResult,
         syncOfflineTransactions} = useTransaction();
 
-    const handleSetSearchText = (value) => setSearchText(value);
+    const handleSetSearchText = (value) => {
+        setSearchText(value)
+
+        if (value.length === 0) {
+            searchParams.delete('q');
+            setSearchParam(searchParams);
+        }
+    };
 
     const handleSearch = () => {
         const params = new URLSearchParams(searchParams);

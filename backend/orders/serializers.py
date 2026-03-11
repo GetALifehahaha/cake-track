@@ -99,6 +99,18 @@ class DashboardSerializer(serializers.Serializer):
  
 
 class CakeSerializer(serializers.ModelSerializer):
+    def validate_name(self, value):
+        normalized_name = value.strip()
+
+        queryset = Cake.objects.filter(name__iexact=normalized_name)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError("A cake with this name already exists.")
+
+        return normalized_name
+
     class Meta:
         model = Cake
         fields = [

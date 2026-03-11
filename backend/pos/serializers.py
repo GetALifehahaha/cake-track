@@ -13,6 +13,18 @@ class DiscountSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    def validate_name(self, value):
+        normalized_name = value.strip()
+
+        queryset = Category.objects.filter(name__iexact=normalized_name)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError("A category with this name already exists.")
+
+        return normalized_name
+
     class Meta:
         model = Category
         fields = ['id', 'name', 'is_disabled']
