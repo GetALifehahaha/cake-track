@@ -19,7 +19,7 @@ const InputRejectModalWrapper = ({ children, onConfirm, onReject }) => {
                 <ModalBody>
                     <div className='flex justify-between items-center w-full'>
                         <Title variant='modal' text='Reject Reason' />
-                        <X size={16} className='text-text cursor-pointer' onClick={() => { setShow(false); onReject() }} />
+                        <X size={16} className='text-text cursor-pointer' onClick={() => { setShow(false); }} />
                     </div>
 
                     <textarea rows={6} className='w-full bg-main-white focus:outline-none border-2 p-2 border-main-dark rounded-sm' value={reason} onChange={(e) => setReason(e.target.value)} placeholder='What is the reason you decline?'>

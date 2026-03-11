@@ -25,7 +25,7 @@ const InputRejectModal = ({ onConfirm, onReject }) => {
 
     return (
         <>
-            <ModalBody title='Reject Reason' onClick={onReject}>
+            <ModalBody title='Reject Reason' onClose={onReject}>
                 <textarea rows={6} className='w-full bg-main-white focus:outline-none border-2 p-2 border-main-dark rounded-sm' value={reason} onChange={(e) => setReason(e.target.value)} placeholder='What is the reason you decline?'>
 
                 </textarea>
