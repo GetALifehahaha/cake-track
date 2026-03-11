@@ -15,7 +15,7 @@ class DiscountSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'is_disabled']
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):

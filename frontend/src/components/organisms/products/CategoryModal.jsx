@@ -3,13 +3,13 @@ import { ModalBody } from '../../molecules'
 import { Button } from '../../atoms'
 import { ModalFeedbackCard } from '../../molecules';
 import {ConfirmationModal} from '..';
-import { Plus, Pen, Trash, X, Check } from 'lucide-react'
+import { Plus, Pen } from 'lucide-react'
 import useCategory from '@/hooks/useCategory'
 import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 
 const CategoryModal = ({onClose}) => {
 
-    const {categoryData, categoryLoading, categoryError, postCategory, patchCategory, refresh, deleteCategory} = useCategory();
+    const {categoryData, categoryLoading, categoryError, postCategory, patchCategory, refresh} = useCategory({ includeDisabled: true });
     
     const [categoryName, setCategoryName] = useState("")
     
@@ -18,10 +18,10 @@ const CategoryModal = ({onClose}) => {
 
     const [feedback, setFeedback] = useState("");
     const [showConfirmPostModal, setShowConfirmPostModal] = useState();
-    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState();
-    const [prepDeleteId, setPrepDeleteId] = useState(null);
+    const [showConfirmToggleModal, setShowConfirmToggleModal] = useState();
+    const [prepToggleCategory, setPrepToggleCategory] = useState(null);
 
-    if (categoryLoading) return <CRUDModalSkeleton title='Manage Categories' subtitle='Add, edit, or delete categories for organizing your products' onClose={onClose} />
+    if (categoryLoading) return <CRUDModalSkeleton title='Manage Categories' subtitle='Add, edit, disable, or enable categories for organizing your products' onClose={onClose} />
     if (categoryError) return <h5>Error loading categories...</h5>
 
     const resetFeedback = () => {
@@ -55,23 +55,26 @@ const CategoryModal = ({onClose}) => {
         setCategoryName(e.target.value)
     }
 
-    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
-    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
+    const handleShowConfirmToggleModal = () => setShowConfirmToggleModal(true);
+    const handleCloseConfirmToggleModal = () => setShowConfirmToggleModal(false);
 
-    const prepDeleteCategory = (id) => {
-        setPrepDeleteId(id);
-        handleShowConfirmDeleteModal();
+    const prepToggleCategoryStatus = (category) => {
+        setPrepToggleCategory(category);
+        handleShowConfirmToggleModal();
     }
 
-    const removePrepDeleteCategory = () => {
-        setPrepDeleteId(null);
-        handleCloseConfirmDeleteModal();
+    const clearPrepToggleCategory = () => {
+        setPrepToggleCategory(null);
+        handleCloseConfirmToggleModal();
     }
 
-    const handleDeleteCategory = async () => {
-        await deleteCategory(prepDeleteId)
+    const handleToggleCategoryStatus = async () => {
+        if (!prepToggleCategory) return;
+
+        await patchCategory(prepToggleCategory.id, { is_disabled: !prepToggleCategory.is_disabled });
+        refresh();
         resetFeedback();
-        removePrepDeleteCategory();
+        clearPrepToggleCategory();
     }
 
     const handleStartEdit = (category) => {
@@ -138,7 +141,7 @@ const CategoryModal = ({onClose}) => {
                 ) : (
                     // --- Display Mode UI ---
                     <>
-                        <span className="flex-1 font-medium text-text">
+                        <span className={`flex-1 font-medium ${category.is_disabled ? 'text-text/40 line-through' : 'text-text'}`}>
                             {capitalize(category.name)}
                         </span>
 
@@ -147,16 +150,16 @@ const CategoryModal = ({onClose}) => {
                             variant="modalOutline"
                             size="fit"
                             icon={Pen}
-                            onClick={() => handleStartEdit(category)}
+                            className={category.is_disabled ? 'opacity-50 pointer-events-none' : ''}
+                            onClick={() => !category.is_disabled && handleStartEdit(category)}
                         />
 
                         <Button
-                            text="Delete"
-                            variant="modalBlock"
-                            className='bg-error'
+                            text={category.is_disabled ? "Enable" : "Disable"}
+                            variant={category.is_disabled ? "modalOutline" : "modalBlock"}
+                            className={category.is_disabled ? '' : 'bg-error'}
                             size="fit"
-                            icon={Trash}
-                            onClick={() => prepDeleteCategory(category.id)}
+                            onClick={() => prepToggleCategoryStatus(category)}
                         />
                     </>
                 )}
@@ -166,7 +169,7 @@ const CategoryModal = ({onClose}) => {
     
 
     return (
-        <ModalBody className='w-[40vw]' title='Manage Categories' subtitle='Add, edit, or delete categories for organizing your products' onClose={onClose}>
+        <ModalBody className='w-[40vw]' title='Manage Categories' subtitle='Add, edit, disable, or enable categories for organizing your products' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
                 <div className="flex flex-col gap-2">
                     <h5 className="text-text">Add New Category</h5>
@@ -209,12 +212,14 @@ const CategoryModal = ({onClose}) => {
                 />
             }
 
-            { showConfirmDeleteModal &&
+            { showConfirmToggleModal &&
                 <ConfirmationModal 
-                    title="Delete Category?" 
-                    content="Are you sure you want to delete this category?" 
-                    onReject={removePrepDeleteCategory} 
-                    onConfirm={handleDeleteCategory} 
+                    title={prepToggleCategory?.is_disabled ? "Enable Category?" : "Disable Category?"} 
+                    content={prepToggleCategory?.is_disabled
+                        ? "Enabling this category will unarchive all related products."
+                        : "Disabling this category will archive all related products."}
+                    onReject={clearPrepToggleCategory} 
+                    onConfirm={handleToggleCategoryStatus} 
                 />
             }
         </ModalBody>

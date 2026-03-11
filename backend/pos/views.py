@@ -60,6 +60,35 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = None
+
+    def get_queryset(self):
+        queryset = Category.objects.all()
+        include_disabled = self.request.query_params.get('include_disabled') #type: ignore
+
+        if self.action != 'list':
+            return queryset
+
+        if include_disabled and str(include_disabled).lower() == 'true':
+            return queryset
+
+        return queryset.filter(is_disabled=False)
+
+    def perform_update(self, serializer):
+        old_category = self.get_object()
+        old_disabled = old_category.is_disabled
+
+        category = serializer.save()
+
+        if old_disabled != category.is_disabled:
+            category.products.update(is_archived=category.is_disabled)
+
+    def destroy(self, request, *args, **kwargs):
+        category = self.get_object()
+        category.is_disabled = True
+        category.save(update_fields=['is_disabled'])
+        category.products.update(is_archived=True)
+
+        return Response(status=status.HTTP_200_OK)
     
         
 class ProductVariantViewSet(viewsets.ModelViewSet):

@@ -4,26 +4,34 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
 import { saveAllCategories, getLocalCategories } from "@/services/db";
 
-export default function useCategory() {
+export default function useCategory(options = {}) {
+    const { includeDisabled = false } = options;
+
     const categoryQuery = useQuery({
-        queryKey: ["categories"],
+        queryKey: ["categories", includeDisabled ? "all" : "active"],
         queryFn: async () => {
             if (navigator.onLine) {
                 try {
-                    const response = await api.get(API_ENDPOINTS.CATEGORIES);
+                    const response = await api.get(API_ENDPOINTS.CATEGORIES, {
+                        params: includeDisabled ? { include_disabled: true } : undefined,
+                    });
                     const categories = response.data.results || response.data;
                     await saveAllCategories(categories);
                 } catch (error) {
                     console.warn("Offline or network error, relying on local categories cache.");
                 }
             }
-            return await getLocalCategories();
+
+            const localCategories = await getLocalCategories();
+            if (includeDisabled) return localCategories;
+
+            return localCategories.filter((category) => !category?.is_disabled);
         },
         staleTime: 10 * 60 * 1000,
     });
 
     const { create, update, remove, loading: mutateLoading, error: mutateError, response } = useMutate("categories", {
-        invalidateKeys: [["categories"]]
+        invalidateKeys: [["categories", "all"], ["categories", "active"], ["products"]]
     });
 
     return {
