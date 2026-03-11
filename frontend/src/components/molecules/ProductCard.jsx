@@ -12,7 +12,7 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
 
     return (
         <div onClick={handleToggleClick} 
-            className={cn('cursor-pointer flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25 duration-200 ease-in-out min-h-60 bg-main-white', selected.some(select => select === product.id) && 'border border-border')}
+            className={cn('cursor-pointer flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 hover:shadow-black/25 duration-200 ease-in-out min-h-60 bg-main-white border-2 border-white', selected.some(select => select === product.id) && 'border-accent-mute')}
         >
             <div className='flex aspect-square h-40 rounded-3xl overflow-hidden justify-center items-center'>
                 {product.image ?
