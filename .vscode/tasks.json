@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "backend",
+      "type": "shell",
+      "command": "bash -c 'source venv/bin/activate && cd backend && python3 manage.py runserver'",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "frontend",
+      "type": "shell",
+      "command": "bash -c 'source ~/.nvm/nvm.sh && nvm use default && cd frontend && npm run dev'",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev",
+      "dependsOn": ["backend", "frontend"],
+      "dependsOrder": "parallel"
+    }
+  ]
+}
