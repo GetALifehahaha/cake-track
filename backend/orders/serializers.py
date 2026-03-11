@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime)
+from payment.models import Payment
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -31,15 +32,30 @@ class OrderSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    payments = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Order
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe'
+            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'total_price', 'payments'
         ]
         read_only_fields = ['id', 'created_at', 'customer']
+
+    def get_payments(self, obj):
+        payment_qs = Payment.objects.filter(orders=obj).order_by('created_at')
+        return [
+            {
+                'id': payment.id,
+                'amount': str(payment.amount),
+                'status': payment.status,
+                'payment_type': payment.payment_type,
+                'created_at': payment.created_at,
+                'gateway_transaction_id': payment.gateway_transaction_id,
+            }
+            for payment in payment_qs
+        ]
         
         
     def create(self, validated_data):

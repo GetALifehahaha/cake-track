@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react'
 import { ModalBody } from '../../molecules'
 import { Button } from '../../atoms'
 import { ModalFeedbackCard } from '../../molecules';
+import { ModalErrorState } from '../../molecules';
 import {ConfirmationModal} from '..';
 import { Plus, Pen } from 'lucide-react'
 import useCategory from '@/hooks/useCategory'
@@ -22,7 +23,7 @@ const CategoryModal = ({onClose}) => {
     const [prepToggleCategory, setPrepToggleCategory] = useState(null);
 
     if (categoryLoading) return <CRUDModalSkeleton title='Manage Categories' subtitle='Add, edit, disable, or enable categories for organizing your products' onClose={onClose} />
-    if (categoryError) return <h5>Error loading categories...</h5>
+    if (categoryError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load categories' details='Unable to load category data. Please try reloading this modal.' />
 
     const resetFeedback = () => {
         setFeedback();

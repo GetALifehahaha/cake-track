@@ -1,5 +1,6 @@
 import json
 import logging
+from decimal import Decimal, ROUND_HALF_UP
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
@@ -12,10 +13,20 @@ from rest_framework import status as http_status
 from backend.settings import NGROK_URL
 from orders.models import Order
 from .models import Payment
-from .serializers import PaymentInitializeSerializers
+from .serializers import PaymentInitializeSerializers, PaymentSerializer
 from .paymongo import PayMongoWrapper
 
 logger = logging.getLogger(__name__)
+
+
+def get_order_downpayment(order):
+    custom_flat = Decimal('500.00')
+    rate = Decimal('0.15')
+
+    if order.total_price is not None and order.total_price > 0:
+        return (Decimal(order.total_price) * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    return custom_flat
 
 class InitiatePaymentView(APIView):
     """
@@ -49,9 +60,10 @@ class InitiatePaymentView(APIView):
             # Use NGROK_URL so the React Native WebView can intercept it correctly
             success_url = f"{NGROK_URL}/payment/success"
             failed_url = f"{NGROK_URL}/payment/failed"
+            downpayment = get_order_downpayment(order)
 
             source_data = pm.create_source(
-                amount=500, # Hardcoded as requested
+                amount=downpayment,
                 redirect_success=success_url, 
                 redirect_failed=failed_url
             )
@@ -65,7 +77,7 @@ class InitiatePaymentView(APIView):
             
             return Response({
                 "checkout_url": checkout_url,
-                "amount": 500,
+                "amount": float(downpayment),
                 "message": "Please redirect user to checkout_url"
             }, status=http_status.HTTP_200_OK)
 
@@ -133,7 +145,8 @@ class PayMongoWebhookView(APIView):
                     orders=order,
                     amount=amount / 100, # Convert back to PHP
                     gateway_transaction_id=payment_id,
-                    status='success' # Mark as success
+                    status='success', # Mark as success
+                    payment_type='downpayment'
                 )
 
             except Exception as e:
@@ -145,7 +158,8 @@ class PayMongoWebhookView(APIView):
                     orders=order,
                     amount=amount / 100,
                     gateway_transaction_id=source_id,
-                    status='success'
+                    status='success',
+                    payment_type='downpayment'
                 )
 
             # 5. Update Order Status regardless of capture outcome
@@ -166,12 +180,16 @@ class PayMongoWebhookView(APIView):
         with transaction.atomic():
             # Only mark as unpaid if not already paid
             if not order.payment.filter(status='success').exists(): # type: ignore
+                source_amount = data['attributes']['data']['attributes'].get('amount')
+                failed_amount = (Decimal(source_amount) / Decimal('100')) if source_amount else get_order_downpayment(order)
+
                 Payment.objects.create(
                     payer=order.customer,
                     orders=order,
-                    amount=500,
+                    amount=failed_amount,
                     gateway_transaction_id=source_id,
-                    status='failed'
+                    status='failed',
+                    payment_type='downpayment'
                 )
                 
                 # Keep order status as 'unpaid'
@@ -247,7 +265,8 @@ class VerifyPaymentView(APIView):
                     orders=order,
                     amount=amount / 100,
                     gateway_transaction_id=payment_id,
-                    status='success'
+                    status='success',
+                    payment_type='downpayment'
                 )
 
                 order.status = 'pending'
@@ -264,7 +283,8 @@ class VerifyPaymentView(APIView):
                         orders=order,
                         amount=amount / 100,
                         gateway_transaction_id=source_id,
-                        status='success'
+                        status='success',
+                        payment_type='downpayment'
                     )
                 if order.status == 'unpaid':
                     order.status = 'pending'
@@ -320,9 +340,10 @@ class RepayOrderView(APIView):
         try:
             success_url = f"{NGROK_URL}/payment/success"
             failed_url = f"{NGROK_URL}/payment/failed"
+            downpayment = get_order_downpayment(order)
 
             source_data = pm.create_source(
-                amount=500,
+                amount=downpayment,
                 redirect_success=success_url,
                 redirect_failed=failed_url
             )
@@ -334,7 +355,7 @@ class RepayOrderView(APIView):
             
             return Response({
                 "checkout_url": checkout_url,
-                "amount": 500,
+                "amount": float(downpayment),
                 "message": "Please redirect user to checkout_url"
             }, status=http_status.HTTP_200_OK)
 
@@ -344,3 +365,16 @@ class RepayOrderView(APIView):
                 {"error": "Failed to connect to payment gateway"},
                 status=http_status.HTTP_503_SERVICE_UNAVAILABLE
             )
+
+
+class PaymentHistoryView(APIView):
+    """Web endpoint for cake-order payment history."""
+    def get(self, request):
+        queryset = Payment.objects.select_related('orders', 'payer').order_by('-created_at')
+
+        order_id = request.query_params.get('order_id')
+        if order_id:
+            queryset = queryset.filter(orders__id=order_id)
+
+        serializer = PaymentSerializer(queryset, many=True)
+        return Response(serializer.data, status=http_status.HTTP_200_OK)

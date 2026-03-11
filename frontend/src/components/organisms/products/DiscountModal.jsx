@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react'
 import { ModalBody } from '../../molecules'
 import { Button } from '../../atoms'
 import { ModalFeedbackCard } from '../../molecules';
+import { ModalErrorState } from '../../molecules';
 import { ConfirmationModal } from '..';
 import { Plus, Pen, Trash } from 'lucide-react'
 import useDiscount from '@/hooks/useDiscount'
@@ -22,7 +23,7 @@ const DiscountModal = ({onClose}) => {
     }, [discountResponse])
 
     if (discountLoading) return <CRUDModalSkeleton title='Archived Products' subtitle='View and manage your archived products. You can restore or permanently delete them' onClose={onClose} />
-    if (discountError) return <h5>Error loading discount...</h5>
+    if (discountError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load discounts' details='Unable to load discount data. Please reload and try again.' />
 
     const resetFeedback = () => setFeedback();
     

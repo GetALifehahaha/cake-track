@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Label, Title, Button, Dropdown, } from '../../atoms';
-import { ModalFeedbackCard, DatePicker, ModalBody } from '../../molecules';
+import { ModalFeedbackCard, DatePicker, ModalBody, ModalErrorState } from '../../molecules';
 import ConfirmationModal from '../ConfirmationModal';
 import { X, Plus, Check } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
@@ -29,7 +29,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     }, [units])
 
     if (loading) return <EditInventorySkeleton onClose={onClose} />
-    if (error) return <h5>Error loading units</h5>
+    if (error) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to fetch units for inventory editing.' />
 
     const handleName = (e) => {
         e.preventDefault();

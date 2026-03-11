@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ModalBody } from '../../molecules';
 import { Button } from '../../atoms';
 import { ModalFeedbackCard } from '../../molecules';
+import { ModalErrorState } from '../../molecules';
 import { ConfirmationModal } from '..';
 import { Plus, Pen, Trash } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
@@ -21,7 +22,7 @@ const UnitModal = ({ onClose }) => {
     }, []);
 
     if (unitLoading) return <CRUDModalSkeleton title='Manage Units' subtitle='Add, edit, or delete units for your inventory' onClose={onClose} />
-    if (unitError) return <h5>Error loading units...</h5>;
+    if (unitError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to load units right now. Please try reloading this modal.' />;
 
     const resetFeedback = () => setFeedback('');
 

@@ -13,7 +13,8 @@ export default function useOrder() {
     [searchParams]);
 
     const lastPart = location.pathname.split('/').filter(Boolean).pop();
-    const currentFilter = lastPart === 'cake-orders' ? null : lastPart;
+    const validStatusFilters = ['pending', 'accepted', 'ready', 'completed', 'rejected', 'unpaid'];
+    const currentFilter = validStatusFilters.includes(lastPart) ? lastPart : null;
 
     const apiParams = useMemo(() => {
         const raw = {

@@ -17,6 +17,11 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         ? orderDetails.order_images.map(img => img.image_url)
         : (orderDetails.image ? [orderDetails.image] : []);
 
+    const downpayment = orderDetails?.payments?.find(payment => payment.payment_type === 'downpayment') || null;
+    const fullPayment = orderDetails?.payments?.find(payment => payment.payment_type === 'full_payment') || null;
+
+    const formatAmount = (value) => Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     // const listIngredients = orderDetails?.ingredients?.length > 0
     //     ? orderDetails.ingredients.map((ingredient, index) =>
     //         <h5 key={index} className='font-light text-text text-sm'>
@@ -85,6 +90,37 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                         </div>
                                     </>
                                 }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="">
+                        <Label text='Payments' variant='large' />
+                        <div className='px-8 py-1 flex flex-col gap-3'>
+                            <div className='flex items-center justify-between p-3 rounded-md bg-main-dark/20'>
+                                <div>
+                                    <h5 className='text-sm font-semibold text-text'>Downpayment</h5>
+                                    <h5 className='text-xs text-text/60'>{downpayment ? formatDateForDisplay(downpayment.created_at) : 'Not paid yet'}</h5>
+                                </div>
+                                <div className='text-right'>
+                                    <h5 className='text-sm font-semibold text-text'>₱ {downpayment ? formatAmount(downpayment.amount) : '0.00'}</h5>
+                                    <h5 className={`text-xs font-medium capitalize ${downpayment?.status === 'success' ? 'text-success' : 'text-text/60'}`}>
+                                        {downpayment?.status || 'pending'}
+                                    </h5>
+                                </div>
+                            </div>
+
+                            <div className='flex items-center justify-between p-3 rounded-md bg-main-dark/20'>
+                                <div>
+                                    <h5 className='text-sm font-semibold text-text'>Full Payment</h5>
+                                    <h5 className='text-xs text-text/60'>{fullPayment ? formatDateForDisplay(fullPayment.created_at) : 'Not paid yet'}</h5>
+                                </div>
+                                <div className='text-right'>
+                                    <h5 className='text-sm font-semibold text-text'>₱ {fullPayment ? formatAmount(fullPayment.amount) : '0.00'}</h5>
+                                    <h5 className={`text-xs font-medium capitalize ${fullPayment?.status === 'success' ? 'text-success' : 'text-text/60'}`}>
+                                        {fullPayment?.status || 'pending'}
+                                    </h5>
+                                </div>
                             </div>
                         </div>
                     </div>

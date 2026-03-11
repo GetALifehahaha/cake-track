@@ -23,6 +23,7 @@ import {
 	ForgotPassword,
 	SetAccount,
 	Cakes,
+	QueueHistory,
 } from './pages'
 import { ProtectedRoute } from './components/organisms'
 
@@ -44,6 +45,7 @@ const App = () => {
 						<Route path='ready' element={<QueueReady />} />
 						<Route path='completed' element={<QueueCompleted />} />
 						<Route path='rejected' element={<QueueRejected />} />
+						<Route path='history' element={<QueueHistory />} />
 						<Route path='availability' element={<QueueOrderAvailability />} />
 					</Route>
 					<Route path='/recipe' element={<Recipe />} />

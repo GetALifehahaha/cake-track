@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from decimal import Decimal, ROUND_HALF_UP
 
 from rest_framework import permissions, viewsets, filters, status, generics
 from django_filters.rest_framework import DjangoFilterBackend
@@ -67,7 +68,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = OrderFilter
     
-    search_fields = ['customer__username', '=id']
+    search_fields = ['customer__first_name', 'customer__last_name', '=id']
     ordering_fields = ['created_at', 'status']
     
     def get_queryset(self):
@@ -91,7 +92,32 @@ class OrderViewSet(viewsets.ModelViewSet):
             if instance.recipe:
                 instance.recipe.cook()
                 
-        serializer.save()
+        updated_order = serializer.save()
+
+        if old_status != "completed" and new_status == "completed":
+            from payment.models import Payment
+
+            existing_full = Payment.objects.filter(orders=updated_order, payment_type='full_payment', status='success').exists()
+            if not existing_full:
+                total_price = Decimal(updated_order.total_price or 0)
+                downpayment_amount = Decimal('0.00')
+
+                if total_price > 0:
+                    downpayment_amount = (total_price * Decimal('0.15')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                else:
+                    downpayment_amount = Decimal('500.00')
+
+                full_payment_amount = total_price - downpayment_amount if total_price > 0 else Decimal('0.00')
+                if full_payment_amount < 0:
+                    full_payment_amount = Decimal('0.00')
+
+                Payment.objects.create(
+                    payer=updated_order.customer,
+                    orders=updated_order,
+                    amount=full_payment_amount,
+                    status='success',
+                    payment_type='full_payment',
+                )
         
     @action(detail=False, methods=['post'], url_path='batch-update')
     def batch_update(self, request):
@@ -129,6 +155,32 @@ class OrderViewSet(viewsets.ModelViewSet):
                 order.reject_reason = ''
             
             order.save()
+
+            if new_status == "completed":
+                from payment.models import Payment
+
+                existing_full = Payment.objects.filter(orders=order, payment_type='full_payment', status='success').exists()
+                if not existing_full:
+                    total_price = Decimal(order.total_price or 0)
+                    downpayment_amount = Decimal('0.00')
+
+                    if total_price > 0:
+                        downpayment_amount = (total_price * Decimal('0.15')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                    else:
+                        downpayment_amount = Decimal('500.00')
+
+                    full_payment_amount = total_price - downpayment_amount if total_price > 0 else Decimal('0.00')
+                    if full_payment_amount < 0:
+                        full_payment_amount = Decimal('0.00')
+
+                    Payment.objects.create(
+                        payer=order.customer,
+                        orders=order,
+                        amount=full_payment_amount,
+                        status='success',
+                        payment_type='full_payment',
+                    )
+
             updated_count += 1
         
         return Response({

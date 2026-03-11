@@ -13,10 +13,16 @@ class Payment(models.Model):
         ('success', 'Success'),
         ('failed', 'Failed'),
     ]
+
+    PAYMENT_TYPE_CHOICES = [
+        ('downpayment', 'Downpayment'),
+        ('full_payment', 'Full Payment'),
+    ]
     
     payer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="payment")
     orders = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payment")
     status = models.CharField(choices=STATUS_CHOICES, max_length=15, default="Pending")
+    payment_type = models.CharField(choices=PAYMENT_TYPE_CHOICES, max_length=20, default='downpayment')
     
     amount = models.DecimalField(max_digits=11, decimal_places=2)
     

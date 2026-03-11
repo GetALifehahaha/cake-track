@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
 import { Title } from '../../components/atoms'
-import { Clock4, LayoutGrid, CheckCircle, XCircle, ArrowRight, SmileIcon, ClipboardCheck, Calendar } from 'lucide-react'
+import { Clock4, LayoutGrid, CheckCircle, XCircle, ArrowRight, SmileIcon, ClipboardCheck, Calendar, History } from 'lucide-react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
 
@@ -17,6 +17,7 @@ const Queue = () => {
 		{ label: "Ready for Pickup", path: '/ready', icon: SmileIcon },
 		{ label: "Completed", path: '/completed', icon: ClipboardCheck },
 		{ label: "Rejected", path: '/rejected', icon: XCircle },
+		{ label: "History", path: '/history', icon: History },
 		{ label: "Order Availability", path: '/availability', icon: Calendar },
 	]
 

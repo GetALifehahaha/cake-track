@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Title, Label, Button, Dropdown } from '../../atoms';
-import { DatePicker, ModalBody, ModalFeedbackCard } from '../../molecules';
+import { DatePicker, ModalBody, ModalFeedbackCard, ModalErrorState } from '../../molecules';
 import { X, Plus, Check } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 import useUnits from '@/hooks/useUnits';
@@ -30,7 +30,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     }, [modalFeedbackContent])
 
     if (loading) return <AddInventoryItemSkeleton onClose={onClose} />
-    if (error) return <h5>Error loading units</h5>
+    if (error) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to fetch units for inventory item creation.' />
 
     const unitSelection = units.map(unit => ({
         key: unit.name, value: unit.id

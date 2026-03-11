@@ -37,8 +37,14 @@ const OrderDetails = () => {
         pickup_time: pickupTime,
         comments = "",
         image,
-        order_images = []
+        order_images = [],
+        total_price: totalPrice,
     } = order;
+
+    const parsedTotal = Number(totalPrice);
+    const repayAmount = Number.isFinite(parsedTotal) && parsedTotal > 0
+        ? parsedTotal * 0.15
+        : 500;
 
     const displayImages = order_images.length > 0
         ? order_images.map(img => img.image_url)
@@ -131,7 +137,7 @@ const OrderDetails = () => {
                                 <CreditCard size={20} color="white" />
                             )}
                             <Text className='text-white text-lg font-bold'>
-                                {repaying ? 'Processing...' : 'Pay Now — ₱500.00'}
+                                {repaying ? 'Processing...' : `Pay Now — ₱${repayAmount.toFixed(2)}`}
                             </Text>
                         </TouchableOpacity>
                     )}

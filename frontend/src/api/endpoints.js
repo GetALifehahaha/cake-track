@@ -24,6 +24,7 @@ const API_ENDPOINTS = {
     UNITS: "/inventory/units/",
     POS_DASHBOARD: "/pos/dashboard/",
     ORDERS_DASHBOARD: "/orders/dashboard/",
+    PAYMENT_HISTORY: "/payment/history/",
 };
 
 export default API_ENDPOINTS;

@@ -119,6 +119,7 @@ const Checkout = () => {
         
         try {
             const cartItemsString = cart.map(item => `${item.amount}x ${item.name}`).join(', ');
+            const premadeTotal = cart.reduce((sum, item) => sum + (item.price * item.amount), 0);
 
             // Format dates for Django (YYYY-MM-DD and HH:MM:SS)
             const formattedDate = dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate;
@@ -149,6 +150,7 @@ const Checkout = () => {
                     message: ""
                 },
                 comments: `PRE-MADE ORDER: ${cartItemsString}`,
+                total_price: premadeTotal,
                 image: cartImages.length > 0 ? cartImages[0] : null,
                 uploaded_images: cartImages
             };
@@ -212,6 +214,9 @@ const Checkout = () => {
         );
     }
 
+    const cartTotal = cart.reduce((total, item) => total + (item.price * (item.amount || 1)), 0);
+    const downpayment = cartTotal * 0.15;
+
     return (
         <SafeAreaView className='flex-1 bg-main-form'>
             <ScrollView>
@@ -267,10 +272,13 @@ const Checkout = () => {
                             <View className='p-4 w-full border-t border-secondary-light flex-row justify-end items-center gap-4'>
                                 <Text className='text-secondary-light font-semibold text-xl'>Total: </Text>
                                 <Text className='text-primary font-semibold text-2xl'>
-                                    ₱ {cart.reduce((total, item) => {
-                                        return total + (item.price * (item.amount || 1));
-                                    }, 0).toFixed(2)}
+                                    ₱ {cartTotal.toFixed(2)}
                                 </Text>
+                            </View>
+
+                            <View className='px-4 pb-2 w-full flex-row justify-end items-center gap-4'>
+                                <Text className='text-secondary-light font-semibold text-lg'>Downpayment (15%): </Text>
+                                <Text className='text-primary font-semibold text-xl'>₱ {downpayment.toFixed(2)}</Text>
                             </View>
                         </View>
                     </View>
@@ -278,15 +286,11 @@ const Checkout = () => {
             </ScrollView>
             <View className='w-full h-40 p-6 bg-white border-y border-secondary-light'>
                 <ConfirmModal
-                    details={`You are about to pay ₱ ${(cart.reduce((sum, item) => {
-                        return sum + (item.price * item.amount);
-                    }, 0)).toFixed(2)}`}
+                    details={`You are about to pay ₱ ${downpayment.toFixed(2)} as downpayment (15%).`}
                     onConfirm={orderCake}>
                     <View className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4'>
                         <View className='bg-white rounded-full h-8 px-4 items-center justify-center'>
-                            <Text className='font-semibold text-secondary-strong'>₱ {(cart.reduce((sum, item) => {
-                                return sum + (item.price * item.amount);
-                            }, 0)).toFixed(2)}</Text>
+                            <Text className='font-semibold text-secondary-strong'>₱ {downpayment.toFixed(2)}</Text>
                         </View>
                         <Text className='font-bold text-lg text-white'>Submit Order</Text>
                     </View>
