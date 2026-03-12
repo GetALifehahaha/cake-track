@@ -91,6 +91,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         if old_status == "pending" and new_status == "accepted":
             if instance.recipe:
                 instance.recipe.cook()
+
+        # If completing a custom order, allow setting total_price from the request
+        if new_status == "completed" and self.request.data.get("total_price") is not None:
+            instance.total_price = Decimal(str(self.request.data["total_price"]))
+            instance.save(update_fields=["total_price"])
                 
         updated_order = serializer.save()
 
@@ -110,6 +115,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                 full_payment_amount = total_price - downpayment_amount if total_price > 0 else Decimal('0.00')
                 if full_payment_amount < 0:
                     full_payment_amount = Decimal('0.00')
+
+                # Use amount_received from request if provided
+                amount_received = self.request.data.get("amount_received")
 
                 Payment.objects.create(
                     payer=updated_order.customer,

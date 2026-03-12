@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DatePicker, Pagination } from '@/components/molecules';
-import { ReadyCard, OrderDetails, ConfirmationModal } from '../../components/organisms';
+import { ReadyCard, OrderDetails, CompletePaymentModal } from '../../components/organisms';
 import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import Loading from '@/components/molecules/Loading';
@@ -16,7 +16,7 @@ const QueueAccepted = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
-	const [completeId, setCompleteId] = useState(null);
+	const [orderToComplete, setOrderToComplete] = useState(null);
 	const [pageNum, setPageNum] = useState(1);
 
 	if (loading) return <Loading />
@@ -44,21 +44,21 @@ const QueueAccepted = () => {
 		}
 	}
 
-	const completeOrder = async () => {
-		if (completeId === null) return;
+	const completeOrder = async (orderId, payload) => {
+		if (!orderId) return;
 
 		try {
-			await patchOrder(completeId, { status: "completed" });
+			await patchOrder(orderId, payload);
 
 			addToast("Order completed successfully");
-			setCompleteId(null);
+			setOrderToComplete(null);
 		} catch (err) {
-			addToast("Failed to accept order.", "error")
+			addToast("Failed to complete order.", "error")
 		}
 	}
 
 	const listOrder = data.results?.map((cake, index) =>
-		(<ReadyCard key={index} order={cake} onComplete={() => setCompleteId(cake.id)} onShowDetails={setOrderDetails} />) || null
+		(<ReadyCard key={index} order={cake} onComplete={() => setOrderToComplete(cake)} onShowDetails={setOrderDetails} />) || null
 	)
 
 
@@ -89,8 +89,12 @@ const QueueAccepted = () => {
 				<OrderDetails orderDetails={orderDetails} onClose={() => setOrderDetails(null)} />
 			}
 
-			{completeId &&
-				<ConfirmationModal title={"Order Finished?"} content={"Are you sure you want to mark this order as finished?"} onConfirm={completeOrder} onReject={() => setCompleteId(null)} />
+			{orderToComplete &&
+				<CompletePaymentModal 
+					order={orderToComplete} 
+					onConfirm={completeOrder} 
+					onClose={() => setOrderToComplete(null)} 
+				/>
 			}
 		</div>
 	)

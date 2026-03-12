@@ -39,7 +39,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 />
             )}
             <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex justify-center items-center z-10'>
-                <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[40vw] flex flex-col gap-10'>
+                <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[40vw] flex flex-col gap-10 max-h-[90vh] h-full overflow-y-auto'>
                     <div className="flex justify-between items-start w-full">
                         <div>
                             <Title variant='modal' text={'Order ' + orderDetails.id || 'Order Details'} />

@@ -64,7 +64,7 @@ const Reports = () => {
         { key: 'december', value: 12 },
     ];
 
-
+    console.log(posDashboardData);
 
     const downloadCSV = (selected) => {
         const today = new Date().toISOString().split("T")[0];
@@ -124,7 +124,7 @@ const Reports = () => {
             csvContent += "Sales Trend\n";
             csvContent += "Date,Items Sold\n";
             posDashboardData.sales_trend.forEach(t => {
-            csvContent += `${t.date},${t.amount}\n`;
+            csvContent += `${t.period},${t.amount}\n`;
             });
             csvContent += "\n";
         }
@@ -257,7 +257,7 @@ const Reports = () => {
                         </div>
                     </div>
                 </div>
-                <Button text="Download Report" size="small" variant="outline" icon={Download} onClick={() => setDownloadModal(true)} className="ml-auto"/>
+                <Button text="Download Report" size="small" variant="block" icon={Download} onClick={() => setDownloadModal(true)} className="ml-auto rounded-sm py-2.5 px-4 h-fit"/>
             </div>
 
             {/* Existing POS dashboards */}

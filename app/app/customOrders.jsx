@@ -189,6 +189,20 @@ const CustomOrders = () => {
     }
 
     const orderCake = async () => {
+        // Capture the cake preview BEFORE showing the loading spinner,
+        // because setIsSubmitting unmounts the preview View
+        let capturedCakeUri = null;
+        if (!personallyDesign && customLayers.length > 0 && cakePreviewRef.current) {
+            try {
+                capturedCakeUri = await captureRef(cakePreviewRef, {
+                    format: 'png',
+                    quality: 1,
+                });
+            } catch (captureErr) {
+                console.warn('Could not capture cake preview:', captureErr);
+            }
+        }
+
         setIsSubmitting(true); // Start loading spinner
 
         try {
@@ -196,18 +210,9 @@ const CustomOrders = () => {
 
             let imagesToUpload = [...images];
 
-            // Capture the layered cake preview as a single image
-            if (!personallyDesign && customLayers.length > 0 && cakePreviewRef.current) {
-                try {
-                    const cakeUri = await captureRef(cakePreviewRef, {
-                        format: 'png',
-                        quality: 1,
-                    });
-                    // Prepend the cake preview so it becomes the main/first image
-                    imagesToUpload.unshift(cakeUri);
-                } catch (captureErr) {
-                    console.warn('Could not capture cake preview:', captureErr);
-                }
+            // Prepend the captured cake preview so it becomes the main/first image
+            if (capturedCakeUri) {
+                imagesToUpload.unshift(capturedCakeUri);
             }
 
             // 1. Upload Image if it exists
