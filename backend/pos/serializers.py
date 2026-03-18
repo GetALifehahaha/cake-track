@@ -1,15 +1,34 @@
 from rest_framework import serializers
 from users.serializers import UserSerializer
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from .models import (
     Discount, Category, Product, ProductVariant,
-    Transaction, TransactionItem, BusinessSettings
+    Transaction, TransactionItem, BusinessSettings,
+    Discount, DiscountUsage
 )
 from decimal import Decimal
+
 
 class DiscountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discount
-        fields = ['id', 'name', 'rate']
+        fields = [
+            "id", "name", "discount_type", "value", "scope",
+            "products", "categories", "start_date", "end_date",
+            "min_order_total", "usage_limit", "used_count", "active"
+        ]
+        read_only_fields = ["used_count"]
+
+
+class DiscountUsageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscountUsage
+        fields = [
+            "id", "discount", "transaction", "products", 
+            "amount", "created_at"
+        ]
+        read_only_fields = ["amount", "created_at"]
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -158,33 +177,121 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         
     def create(self, validated_data):
         items_data = validated_data.pop('transaction_items')
+        discount_input = validated_data.pop('discount', None)
+        paid_amount = validated_data.get('paid_amount', Decimal('0.00'))
+        
         validated_data['cashier'] = self.context['request'].user
 
-        gross_total = sum(
-            Decimal(item['product_variant'].price) * item['quantity'] 
-            for item in items_data
-        )
+        with transaction.atomic():
+            gross_total = sum(
+                Decimal(str(item['product_variant'].price)) * item['quantity'] 
+                for item in items_data
+            )
 
-        discount = validated_data.pop('discount', None)
+            discount_amount = Decimal('0.00')
+            locked_discount = None
 
-        discount_amount = gross_total * discount.rate if discount else Decimal('0.00')
+            if discount_input:
+                locked_discount = Discount.objects.select_for_update().get(id=discount_input.id)
 
-        net_total = gross_total - discount_amount
+                if not locked_discount.is_valid():
+                    raise ValidationError({"discount": "This discount is invalid, expired, or has reached its usage limit."})
 
-        change = validated_data.pop('paid_amount') - net_total
+                if gross_total < locked_discount.min_order_total:
+                    raise ValidationError({"discount": f"A minimum order total of {locked_discount.min_order_total} is required."})
 
-        transaction = Transaction.objects.create(
-            gross_total=gross_total,
-            discount_amount=discount_amount,
-            net_total=net_total,
-            change=change,
-            **validated_data
-        )
+                # Isolate the total of items eligible for the discount
+                discountable_total = Decimal('0.00')
 
-        for item in items_data:
-            TransactionItem.objects.create(transaction=transaction, **item)
+                if locked_discount.scope == 'all_products':
+                    discountable_total = gross_total
 
-        return transaction
+                elif locked_discount.scope == 'selected_products':
+                    valid_product_ids = set(locked_discount.products.values_list('id', flat=True))
+                    discountable_total = sum(
+                        Decimal(str(item['product_variant'].price)) * item['quantity']
+                        for item in items_data if item['product'].id in valid_product_ids
+                    )
+
+                elif locked_discount.scope == 'selected_category':
+                    valid_category_ids = set(locked_discount.categories.values_list('id', flat=True))
+                    discountable_total = sum(
+                        Decimal(str(item['product_variant'].price)) * item['quantity']
+                        for item in items_data if item['product'].category_id in valid_category_ids
+                    )
+
+                # Apply math only if there are eligible items
+                if discountable_total > Decimal('0.00'):
+                    if locked_discount.discount_type == 'percentage':
+                        discount_amount = discountable_total * (locked_discount.value / Decimal('100.00'))
+                    elif locked_discount.discount_type == 'fixed':
+                        discount_amount = locked_discount.value
+
+                    # Cap the discount so it doesn't exceed the eligible items' total
+                    if discount_amount > discountable_total:
+                        discount_amount = discountable_total
+
+            net_total = gross_total - discount_amount
+            change = paid_amount - net_total
+
+            if change < Decimal('0.00'):
+                raise ValidationError({"paid_amount": "The paid amount is less than the net total."})
+
+            transaction_obj = Transaction.objects.create(
+                gross_total=gross_total,
+                discount_amount=discount_amount,
+                net_total=net_total,
+                change=change,
+                discount=locked_discount,
+                **validated_data
+            )
+
+            for item in items_data:
+                item_price = Decimal(str(item['product_variant'].price))
+                item_total = item_price * item['quantity']
+                item_discount = Decimal('0.00')
+
+                is_eligible = False
+                
+                if locked_discount:
+                    if locked_discount.scope == 'all_products':
+                        is_eligible = True
+                    elif locked_discount.scope == 'selected_products' and item['product'].id in valid_product_ids:
+                        is_eligible = True
+                    elif locked_discount.scope == 'selected_category' and item['product'].category_id in valid_category_ids:
+                        is_eligible = True
+
+                if is_eligible and discountable_total > Decimal('0.00'):
+                    proportion = item_total / discountable_total
+                    item_discount = round(proportion * discount_amount, 2)
+
+                TransactionItem.objects.create(
+                    transaction=transaction_obj,
+                    price_at_time=item_price,
+                    discount_amount=item_discount,
+                    **item
+                )
+
+            if locked_discount and discount_amount > Decimal('0.00'):
+                usage_record = DiscountUsage.objects.create(
+                    discount=locked_discount,
+                    transaction=transaction_obj,
+                    amount=discount_amount
+                )
+                
+                # Optional: Record exactly which products triggered the discount
+                if locked_discount.scope in ['selected_products', 'selected_category']:
+                    eligible_products = [
+                        item['product'] for item in items_data 
+                        if (locked_discount.scope == 'selected_products' and item['product'].id in valid_product_ids) or 
+                           (locked_discount.scope == 'selected_category' and item['product'].category_id in valid_category_ids)
+                    ]
+                    usage_record.products.set(eligible_products)
+                
+                locked_discount.used_count += 1
+                locked_discount.save(update_fields=['used_count'])
+
+        return transaction_obj
     
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,19 +1,102 @@
 from django.db import IntegrityError, models
 from django.contrib.auth.models import User
-import random
-from django.db import models
 from django.utils import timezone
 from backend.utils import generate_id
+from decimal import Decimal, ROUND_HALF_UP
 
 # Create your models here.
 
 
 class Discount(models.Model):
-    name = models.CharField(max_length=50)
-    rate = models.DecimalField(decimal_places=2, max_digits=5)
-    
+
+    DISCOUNT_TYPE = [
+        ("percentage", "Percentage"),
+        ("fixed", "Fixed Amount"),
+    ]
+
+    SCOPE = [
+        ("all_products", "Entire Order"),
+        ("selected_products", "Selected Product/s"),
+        ("selected_category", "Selected Category"),
+    ]
+
+    name = models.CharField(max_length=100)
+
+    discount_type = models.CharField(
+        max_length=30,
+        choices=DISCOUNT_TYPE,
+        default="percentage"
+    )
+
+    value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal("10.00")
+    )
+
+    scope = models.CharField(
+        max_length=30,
+        choices=SCOPE,
+        default="all_products"
+    )
+
+    products = models.ManyToManyField(
+        "Product",
+        blank=True,
+        related_name="discounts"
+    )
+
+    category = models.ManyToManyField(
+        "Category",
+        blank=True,
+        related_name="discounts"
+    )
+
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(default=timezone.now() + timezone.timedelta(days=30))
+
+    min_order_total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00")
+    )
+
+    usage_limit = models.PositiveIntegerField(
+        null=True,
+        blank=True
+    )
+
+    used_count = models.PositiveIntegerField(default=0)
+
+    active = models.BooleanField(default=True)
+
+    def is_valid(self):
+
+        now = timezone.now()
+
+        if not self.active:
+            return False
+
+        if now < self.start_date or now > self.end_date:
+            return False
+
+        if self.usage_limit and self.used_count >= self.usage_limit:
+            return False
+
+        return True
+
+
     def __str__(self):
         return self.name
+    
+
+class DiscountUsage(models.Model):
+    discount = models.ForeignKey(Discount, on_delete=models.PROTECT, related_name="usages")
+    transaction = models.ForeignKey("Transaction", on_delete=models.CASCADE, related_name="discount_usages")
+    products = models.ManyToManyField("Product", blank=True)
+    
+    amount = models.DecimalField(max_digits=11, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class Category(models.Model):
@@ -111,6 +194,7 @@ class TransactionItem(models.Model):
         blank=True
     )
     quantity = models.PositiveIntegerField()
+    price_at_time = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
         variant_name = f" - {self.product_variant.label}" if self.product_variant else ""

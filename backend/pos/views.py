@@ -23,6 +23,7 @@ from rest_framework.pagination import PageNumberPagination
 from .filters import TransactionFilter
 
 from .serializers import (DiscountSerializer, 
+                          DiscountUsageSerializer,
                           CategorySerializer, 
                           ProductVariantSerializer, 
                           ProductSerializer, 
@@ -33,6 +34,7 @@ from .serializers import (DiscountSerializer,
                           ProductBatchUnarchiveSerializer
                           )
 from .models import (Discount, 
+                     DiscountUsage,
                      Category, 
                      ProductVariant, 
                      Product, 
@@ -51,8 +53,10 @@ class MediumPageSize(PageNumberPagination):
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    pagination_class = None
+
+class DiscountUsageViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = DiscountUsage.objects.select_related('discount', 'transaction')
+    serializer_class = DiscountUsageSerializer
     
 
 class CategoryViewSet(viewsets.ModelViewSet):

@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import (DiscountViewSet,
+                    DiscountUsageViewSet,
                     CategoryViewSet,
                     ProductVariantViewSet,
                     ProductViewSet,
@@ -15,6 +16,7 @@ from .views import (DiscountViewSet,
 
 router = DefaultRouter()
 router.register(r'discounts', DiscountViewSet)
+router.register(r'discount-usage', DiscountUsageViewSet, basename='discount-usage')
 router.register(r'categories', CategoryViewSet)
 router.register(r'product-variants', ProductVariantViewSet)
 router.register(r'products', ProductViewSet)

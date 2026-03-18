@@ -7,10 +7,10 @@ from .models import (
 # -----------------------------
 # Simple model registrations
 # -----------------------------
-@admin.register(Discount)
-class DiscountAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'rate']
-    search_fields = ['name']
+# @admin.register(Discount)
+# class DiscountAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'name', 'rate']
+#     search_fields = ['name']
 
 
 @admin.register(Category)
