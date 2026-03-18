@@ -1,4 +1,4 @@
-import { Monitor, File, Box, Clipboard, ClipboardPenLine, BookmarkCheck, User2Icon, Coffee, ChartBar, CakeSlice } from "lucide-react"
+import { Monitor, File, Box, Clipboard, ClipboardPenLine, BookmarkCheck, User2Icon, Coffee, ChartBar, CakeSlice, BadgePercentIcon } from "lucide-react"
 
 export const SidebarConfig = [
     {
@@ -11,6 +11,12 @@ export const SidebarConfig = [
         label: "PRODUCTS",
         link: '/products',
         icon: Coffee,
+        allowedRoles: ['admin']
+    },
+    {
+        label: "DISCOUNTS",
+        link: '/discounts',
+        icon: BadgePercentIcon,
         allowedRoles: ['admin']
     },
     {

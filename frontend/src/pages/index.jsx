@@ -12,6 +12,7 @@ export {default as Reports} from './Reports'
 export {default as Login} from './Login'
 export {default as ForgotPassword} from './ForgotPassword'
 export {default as SetAccount} from './SetAccount'
+export {default as Discounts} from './Discounts'
 
 export {default as QueueLayout} from './CakeOrders/QueueLayout'
 export {default as QueueOverview} from './CakeOrders/QueueOverview'

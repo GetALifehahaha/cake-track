@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { Pagination, ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import { AddProductModal, ArchivedModal, DiscountModal, CategoryModal, EditProductModal, ProductsSkeletonLoading} from '../components/organisms';
+import { AddProductModal, ArchivedModal, CategoryModal, EditProductModal, ProductsSkeletonLoading} from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
@@ -12,7 +12,7 @@ import Loading from '@/components/molecules/Loading';
 const Products = () => {
     const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();  
-    const {categoryData, categoryLoading, categoryError, categoryResponse} = useCategory();
+    const {categoryData, categoryLoading, categoryError} = useCategory();
     const {postProduct, data: productData, patchProduct, loading: productLoading, error: productError, batchUnarchiveProduct} = useProduct();
     const [filter, setFilter] = useState(null);
     const [prepEditProduct, setPrepEditProduct] = useState(null);
@@ -20,7 +20,6 @@ const Products = () => {
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
-    const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     const handleSetFilter = (value) => {
@@ -128,7 +127,6 @@ const Products = () => {
                     <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                 </div>
                 <div className='flex items-center gap-4'>
-                    <Button variant='block2' text='Manage Discounts' icon={Settings} onClick={handleShowDiscountModal}/>
                     <Button variant='block2' text='Manage Categories' icon={Settings} onClick={handleShowCategoryModal} />
                     <Button variant='block' text='Add Item' icon={Plus} onClick={handleShowAddProductModal} />
                 </div>
@@ -164,9 +162,6 @@ const Products = () => {
             <EditProductModal product={prepEditProduct} categoryOptions={categoryOptions} onConfirm={editProduct} onClose={handleCloseEditProductModal} />
             }
 
-            {showDiscountModal &&
-            <DiscountModal onClose={handleCloseDiscountModal}/>
-            }
             {showCategoryModal &&
             <CategoryModal onClose={handleCloseCategoryModal}/>
             }

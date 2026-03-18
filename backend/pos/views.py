@@ -53,10 +53,13 @@ class MediumPageSize(PageNumberPagination):
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
+    pagination_class = None
 
 class DiscountUsageViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DiscountUsage.objects.select_related('discount', 'transaction')
     serializer_class = DiscountUsageSerializer
+    pagination_class = None
+
     
 
 class CategoryViewSet(viewsets.ModelViewSet):

@@ -4,6 +4,7 @@ import {
 	Layout,
 	Home,
 	Transactions,
+	Discounts,
 	NotFound,
 	Login,
 	Inventory,
@@ -36,6 +37,7 @@ const App = () => {
 				<Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
 					<Route path='/' element={<Home />} />
 					<Route path='/transactions' element={<Transactions />} />
+					<Route path='/discounts' element={<Discounts />} />
 					<Route path='/inventory' element={<Inventory />} />
 					<Route path='/products' element={<Products />} />
 					<Route path='/queue' element={<QueueLayout />}>

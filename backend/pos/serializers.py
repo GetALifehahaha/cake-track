@@ -11,6 +11,14 @@ from decimal import Decimal
 
 
 class DiscountSerializer(serializers.ModelSerializer):
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Category.objects.all(),
+        source="category",
+        required=False,
+        allow_empty=True
+    )
+
     class Meta:
         model = Discount
         fields = [

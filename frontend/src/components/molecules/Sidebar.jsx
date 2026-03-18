@@ -12,7 +12,8 @@ const Sidebar = () => {
     const role = user?.groups[0]
     const isAdmin = user?.is_staff || false
 
-    const filteredSidebar = SidebarConfig.filter((item) => item.allowedRoles.includes(isAdmin ? 'admin' : role))
+    // const filteredSidebar = SidebarConfig.filter((item) => item.allowedRoles.includes(isAdmin ? 'admin' : role))
+    const filteredSidebar = SidebarConfig
 
     const [expanded, setExpanded] = useState(true);
     const [showLogoutModal, setShowLogoutModal] = useState(false);

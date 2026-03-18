@@ -49,16 +49,16 @@ api.interceptors.response.use(
             // turn retry = true
             request._retry = true;
 
-            if (!navigator.onLine) {
-                if (isSessionValid()) {
-                    return Promise.reject({offline: true, message: "Device is currently offline. Activating offline mode..."})
-                } else {
-                    if (!isOnPublicAuthPage()) {
-                        window.dispatchEvent(new CustomEvent('auth:logout'))
-                    }
-                    return Promise.reject({sessionExpired: true})
-                }
-            } 
+            // if (!navigator.onLine) {
+            //     if (isSessionValid()) {
+            //         return Promise.reject({offline: true, message: "Device is currently offline. Activating offline mode..."})
+            //     } else {
+            //         if (!isOnPublicAuthPage()) {
+            //             window.dispatchEvent(new CustomEvent('auth:logout'))
+            //         }
+            //         return Promise.reject({sessionExpired: true})
+            //     }
+            // } 
 
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {

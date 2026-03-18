@@ -7,6 +7,7 @@ const API_ENDPOINTS = {
     USERS_ACTIVATE: "/users/user/activate/",
     CATEGORIES: "/pos/categories/",
     DISCOUNTS: "/pos/discounts/",
+    DISCOUNT_USAGE: "/pos/discount-usage/",
     INGREDIENTS: "/inventory/ingredients/",
     INGREDIENTS_ALL: "/inventory/ingredients-all/",
     INGREDIENTS_DASHBOARD: "/inventory/dashboard/",

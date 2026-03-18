@@ -194,6 +194,7 @@ class TransactionItem(models.Model):
         blank=True
     )
     quantity = models.PositiveIntegerField()
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
     price_at_time = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
