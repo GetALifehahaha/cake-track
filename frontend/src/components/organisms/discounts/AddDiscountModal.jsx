@@ -130,7 +130,7 @@ const AddDiscountModal = ({ productOptions, categoryOptions, onConfirm, onClose 
                             </div>
                             <div className='flex flex-col gap-2 flex-1'>
                                 <Label variant='modal' text='Value' />
-                                <input name='value' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.value} onChange={() => handleInputChange()} placeholder='0.00' />
+                                <input name='value' type='number' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.value} onChange={handleInputChange} placeholder='0.00' />
                             </div>
                         </div>
                     </div>

@@ -91,34 +91,33 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
 
 
     return (
-        <ModalBody title='Edit Discount' onClose={onClose} subtitle={`Editing rules for ${discount.name}`}>
-            <div className='flex flex-col gap-6 w-[800px] max-h-[70vh] overflow-y-auto pr-2 pb-2'>
-                
+        <ModalBody title='Edit Discount' onClose={onClose} subtitle={`Editing rules for ${discount.name}`} className={'w-[80vw]'}>
+            <div className='flex flex-row gap-6 max-h-[70vh] overflow-y-auto pr-2 pb-2'>
                 {/* TOP ROW: Details (Left) & Schedule (Right) */}
-                <div className='grid grid-cols-2 gap-6'>
+                <div className='grid grid-row-2 gap-6 flex-1'>
                     {/* Details Section */}
-                    <div className='flex flex-col gap-4 p-4 border border-main-dark/30 rounded-lg bg-main-dark/5'>
+                    <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Details</h6>
                         
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Discount Name' />
-                            <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.name} onChange={handleInputChange} />
+                            <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.name} onChange={handleInputChange} placeholder='e.g., Summer Sale' />
                         </div>
 
                         <div className='flex gap-4'>
                             <div className='flex flex-col gap-2 flex-1'>
                                 <Label variant='modal' text='Discount Type' />
-                                <Dropdown variant='modal' value={formData.discount_type} options={typeOptions} onSelect={(val) => handleSelection('discount_type', val)} />
+                                <Dropdown allowNone={false} variant='modal' value={formData.discount_type} options={typeOptions} onSelect={(val) => handleSelection('discount_type', val)} />
                             </div>
                             <div className='flex flex-col gap-2 flex-1'>
                                 <Label variant='modal' text='Value' />
-                                <input name='value' type='number' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.value} onChange={handleInputChange} />
+                                <input name='value' type='number' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.value} onChange={handleInputChange} placeholder='0.00' />
                             </div>
                         </div>
                     </div>
 
                     {/* Schedule Section */}
-                    <div className='flex flex-col gap-4 p-4 border border-main-dark/30 rounded-lg bg-main-dark/5'>
+                    <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Schedule</h6>
                         
                         <div className='flex flex-col gap-2'>
@@ -144,25 +143,26 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                 </div>
 
                 {/* BOTTOM SECTION: Rules & Active Status */}
-                <div className='flex flex-col gap-6'>
+                <div className='flex flex-col gap-6 flex-1'>
                     {/* Rules & Limits Section */}
-                    <div className='flex flex-col gap-4 p-4 border border-main-dark/30 rounded-lg bg-main-dark/5'>
+                    <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Rules & Limits</h6>
                         
                         <div className='flex flex-col gap-2 w-1/2 pr-3'>
                             <Label variant='modal' text='Scope' />
-                            <Dropdown variant='modal' value={formData.scope} options={scopeOptions} onSelect={(val) => handleSelection('scope', val)} />
+                            <Dropdown allowNone={false} variant='modal' value={formData.scope} options={scopeOptions} onSelect={(val) => handleSelection('scope', val)} />
                         </div>
 
                         {formData.scope === 'selected_products' && (
                             <div className='flex flex-col gap-2'>
                                 <Label variant='modal' text='Select Products' />
                                 <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the product you want to discount' />
-                                <div className='flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1'>
+                                <div className='grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-2 '>
                                     {filteredProducts.map(p => (
-                                        <span key={p.value} onClick={() => handleArraySelection('products', p.value)} className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${formData.products.includes(p.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
+                                        <div key={p.value} onClick={() => handleArraySelection('products', p.value)} 
+                                            className={`h-fit px-3 py-1 text-sm rounded-sm cursor-pointer transition-colors ${formData.products.includes(p.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
                                             {p.key}
-                                        </span>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -171,12 +171,13 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                         {formData.scope === 'selected_category' && (
                             <div className='flex flex-col gap-2'>
                                 <Label variant='modal' text='Select Categories' />
-                                <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the product you want to discount' />
-                                <div className='flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1'>
+                                <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the category you want to discount' />
+                                <div className='grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-2 '>
                                     {filteredCategories.map(c => (
-                                        <span key={c.value} onClick={() => handleArraySelection('categories', c.value)} className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${formData.categories.includes(c.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
+                                        <div key={c.value} onClick={() => handleArraySelection('categories', c.value)} 
+                                            className={`h-fit px-3 py-1 text-sm rounded-sm cursor-pointer transition-colors ${formData.categories.includes(c.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
                                             {c.key}
-                                        </span>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -195,7 +196,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                     </div>
 
                     {/* Status Toggle */}
-                    <div className='flex items-center gap-3 p-4 border border-main-dark/30 rounded-lg bg-main-dark/5'>
+                    <div className='flex items-center gap-3'>
                         <input type='checkbox' name='active' id='active-toggle' checked={formData.active} onChange={handleInputChange} className='w-5 h-5 accent-accent cursor-pointer' />
                         <label htmlFor='active-toggle' className='text-sm font-semibold text-text cursor-pointer select-none'>
                             Set Discount as Active
@@ -208,9 +209,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
             {feedback && <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} className="mt-4" />}
 
             {/* ACTION FOOTER */}
-            <div className='flex justify-between items-center mt-6 pt-4 border-t border-main-dark/30'>
-                <Button variant='error' text='Delete' onClick={() => onDelete(discount.id)} />
-
+            <div className='flex justify-end mt-6 pt-4 border-t border-main-dark/30'>
                 <div className='flex gap-4'>
                     {loading ? (
                         <div className='flex flex-row items-center gap-2 px-4'>
@@ -219,6 +218,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                         </div>
                     ) : (
                         <>
+                            <Button variant='error' text='Delete' onClick={() => onDelete(discount.id)} />
                             <Button variant='modalOutline' text='Cancel' onClick={onClose} />
                             <Button variant='modalBlock' text='Update Discount' onClick={submit} />
                         </>
