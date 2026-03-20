@@ -2,7 +2,6 @@ import API_ENDPOINTS from "@/api/endpoints";
 import useMutate from "./useMutate";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
-import { saveAllCategories, getLocalCategories } from "@/services/db";
 
 export default function useCategory(options = {}) {
     const { includeDisabled = false } = options;
@@ -10,22 +9,12 @@ export default function useCategory(options = {}) {
     const categoryQuery = useQuery({
         queryKey: ["categories", includeDisabled ? "all" : "active"],
         queryFn: async () => {
-            if (navigator.onLine) {
-                try {
-                    const response = await api.get(API_ENDPOINTS.CATEGORIES, {
-                        params: includeDisabled ? { include_disabled: true } : undefined,
-                    });
-                    const categories = response.data.results || response.data;
-                    await saveAllCategories(categories);
-                } catch (error) {
-                    console.warn("Offline or network error, relying on local categories cache.");
-                }
-            }
-
-            const localCategories = await getLocalCategories();
-            if (includeDisabled) return localCategories;
-
-            return localCategories.filter((category) => !category?.is_disabled);
+            const response = await api.get(API_ENDPOINTS.CATEGORIES, {
+                params: includeDisabled ? { include_disabled: true } : undefined,
+            });
+            const categories = response.data.results || response.data;
+            if (includeDisabled) return categories;
+            return categories.filter((category) => !category?.is_disabled);
         },
         staleTime: 10 * 60 * 1000,
     });

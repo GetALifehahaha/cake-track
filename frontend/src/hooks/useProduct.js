@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import useMutate from "./useMutate";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
-import { getLocalProducts, saveAllProducts } from "@/services/db";
+import useQueryFetch from "./useQueryFetch";
 
 export default function useProduct({isArchived=false} = {}) {
     const [searchParams] = useSearchParams();
@@ -19,26 +19,11 @@ export default function useProduct({isArchived=false} = {}) {
 
     const productQuery = useQuery({
         queryKey: ["products", apiParams],
-        queryFn: async () => {
-            const page = parseInt(apiParams.page || 1);
-            const limit = 15;
-            const category = apiParams.categories__name;
-            const q = apiParams.q;
-
-            if (navigator.onLine) {
-                try {
-                    const response = await api.get('/pos/products/get_all/');
-                    const allProducts = response.data.results || response.data;
-                    await saveAllProducts(allProducts);
-                } catch (error) {
-                    console.warn("Failed to sync products. Serving from local cache.", error);
-                }
-            }
-
-            return await getLocalProducts({ page, limit, category, q, isArchived });
-        },
+        queryFn: () => api.get(API_ENDPOINTS.PRODUCTS, { params: apiParams }).then((res) => res.data),
         staleTime: 5 * 60 * 1000
     });
+
+    const productAllQuery = useQueryFetch(["products_all"], API_ENDPOINTS.PRODUCTS_ALL, {}, { keepPreviousData: false });
 
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate("products", {
         invalidateKeys: [["products"]]
@@ -48,6 +33,7 @@ export default function useProduct({isArchived=false} = {}) {
         data: productQuery?.data || { results: [], next: null, previous: null },
         loading: productQuery.isPending || mutateLoading,
         error: productQuery.error || mutateError,
+        allProducts: productAllQuery?.data || [],
         postProduct: (params) => create(API_ENDPOINTS.PRODUCTS, params),
         patchProduct: (id, data) => update(`${API_ENDPOINTS.PRODUCTS}${id}/`, data),
         batchUnarchiveProduct: (data) => create(API_ENDPOINTS.PRODUCTS_UNARCHIVE, data),

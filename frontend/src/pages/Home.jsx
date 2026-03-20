@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ModalFeedbackCard, Pagination, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton, SyncStatusBar } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -26,7 +26,7 @@ const Home = () => {
         loading: transactionLoading,
         error: transactionError,
     } = useTransaction();
-    const {data: businessData, loading: businessLoading, error: businessError, verifyPinOffline} = useBusinessDetails();
+    const {data: businessData, loading: businessLoading, error: businessError} = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
     const [checkoutProducts, setCheckoutProducts] = useState(() => {
@@ -199,13 +199,7 @@ const Home = () => {
 
     
     const confirmAccessCode = async () => {
-        let isValid = false;
-
-        if (navigator.onLine && actualAccessCode) {
-            isValid = accessCode == actualAccessCode;
-        } else {
-            isValid = await verifyPinOffline(accessCode);
-        }
+        const isValid = accessCode == actualAccessCode;
 
         if (!isValid) {
             setModalFeedbackContent({

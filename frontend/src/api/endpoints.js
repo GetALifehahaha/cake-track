@@ -18,6 +18,7 @@ const API_ENDPOINTS = {
     BLOCKED_DATES: "/orders/blocked-dates/",
     OPENING_TIME: "/orders/opening-time/",
     PRODUCTS: "/pos/products/",
+    PRODUCTS_ALL: "/pos/products/get_all/",
     PRODUCTS_UNARCHIVE: "/pos/products/unarchive/",
     RECIPES: "/inventory/recipes/",
     SIZES: "/pos/sizes/",

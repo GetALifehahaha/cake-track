@@ -2,22 +2,13 @@ import API_ENDPOINTS from "@/api/endpoints";
 import useMutate from "./useMutate";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
-import { saveAllDiscounts, getLocalDiscounts } from "@/services/db";
 
 export default function useDiscount() {
     const discountQuery = useQuery({
         queryKey: ["discounts"],
         queryFn: async () => {
-            if (navigator.onLine) {
-                try {
-                    const response = await api.get(API_ENDPOINTS.DISCOUNTS);
-                    const discounts = response.data.results || response.data;
-                    await saveAllDiscounts(discounts);
-                } catch (error) {
-                    console.warn("Offline or network error, relying on local discount cache.");
-                }
-            }
-            return await getLocalDiscounts();
+            const response = await api.get(API_ENDPOINTS.DISCOUNTS);
+            return response.data.results || response.data;
         },
         staleTime: 10 * 60 * 1000,
     });

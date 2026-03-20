@@ -31,7 +31,8 @@ from .serializers import (DiscountSerializer,
                           TransactionSerializer, 
                           TransactionItemSerializer,
                           BusinessSettingsSerializer,
-                          ProductBatchUnarchiveSerializer
+                          ProductBatchUnarchiveSerializer,
+                          ProductAllSerializer
                           )
 from .models import (Discount, 
                      DiscountUsage,
@@ -53,7 +54,13 @@ class MediumPageSize(PageNumberPagination):
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = None
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    search_fields = ['name']
+
 
 class DiscountUsageViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DiscountUsage.objects.select_related('discount', 'transaction')
@@ -148,7 +155,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_all(self, request):
         queryset = Product.objects.all()
         self.pagination_class = None
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = ProductAllSerializer(queryset, many=True)
         return Response(serializer.data)
     
 

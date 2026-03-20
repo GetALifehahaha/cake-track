@@ -4,7 +4,7 @@ import api from '@/api/api'
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from './ToastContext'
-import { isSessionValid, refreshTokenMinutesRemaining } from '@/utils/tokenUtils'
+import { refreshTokenMinutesRemaining } from '@/utils/tokenUtils'
 
 export const AuthContext = createContext();
 
@@ -56,22 +56,12 @@ export const AuthProvider = ({children}) => {
     }, [navigate])
 
     const auth = async () => {
-
-        if (!navigator.onLine) {
-            if (isSessionValid()) {
-                setIsAuthorized(true);
-            } else {
-                setUser(null);
-                setIsAuthorized(false);
-            }
-        } else {
-            try {
-                await getUserData();
-                setIsAuthorized(true);
-            } catch (err) {
-                setUser(null);
-                setIsAuthorized(false);
-            }
+        try {
+            await getUserData();
+            setIsAuthorized(true);
+        } catch (err) {
+            setUser(null);
+            setIsAuthorized(false);
         }
     }
 
@@ -166,7 +156,7 @@ export const AuthProvider = ({children}) => {
 
     return (
         <AuthContext.Provider value={{user, getUserData, isAuthorized, setUser, login, googleLogin, register, setIsAuthorized, loading, logout, sessionMinutesRemaining, sessionWarning}}>
-            {sessionWarning && <div className="w-full bg-warning-fill/20 text-warning-text text-xs font-medium text-center py-1.5 px-4">Your session will expire in {sessionMinutesRemaining} minutes. Connect to an internet connection and sync your offline transactions before it expires.</div>}
+            {sessionWarning && <div className="w-full bg-warning-fill/20 text-warning-text text-xs font-medium text-center py-1.5 px-4">Your session will expire in {sessionMinutesRemaining} minutes. Please log in again before it expires.</div>}
             {children}
         </AuthContext.Provider>
     )

@@ -6,8 +6,6 @@ import { AuthContext } from '@/context/AuthContext'
 import { Button } from '@/components/atoms'
 import { Search } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
-import useTransaction from '@/hooks/useTransaction'
-import { SyncStatusBar } from '@/components/organisms'
 
 const Layout = () => {
 
@@ -21,13 +19,6 @@ const Layout = () => {
         path.endsWith('/queue') ||
         path.includes('details');
     
-    const {        
-        unsyncedCount,
-        isSyncing,
-        syncProgress,
-        syncResult,
-        syncOfflineTransactions} = useTransaction();
-
     const handleSetSearchText = (value) => {
         setSearchText(value)
 
@@ -59,14 +50,6 @@ const Layout = () => {
                     </span>
 
                     <div className='flex gap-2'>
-                    <SyncStatusBar
-                        isOnline={navigator.onLine}
-                        unsyncedCount={unsyncedCount}
-                        isSyncing={isSyncing}
-                        syncProgress={syncProgress}
-                        syncResult={syncResult}
-                        onSync={syncOfflineTransactions}
-                        />
                     <ProfileCard user={user}/>
                     </div>
                 </div>

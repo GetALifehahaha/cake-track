@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Button, Dropdown, Label } from '../../atoms';
 import { DatePicker, ModalBody, ModalFeedbackCard } from '../../molecules';
 import { Loader2 } from 'lucide-react';
+import { inputText } from '@/utils/safeInput';
 
 const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfirm, onDelete, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const [search, setSearch] = useState("");
 
     const [formData, setFormData] = useState({
         name: discount.name,
@@ -84,6 +86,10 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
         onConfirm(payload);
     };
 
+    const filteredProducts = productOptions.filter(({key}) => key.toLowerCase().includes(search.toLowerCase()))
+    const filteredCategories = categoryOptions.filter(({key}) => key.toLowerCase().includes(search.toLowerCase()))
+
+
     return (
         <ModalBody title='Edit Discount' onClose={onClose} subtitle={`Editing rules for ${discount.name}`}>
             <div className='flex flex-col gap-6 w-[800px] max-h-[70vh] overflow-y-auto pr-2 pb-2'>
@@ -151,8 +157,9 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                         {formData.scope === 'selected_products' && (
                             <div className='flex flex-col gap-2'>
                                 <Label variant='modal' text='Select Products' />
+                                <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the product you want to discount' />
                                 <div className='flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1'>
-                                    {productOptions.map(p => (
+                                    {filteredProducts.map(p => (
                                         <span key={p.value} onClick={() => handleArraySelection('products', p.value)} className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${formData.products.includes(p.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
                                             {p.key}
                                         </span>
@@ -164,8 +171,9 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                         {formData.scope === 'selected_category' && (
                             <div className='flex flex-col gap-2'>
                                 <Label variant='modal' text='Select Categories' />
+                                <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the product you want to discount' />
                                 <div className='flex flex-wrap gap-2 max-h-[120px] overflow-y-auto p-1'>
-                                    {categoryOptions.map(c => (
+                                    {filteredCategories.map(c => (
                                         <span key={c.value} onClick={() => handleArraySelection('categories', c.value)} className={`px-3 py-1 text-xs rounded-full cursor-pointer transition-colors ${formData.categories.includes(c.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
                                             {c.key}
                                         </span>

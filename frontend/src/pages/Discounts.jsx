@@ -12,7 +12,7 @@ import Loading from '@/components/molecules/Loading';
 const Discounts = () => {
     const { addToast } = useToast();
     const { discountData, discountLoading, discountError, postDiscount, patchDiscount, deleteDiscount } = useDiscount();
-    const { data: productData, loading: productLoading } = useProduct();
+    const { allProducts: productData, loading: productLoading } = useProduct();
     const { categoryData, categoryLoading } = useCategory();
 
     const [showAddModal, setShowAddModal] = useState(false);
@@ -57,7 +57,7 @@ const Discounts = () => {
         }
     };
 
-    const productOptions = productData?.results?.map(p => ({ key: p.name, value: p.id })) || [];
+    const productOptions = productData?.map(p => ({ key: p.name, value: p.id })) || [];
     const categoryOptions = categoryData?.map(c => ({ key: c.name, value: c.id })) || [];
 
     return (
@@ -74,50 +74,48 @@ const Discounts = () => {
                     </div>
                 ) : (
                     <div className='overflow-x-auto w-full'>
-                        <table className='w-full text-left border-collapse'>
-                            <div className='p-2 py-3 bg-accent-mute rounded-t-lg flex flex-row items-center text-white text-sm text-center'>
-								<h5 className='flex-1 text-left pl-2'>Name</h5>
-								<h5 className='flex-1 text-left'>Type</h5>
-								<h5 className='flex-1 text-left'>Value</h5>
-								<h5 className='flex-1 text-left'>Scope</h5>
-								<h5 className='flex-1 text-left'>Usage (Used/Limit)</h5>
-								<h5 className='flex-1 text-left'>Status</h5>
-							</div>
-                            <div className='flex flex-col gap-2 mt-2'>
-								{discountData.map((discount) => (
-									<div 
-									onClick={() => setPrepEditDiscount(discount)}
-									key={discount.id} className='p-2.5 flex flex-row items-center text-text font-medium text-sm text-center bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark cursor-pointer hover:-translate-y-1 transition'>
-										
-										<div className='flex-1 text-left pl-2'>
-											<h5>{discount.name}</h5>
-										</div>
-										
-										<h5 className='flex-1 text-left capitalize'>
-											{discount.discount_type}
-										</h5>
-										
-										<h5 className='flex-1 text-left'>
-											{discount.discount_type === 'percentage' ? `${discount.value}%` : `₱${discount.value}`}
-										</h5>
-										
-										<h5 className='flex-1 text-left capitalize'>
-											{discount.scope.replace('_', ' ')}
-										</h5>
-										
-										<h5 className='flex-1 text-left'>
-											{discount.used_count} / {discount.usage_limit || '∞'}
-										</h5>
-										
-										<div className='flex-1 text-left flex items-center'>
-											<span className={`px-2 py-1 rounded-full text-xs font-semibold ${discount.active ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}`}>
-												{discount.active ? 'Active' : 'Inactive'}
-											</span>
-										</div>
-									</div>
-								))}
-							</div>
-                        </table>
+                        <div className='p-2 py-3 bg-accent-mute rounded-t-lg flex flex-row items-center text-white text-sm text-center'>
+                            <h5 className='flex-1 text-left pl-2'>Name</h5>
+                            <h5 className='flex-1 text-left'>Type</h5>
+                            <h5 className='flex-1 text-left'>Value</h5>
+                            <h5 className='flex-1 text-left'>Scope</h5>
+                            <h5 className='flex-1 text-left'>Usage (Used/Limit)</h5>
+                            <h5 className='flex-1 text-left'>Status</h5>
+                        </div>
+                        <div className='flex flex-col gap-2 mt-2'>
+                            {discountData.map((discount) => (
+                                <div 
+                                onClick={() => setPrepEditDiscount(discount)}
+                                key={discount.id} className='p-2.5 flex flex-row items-center text-text font-medium text-sm text-center bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark cursor-pointer hover:-translate-y-1 transition'>
+                                    
+                                    <div className='flex-1 text-left pl-2'>
+                                        <h5>{discount.name}</h5>
+                                    </div>
+                                    
+                                    <h5 className='flex-1 text-left capitalize'>
+                                        {discount.discount_type}
+                                    </h5>
+                                    
+                                    <h5 className='flex-1 text-left'>
+                                        {discount.discount_type === 'percentage' ? `${discount.value}%` : `₱${discount.value}`}
+                                    </h5>
+                                    
+                                    <h5 className='flex-1 text-left capitalize'>
+                                        {discount.scope.replace('_', ' ')}
+                                    </h5>
+                                    
+                                    <h5 className='flex-1 text-left'>
+                                        {discount.used_count} / {discount.usage_limit || '∞'}
+                                    </h5>
+                                    
+                                    <div className='flex-1 text-left flex items-center'>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${discount.active ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}`}>
+                                            {discount.active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
                 

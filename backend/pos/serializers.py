@@ -57,6 +57,13 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_disabled']
 
 
+class ProductAllSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name']
+        read_only_fields = fields
+
+
 class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
