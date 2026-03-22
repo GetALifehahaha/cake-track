@@ -194,6 +194,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('transaction_items')
         discount_input = validated_data.pop('discount', None)
         paid_amount = validated_data.get('paid_amount', Decimal('0.00'))
+        is_void = validated_data.pop('is_void', False)
         
         validated_data['cashier'] = self.context['request'].user
 
@@ -249,15 +250,16 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             net_total = gross_total - discount_amount
             change = paid_amount - net_total
 
-            if change < Decimal('0.00'):
+            if change < Decimal('0.00') and not is_void:
                 raise ValidationError({"paid_amount": "The paid amount is less than the net total."})
 
             transaction_obj = Transaction.objects.create(
                 gross_total=gross_total,
                 discount_amount=discount_amount,
                 net_total=net_total,
-                change=change,
+                change=0,
                 discount=locked_discount,
+                is_void=is_void,
                 **validated_data
             )
 
