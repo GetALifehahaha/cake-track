@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ModalFeedbackCard, Pagination, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton, SelectDiscountModal } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -36,7 +36,7 @@ const Home = () => {
     const [voidProducts, setVoidProducts] = useState([]);
 
     const [grossTotal, setGrossTotal] = useState(0);
-    const [discount, setDiscount] = useState();
+    const [discount, setDiscount] = useState({id: -1, name: ""});
     const [discountValue, setDiscountValue] = useState(0);
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
@@ -49,6 +49,7 @@ const Home = () => {
     const [showClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
+    const [showDiscountModal, setShowDiscountModal] = useState(false);
 
 
     const [actualAccessCode, setActualAccessCode] = useState();
@@ -162,6 +163,13 @@ const Home = () => {
         setModalFeedbackContent(null)
     }
 
+    // TODO: Apply discount
+    const selectDiscount = (discount) => {
+        setDiscount({id: discount.id, name: discount.name})
+
+        setShowDiscountModal(false);
+    }
+
 
     const handlePrepProduct = (product) => {
         if (product.variants.length === 1) addToCheckout({
@@ -263,7 +271,7 @@ const Home = () => {
                 order_type: orderType,
                 transaction_items: checkoutProductsPayload,
                 paid_amount: parsedValue,
-                discount: discount,
+                discount: discount.id !== -1 ? discount.id : null
             })
 
             const localReceiptTransaction = {
@@ -278,7 +286,7 @@ const Home = () => {
                 net_total: netTotal,
                 paid_amount: parsedValue,
                 change: parsedValue - netTotal,
-                discount: selectedDiscount || null,
+                discount: discount.name || null,
                 cashier: {
                     first_name: user?.first_name || '',
                     last_name: user?.last_name || '',
@@ -299,6 +307,7 @@ const Home = () => {
 
             setCompletedTransaction(transactionResponse?.source === "server" ? (transactionResponse?.data ?? null) : localReceiptTransaction);
             setReceivedPayment(transactionResponse?.data?.paid_amount ?? parsedValue);
+            setDiscount({id: -1, name: ''})
             setShowPaymentSuccessModal(true);
             removeAllProducts();
 
@@ -475,9 +484,7 @@ const Home = () => {
                                     <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                                 </div>
                                 <div className='flex items-center'>
-                                    <Label variant='small' text='Discount' />
-                                    <div className='flex-1' />
-                                    <Dropdown value={discount} variant='outline' selection="Discount" size='fit' options={discountOptions} onSelect={handleSetDiscount} className='bg-main' />
+                                    <Button text={discount?.name || 'Select Discount'}  variant='modalOutline' className='text-sm py-1' size='small' onClick={() => setShowDiscountModal(true)} />
                                 </div>
                             </div>
                             <hr className='text-border'></hr>
@@ -527,6 +534,11 @@ const Home = () => {
 
             {prepProduct &&
                 <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
+            }
+
+            {/* TODO: Apply discount */}
+            {showDiscountModal &&
+                <SelectDiscountModal discounts={discountData} cartItems={checkoutProducts} grossTotal={grossTotal} currentDiscountId={discount.id} onSelect={selectDiscount} onClose={() => setShowDiscountModal(false)} />
             }
         </div>
     )

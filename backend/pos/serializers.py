@@ -193,6 +193,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('transaction_items')
         discount_input = validated_data.pop('discount', None)
+        
+        discount_input = discount_input if discount_input != -1 else None
+
         paid_amount = validated_data.get('paid_amount', Decimal('0.00'))
         is_void = validated_data.pop('is_void', False)
         

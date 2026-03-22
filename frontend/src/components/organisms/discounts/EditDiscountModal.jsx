@@ -124,7 +124,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                             <Label variant='modal' text='Start Date & Time' />
                             <div className='flex gap-2 items-center'>
                                 <div className='flex-1'>
-                                    <DatePicker date={new Date(formData.start_date.split('T')[0])} setDate={(d) => handleDateUpdate('start_date', d)} />
+                                    <DatePicker date={new Date(formData.start_date.split('T')[0])} selected={formData['start_date']} onSelect={(d) => handleDateUpdate('start_date', d)} />
                                 </div>
                                 <input type='time' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none border border-border w-1/3' value={formData.start_date.split('T')[1]} onChange={(e) => handleTimeUpdate('start_date', e)} />
                             </div>
@@ -134,7 +134,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                             <Label variant='modal' text='End Date & Time' />
                             <div className='flex gap-2 items-center'>
                                 <div className='flex-1'>
-                                    <DatePicker date={new Date(formData.end_date.split('T')[0])} setDate={(d) => handleDateUpdate('end_date', d)} />
+                                    <DatePicker date={new Date(formData.end_date.split('T')[0])} selected={formData['end_date']} onSelect={(d) => handleDateUpdate('end_date', d)} />
                                 </div>
                                 <input type='time' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none border border-border w-1/3' value={formData.end_date.split('T')[1]} onChange={(e) => handleTimeUpdate('end_date', e)} />
                             </div>

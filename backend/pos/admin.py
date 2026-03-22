@@ -69,3 +69,6 @@ class TransactionItemAdmin(admin.ModelAdmin):
     list_display = ['id', 'transaction', 'product', 'product_variant', 'quantity']
     search_fields = ['product__name', 'transaction__id']
     list_filter = ['product']
+
+
+admin.site.register(Discount)
