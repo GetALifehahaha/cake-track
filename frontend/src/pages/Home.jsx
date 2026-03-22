@@ -588,8 +588,11 @@ const Home = () => {
                                     <Label variant='small' text={`Items (${checkoutProducts.length})`} />
                                     <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                                 </div>
-                                <div className='flex items-center'>
+                                <div className='flex items-center justify-between w-full gap-2'>
                                     <Button text={discount?.name || 'Select Discount'}  variant='modalOutline' className='text-sm py-1' size='small' onClick={() => setShowDiscountModal(true)} />
+                                    <h5 className='text-sm font-semibold text-success whitespace-nowrap'>
+                                        -₱ {Number(discountBreakdown.totalDiscount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </h5>
                                 </div>
                             </div>
                             <hr className='text-border'></hr>

@@ -4,6 +4,7 @@ import Loading from '@/components/molecules/Loading';
 import { Button } from '../../atoms';
 import useInventoryTransaction from '@/hooks/useInventoryTransaction'; // Assuming this hook fetches transactions
 import { cn } from '@/utils/cn';
+import { formatQty } from '@/utils/formatQty';
 
 const TransactionHistoryModal = ({ onClose }) => {
     const { inventoryTransactionData: transactions, inventoryTransactionLoading: loading, inventoryTransactionError: error } = useInventoryTransaction();
@@ -41,10 +42,10 @@ const TransactionHistoryModal = ({ onClose }) => {
                                     </span>
                                 </h5>
                                 <h5 className='flex-1 px-2 py-3 text-left text-sm'>
-                                    {tx.amount} {tx.unit_abbreviation}
+                                    {formatQty(tx.amount)} {tx.unit_abbreviation}
                                 </h5>
                                 <h5 className='flex-1 px-2 py-3 text-left text-sm text-text/60'>
-                                    {tx.remaining_amount}
+                                    {formatQty(tx.remaining_amount)}
                                 </h5>
                                 <h5 className='flex-1 px-2 py-3 text-left text-sm text-error font-medium'>
                                     {tx.expiration_date || '-'}

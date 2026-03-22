@@ -9,6 +9,7 @@ import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
 import { InventorySkeleton } from '@/components/molecules/Skeletons';
 import { useSearchParams } from 'react-router-dom';
+import { formatQty } from '@/utils/formatQty';
 
 const Inventory = () => {
 
@@ -138,7 +139,7 @@ const Inventory = () => {
                 <div className='flex-1 text-left flex gap-2'>
                     <h5 >{item.name}</h5>
                 </div>
-                <h5 className='flex-1 text-left'>{(item.total_stock).replace(/\.00$/, '')} {item.unit.abbreviation}</h5>
+                <h5 className='flex-1 text-left'>{formatQty(item.total_stock)} {item.unit.abbreviation}</h5>
                 <div className='flex-1 text-left flex items-center'>
                     <StockLabel amount={item.total_stock} />
 
@@ -181,7 +182,7 @@ const Inventory = () => {
                                 >
                                     <div className='flex-1 flex flex-col items-start gap-2'>
                                         <h5 className='text-text/50'>Remaining Amount</h5>
-                                        <h5 >{(batch.remaining_amount).replace(/\.00$/, '')}</h5>
+                                        <h5 >{formatQty(batch.remaining_amount)} {item.unit.abbreviation}</h5>
                                     </div>
                                     <div className='flex-1 flex flex-col items-start gap-2'>
                                         <h5 className='text-text/50'>Purchase Date</h5>

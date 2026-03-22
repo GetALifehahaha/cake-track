@@ -5,6 +5,7 @@ import ConfirmationModal from '../ConfirmationModal';
 import { X, Plus, Check } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
 import { EditInventorySkeleton } from '@/components/molecules/Skeletons';
+import { formatQty } from '@/utils/formatQty';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const {data: units, loading, error, postUnit, refresh} = useUnits()
@@ -14,6 +15,14 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const [creatingUnit, setCreatingUnit] = useState(false);
     const [newUnitName, setNewUnitName] = useState('');
     const [newUnitAbbreviation, setNewUnitAbbreviation] = useState('');
+    const [conversions, setConversions] = useState(
+        (item.conversions || []).map((conversion) => ({
+            from_unit_id: conversion.from_unit?.id || conversion.from_unit_id,
+            multiplier_to_base: conversion.multiplier_to_base === null || conversion.multiplier_to_base === undefined
+                ? ''
+                : formatQty(conversion.multiplier_to_base),
+        }))
+    );
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -23,10 +32,15 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
 
     const unitSelection = useMemo(() => {
         return units.map(unit => ({
-            key: unit.name,
+            key: `${unit.name}${unit.abbreviation ? ` (${unit.abbreviation})` : ''}`,
             value: unit.id
         }))
     }, [units])
+
+    const selectedUnitMeta = useMemo(() => units.find(u => u.id === unit), [units, unit]);
+    const compatibleUnits = useMemo(() => units
+        .filter(u => u.id !== unit)
+        .map(u => ({ key: `${u.name}${u.abbreviation ? ` (${u.abbreviation})` : ''}`, value: u.id })), [units, unit]);
 
     if (loading) return <EditInventorySkeleton onClose={onClose} />
     if (error) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to fetch units for inventory editing.' />
@@ -72,6 +86,25 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         }
     }
 
+    const addConversionRow = () => {
+        setConversions(prev => [...prev, { from_unit_id: null, multiplier_to_base: '' }]);
+    };
+
+    const removeConversionRow = (index) => {
+        setConversions(prev => prev.filter((_, idx) => idx !== index));
+    };
+
+    const updateConversionRow = (index, key, value) => {
+        setConversions(prev => prev.map((row, idx) => idx === index ? { ...row, [key]: value } : row));
+    };
+
+    const normalizeConversionRow = (index) => {
+        setConversions(prev => prev.map((row, idx) => {
+            if (idx !== index || row.multiplier_to_base === '') return row;
+            return { ...row, multiplier_to_base: formatQty(row.multiplier_to_base) };
+        }));
+    };
+
     const handleConfirm = () => {
         if (!name || !unit) {
             setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
@@ -79,7 +112,14 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             return;
         }
 
-        onConfirm({ id: item.id, name, unit_id: unit})
+        const normalizedConversions = conversions
+            .filter(entry => entry.from_unit_id && Number(entry.multiplier_to_base) > 0)
+            .map(entry => ({
+                from_unit_id: entry.from_unit_id,
+                multiplier_to_base: entry.multiplier_to_base,
+            }));
+
+        onConfirm({ id: item.id, name, unit_id: unit, conversions: normalizedConversions })
     }
 
     const handleDelete = () => {
@@ -135,6 +175,47 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                                 <Button variant='icon' text='' icon={Plus} onClick={() => setCreatingUnit(true)} />
                             </div>
                         )}
+                    </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <div className='flex items-center justify-between'>
+                            <Label variant='modal' text='Unit Conversions (Optional)' />
+                            <Button variant='modalOutline' size='small' text='Add Conversion' onClick={addConversionRow} />
+                        </div>
+
+                        {conversions.length === 0 && (
+                            <h5 className='text-xs text-text/60'>Example: Flour base unit = kg, then set cup → 0.2 (1 cup = 0.2 kg).</h5>
+                        )}
+
+                        <div className='flex flex-col gap-2'>
+                            {conversions.map((row, index) => (
+                                <div key={index} className='flex gap-2 items-center'>
+                                    <div className='flex-1'>
+                                        <Dropdown
+                                            size='full'
+                                            variant='modal'
+                                            value={row.from_unit_id}
+                                            selection='From unit'
+                                            options={compatibleUnits}
+                                            onSelect={(value) => updateConversionRow(index, 'from_unit_id', value)}
+                                        />
+                                    </div>
+                                    <input
+                                        type='text'
+                                        value={row.multiplier_to_base}
+                                        placeholder={`1 unit = ? ${selectedUnitMeta?.abbreviation || selectedUnitMeta?.name || 'base'}`}
+                                        className='w-56 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            if (!/^\d*\.?\d{0,6}$/.test(raw)) return;
+                                            updateConversionRow(index, 'multiplier_to_base', raw);
+                                        }}
+                                        onBlur={() => normalizeConversionRow(index)}
+                                    />
+                                    <Button variant='icon' text='' icon={X} onClick={() => removeConversionRow(index)} />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

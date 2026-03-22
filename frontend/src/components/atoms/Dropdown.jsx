@@ -18,7 +18,8 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
     const sizes = {
         full: 'w-full',
         fit: 'w-fit',
-        regular: 'w-[140px]'
+        regular: 'w-[140px]',
+        'height-full': 'h-full'
     }
 
     const capitalize = (str) => str ? str[0].toUpperCase() + str.slice(1) : str;

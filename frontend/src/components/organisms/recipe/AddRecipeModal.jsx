@@ -1,12 +1,44 @@
 import React, { useState } from 'react';
 import { ModalFeedbackCard, ModalErrorState } from '../../molecules';
-import { Button } from '../../atoms';
+import { Button, Dropdown } from '../../atoms';
 import { X, UtensilsCrossed, Info, List, Search } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import Loading from '@/components/molecules/Loading';
 import ConfirmationModal from '../ConfirmationModal';
 import { RecipeModalSkeleton } from '@/components/molecules/Skeletons';
-import { getUnitOptions, getDefaultRecipeUnit, toStorageUnit } from '@/utils/unitConversion';
+import { formatQty } from '@/utils/recipeUnits';
+
+const buildIngredientUnitOptions = (ingredient) => {
+    const baseUnit = ingredient?.unit;
+    const conversionUnits = (ingredient?.conversions || [])
+        .map(conversion => ({
+            unit: conversion.from_unit,
+            multiplierToBase: Number(conversion.multiplier_to_base || 1),
+        }))
+        .filter(entry => entry.unit);
+
+    const unique = new Map();
+
+    if (baseUnit?.id) {
+        unique.set(baseUnit.id, {
+            value: baseUnit.id,
+            label: baseUnit.abbreviation || baseUnit.name,
+            multiplierToBase: 1,
+        });
+    }
+
+    conversionUnits.forEach(entry => {
+        if (!unique.has(entry.unit.id)) {
+            unique.set(entry.unit.id, {
+                value: entry.unit.id,
+                label: entry.unit.abbreviation || entry.unit.name,
+                multiplierToBase: entry.multiplierToBase,
+            });
+        }
+    });
+
+    return Array.from(unique.values());
+};
 
 const AddRecipeModal = ({ onClose, onConfirm }) => {
     const { ingredientAll, ingredientLoading, ingredientError, refresh } = useIngredient();
@@ -91,7 +123,9 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
 
     const handleAddIngredient = (ingredient) => {
         if (selectedIngredients.some(item => item.ingredient_id === ingredient.id)) return;
-        const storageUnit = ingredient.unit?.abbreviation || '';
+        const unitOptions = buildIngredientUnitOptions(ingredient);
+        const defaultUnitId = ingredient?.unit?.id || unitOptions[0]?.value || null;
+        const defaultUnitLabel = unitOptions.find(option => option.value === defaultUnitId)?.label || '';
         
         setSelectedIngredients(prev => [
             ...prev, 
@@ -99,9 +133,10 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                 ingredient_id: ingredient.id, 
                 ingredient_name: ingredient.name, 
                 amount_needed: '', 
-                storage_unit: storageUnit,
-                display_unit: getDefaultRecipeUnit(storageUnit),
-                unit_options: getUnitOptions(storageUnit),
+                base_unit_id: ingredient?.unit?.id,
+                display_unit_id: defaultUnitId,
+                display_unit_label: defaultUnitLabel,
+                unit_options: unitOptions,
             }
         ]);
     };
@@ -111,7 +146,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
     };
 
     const handleUpdateAmount = (index, e) => {
-        if (!/^\d*\.?\d{0,2}$/.test(e.target.value)) return;
+        if (!/^\d*\.?\d{0,4}$/.test(e.target.value)) return;
         if (e.target.value.length > 11) return;
 
         const updated = selectedIngredients.map((item, i) => 
@@ -120,12 +155,31 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
         setSelectedIngredients(updated);
     };
 
-    const handleToggleUnit = (index) => {
+    const handleAmountBlur = (index) => {
+        setSelectedIngredients(prev => prev.map((item, i) => {
+            if (i !== index || item.amount_needed === '') return item;
+            return { ...item, amount_needed: formatQty(item.amount_needed) };
+        }));
+    };
+
+    const handleSelectUnit = (index, selectedUnitId) => {
         setSelectedIngredients(prev => prev.map((item, i) => {
             if (i !== index || item.unit_options.length <= 1) return item;
-            const currentIdx = item.unit_options.findIndex(o => o.value === item.display_unit);
-            const nextIdx = (currentIdx + 1) % item.unit_options.length;
-            return { ...item, display_unit: item.unit_options[nextIdx].value, amount_needed: '' };
+            const currentIdx = item.unit_options.findIndex(o => o.value === item.display_unit_id);
+            const nextIdx = item.unit_options.findIndex(o => o.value === selectedUnitId);
+            if (nextIdx < 0 || nextIdx === currentIdx) return item;
+            const currentOption = item.unit_options[currentIdx];
+            const nextOption = item.unit_options[nextIdx];
+            const numericAmount = Number(item.amount_needed || 0);
+            const convertedAmount = item.amount_needed
+                ? (numericAmount * Number(currentOption?.multiplierToBase || 1)) / Number(nextOption?.multiplierToBase || 1)
+                : '';
+            return {
+                ...item,
+                display_unit_id: nextOption.value,
+                display_unit_label: nextOption.label,
+                amount_needed: convertedAmount === '' ? '' : formatQty(convertedAmount),
+            };
         }));
     };
 
@@ -140,11 +194,11 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
             instructions,
             ingredients: selectedIngredients.map(item => ({
                 ingredient_id: item.ingredient_id,
-                amount_needed: parseFloat(toStorageUnit(item.amount_needed || 0, item.display_unit).toFixed(4))
+                amount_needed: parseFloat((item.amount_needed || 0)),
+                input_unit_id: item.display_unit_id,
             }))
         };
 
-        console.log(payload)
         await onConfirm(payload);
     };
 
@@ -242,14 +296,13 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                                     </div>
                                     <div className="flex-1 overflow-y-auto pr-2 space-y-3 pb-4">
                                         {filteredIngredients.map(ing => (
-                                            console.log(ing),
                                             <div 
                                                 key={ing.id} 
                                                 onClick={() => handleAddIngredient(ing)} 
                                                 className="p-4 rounded-xl border border-border bg-main-white cursor-pointer hover:border-accent hover:shadow-sm transition-all flex flex-col gap-1"
                                             >
                                                 <h5 className="font-medium text-sm text-text">{ing.name}</h5>
-                                                <p className="text-[10px] text-text-light">Stock: {ing?.total_stock || 0} {ing?.unit?.abbreviation}</p>
+                                                <p className="text-[10px] text-text-light">Stock: {formatQty(ing?.total_stock || 0)} {ing?.unit?.abbreviation}</p>
                                             </div>
                                         ))}
                                         {filteredIngredients.length === 0 && (
@@ -264,22 +317,38 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                                         {selectedIngredients.map((item, index) => (
                                             <div key={index} className="flex items-center gap-2 p-2 bg-main-white rounded-lg shadow-sm border border-border/50">
                                                 <h5 className="flex-1 font-medium text-xs text-text truncate pl-2">{item.ingredient_name}</h5>
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex flex-col items-end gap-0.5">
+                                                    <div className="flex items-center gap-1.5">
                                                     <input 
                                                         type="text" 
                                                         placeholder="0.00" 
                                                         value={item.amount_needed} 
                                                         onChange={(e) => handleUpdateAmount(index, e)}
-                                                        className="w-14 px-2 py-1.5 bg-main rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-accent text-center" 
+                                                        onBlur={() => handleAmountBlur(index)}
+                                                        className="min-w-14 px-2 py-1.5 bg-main rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-accent text-center" 
                                                     />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleUnit(index)}
-                                                        className={`text-[10px] font-medium w-8 text-center rounded px-1 py-0.5 transition-colors ${item.unit_options?.length > 1 ? 'text-accent cursor-pointer hover:bg-accent/10' : 'text-text-light cursor-default'}`}
-                                                        title={item.unit_options?.length > 1 ? 'Click to toggle unit' : ''}
-                                                    >
-                                                        {item.display_unit}
-                                                    </button>
+                                                    <div className="w-20">
+                                                        <Dropdown
+                                                            size="full"
+                                                            variant="modal"
+                                                            value={item.display_unit_id}
+                                                            selection={item.display_unit_label || 'Unit'}
+                                                            options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
+                                                            onSelect={(value) => handleSelectUnit(index, value)}
+                                                            allowNone={false}
+                                                        />
+                                                    </div>
+                                                    </div>
+                                                    {/* {item.amount_needed && (
+                                                        <h6 className='text-[10px] text-text/50'>
+                                                            {(() => {
+                                                                const unit = item.unit_options.find(option => option.value === item.display_unit_id);
+                                                                const baseAmount = Number(item.amount_needed || 0) * Number(unit?.multiplierToBase || 1);
+                                                                const baseLabel = item.unit_options[0]?.label || item.display_unit_label;
+                                                                return `${formatQty(baseAmount)} ${baseLabel}`;
+                                                            })()}
+                                                        </h6>
+                                                    )} */}
                                                 </div>
                                                 <button onClick={() => handleRemoveIngredient(index)} className="p-1.5 text-text-light hover:text-error transition-colors">
                                                     <X size={14} />

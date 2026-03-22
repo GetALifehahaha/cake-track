@@ -10,6 +10,7 @@ import Loading from '../../molecules/Loading';
 import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
 import { InventoryInOutSkeleton } from '@/components/molecules/Skeletons';
+import { formatQty } from '@/utils/formatQty';
 
 const InventoryInOut = ({ onConfirm, onClose }) => {
 
@@ -145,7 +146,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	const listIngredients = filteredIngredients.map((ingredient) =>
 		<div key={ingredient.id} className='flex flex-col gap-2 px-4 py-2 rounded-md bg-main-white text-sm font-medium transition-all cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name, ingredient.total_stock)}>
 			<h5 className='text-text line-clamp-2'>{ingredient.name}</h5>
-			<h5 className='text-text/50'>Stock: {(ingredient.total_stock).replace(/\.00$/, '')} {ingredient.unit.abbreviation}</h5>
+			<h5 className='text-text/50'>Stock: {formatQty(ingredient.total_stock)} {ingredient.unit.abbreviation}</h5>
 		</div>
 	)
 

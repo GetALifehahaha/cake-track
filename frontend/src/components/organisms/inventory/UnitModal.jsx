@@ -48,7 +48,10 @@ const UnitModal = ({ onClose }) => {
     const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
 
     const handlePostUnit = async () => {
-        await postUnit({ name: unitName, abbreviation: unitAbbreviation });
+        await postUnit({
+            name: unitName,
+            abbreviation: unitAbbreviation,
+        });
         resetFeedback();
         closeUnitForm();
         handleCloseConfirmPostModal();
@@ -112,7 +115,7 @@ const UnitModal = ({ onClose }) => {
     ));
 
     return (
-        <ModalBody className='w-[40vw]' title='Manage Units' subtitle='Add, edit, or delete units for measurements' onClose={onClose}>
+        <ModalBody className='w-[60vw]' title='Manage Units' subtitle='Add, edit, or delete units for measurements' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
                 
                 {/* Add New Section */}

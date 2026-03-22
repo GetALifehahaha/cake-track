@@ -8,6 +8,7 @@ import Loading from '@/components/molecules/Loading';
 import { useToast } from '@/context/ToastContext';
 import ViewRecipeModal from '@/components/organisms/recipe/ViewRecipeModal';
 import { RecipeSkeleton } from '@/components/molecules/Skeletons';
+import { formatQty, getBestDisplay } from '@/utils/recipeUnits';
 
 const Recipe = () => {
 
@@ -20,8 +21,6 @@ const Recipe = () => {
     
     if (loading) return <RecipeSkeleton />
     if (error) return <h5>Error...</h5>
-
-    console.log(data)
 
     const selectViewRecipe = (recipe) => {
         setViewRecipe(recipe)
@@ -84,7 +83,17 @@ const Recipe = () => {
                 <ul className='flex flex-col gap-1'>
                     {recipe.ingredients.map(ing => (
                         <li key={ing.ingredient_id} className='text-sm text-text'>
-                            • {ing.amount_needed} {ing.ingredient_unit} {ing.ingredient_name}
+                            {(() => {
+                                const display = getBestDisplay(ing);
+                                return (
+                                    <>
+                                        • {formatQty(display.amount)} {display.unitLabel} {ing.ingredient_name}
+                                        {display.usedNonBase && (
+                                            <span className='text-text/50'> ({formatQty(display.baseAmount)} {display.baseUnitLabel})</span>
+                                        )}
+                                    </>
+                                )
+                            })()}
                         </li>
                     ))}
                 </ul>
