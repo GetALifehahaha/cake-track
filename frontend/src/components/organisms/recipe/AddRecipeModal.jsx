@@ -325,7 +325,7 @@ const AddRecipeModal = ({ onClose, onConfirm }) => {
                                                         value={item.amount_needed} 
                                                         onChange={(e) => handleUpdateAmount(index, e)}
                                                         onBlur={() => handleAmountBlur(index)}
-                                                        className="min-w-14 px-2 py-1.5 bg-main rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-accent text-center" 
+                                                        className="min-w-14 px-2 py-1.5 bg-main rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-accent text-center" 
                                                     />
                                                     <div className="w-20">
                                                         <Dropdown
