@@ -1,162 +1,121 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { Title, Label } from '../../atoms';
 import { X } from 'lucide-react';
-import { capitalize } from '@/utils/capitalize';
-import { formatCasing } from '@/utils/formatCasing';
-import { formatDateForDisplay } from '@/utils/date';
-import { PreviewImage } from '../../molecules';
-import { parseTimeString } from '@/utils/time';
-
 
 const OrderDetails = ({ orderDetails, onClose }) => {
+    // Determine if it's a pre-made cake or custom
+    const isPreMade = orderDetails.cake_orders.type === 'pre-made';
 
-    const [previewImage, setPreviewImage] = useState(null);
-
-    // Helper to get all images
-    const displayImages = orderDetails.order_images && orderDetails.order_images.length > 0 
-        ? orderDetails.order_images.map(img => img.image_url)
-        : (orderDetails.image ? [orderDetails.image] : []);
-
-    const downpayment = orderDetails?.payments?.find(payment => payment.payment_type === 'downpayment') || null;
-    const fullPayment = orderDetails?.payments?.find(payment => payment.payment_type === 'full_payment') || null;
-
-    const formatAmount = (value) => Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    // const listIngredients = orderDetails?.ingredients?.length > 0
-    //     ? orderDetails.ingredients.map((ingredient, index) =>
-    //         <h5 key={index} className='font-light text-text text-sm'>
-    //             {ingredient}
-    //         </h5>
-    //     )
-    //     : null
-    
     return (
-        <>
-            {previewImage && (
-                <PreviewImage 
-                src={previewImage} 
-                onClose={() => setPreviewImage(null)} 
-                />
-            )}
-            <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex justify-center items-center z-10'>
-                <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[40vw] flex flex-col gap-10 max-h-[90vh] h-full overflow-y-auto'>
-                    <div className="flex justify-between items-start w-full">
-                        <div>
-                            <Title variant='modal' text={'Order ' + orderDetails.id || 'Order Details'} />
-                            <h5 className='text-text text-sm font-semibold py-1'>{orderDetails.full_name}</h5>
-                            <h5 className='text-text text-sm'>Contact #: <strong>{orderDetails.phone_number}</strong></h5>
-                            <h5 className='text-text text-sm'>Pickup Date: <strong>{orderDetails.due_date} : {parseTimeString(orderDetails.pickup_time)}</strong></h5>
-                            <h5 className='text-text text-sm'>Order Date: <strong>{formatDateForDisplay(orderDetails.created_at)}</strong></h5>
+        <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4'>
+            <div className='bg-white rounded-3xl shadow-xl w-full max-w-[80vw] overflow-hidden flex flex-col'>
+                
+                {/* Header with Stepper */}
+                <div className="p-6 flex justify-between items-center border-b border-gray-100">
+                    <div className='flex flex-col gap-1'>
+                        <div className="flex items-center gap-3">
+                            <span className="bg-accent/20 text-accent-dark px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                {orderDetails.id}
+                            </span>
+                            <span className="capitalize text-text/50 text-sm font-medium">{orderDetails.status}</span>
                         </div>
-                        <div>
-                            <X size={16} className='text-text cursor-pointer' onClick={onClose} />
-                        </div>
+                        <h2 className="text-md ml-2 font-bold text-text">
+                            Deduct Inventory Ingredients
+                        </h2>
                     </div>
+                    
+                    {/* Stepper Implementation */}
+                    {orderDetails.status !== 'pending' && (
 
-                    <hr className='text-accent-dark w-4/5 mx-auto' />
-
-                    {/* Ingredients */}
-                    {/* {listIngredients &&
-                        <>
-                            <div className="">
-                                <Label text='Ingredient' variant='large' />
-                                <div className='px-6 py-1'>
-                                    {listIngredients}
-                                </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="w-8 h-8 rounded-full bg-stone-500 text-white flex items-center justify-center text-xs font-bold">1</span>
+                                <span className="text-stone-700 font-semibold text-sm">Order Info</span>
                             </div>
-                            <hr className='text-accent-dark/50 w-4/5 mx-auto' />
-                        </>
-                    } */}
-
-                    {/* Cake Details */}
-                    <div className="">
-                        <Label text='Cake Details' variant='large' />
-                        <div className='px-8 py-1 flex flex-row gap-8 justify-center'>
-                            <div className='flex-1'>
-                                <h5 className='text-sm text-text/75 font-medium'>Occasion: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.occasion)}</strong></h5>
-                                <h5 className='text-sm text-text/75 font-medium'>Flavor: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.base_flavor)}</strong></h5>
-                                <h5 className='text-sm text-text/75 font-medium'>Filling: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.filling)}</strong></h5>
-                                <h5 className='text-sm text-text/75 font-medium'>Shape: <strong className='ml-1 text-text'>{capitalize(orderDetails.cake_orders.shape)}</strong></h5>
-                                <h5 className='text-sm text-text/75 font-medium'>Tier: <strong className='ml-1 text-text'>{orderDetails.cake_orders.cake_tier}-tier</strong></h5>
+                            <div className="h-px w-8 bg-gray-300"></div>
+                            <div className="flex items-center gap-2 opacity-40">
+                                <span className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold">2</span>
+                                <span className="text-gray-600 font-medium text-sm">Ingredients</span>
                             </div>
-                            <div className='flex-1'>
-                                <h5 className='text-sm text-text/75 font-medium'>Inscription: <strong className='ml-1 text-text'>{formatCasing(orderDetails.cake_orders.message_type)}</strong></h5>
-                                <h5 className='text-sm text-text/75 font-medium'>Message: <strong className='ml-1 text-text'>{orderDetails.cake_orders.message}</strong></h5>
-                                {orderDetails.cupcake_orders &&
-                                    <>
-                                        <h5 className='text-sm text-text/75 font-medium'>Cupcakes: <strong className='ml-1 text-text'>{orderDetails.cupcake_orders.amount}</strong></h5>
-                                        <div className='px-6 py-1'>
-                                            <h5 className='text-sm text-text/75 font-medium'>Frosting Color: <strong className='ml-1 text-text capitalize'>{orderDetails.cupcake_orders.frosting}</strong></h5>
-                                        </div>
-                                    </>
-                                }
+                            <div className="h-px w-8 bg-gray-300"></div>
+                            <div className="flex items-center gap-2 opacity-40">
+                                <span className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold">3</span>
+                                <span className="text-gray-600 font-medium text-sm">Review</span>
                             </div>
                         </div>
-                    </div>
+                        )}
 
-                    <div className="">
-                        <Label text='Payments' variant='large' />
-                        <div className='px-8 py-1 flex flex-col gap-3'>
-                            <div className='flex items-center justify-between p-3 rounded-md bg-main-dark/20'>
-                                <div>
-                                    <h5 className='text-sm font-semibold text-text'>Downpayment</h5>
-                                    <h5 className='text-xs text-text/60'>{downpayment ? formatDateForDisplay(downpayment.created_at) : 'Not paid yet'}</h5>
-                                </div>
-                                <div className='text-right'>
-                                    <h5 className='text-sm font-semibold text-text'>₱ {downpayment ? formatAmount(downpayment.amount) : '0.00'}</h5>
-                                    <h5 className={`text-xs font-medium capitalize ${downpayment?.status === 'success' ? 'text-success' : 'text-text/60'}`}>
-                                        {downpayment?.status || 'pending'}
-                                    </h5>
-                                </div>
-                            </div>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                        <X size={20} className="text-gray-400" />
+                    </button>
+                </div>
 
-                            <div className='flex items-center justify-between p-3 rounded-md bg-main-dark/20'>
-                                <div>
-                                    <h5 className='text-sm font-semibold text-text'>Full Payment</h5>
-                                    <h5 className='text-xs text-text/60'>{fullPayment ? formatDateForDisplay(fullPayment.created_at) : 'Not paid yet'}</h5>
-                                </div>
-                                <div className='text-right'>
-                                    <h5 className='text-sm font-semibold text-text'>₱ {fullPayment ? formatAmount(fullPayment.amount) : '0.00'}</h5>
-                                    <h5 className={`text-xs font-medium capitalize ${fullPayment?.status === 'success' ? 'text-success' : 'text-text/60'}`}>
-                                        {fullPayment?.status || 'pending'}
-                                    </h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Reference Images */}
-                    <div className="">
-                        <Label text='Reference Details' variant='large' />
-                        <div className='min-h-20 flex flex-wrap gap-4 justify-center items-center py-4'>
-                            {displayImages.length > 0 ? (
-                                displayImages.map((src, index) => (
-                                    <img 
-                                        key={index}
-                                        className='w-32 h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity' 
-                                        src={src}
-                                        onClick={() => setPreviewImage(src)}
-                                        alt={`Reference ${index + 1}`}
-                                    />
-                                ))
-                            ) : (
-                                <h5 className='text-text/25 font-medium text-center'>NO IMAGE</h5>
-                            )}
-                        </div>
-                    </div>
-
-                    {orderDetails.comments &&
+                <div className="p-8 space-y-8 overflow-y-auto">
+                    <div>
+                        
                         <div className="">
-                            <Label text='Comments' variant='large' />
-                            <div className='min-h-20 flex p-4'>
-                                <h5 className='text-text font-base text-left'>{orderDetails.comments}</h5>
+                            <h3 className="text-lg font-bold text-gray-800">Order Summary</h3>
+                            <p className="text-gray-400 text-sm">Review the accepted order details before deducting from inventory.</p>
+                        </div>
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Cake Details Card */}
+                        <div className="border border-accent-mute rounded-2xl p-6 bg-accent/5">
+                            <h4 className="text-[10px] uppercase tracking-widest text-accent-text font-bold mb-4">Cake Details</h4>
+                            <div className="space-y-4">
+                                <DetailRow label="Flavor" value={orderDetails.cake_orders.base_flavor} />
+                                <DetailRow label="Filling" value={orderDetails.cake_orders.filling} />
+                                <DetailRow label="Shape" value={orderDetails.cake_orders.shape} />
+                                <DetailRow label="Inscription" value={orderDetails.cake_orders.message_type}/>
+                                <DetailRow label="Message" value={orderDetails.cake_orders.message}  />
                             </div>
+                        </div>
+
+                        {/* Extras Card */}
+                        <div className="border border-accent-mute rounded-2xl p-6 bg-accent/5">
+                            <h4 className="text-[10px] uppercase tracking-widest text-accent-text font-bold mb-4">Extras</h4>
+                            <div className="space-y-4">
+                                <DetailRow label="Cupcakes" value={`${orderDetails.cupcake_orders?.amount || 0}x`} />
+                                <DetailRow label="Frosting" value={orderDetails.cupcake_orders?.frosting || 'N/A'} />
+                                <DetailRow label="Order ID" value={orderDetails.id} />
+                                <DetailRow label="Status" value={orderDetails.status}/>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Helper Banner */}
+                    {orderDetails.status !== 'pending' &&
+                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full border border-blue-400 text-blue-500 flex items-center justify-center text-[10px] font-bold">i</div>
+                            <p className="text-blue-600 text-sm">
+                                Click <span className="font-bold">Next Step</span> to set up ingredients. You can load from a saved recipe or enter them manually.
+                            </p>
                         </div>
                     }
                 </div>
+
+                {/* Footer Action */}
+                {orderDetails.status !== 'pending' && 
+                    <div className="p-6 bg-gray-50 flex justify-end">
+                        <button className="bg-stone-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors">
+                            Next Step
+                        </button>
+                    </div>
+                }
             </div>
-        </>
-    )
-}
+        </div>
+    );
+};
+
+// Internal Helper for clean rows
+const DetailRow = ({ label, value, isLast, valueClass = "text-stone-900" }) => (
+    <div className={`flex justify-between items-center pb-2 ${!isLast ? 'border-b border-accent/15' : ''}`}>
+        <span className="text-sm text-stone-500 font-medium">{label}</span>
+        <span className={`text-sm font-bold capitalize ${valueClass} wrap-break-words whitespace-normal w-80`}>{value}</span>
+    </div>
+);
 
 export default OrderDetails;
