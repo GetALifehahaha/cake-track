@@ -4,15 +4,23 @@ from django.utils import timezone
 
 # Create your models here.
 class Unit(models.Model):
+    DIMENSION_CHOICES = [
+        ('mass', 'Mass'),
+        ('volume', 'Volume'),
+        ('count', 'Count'),
+    ]
+
     name = models.CharField(max_length=50, unique=True)
     abbreviation = models.CharField(max_length=10, blank=True)
+    dimension = models.CharField(max_length=20, choices=DIMENSION_CHOICES, default='mass')
+    multiplier_to_reference = models.DecimalField(max_digits=14, decimal_places=6, default=1)
 
     def __str__(self):
         return f"{self.abbreviation} : {self.name}"
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=20)
-    total_stock = models.DecimalField(max_digits=11, decimal_places=2, default=0) #type: ignore
+    total_stock = models.DecimalField(max_digits=14, decimal_places=4, default=0) #type: ignore
 
     unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name="ingredients")
 
@@ -23,8 +31,8 @@ class Ingredient(models.Model):
 class Transaction(models.Model):
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name="transactions")
     
-    amount = models.DecimalField(max_digits=11, decimal_places=2)
-    remaining_amount = models.DecimalField(max_digits=11, decimal_places=2, default=0) #type: ignore
+    amount = models.DecimalField(max_digits=14, decimal_places=4)
+    remaining_amount = models.DecimalField(max_digits=14, decimal_places=4, default=0) #type: ignore
 
     TYPE = [
         ('in', 'In'),
@@ -64,26 +72,28 @@ class Recipe(models.Model):
         Deducts ingredients for this recipe. 
         quantity: How many of this recipe are being made (default 1).
         """
-        with transaction.atomic():
-            for recipe_item in self.recipe_ingredients.select_related('ingredient'): # type: ignore
-                ingredient = recipe_item.ingredient
-                amount_needed = recipe_item.amount_needed * quantity
+        from .services import deduct_ingredient_totals
 
-                if ingredient.total_stock < amount_needed:
-                    raise ValidationError(
-                        f"Not enough {ingredient.name}. Needed: {amount_needed}, Stock: {ingredient.total_stock}"
-                    )
+        ingredient_totals = {}
 
-                ingredient.total_stock -= amount_needed
-                ingredient.save()
+        for recipe_item in self.recipe_ingredients.select_related('ingredient'):  # type: ignore
+            ingredient = recipe_item.ingredient
+            amount_needed = recipe_item.amount_needed * quantity
 
-                Transaction.objects.create(
-                    ingredient=ingredient,
-                    amount=amount_needed,
-                    transaction_type='out',
-                    remaining_amount=ingredient.total_stock,
-                    purchase_date=timezone.now() 
+            if ingredient.total_stock < amount_needed:
+                raise ValidationError(
+                    f"Not enough {ingredient.name}. Needed: {amount_needed}, Stock: {ingredient.total_stock}"
                 )
+
+            if ingredient.id in ingredient_totals:
+                ingredient_totals[ingredient.id] += amount_needed
+            else:
+                ingredient_totals[ingredient.id] = amount_needed
+
+        deduct_ingredient_totals(
+            ingredient_totals=ingredient_totals,
+            purchase_date=timezone.now().date(),
+        )
                 
 
 class RecipeIngredient(models.Model):
@@ -94,8 +104,24 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     
     # How much of this ingredient is needed for 1 portion of the recipe
-    amount_needed = models.DecimalField(max_digits=10, decimal_places=2) 
+    amount_needed = models.DecimalField(max_digits=14, decimal_places=4) 
 
     def __str__(self):
         return f"{self.recipe.name} needs {self.amount_needed} of {self.ingredient.name}"
+
+
+class IngredientUnitConversion(models.Model):
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, related_name='conversions')
+    from_unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name='ingredient_conversion_sources')
+    multiplier_to_base = models.DecimalField(max_digits=14, decimal_places=6)
+
+    class Meta:
+        unique_together = ('ingredient', 'from_unit')
+
+    def clean(self):
+        if self.from_unit_id and self.ingredient_id and self.from_unit_id == self.ingredient.unit_id:
+            raise ValidationError("Source unit cannot be the same as the ingredient base unit.")
+
+    def __str__(self):
+        return f"{self.ingredient.name}: 1 {self.from_unit.abbreviation or self.from_unit.name} = {self.multiplier_to_base} {self.ingredient.unit.abbreviation or self.ingredient.unit.name}"
     

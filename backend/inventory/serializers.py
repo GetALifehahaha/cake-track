@@ -1,9 +1,14 @@
+from datetime import date
+
 from django.db import transaction, models
 from rest_framework import serializers
-from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit )
+from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit, IngredientUnitConversion )
 from decimal import Decimal
 from rest_framework.serializers import ValidationError
-from datetime import timezone
+from django.utils import timezone
+
+from .conversions import get_unit_conversion_factor
+from .services import deduct_ingredient_totals, deduct_ingredient_stock
 
 class UnitSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
@@ -18,9 +23,14 @@ class UnitSerializer(serializers.ModelSerializer):
 
         return normalized_name
 
+    def validate_multiplier_to_reference(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Multiplier must be greater than zero.")
+        return value
+
     class Meta:
         model = Unit
-        fields = ['id', 'name', 'abbreviation']
+        fields = ['id', 'name', 'abbreviation', 'dimension', 'multiplier_to_reference']
 
 class TransactionSerializer(serializers.ModelSerializer):
     ingredient_id = serializers.IntegerField()
@@ -73,36 +83,11 @@ class TransactionCreateSerializer(serializers.Serializer):
                     
                 else:
                     # if out, get out_count, then get all the batches which has out
-                    out_count = amount
-                    batches = ingredient.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')
-                    
-                    for batch in batches:
-                        if out_count <= 0:
-                            break
-                        
-                        if batch.remaining_amount > out_count:
-                            batch.remaining_amount -= out_count
-                            batch.save()
-                            out_count = Decimal("0")
-                        else:
-                            out_count -= batch.remaining_amount
-                            batch.remaining_amount = Decimal("0")
-                            batch.save()
-                            
-                    if out_count > 0:
-                        raise ValidationError(f"Not enough stock for: {ingredient.name}")
-                    
-                    transaction_object = Transaction.objects.create(
+                    transaction_object = deduct_ingredient_stock(
                         ingredient=ingredient,
-                        amount=amount,
-                        remaining_amount=Decimal("0"),
-                        transaction_type="out",
-                        purchase_date=purchase_date
+                        amount=Decimal(str(amount)),
+                        purchase_date=purchase_date,
                     )
-                    
-                    ingredient.total_stock -= amount
-                    
-                    ingredient.save()
                     created_transactions.append(transaction_object)
                 
         return {'transactions': created_transactions}
@@ -118,11 +103,30 @@ class IngredientBatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = ['id', 'amount', 'expiration_date', 'purchase_date', 'remaining_amount']
+
+
+class IngredientUnitConversionSerializer(serializers.ModelSerializer):
+    from_unit = UnitSerializer(read_only=True)
+    from_unit_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        queryset=Unit.objects.all(),
+        source='from_unit'
+    )
+
+    class Meta:
+        model = IngredientUnitConversion
+        fields = ['id', 'from_unit', 'from_unit_id', 'multiplier_to_base']
+
+    def validate_multiplier_to_base(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Multiplier to base must be greater than zero.")
+        return value
         
         
 class IngredientSerializer(serializers.ModelSerializer):
     batches = serializers.SerializerMethodField()
     unit = UnitSerializer(read_only=True)
+    conversions = IngredientUnitConversionSerializer(many=True, required=False)
     unit_id = serializers.PrimaryKeyRelatedField(
         write_only=True,
         queryset=Unit.objects.all(),
@@ -131,7 +135,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'batches']
+        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'batches', 'conversions']
 
     def validate_name(self, value):
         normalized_name = value.strip()
@@ -144,6 +148,55 @@ class IngredientSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An ingredient with this name already exists.")
 
         return normalized_name
+
+    def _validate_conversions_data(self, base_unit, conversions_data):
+        seen_from_units = set()
+
+        for conversion in conversions_data:
+            from_unit = conversion['from_unit']
+
+            if from_unit.id == base_unit.id:
+                raise serializers.ValidationError("Conversion source unit cannot be the same as the ingredient base unit.")
+
+            if from_unit.id in seen_from_units:
+                raise serializers.ValidationError("Duplicate conversion units are not allowed for the same ingredient.")
+
+            seen_from_units.add(from_unit.id)
+
+    def validate(self, attrs):
+        if self.instance is None:
+            request = self.context.get("request")
+            data = request.data if request else {}
+
+            amount = data.get("amount")
+            purchase_date = data.get("purchaseDate")
+            expiration_date = data.get("expirationDate")
+
+            if amount is None or Decimal(str(amount)) <= 0:
+                raise serializers.ValidationError({"amount": "Initial amount must be greater than zero."})
+
+            if not purchase_date:
+                raise serializers.ValidationError({"purchaseDate": "Purchase date is required."})
+
+            if not expiration_date:
+                raise serializers.ValidationError({"expirationDate": "Expiration date is required."})
+
+            try:
+                parsed_purchase = date.fromisoformat(str(purchase_date))
+                parsed_expiration = date.fromisoformat(str(expiration_date))
+            except ValueError as error:
+                raise serializers.ValidationError({"dates": "Invalid date format. Use YYYY-MM-DD."}) from error
+
+            if parsed_expiration < parsed_purchase:
+                raise serializers.ValidationError({"expirationDate": "Expiration date cannot be earlier than purchase date."})
+
+        base_unit = attrs.get('unit', self.instance.unit if self.instance else None)
+        conversions_data = attrs.get('conversions', None)
+
+        if base_unit and conversions_data is not None:
+            self._validate_conversions_data(base_unit, conversions_data)
+
+        return attrs
         
     def get_batches(self, obj):
         queryset = obj.transactions.filter(transaction_type='in', remaining_amount__gt=0).order_by('expiration_date', 'purchase_date')
@@ -154,6 +207,8 @@ class IngredientSerializer(serializers.ModelSerializer):
         """
         Create Ingredient and automatically create first batch.
         """
+        conversions_data = validated_data.pop('conversions', [])
+
         # Extract fields passed from frontend
         request = self.context.get("request")
         data = request.data
@@ -164,6 +219,13 @@ class IngredientSerializer(serializers.ModelSerializer):
 
         # 1. Create Ingredient
         ingredient = Ingredient.objects.create(**validated_data)
+
+        for conversion in conversions_data:
+            IngredientUnitConversion.objects.create(
+                ingredient=ingredient,
+                from_unit=conversion['from_unit'],
+                multiplier_to_base=conversion['multiplier_to_base']
+            )
 
         # 2. Create first batch (Transaction)
         Transaction.objects.create(
@@ -182,6 +244,51 @@ class IngredientSerializer(serializers.ModelSerializer):
         ingredient.save()
 
         return ingredient
+
+    def update(self, instance, validated_data):
+        conversions_data = validated_data.pop('conversions', None)
+
+        old_unit = instance.unit
+        new_unit = validated_data.get('unit', instance.unit)
+
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+
+            unit_changed = old_unit.id != new_unit.id
+
+            if unit_changed:
+                conversion_factor = get_unit_conversion_factor(old_unit, new_unit, ingredient=instance)
+
+                instance.total_stock = Decimal(str(instance.total_stock)) * conversion_factor
+
+            instance.save()
+
+            if unit_changed:
+                for transaction_item in instance.transactions.all():
+                    transaction_item.amount = Decimal(str(transaction_item.amount)) * conversion_factor
+                    transaction_item.remaining_amount = Decimal(str(transaction_item.remaining_amount)) * conversion_factor
+                    transaction_item.save(update_fields=['amount', 'remaining_amount'])
+
+                for recipe_ingredient in RecipeIngredient.objects.filter(ingredient=instance):
+                    recipe_ingredient.amount_needed = Decimal(str(recipe_ingredient.amount_needed)) * conversion_factor
+                    recipe_ingredient.save(update_fields=['amount_needed'])
+
+                for conversion in instance.conversions.all():
+                    conversion.multiplier_to_base = Decimal(str(conversion.multiplier_to_base)) * conversion_factor
+                    conversion.save(update_fields=['multiplier_to_base'])
+
+            if conversions_data is not None:
+                instance.conversions.all().delete()
+
+                for conversion in conversions_data:
+                    IngredientUnitConversion.objects.create(
+                        ingredient=instance,
+                        from_unit=conversion['from_unit'],
+                        multiplier_to_base=conversion['multiplier_to_base']
+                    )
+
+        return instance
     
     
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -190,16 +297,78 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     """
     ingredient_name = serializers.CharField(source='ingredient.name', read_only=True)
     ingredient_unit = serializers.CharField(source='ingredient.unit.abbreviation', read_only=True)
-    ingredient_stock = serializers.DecimalField(source='ingredient.total_stock', max_digits=11, decimal_places=2, read_only=True)
+    ingredient_stock = serializers.DecimalField(source='ingredient.total_stock', max_digits=14, decimal_places=4, read_only=True)
     is_missing = serializers.SerializerMethodField()
     ingredient_id = serializers.IntegerField()
+    ingredient_unit_id = serializers.IntegerField(source='ingredient.unit.id', read_only=True)
+    ingredient_units = serializers.SerializerMethodField()
+    input_unit_id = serializers.PrimaryKeyRelatedField(
+        queryset=Unit.objects.all(),
+        write_only=True,
+        required=False,
+    )
 
     class Meta:
         model = RecipeIngredient
-        fields = ['ingredient_id', 'ingredient_name', 'amount_needed', 'ingredient_unit', 'ingredient_stock', 'is_missing']
+        fields = ['ingredient_id', 'ingredient_name', 'amount_needed', 'ingredient_unit', 'ingredient_unit_id', 'ingredient_units', 'ingredient_stock', 'is_missing', 'input_unit_id']
 
     def get_is_missing(self, obj):
         return obj.ingredient.total_stock < obj.amount_needed
+
+    def get_ingredient_units(self, obj):
+        base_unit = obj.ingredient.unit
+        units = [
+            {
+                'id': base_unit.id,
+                'name': base_unit.name,
+                'abbreviation': base_unit.abbreviation,
+                'dimension': base_unit.dimension,
+                'multiplier_to_base': 1,
+            }
+        ]
+
+        for conversion in obj.ingredient.conversions.select_related('from_unit').all():
+            unit = conversion.from_unit
+            units.append(
+                {
+                    'id': unit.id,
+                    'name': unit.name,
+                    'abbreviation': unit.abbreviation,
+                    'dimension': unit.dimension,
+                    'multiplier_to_base': conversion.multiplier_to_base,
+                }
+            )
+
+        return units
+
+    def validate(self, attrs):
+        ingredient_id = attrs.get('ingredient_id')
+        amount_needed = attrs.get('amount_needed')
+        input_unit = attrs.get('input_unit_id')
+
+        if amount_needed is not None and Decimal(str(amount_needed)) <= 0:
+            raise serializers.ValidationError({"amount_needed": "Amount needed must be greater than zero."})
+
+        if ingredient_id is None:
+            return attrs
+
+        ingredient = Ingredient.objects.filter(id=ingredient_id).first()
+        if ingredient is None:
+            raise serializers.ValidationError({"ingredient_id": "Ingredient does not exist."})
+
+        selected_unit = input_unit or ingredient.unit
+
+        if selected_unit.id == ingredient.unit.id:
+            return attrs
+
+        try:
+            get_unit_conversion_factor(selected_unit, ingredient.unit, ingredient=ingredient)
+        except ValidationError as error:
+            raise serializers.ValidationError(
+                {"input_unit_id": f"No conversion rule found for {ingredient.name}: {selected_unit.name} -> {ingredient.unit.name}."}
+            ) from error
+
+        return attrs
         
 
 
@@ -223,10 +392,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         
         for item in ingredients_data:
+            ingredient = Ingredient.objects.get(id=item['ingredient_id'])
+            input_unit = item.get('input_unit_id') or ingredient.unit
+            amount_needed = Decimal(str(item['amount_needed']))
+            conversion_factor = get_unit_conversion_factor(input_unit, ingredient.unit, ingredient=ingredient)
+
             RecipeIngredient.objects.create(
                 recipe=recipe, 
                 ingredient_id=item['ingredient_id'],
-                amount_needed=item['amount_needed']
+                amount_needed=amount_needed * conversion_factor
             )
         return recipe
     
@@ -247,17 +421,21 @@ class RecipeSerializer(serializers.ModelSerializer):
 
             for item in ingredients_data:
                 ingredient_id = item['ingredient_id']
-                amount_needed = item['amount_needed']
+                ingredient = Ingredient.objects.get(id=ingredient_id)
+                input_unit = item.get('input_unit_id') or ingredient.unit
+                amount_needed = Decimal(str(item['amount_needed']))
+                conversion_factor = get_unit_conversion_factor(input_unit, ingredient.unit, ingredient=ingredient)
+                normalized_amount_needed = amount_needed * conversion_factor
 
                 if ingredient_id in existing_ingredients:
                     recipe_ingredient = existing_ingredients[ingredient_id]
-                    recipe_ingredient.amount_needed = amount_needed
+                    recipe_ingredient.amount_needed = normalized_amount_needed
                     recipe_ingredient.save()
                 else:
                     RecipeIngredient.objects.create(
                         recipe=instance,
                         ingredient_id=ingredient_id,
-                        amount_needed=amount_needed
+                        amount_needed=normalized_amount_needed
                     )
 
         return instance
@@ -319,49 +497,7 @@ class BulkRecipeCookSerializer(serializers.Serializer):
         created_transactions = []
 
         with transaction.atomic():
-            for ing_id, total_amount_needed in ingredient_totals.items():
-                ingredient = Ingredient.objects.get(id=ing_id)
-                
-                out_count = total_amount_needed
-                
-                batches = ingredient.transactions.filter(
-                    transaction_type='in', 
-                    remaining_amount__gt=0
-                ).order_by('expiration_date', 'purchase_date')
-
-                for batch in batches:
-                    if out_count <= 0:
-                        break
-
-                    if batch.remaining_amount > out_count:
-                        # Batch has enough to cover the rest
-                        batch.remaining_amount -= out_count
-                        batch.save()
-                        out_count = Decimal("0")
-                    else:
-                        # Drain this batch and continue to next
-                        out_count -= batch.remaining_amount
-                        batch.remaining_amount = Decimal("0")
-                        batch.save()
-
-                # Double check logic (should be caught by validate, but safe to keep)
-                if out_count > 0:
-                     raise ValidationError(f"Data integrity error: Stock mismatch for {ingredient.name}")
-
-                # Create the OUT transaction record
-                transaction_object = Transaction.objects.create(
-                    ingredient=ingredient,
-                    amount=total_amount_needed,
-                    remaining_amount=Decimal("0"),
-                    transaction_type="out"
-                    # Note: We don't usually set expiration_date on OUT transactions
-                )
-                
-                # Update main stock
-                ingredient.total_stock -= total_amount_needed
-                ingredient.save()
-                
-                created_transactions.append(transaction_object)
+            created_transactions = deduct_ingredient_totals(ingredient_totals=ingredient_totals)
 
         return {
             'status': 'success',
