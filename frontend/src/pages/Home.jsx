@@ -37,7 +37,6 @@ const Home = () => {
 
     const [grossTotal, setGrossTotal] = useState(0);
     const [discount, setDiscount] = useState({id: -1, name: ""});
-    const [discountValue, setDiscountValue] = useState(0);
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [completedTransaction, setCompletedTransaction] = useState(null);
@@ -59,13 +58,6 @@ const Home = () => {
     const [showModalFeedback, setShowModalFeedback] = useState(false);
 
     // SET AND TOGGLES
-
-    const handleSetDiscount = (value) => {
-        setDiscount(value)
-
-        const discount = discountData.find(d => d.id === value)
-        setDiscountValue(value ? discount.rate : null)
-    }
 
     const handleSetFilter = (value) => {
         setSearchParams(prevParams => {
@@ -125,9 +117,97 @@ const Home = () => {
         })
     }, [checkoutProducts]);
 
+    const selectedDiscount = useMemo(() => {
+        if (!discount?.id || discount.id === -1) return null;
+        return discountData.find(d => d.id === discount.id) || null;
+    }, [discount, discountData]);
+
+    const discountBreakdown = useMemo(() => {
+        const itemMap = {};
+        checkoutProducts.forEach((product) => {
+            const lineTotal = Number(product.price || 0) * Number(product.amount || 0);
+            itemMap[product.variant_id] = {
+                before: lineTotal,
+                after: lineTotal,
+                isApplicable: false,
+            };
+        });
+
+        if (!selectedDiscount) {
+            return {
+                itemPricing: itemMap,
+                totalDiscount: 0,
+                net: grossTotal,
+            };
+        }
+
+        const getItemCategoryIds = (item) => {
+            if (Array.isArray(item?.categories)) return item.categories.map(c => c.id);
+            if (Array.isArray(item?.product?.categories)) return item.product.categories.map(c => c.id);
+            return [];
+        };
+
+        const isEligible = (item) => {
+            if (selectedDiscount.scope === 'all_products') return true;
+            if (selectedDiscount.scope === 'selected_products') {
+                return (selectedDiscount.products || []).includes(item.id);
+            }
+            if (selectedDiscount.scope === 'selected_category') {
+                const itemCategoryIds = getItemCategoryIds(item);
+                return itemCategoryIds.some(id => (selectedDiscount.categories || []).includes(id));
+            }
+            return false;
+        };
+
+        const eligibleItems = checkoutProducts.filter(isEligible);
+        const eligibleTotal = eligibleItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.amount || 0), 0);
+
+        if (
+            eligibleTotal <= 0 ||
+            grossTotal < Number(selectedDiscount.min_order_total || 0)
+        ) {
+            return {
+                itemPricing: itemMap,
+                totalDiscount: 0,
+                net: grossTotal,
+            };
+        }
+
+        let totalDiscount = 0;
+        if (selectedDiscount.discount_type === 'percentage') {
+            totalDiscount = eligibleTotal * (Number(selectedDiscount.value || 0) / 100);
+        } else if (selectedDiscount.discount_type === 'fixed') {
+            totalDiscount = Math.min(Number(selectedDiscount.value || 0), eligibleTotal);
+        }
+
+        let distributed = 0;
+        eligibleItems.forEach((item, index) => {
+            const lineTotal = Number(item.price || 0) * Number(item.amount || 0);
+            const rawShare = totalDiscount * (lineTotal / eligibleTotal);
+            const lineDiscount = index === eligibleItems.length - 1
+                ? totalDiscount - distributed
+                : Math.round(rawShare * 100) / 100;
+
+            distributed += lineDiscount;
+
+            itemMap[item.variant_id] = {
+                before: lineTotal,
+                after: Math.max(lineTotal - lineDiscount, 0),
+                isApplicable: lineDiscount > 0,
+            };
+        });
+
+        const normalizedDiscount = Math.round(totalDiscount * 100) / 100;
+        return {
+            itemPricing: itemMap,
+            totalDiscount: normalizedDiscount,
+            net: Math.max(grossTotal - normalizedDiscount, 0),
+        };
+    }, [checkoutProducts, selectedDiscount, grossTotal]);
+
     useMemo(() => {
-        setNetTotal(grossTotal - grossTotal * discountValue);
-    }, [grossTotal, discountValue, discount])
+        setNetTotal(discountBreakdown.net);
+    }, [discountBreakdown.net])
 
     useEffect(() => {
         setActualAccessCode(businessData?.secret_pin)
@@ -263,8 +343,6 @@ const Home = () => {
                 quantity: p.amount,
             }))
 
-            const selectedDiscount = discountData.find(d => d.id === discount);
-
             const transactionResponse = await postTransaction({
                 is_void: false,
                 payment_method: "cash",
@@ -273,6 +351,30 @@ const Home = () => {
                 paid_amount: parsedValue,
                 discount: discount.id !== -1 ? discount.id : null
             })
+
+            const receiptItems = checkoutProducts.map(p => {
+                const pricing = discountBreakdown.itemPricing[p.variant_id] || {
+                    before: Number(p.price || 0) * Number(p.amount || 0),
+                    after: Number(p.price || 0) * Number(p.amount || 0),
+                    isApplicable: false,
+                };
+
+                return {
+                    quantity: p.amount,
+                    product: {
+                        id: p.id,
+                        name: p.name,
+                    },
+                    product_variant: {
+                        id: p.variant_id,
+                        label: p.label,
+                        price: p.price,
+                    },
+                    line_total_before: pricing.before,
+                    line_total_after: pricing.after,
+                    line_discount: Math.max(Number(pricing.before || 0) - Number(pricing.after || 0), 0),
+                };
+            });
 
             const localReceiptTransaction = {
                 id: null,
@@ -291,22 +393,24 @@ const Home = () => {
                     first_name: user?.first_name || '',
                     last_name: user?.last_name || '',
                 },
-                transaction_items: checkoutProducts.map(p => ({
-                    quantity: p.amount,
-                    product: {
-                        id: p.id,
-                        name: p.name,
-                    },
-                    product_variant: {
-                        id: p.variant_id,
-                        label: p.label,
-                        price: p.price,
-                    },
-                })),
+                transaction_items: receiptItems,
             };
 
-            setCompletedTransaction(transactionResponse?.source === "server" ? (transactionResponse?.data ?? null) : localReceiptTransaction);
-            setReceivedPayment(transactionResponse?.data?.paid_amount ?? parsedValue);
+            const serverTransaction = transactionResponse?.data || null;
+            const completedReceiptTransaction = serverTransaction
+                ? {
+                    ...serverTransaction,
+                    gross_total: grossTotal,
+                    net_total: netTotal,
+                    paid_amount: parsedValue,
+                    change: parsedValue - netTotal,
+                    discount: serverTransaction.discount || (discount.id !== -1 ? { name: discount.name } : null),
+                    transaction_items: receiptItems,
+                }
+                : localReceiptTransaction;
+
+            setCompletedTransaction(completedReceiptTransaction);
+            setReceivedPayment(parsedValue);
             setDiscount({id: -1, name: ''})
             setShowPaymentSuccessModal(true);
             removeAllProducts();
@@ -375,6 +479,7 @@ const Home = () => {
         <CheckoutProduct
             key={index}
             product={product}
+            pricing={discountBreakdown.itemPricing[product.variant_id]}
             onChangeAmount={handleSetAmount}
             onToggle={handleRemoveProductFromCheckout} />
     )

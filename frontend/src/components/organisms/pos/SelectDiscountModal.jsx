@@ -6,43 +6,78 @@ import { cn } from '@/utils/cn';
 
 const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClose, currentDiscountId=null }) => {
 
+    const formatMoney = (value) => Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const getItemCategoryIds = (item) => {
+        if (Array.isArray(item?.categories)) return item.categories.map(c => c.id);
+        if (Array.isArray(item?.product?.categories)) return item.product.categories.map(c => c.id);
+        return [];
+    };
+
+    const getItemLineTotal = (item) => Number(item?.price || 0) * Number(item?.amount || 0);
+
     const processedDiscounts = useMemo(() => {
         const evaluated = discounts.map(discount => {
             let isApplicable = true;
             let reason = "";
 
+            const eligibleItems = cartItems.filter(item => {
+                if (discount.scope === 'all_products') return true;
+                if (discount.scope === 'selected_products') return (discount.products || []).includes(item.id);
+                if (discount.scope === 'selected_category') {
+                    const itemCategoryIds = getItemCategoryIds(item);
+                    return itemCategoryIds.some(id => (discount.categories || []).includes(id));
+                }
+                return false;
+            });
+
+            const applicableProductNames = [...new Set(eligibleItems.map(item => item.name).filter(Boolean))];
+
+            const applicableBefore = eligibleItems.reduce((sum, item) => sum + getItemLineTotal(item), 0);
+            let discountAmount = 0;
+
+            if (discount.discount_type === 'percentage') {
+                discountAmount = applicableBefore * (parseFloat(discount.value || 0) / 100);
+            } else if (discount.discount_type === 'fixed') {
+                discountAmount = parseFloat(discount.value || 0);
+            }
+
+            if (discountAmount > applicableBefore) {
+                discountAmount = applicableBefore;
+            }
+
+            const applicableAfter = Math.max(applicableBefore - discountAmount, 0);
+            const orderAfter = Math.max(grossTotal - discountAmount, 0);
+
             if (discount.start_date && new Date(discount.start_date) > new Date()) {
                 isApplicable = false;
                 reason = "Discount not active yet";
-                return { ...discount, isApplicable, reason };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames };
 
             } else if (discount.end_date && new Date(discount.end_date) < new Date()) {
                 isApplicable = false;
                 reason = "Discount has expired";
-                return { ...discount, isApplicable, reason };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames };
             }
 
             if (grossTotal < parseFloat(discount.min_order_total)) {
                 isApplicable = false;
                 reason = `Minimum order of ₱${discount.min_order_total} required`;
             } else if (discount.scope === 'selected_products') {
-                const hasValidProduct = cartItems.some(item => discount.products.includes(item.id));
+                const hasValidProduct = applicableBefore > 0;
                 if (!hasValidProduct) {
                     isApplicable = false;
                     reason = "No eligible products in cart";
                 }
             } else if (discount.scope === 'selected_category') {
-                const hasValidCategory = cartItems.some(item => {
-                    const itemCategoryIds = item.product.categories.map(c => c.id);
-                    return itemCategoryIds.some(id => discount.categories.includes(id));
-                });
+                const hasValidCategory = applicableBefore > 0;
                 if (!hasValidCategory) {
                     isApplicable = false;
                     reason = "No eligible categories in cart";
                 }
             }
 
-            return { ...discount, isApplicable, reason };
+            return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames };
         });
 
         return evaluated.sort((a, b) => {
@@ -120,6 +155,23 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                                     {discount.reason}
                                 </div>
                             )}
+                        </div>
+
+                        <div className="flex flex-col gap-1 text-xs text-text/70">
+                            <div className="flex items-start justify-between gap-2">
+                                <span>Products</span>
+                                <span className="font-semibold text-right max-w-[65%] truncate" title={discount.applicableProductNames.join(', ')}>
+                                    {discount.applicableProductNames.length > 0 ? discount.applicableProductNames.join(', ') : 'None'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Applicable Items</span>
+                                <span className="font-semibold">₱{formatMoney(discount.applicableBefore)} → ₱{formatMoney(discount.applicableAfter)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Order Total</span>
+                                <span className="font-semibold">₱{formatMoney(grossTotal)} → ₱{formatMoney(discount.orderAfter)}</span>
+                            </div>
                         </div>
                     </div>
                 ))}

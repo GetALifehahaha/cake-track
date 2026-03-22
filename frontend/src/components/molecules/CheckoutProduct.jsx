@@ -3,7 +3,11 @@ import { Button } from '../atoms';
 import {X, Plus, Minus} from 'lucide-react'
 import { cn } from '@/lib/utils';
 
-const CheckoutProduct = ({product, onChangeAmount}) => {
+const CheckoutProduct = ({product, pricing, onChangeAmount}) => {
+
+    const beforePrice = Number(pricing?.before ?? (product.price * product.amount || 0));
+    const afterPrice = Number(pricing?.after ?? beforePrice);
+    const isDiscounted = Boolean(pricing?.isApplicable && afterPrice < beforePrice);
 
     const handleSetAmount = (method) => {
         if (method == "minus") {
@@ -25,7 +29,14 @@ const CheckoutProduct = ({product, onChangeAmount}) => {
                 <h5 className='font-medium text-sm'>{product.name}</h5>
                 <div className='flex items-center gap-2'>
                     <h5 className='font-medium text-sm text-text/50'>{product.label}</h5>
-                    <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price * product.amount || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                    {isDiscounted ? (
+                        <div className='flex items-center gap-1.5'>
+                            <h5 className='font-medium text-xs text-text/40 line-through'>₱ {beforePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                            <h5 className='font-semibold text-accent-text text-sm'>₱ {afterPrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                        </div>
+                    ) : (
+                        <h5 className='font-semibold text-accent-text text-sm'>₱ {beforePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                    )}
                 </div>
             </div>
 

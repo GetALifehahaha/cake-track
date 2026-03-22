@@ -24,6 +24,10 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
     const vatAmount = grossTotal * 0.12;
     const changeAmount = toAmount(transactionData?.change, paidAmount - netTotal);
     const transactionId = transactionData?.is_local ? '' : (transactionData?.display_id || transactionData?.id || '');
+    const discountName = typeof transactionData?.discount === 'string'
+        ? transactionData.discount
+        : transactionData?.discount?.name;
+    const discountApplied = grossTotal > netTotal;
 
     const handlePrint = useReactToPrint({
         contentRef: contentRef,
@@ -122,9 +126,18 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                                 <span className="flex-1 pl-1 pr-1 wrap-break-word leading-tight">
                                     {item.product?.name || item.name || 'Item'}
                                 </span>
-                                <span className="text-right whitespace-nowrap">
-                                    {formatMoney((toAmount(item?.product_variant?.price, toAmount(item?.price, 0))) * toAmount(item?.quantity, 0))}
-                                </span>
+                                {toAmount(item?.line_total_after, toAmount(item?.line_total_before, -1)) >= 0 ? (
+                                    <span className="text-right whitespace-nowrap">
+                                        {toAmount(item?.line_total_after, 0) < toAmount(item?.line_total_before, 0) && (
+                                            <span className="line-through opacity-60 mr-1">{formatMoney(toAmount(item?.line_total_before, 0))}</span>
+                                        )}
+                                        <span>{formatMoney(toAmount(item?.line_total_after, 0))}</span>
+                                    </span>
+                                ) : (
+                                    <span className="text-right whitespace-nowrap">
+                                        {formatMoney((toAmount(item?.product_variant?.price, toAmount(item?.price, 0))) * toAmount(item?.quantity, 0))}
+                                    </span>
+                                )}
                             </div>
                         ))}
 
@@ -138,9 +151,9 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                                 <span>{formatMoney(grossTotal)}</span>
                             </div>
                             
-                            {transactionData?.discount_id && (
+                            {discountApplied && (
                                 <div className="flex justify-between">
-                                    <span>Disc ({transactionData.discount?.name}):</span>
+                                    <span>Disc ({discountName || 'Applied'}):</span>
                                     <span>-{formatMoney(grossTotal - netTotal)}</span>
                                 </div>
                             )}
