@@ -44,7 +44,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter', 
         'rest_framework.filters.OrderingFilter'
         ],
-    "PAGE_SIZE": 100,
+    "PAGE_SIZE": 50,
     "SEARCH_PARAM": "q",
 }
 

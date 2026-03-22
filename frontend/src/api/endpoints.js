@@ -14,6 +14,7 @@ const API_ENDPOINTS = {
     INGREDIENTS_STOCK_OUT_EXPIRED: "/inventory/ingredients/stock-out-expired/",
     INVENTORY_TRANSACTIONS: "/inventory/transactions/",
     ORDERS: "/orders/orders/",
+    ORDERS_DEDUCT_INGREDIENTS: "/orders/orders/{id}/deduct-ingredients/",
     ORDERS_BATCH_UPDATE: "/orders/orders/batch-update/",
     BLOCKED_DATES: "/orders/blocked-dates/",
     OPENING_TIME: "/orders/opening-time/",

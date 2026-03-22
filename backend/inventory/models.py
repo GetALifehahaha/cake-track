@@ -51,6 +51,7 @@ class Transaction(models.Model):
 
 class Recipe(models.Model): 
     name = models.CharField(max_length=100)
+    is_temporary = models.BooleanField(default=False)
     ingredients = models.ManyToManyField(
         Ingredient, 
         through='RecipeIngredient'

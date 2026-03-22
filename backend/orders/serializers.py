@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime)
 from payment.models import Payment
+from inventory.serializers import RecipeSerializer
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -24,6 +25,7 @@ class OrderImageSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     cake_orders = CakeOrderSerializer()
     cupcake_orders = CupcakeOrderSerializer(required=False)
+    recipe_details = RecipeSerializer(source='recipe', read_only=True)
     
     order_images = OrderImageSerializer(many=True, read_only=True)
     
@@ -39,7 +41,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'total_price', 'payments'
+            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'recipe_details', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
         read_only_fields = ['id', 'created_at', 'customer']
 

@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from decimal import Decimal, ROUND_HALF_UP
+from django.utils import timezone
 
 from rest_framework import permissions, viewsets, filters, status, generics
 from django_filters.rest_framework import DjangoFilterBackend
@@ -87,10 +88,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         instance = serializer.instance
         old_status = instance.status
         new_status = self.request.data.get("status", old_status) #type: ignore
-        
-        if old_status == "pending" and new_status == "accepted":
-            if instance.recipe:
-                instance.recipe.cook()
 
         # If completing a custom order, allow setting total_price from the request
         if new_status == "completed" and self.request.data.get("total_price") is not None:
@@ -161,15 +158,6 @@ class OrderViewSet(viewsets.ModelViewSet):
             if order.status != "pending":
                 errors.append(f"Order {order.id} is not pending.") #type: ignore
                 continue
-            
-            if new_status == "accepted":
-                if order.recipe:
-                    try:
-                        order.recipe.cook()
-                    except ValidationError as e:
-                        errors.append(f"Order {order.id}: {str(e)}") #type: ignore
-                        continue
-                    
 
             order.status = new_status
             if new_status == "rejected":
@@ -210,6 +198,38 @@ class OrderViewSet(viewsets.ModelViewSet):
             "message": f"Succesfully updated {updated_count} orders.", "errors": errors
         }, status=status.HTTP_200_OK
         )
+
+    @action(detail=True, methods=['post'], url_path='deduct-ingredients')
+    def deduct_ingredients(self, request, pk=None):
+        order = self.get_object()
+
+        if order.status in ['pending', 'rejected', 'cancelled', 'unpaid']:
+            return Response(
+                {"detail": "Ingredients can only be deducted for accepted/ready/completed orders."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not order.recipe:
+            return Response(
+                {"detail": "No recipe attached to this order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if order.ingredients_deducted_at is not None:
+            return Response(
+                {"detail": "Ingredients already deducted for this order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            order.recipe.cook()
+        except ValidationError as error:
+            return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.ingredients_deducted_at = timezone.now()
+        order.save(update_fields=['ingredients_deducted_at'])
+
+        return Response({"message": "Ingredients deducted successfully."}, status=status.HTTP_200_OK)
 
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware

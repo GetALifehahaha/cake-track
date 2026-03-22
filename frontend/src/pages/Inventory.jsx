@@ -174,10 +174,10 @@ const Inventory = () => {
                                 <div
                                     key={batchIndex}
                                     className={cn(
-                                        'p-4 flex flex-row rounded-lg border',
-                                        status === 'expired' && 'border-error bg-white text-error',
-                                        status === 'near' && 'border-warning bg-white text-warning',
-                                        status === 'normal' && 'border-border bg-white text-text'
+                                        'p-4 flex flex-row rounded-lg border text-sm',
+                                        status === 'expired' && 'border-error-border bg-error-fill',
+                                        status === 'near' && 'border-warning-border bg-yellow-50/50',
+                                        status === 'normal' && 'border-border bg-main-white'
                                     )}
                                 >
                                     <div className='flex-1 flex flex-col items-start gap-2'>
@@ -190,7 +190,7 @@ const Inventory = () => {
                                     </div>
                                     <div className='flex-1 flex flex-col items-start gap-2'>
                                         <h5 className='text-text/50'>Expiration Date</h5>
-                                        <h5 className={cn(status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text' )}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                        <h5 className={cn(status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text' )}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status=='expired' && '(Expired)'}{status=='near'=='(Due soon)'}</h5>
                                     </div>
                                 </div>
                                 )

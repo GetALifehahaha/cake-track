@@ -158,6 +158,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 
+    def get_queryset(self):
+        queryset = Recipe.objects.all().order_by('name')
+
+        if self.action == 'list':
+            return queryset.filter(is_temporary=False)
+
+        return queryset
+
     # POST /api/recipes/cook/
     @action(detail=False, methods=['post'])
     def cook(self, request):

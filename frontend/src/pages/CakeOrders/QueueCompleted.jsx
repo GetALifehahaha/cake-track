@@ -1,19 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Title } from '../../components/atoms'
 import useOrder from '@/hooks/useOrders';
 import { formatDateForDisplay } from '@/utils/date';
 import { capitalize } from '@/utils/capitalize';
 import Loading from '@/components/molecules/Loading';
 import { Pagination } from '@/components/molecules';
+import { OrderDetails } from '@/components/organisms';
 
 const QueueReady = () => {
 
 	const { data, loading, error, patchOrder } = useOrder();
+	const [orderDetails, setOrderDetails] = useState(null);
 
 	if (loading) return <Loading />
 
 	const listCompletedTransactions = data.results.map((item, index) =>
-		<div className='flex w-full text-sm py-2 border-b-2 border-b-main-dark items-center' key={index}>
+		<div className='flex w-full text-sm py-2 border-b-2 border-b-main-dark items-center cursor-pointer hover:bg-main/40' key={index} onClick={() => setOrderDetails(item)}>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.id}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.full_name}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{capitalize(item.cake_orders.base_flavor)}</h5>
@@ -43,6 +45,10 @@ const QueueReady = () => {
 					<Pagination prev={data.previous} next={data.next} />
 				</span>
 			</div>
+
+			{orderDetails &&
+				<OrderDetails orderDetails={orderDetails} onClose={() => setOrderDetails(null)} />
+			}
 		</div>
 	)
 }

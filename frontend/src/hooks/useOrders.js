@@ -47,6 +47,8 @@ export default function useOrder() {
 
         postOrder:         (params)     => create(API_ENDPOINTS.ORDERS, params),
         patchOrder:        (id, params) => update(`${API_ENDPOINTS.ORDERS}${id}/`, params),
+        deductOrderIngredients: (id) =>
+            create(API_ENDPOINTS.ORDERS_DEDUCT_INGREDIENTS.replace('{id}', id)),
         batchUpdateOrders: (params)     => create(API_ENDPOINTS.ORDERS_BATCH_UPDATE, params),
         deleteOrder:       (id)         => remove(`${API_ENDPOINTS.ORDERS}${id}/`),
 

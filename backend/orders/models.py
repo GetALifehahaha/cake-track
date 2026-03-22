@@ -34,6 +34,7 @@ class Order(models.Model):
     reject_reason = models.TextField(null=True, blank=True)
     payment_source_id = models.CharField(max_length=255, blank=True, null=True)
     total_price = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
+    ingredients_deducted_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
