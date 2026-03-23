@@ -4,6 +4,7 @@ export { default as PaymentSuccessModal } from './pos/PaymentSuccessModal'
 export { default as ClearCheckoutModal } from './pos/ClearCheckoutModal'
 export { default as VariantModal } from './pos/VariantModal'
 export { default as SelectDiscountModal } from './pos/SelectDiscountModal'
+export { default as PendingOrdersModal } from './pos/PendingOrdersModal'
 export { default as HomeSkeleton } from './pos/HomeSkeleton'
 
 // PRODUCTS

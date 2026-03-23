@@ -28,6 +28,7 @@ from .serializers import (DiscountSerializer,
                           ProductVariantSerializer, 
                           ProductSerializer, 
                           TransactionCreateSerializer, 
+                          TransactionCompleteSerializer,
                           TransactionSerializer, 
                           TransactionItemSerializer,
                           BusinessSettingsSerializer,
@@ -201,7 +202,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         daily_revenue = (
             queryset
-            .filter(is_void=False, created_at__date=today)
+            .filter(is_void=False, is_completed=True, created_at__date=today.date())
             .aggregate(total=Sum("net_total"))['total']
             or 0
         )
@@ -229,6 +230,19 @@ class TransactionViewSet(viewsets.ModelViewSet):
             )
             
         return queryset
+
+    @action(detail=True, methods=['post'], url_path='complete', url_name='complete')
+    def complete(self, request, *args, **kwargs):
+        transaction = self.get_object()
+        serializer = TransactionCompleteSerializer(instance=transaction, data=request.data or {})
+        serializer.is_valid(raise_exception=True)
+        completed_transaction = serializer.save()
+
+        output_serializer = TransactionSerializer(
+            completed_transaction,
+            context=self.get_serializer_context(),
+        )
+        return Response(output_serializer.data, status=status.HTTP_200_OK)
     
         
 class TransactionItemViewSet(viewsets.ModelViewSet):
@@ -316,7 +330,7 @@ class DashboardAnalyticsView(APIView):
             return Response({"detail": "start_date cannot be after end_date."}, status=400)
 
         # 2️⃣ Base Queryset for Global Metrics
-        valid_transactions = all_transactions.filter(is_void=False)
+        valid_transactions = all_transactions.filter(is_void=False, is_completed=True)
         void_transactions = all_transactions.filter(is_void=True)
 
         void_total = void_transactions.count()

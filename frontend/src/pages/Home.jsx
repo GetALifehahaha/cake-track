@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Dropdown, Button, Label, Title } from '../components/atoms'
 import { CheckoutProduct, ModalFeedbackCard, Pagination, ProductCard } from '../components/molecules'
-import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton, SelectDiscountModal } from '../components/organisms/'
+import { PaymentModal, PaymentSuccessModal, ClearCheckoutModal, VariantModal, HomeSkeleton, SelectDiscountModal, PendingOrdersModal } from '../components/organisms/'
 import { Lock } from 'lucide-react'
 import useProduct from '@/hooks/useProduct'
 import { useSearchParams } from 'react-router-dom'
@@ -23,6 +23,10 @@ const Home = () => {
     const {data: productData, loading: productLoading, error: productError} = useProduct();
     const {
         postTransaction,
+        completeTransaction,
+        pendingData,
+        pendingLoading,
+        refreshPending,
         loading: transactionLoading,
         error: transactionError,
     } = useTransaction();
@@ -40,6 +44,7 @@ const Home = () => {
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [completedTransaction, setCompletedTransaction] = useState(null);
+    const [customerName, setCustomerName] = useState("");
     const [orderType, setOrderType] = useState("dine-in");
     const [filter, setFilter] = useState(); 
 
@@ -49,6 +54,8 @@ const Home = () => {
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
+    const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
+    const [completingOrderId, setCompletingOrderId] = useState(null);
 
 
     const [actualAccessCode, setActualAccessCode] = useState();
@@ -302,8 +309,32 @@ const Home = () => {
         voidPayment();
     }
 
-    const completePayment = async (value) => {
-        if (value) {
+    const pendingTransactions = (Array.isArray(pendingData?.results) ? pendingData.results : [])
+        .filter((transaction) => !transaction.is_void);
+    const pendingOrdersCount = pendingTransactions.length;
+
+    const handleCompletePendingOrder = async (transactionId) => {
+        try {
+            setCompletingOrderId(transactionId);
+            await completeTransaction(transactionId);
+            addToast('Order marked as completed', 'success');
+            refreshPending();
+        } catch (error) {
+            const detail = error?.response?.data?.detail || 'Failed to complete order';
+            addToast(detail, 'error');
+        } finally {
+            setCompletingOrderId(null);
+        }
+    }
+
+    const completePayment = async (payload) => {
+        if (payload) {
+            const parsedValue = parseFloat(
+                typeof payload === 'object' ? payload?.receivedPayment : payload,
+            );
+            const submittedCustomerName =
+                typeof payload === 'object' ? payload?.customerName : (customerName?.trim() || null);
+
             // Validation
             if (!checkoutProducts || checkoutProducts.length === 0) {
                 setModalFeedbackContent({ type: "error", label: "No Items", details: "Add at least one product before completing a transaction." });
@@ -324,7 +355,6 @@ const Home = () => {
                 return;
             }
 
-            const parsedValue = parseFloat(value);
             if (isNaN(parsedValue) || parsedValue <= 0) {
                 setModalFeedbackContent({ type: "error", label: "Invalid Payment", details: "Please enter a valid payment amount." });
                 setShowModalFeedback(true);
@@ -345,12 +375,16 @@ const Home = () => {
 
             const transactionResponse = await postTransaction({
                 is_void: false,
+                is_completed: false,
                 payment_method: "cash",
                 order_type: orderType,
+                customer_name: submittedCustomerName,
                 transaction_items: checkoutProductsPayload,
                 paid_amount: parsedValue,
                 discount: discount.id !== -1 ? discount.id : null
             })
+
+            refreshPending();
 
             const receiptItems = checkoutProducts.map(p => {
                 const pricing = discountBreakdown.itemPricing[p.variant_id] || {
@@ -411,6 +445,7 @@ const Home = () => {
 
             setCompletedTransaction(completedReceiptTransaction);
             setReceivedPayment(parsedValue);
+            setCustomerName("");
             setDiscount({id: -1, name: ''})
             setShowPaymentSuccessModal(true);
             removeAllProducts();
@@ -523,6 +558,14 @@ const Home = () => {
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row gap-1 items-center'>
                     <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter} />
+                    <div className='ml-auto'>
+                        <Button
+                            variant='modalOutline'
+                            size='small'
+                            text={pendingLoading ? 'Pending Orders (...)' : `Pending Orders (${pendingOrdersCount})`}
+                            onClick={() => setShowPendingOrdersModal(true)}
+                        />
+                    </div>
                 </div>
 
                 {/* Product Section */}
@@ -590,9 +633,11 @@ const Home = () => {
                                 </div>
                                 <div className='flex items-center justify-between w-full gap-2'>
                                     <Button text={discount?.name || 'Select Discount'}  variant='modalOutline' className='text-sm py-1' size='small' onClick={() => setShowDiscountModal(true)} />
-                                    <h5 className='text-sm font-semibold text-success whitespace-nowrap'>
-                                        -₱ {Number(discountBreakdown.totalDiscount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </h5>
+                                    {discount.id !== -1 &&
+                                        <h5 className='text-sm font-semibold text-success whitespace-nowrap'>
+                                            -₱ {Number(discountBreakdown.totalDiscount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </h5>
+                                    }
                                 </div>
                             </div>
                             <hr className='text-border'></hr>
@@ -608,7 +653,13 @@ const Home = () => {
 
             {/* Modals */}
             {showPaymentModal &&
-                <PaymentModal totalPrice={netTotal} onConfirm={completePayment} onClose={() => setShowPaymentModal(false)}/>
+                <PaymentModal
+                    totalPrice={netTotal}
+                    customerName={customerName}
+                    onCustomerNameChange={setCustomerName}
+                    onConfirm={completePayment}
+                    onClose={() => setShowPaymentModal(false)}
+                />
             }
 
             {showPaymentSuccessModal &&
@@ -647,6 +698,15 @@ const Home = () => {
             {/* TODO: Apply discount */}
             {showDiscountModal &&
                 <SelectDiscountModal discounts={discountData} cartItems={checkoutProducts} grossTotal={grossTotal} currentDiscountId={discount.id} onSelect={selectDiscount} onClose={() => setShowDiscountModal(false)} />
+            }
+
+            {showPendingOrdersModal &&
+                <PendingOrdersModal
+                    pendingTransactions={pendingTransactions}
+                    completingOrderId={completingOrderId}
+                    onClose={() => setShowPendingOrdersModal(false)}
+                    onComplete={handleCompletePendingOrder}
+                />
             }
         </div>
     )

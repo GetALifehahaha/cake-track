@@ -19,10 +19,18 @@ export default function useTransaction() {
         apiParams,
         { keepPreviousData: false }
     );
-    const { create, update, remove, loading: mutateLoading, error: mutateError } =
+    const pendingTransactionsQuery = useQueryFetch(
+        ["transactions", "pending", user?.id ?? "guest"],
+        API_ENDPOINTS.TRANSACTIONS,
+        { is_completed: false, is_void: false },
+        { keepPreviousData: false }
+    );
+
+    const { create, update, remove, request, loading: mutateLoading, error: mutateError } =
         useMutate("transactions", {
             invalidateKeys: [
                 ["transactions"],
+                ["transactions", "pending"],
                 ["pos-dashboard"],
                 ["ingredients"],
                 ["ingredient-fetch-all"],
@@ -43,7 +51,13 @@ export default function useTransaction() {
 
         postTransaction,
         patchTransaction: (id, data) => update(`${API_ENDPOINTS.TRANSACTIONS}${id}/`, data),
+        completeTransaction: (id) => request("post", `${API_ENDPOINTS.TRANSACTIONS}${id}/complete/`),
         deleteTransaction: (id) => remove(`${API_ENDPOINTS.TRANSACTIONS}${id}/`),
         refresh: () => transactionQuery.refetch(),
+
+        pendingData: pendingTransactionsQuery?.data || { results: [] },
+        pendingLoading: pendingTransactionsQuery.isPending,
+        pendingError: pendingTransactionsQuery.error,
+        refreshPending: () => pendingTransactionsQuery.refetch(),
     };
 }

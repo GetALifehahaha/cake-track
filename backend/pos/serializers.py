@@ -2,6 +2,7 @@ from rest_framework import serializers
 from users.serializers import UserSerializer
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 from .models import (
     Discount, Category, Product, ProductVariant,
     Transaction, TransactionItem, BusinessSettings,
@@ -201,6 +202,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
             'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
+            'is_completed', 'customer_name', 'completed_at',
         ]
    
 
@@ -215,9 +217,20 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['discount', 'payment_method', 'transaction_items', 'is_void', 'paid_amount', 'order_type']
+        fields = [
+            'discount',
+            'payment_method',
+            'transaction_items',
+            'is_void',
+            'paid_amount',
+            'order_type',
+            'is_completed',
+            'customer_name',
+        ]
         extra_kwargs = {
             "discount": {"required": False, "allow_null": True},
+            "is_completed": {"required": False},
+            "customer_name": {"required": False, "allow_null": True, "allow_blank": True},
         }
         
     def create(self, validated_data):
@@ -228,6 +241,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
         paid_amount = validated_data.get('paid_amount', Decimal('0.00'))
         is_void = validated_data.pop('is_void', False)
+        is_completed = validated_data.pop('is_completed', False)
         
         validated_data['cashier'] = self.context['request'].user
 
@@ -311,16 +325,20 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             net_total = gross_total - discount_amount
             change = paid_amount - net_total
 
-            if change < Decimal('0.00') and not is_void:
+            if change < Decimal('0.00') and not is_void and is_completed:
                 raise ValidationError({"paid_amount": "The paid amount is less than the net total."})
+
+            completed_at = timezone.now() if is_completed else None
 
             transaction_obj = Transaction.objects.create(
                 gross_total=gross_total,
                 discount_amount=discount_amount,
                 net_total=net_total,
-                change=0,
+                change=change,
                 discount=locked_discount,
                 is_void=is_void,
+                is_completed=is_completed,
+                completed_at=completed_at,
                 **validated_data
             )
 
@@ -373,6 +391,25 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 deduct_ingredient_totals(ingredient_totals=ingredient_totals)
 
         return transaction_obj
+
+
+class TransactionCompleteSerializer(serializers.Serializer):
+    def validate(self, attrs):
+        transaction = self.instance
+
+        if transaction.is_void:
+            raise serializers.ValidationError({"detail": "Void transactions cannot be completed."})
+
+        if transaction.is_completed:
+            raise serializers.ValidationError({"detail": "Transaction is already completed."})
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.is_completed = True
+        instance.completed_at = timezone.now()
+        instance.save(update_fields=['is_completed', 'completed_at'])
+        return instance
     
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:

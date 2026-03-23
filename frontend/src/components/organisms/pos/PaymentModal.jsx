@@ -4,7 +4,7 @@ import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../../mol
 import { X } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 
-const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
+const PaymentModal = ({totalPrice, customerName = '', onCustomerNameChange, onConfirm, onClose}) => {
 
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [isExact, setIsExact] = useState(false);
@@ -89,9 +89,15 @@ const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
     }
 
     const handleConfirmModal = (value) => {
+        if (!value) {
+            onConfirm(false);
+            return;
+        }
 
-        if (!value) onConfirm(false);
-        onConfirm(receivedPayment);
+        onConfirm({
+            receivedPayment,
+            customerName: customerName?.trim() || null,
+        });
     }
 
     const listQuickSelectAmounts = quickSelectAmounts.map(({value, selected}, index) => 
@@ -123,6 +129,17 @@ const PaymentModal = ({totalPrice, onConfirm, onClose}) => {
                 <div className='flex flex-col gap-2'>
                     <Label variant='small' text='Or Enter Amount'/>
                     <input type='text' min={0} maxLength={11} value={receivedPayment} onChange={(e) => handleSetReceivedPayment(e)} className={`focus:outline-none p-4 rounded-lg border-main-dark/50 border  ${(isExact) ? '' : 'bg-main-dark/50'}`}/>
+                </div>
+
+                <div className='flex flex-col gap-2'>
+                    <Label variant='small' text='Customer Name (Optional)'/>
+                    <input
+                        type='text'
+                        value={customerName}
+                        onChange={(e) => onCustomerNameChange?.(e.target.value)}
+                        placeholder='Enter customer name'
+                        className='focus:outline-none p-3 rounded-lg border-main-dark/50 border bg-main-white'
+                    />
                 </div>
 
                 { showModalFeedback &&

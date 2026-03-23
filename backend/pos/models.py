@@ -144,6 +144,10 @@ class Transaction(models.Model):
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True)
     is_void = models.BooleanField(default=False)
     paid_amount = models.DecimalField(decimal_places=2, max_digits=11, default=0) #type: ignore
+
+    is_completed = models.BooleanField(default=False)
+    customer_name = models.CharField(max_length=255, blank=True, null=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"Transaction #{self.pk}"

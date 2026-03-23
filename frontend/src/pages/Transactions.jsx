@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Title } from '../components/atoms';
 import { TransactionDetails } from '../components/organisms';
 import { Ellipsis, X } from 'lucide-react';
@@ -20,6 +20,14 @@ const Transactions = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentDateParams = searchParams.get('created_at')
     const selectedDate = currentDateParams ? new Date(currentDateParams) : null
+
+    useEffect(() => {
+        if (searchParams.get('is_completed') === 'true') return;
+
+        const newParams = Object.fromEntries(searchParams.entries());
+        newParams.is_completed = 'true';
+        setSearchParams(newParams, { replace: true });
+    }, [searchParams, setSearchParams]);
 
     const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Status', 'Total'];
     const basis = `basis-1/${tableHeader.length}`
@@ -45,6 +53,8 @@ const Transactions = () => {
             delete newParams.created_at
         }
 
+        newParams.is_completed = 'true';
+
         setSearchParams(newParams)
     }
 
@@ -56,7 +66,9 @@ const Transactions = () => {
         });
     };
 
-    const groupedTransactions = data.results.reduce((groups, item) => {
+    const completedTransactions = (data?.results || []).filter((item) => item.is_completed);
+
+    const groupedTransactions = completedTransactions.reduce((groups, item) => {
         const dateKey = getGroupKey(item.created_at);
 
         if (!groups[dateKey]) {
@@ -163,7 +175,7 @@ const Transactions = () => {
                     {listHeaders}
                 </div>
                 <div className='flex flex-col items-center gap-2 py-2 min-h-[40vh]'>
-                    {data.results.length == 0 &&
+                    {completedTransactions.length == 0 &&
                         <h5 className='font-medium text-text/50 my-auto'>
                             No transactions found
                         </h5>

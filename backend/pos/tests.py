@@ -1,5 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
+from rest_framework.test import APITestCase, APIClient
 from decimal import Decimal
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -141,3 +142,96 @@ class TransactionCreationTests(TestCase):
             serializer.save()
             
         self.assertTrue("minimum order total" in str(context.exception).lower())
+
+    def test_pending_transaction_defaults_to_not_completed(self):
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+
+        data = {
+            "payment_method": "cash",
+            "paid_amount": Decimal("0.00"),
+            "order_type": "dine-in",
+            "is_completed": False,
+            "transaction_items": [
+                {"product": self.product_a.id, "product_variant": self.variant_a.id, "quantity": 1}
+            ]
+        }
+
+        serializer = TransactionCreateSerializer(data=data, context={'request': request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        transaction = serializer.save()
+
+        self.assertFalse(transaction.is_completed)
+        self.assertIsNone(transaction.completed_at)
+
+    def test_create_completed_transaction_sets_completed_at(self):
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+
+        data = {
+            "payment_method": "cash",
+            "paid_amount": Decimal("1000.00"),
+            "order_type": "dine-in",
+            "is_completed": True,
+            "customer_name": "Walk-in Customer",
+            "transaction_items": [
+                {"product": self.product_a.id, "product_variant": self.variant_a.id, "quantity": 1}
+            ]
+        }
+
+        serializer = TransactionCreateSerializer(data=data, context={'request': request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        transaction = serializer.save()
+
+        self.assertTrue(transaction.is_completed)
+        self.assertIsNotNone(transaction.completed_at)
+        self.assertEqual(transaction.customer_name, "Walk-in Customer")
+
+
+class TransactionCompletionActionTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.cashier = User.objects.create_user(username="cashier_action", password="password123")
+        self.client.force_authenticate(user=self.cashier)
+
+        category = Category.objects.create(name="Bread")
+        product = Product.objects.create(name="Loaf")
+        product.categories.add(category)
+        variant = ProductVariant.objects.create(product=product, label="Regular", price=Decimal("120.00"))
+
+        self.pending_transaction = Transaction.objects.create(
+            cashier=self.cashier,
+            payment_method='cash',
+            order_type='dine-in',
+            gross_total=Decimal('120.00'),
+            discount_amount=Decimal('0.00'),
+            net_total=Decimal('120.00'),
+            paid_amount=Decimal('0.00'),
+            change=Decimal('0.00'),
+            is_completed=False,
+        )
+
+        TransactionItem.objects.create(
+            transaction=self.pending_transaction,
+            product=product,
+            product_variant=variant,
+            quantity=1,
+            discount_amount=Decimal('0.00'),
+            price_at_time=Decimal('120.00'),
+        )
+
+    def test_complete_transaction_action_sets_flags(self):
+        response = self.client.post(f"/pos/transactions/{self.pending_transaction.id}/complete/", {}, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        self.pending_transaction.refresh_from_db()
+        self.assertTrue(self.pending_transaction.is_completed)
+        self.assertIsNotNone(self.pending_transaction.completed_at)
+
+    def test_complete_transaction_action_rejects_already_completed(self):
+        self.pending_transaction.is_completed = True
+        self.pending_transaction.completed_at = timezone.now()
+        self.pending_transaction.save(update_fields=['is_completed', 'completed_at'])
+
+        response = self.client.post(f"/pos/transactions/{self.pending_transaction.id}/complete/", {}, format='json')
+        self.assertEqual(response.status_code, 400)
