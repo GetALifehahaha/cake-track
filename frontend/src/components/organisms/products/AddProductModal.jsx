@@ -9,10 +9,13 @@ import {
 } from "@/api/constants";
 import { cn } from '@/utils/cn';
 import useCategory from '@/hooks/useCategory';
+import useRecipe from '@/hooks/useRecipe';
+import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
 
 const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, onClose}) => {
 
     const { postCategory, refresh: refreshCategories } = useCategory();
+    const { data: recipeData, postRecipe } = useRecipe();
 
     const [productName, setProductName] = useState("");
     const [categories, setCategories] = useState([{ id: "" }]);
@@ -28,6 +31,8 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
     const [loading, setLoading] = useState(false);
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
+    const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [recipeId, setRecipeId] = useState('');
 
     const [imagePreview, setImagePreview] = useState(null);
 
@@ -43,10 +48,17 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
             name: productName,
             image: image ? await uploadToCloudinary(image) : null,
             category_ids: [...categories.filter(Boolean).map(category => category.id)],
-            variants: variants.filter(({ label, price }) => label.trim() && price > 0)
+            variants: variants.filter(({ label, price }) => label.trim() && price > 0),
+            recipe: recipeId ? Number(recipeId) : null,
         }
         onConfirm(payload);
         setLoading(false);
+    }
+
+    const handleCreateRecipe = async (payload) => {
+        const created = await postRecipe(payload);
+        setRecipeId(String(created.id));
+        setShowAddRecipeModal(false);
     }
 
     const handleImageChange = (e) => {
@@ -214,6 +226,8 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
         setShowConfirmationModal(!showConfirmationModal);
     }
 
+    const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
+
     return (
         <ModalBody title='Add New Item' onClose={onClose} subtitle='Create a new product by filling in the details below'>
                 <div className='flex gap-8'>
@@ -339,6 +353,23 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
                             }
                             </div>  
                         </div>
+
+                        <div className='flex flex-col gap-2'>
+                            <Label variant='modal' text='Recipe' />
+                            <div className='flex items-center gap-2'>
+                                <div className='flex-1'>
+                                    <Dropdown
+                                        variant='modal'
+                                        value={recipeId}
+                                        selection='Select recipe (optional)'
+                                        size='full'
+                                        options={recipeOptions}
+                                        onSelect={(value) => setRecipeId(value ? String(value) : '')}
+                                    />
+                                </div>
+                                <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -363,6 +394,10 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
 
                 {showConfirmationModal &&
                     <ConfirmationModal title="Add Product?" content="Are you sure you want to add this product?" onReject={handleSetShowConfirmationModal} onConfirm={handleConfirmModal} />
+                }
+
+                {showAddRecipeModal &&
+                    <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
                 }
             {/* Sizes and Prices */}
         </ModalBody>

@@ -9,10 +9,13 @@ import {
 } from "@/api/constants";
 import { cn } from '@/utils/cn';
 import useCategory from '@/hooks/useCategory';
+import useRecipe from '@/hooks/useRecipe';
+import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
 
 const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onConfirm, onClose}) => {
 
     const { postCategory, refresh: refreshCategories } = useCategory();
+    const { data: recipeData, postRecipe } = useRecipe();
 
     const [productName, setProductName] = useState(product.name);
     const [categories, setCategories] = useState(product.categories?.length? [...product.categories]: [""])
@@ -23,7 +26,9 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
 
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
-    
+    const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [recipeId, setRecipeId] = useState(product.recipe ? String(product.recipe) : '');
+
     const [imagePreview, setImagePreview] = useState(product.image);
 
     const [feedback, setFeedback] = useState("");
@@ -109,7 +114,8 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
             variants: variants.filter(
                 ({label, price}, index) =>
                     index !== variants.length - 1 || (label && price)
-            )
+            ),
+            recipe: recipeId ? Number(recipeId) : null,
         }
         
         onConfirm(payload);
@@ -210,6 +216,14 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
     const removeVariant = (index) => {
         setVariants(prev => prev.filter((_, itemIndex) => itemIndex !== index))
     }
+
+    const handleCreateRecipe = async (payload) => {
+        const created = await postRecipe(payload);
+        setRecipeId(String(created.id));
+        setShowAddRecipeModal(false);
+    }
+
+    const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
 
     return (
         <ModalBody title='Edit product details' onClose={onClose}>
@@ -335,6 +349,23 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                             ))}
                         </div>
                     </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Recipe' />
+                        <div className='flex items-center gap-2'>
+                            <div className='flex-1'>
+                                <Dropdown
+                                    variant='modal'
+                                    value={recipeId}
+                                    selection='Select recipe (optional)'
+                                    size='full'
+                                    options={recipeOptions}
+                                    onSelect={(value) => setRecipeId(value ? String(value) : '')}
+                                />
+                            </div>
+                            <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -363,6 +394,10 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
             }
             {archiveConfirmation &&
                 <ConfirmationModal title="Archive Product?" content="Are you sure you want to archive this product? You can get it back from the archives" onReject={handleSetArchiveConfirmation} onConfirm={handleArchive} />
+            }
+
+            {showAddRecipeModal &&
+                <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
             }
         </ModalBody>
 

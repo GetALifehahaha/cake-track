@@ -29,7 +29,20 @@ export default function useOrder() {
     }, [currentFilter, currentParams.due_date, currentParams.q]);
 
     const ordersQuery = useQueryFetch('orders', API_ENDPOINTS.ORDERS, apiParams);
-    const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate('orders');
+    const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate(
+        'orders',
+        {
+            invalidateKeys: [
+                ['orders'],
+                ['orders-dashboard'],
+                ['ingredients'],
+                ['ingredient-fetch-all'],
+                ['ingredient-dashboard'],
+                ['inventory-transactions'],
+                ['recipes'],
+            ],
+        },
+    );
 
     const blockedDatesQuery = useQueryFetch('blocked-dates', API_ENDPOINTS.BLOCKED_DATES);
     const {

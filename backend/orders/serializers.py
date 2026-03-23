@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime)
 from payment.models import Payment
 from inventory.serializers import RecipeSerializer
+from inventory.models import Recipe, RecipeIngredient
+from decimal import Decimal
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -34,6 +36,11 @@ class OrderSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    premade_items = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=False
+    )
     payments = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
@@ -41,9 +48,53 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'recipe_details', 'total_price', 'ingredients_deducted_at', 'payments'
+            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
         read_only_fields = ['id', 'created_at', 'customer']
+
+    def _create_premade_recipe(self, order, premade_items):
+        ingredient_totals = {}
+
+        for item in premade_items:
+            cake_id = item.get('cake_id')
+            quantity = item.get('quantity', 1)
+
+            if not cake_id:
+                raise serializers.ValidationError({'premade_items': 'Each item must include cake_id.'})
+
+            if quantity is None or int(quantity) < 1:
+                raise serializers.ValidationError({'premade_items': 'Quantity must be at least 1.'})
+
+            try:
+                cake = Cake.objects.select_related('recipe').get(id=cake_id)
+            except Cake.DoesNotExist as error:
+                raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} does not exist.'}) from error
+
+            if cake.recipe is None:
+                raise serializers.ValidationError({'premade_items': f'Cake {cake.name} has no recipe configured.'})
+
+            for recipe_item in cake.recipe.recipe_ingredients.select_related('ingredient').all():
+                ingredient_id = recipe_item.ingredient_id
+                amount_needed = Decimal(str(recipe_item.amount_needed)) * Decimal(str(quantity))
+                ingredient_totals[ingredient_id] = ingredient_totals.get(ingredient_id, Decimal('0')) + amount_needed
+
+        if not ingredient_totals:
+            return None
+
+        recipe = Recipe.objects.create(
+            name=f'Temporary recipe - {order.id}',
+            instructions=f'Auto-generated from premade cakes for order {order.id}',
+            is_temporary=True,
+        )
+
+        for ingredient_id, amount_needed in ingredient_totals.items():
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient_id=ingredient_id,
+                amount_needed=amount_needed,
+            )
+
+        return recipe
 
     def get_payments(self, obj):
         payment_qs = Payment.objects.filter(orders=obj).order_by('created_at')
@@ -67,6 +118,7 @@ class OrderSerializer(serializers.ModelSerializer):
         cake_data = validated_data.pop('cake_orders')
         cupcake_data = validated_data.pop('cupcake_orders', None)
         recipe = validated_data.pop('recipe', None)
+        premade_items = validated_data.pop('premade_items', [])
         # Extract the list of image URLs
         uploaded_images = validated_data.pop('uploaded_images', [])
         
@@ -79,6 +131,12 @@ class OrderSerializer(serializers.ModelSerializer):
             
         for url in uploaded_images:
             OrderImage.objects.create(order=order, image_url=url)
+
+        if recipe is None and premade_items:
+            generated_recipe = self._create_premade_recipe(order, premade_items)
+            if generated_recipe is not None:
+                order.recipe = generated_recipe
+                order.save(update_fields=['recipe'])
             
         return order
     
@@ -117,6 +175,10 @@ class DashboardSerializer(serializers.Serializer):
  
 
 class CakeSerializer(serializers.ModelSerializer):
+    recipe_details = RecipeSerializer(source='recipe', read_only=True)
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all(), required=False, allow_null=True)
+    recipe_available = serializers.SerializerMethodField()
+
     def validate_name(self, value):
         normalized_name = value.strip()
 
@@ -136,11 +198,20 @@ class CakeSerializer(serializers.ModelSerializer):
             "name",
             "price",
             "image",
+            "recipe",
+            "recipe_details",
+            "recipe_available",
             "created_at",
             "updated_at",
             "is_archived"
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_recipe_available(self, obj):
+        if obj.recipe is None:
+            return True
+
+        return obj.recipe.is_available()
 
 
 class CakeBatchUnarchiveSerializer(serializers.Serializer):

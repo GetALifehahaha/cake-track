@@ -24,20 +24,24 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
 
     const capitalize = (str) => str ? str[0].toUpperCase() + str.slice(1) : str;
 
-    const listOptions = options.map(({key, value}, index) => <SelectItem key={index} value={forPageFilter ? key : value}>{capitalize(key)}</SelectItem>)
+    const normalizedValue = value === null || value === undefined ? "" : String(value);
+
+    const listOptions = options.map(({key, value}, index) => (
+        <SelectItem key={index} value={String(forPageFilter ? key : value)}>{capitalize(key)}</SelectItem>
+    ))
 
     return (
         <Select 
-            value={value || ""}
+            value={normalizedValue}
             onValueChange={(val) => {
-            if (onSelect) onSelect(val);
+            if (onSelect) onSelect(val === "__none__" ? null : val);
         }}>
             <SelectTrigger className={`${variants[variant]} ${sizes[size]}`}>
                 <SelectValue placeholder={selection} />
             </SelectTrigger>
             <SelectContent className='right-0'>
                 {listOptions}
-                {allowNone && <SelectItem value={null} className='text-black/60 font-medium'>{removeText}</SelectItem>}
+                {allowNone && <SelectItem value="__none__" className='text-black/60 font-medium'>{removeText}</SelectItem>}
             </SelectContent>
         </Select>
     )

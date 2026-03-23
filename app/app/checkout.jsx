@@ -154,6 +154,10 @@ const Checkout = () => {
                     message: ""
                 },
                 comments: `PRE-MADE ORDER: ${cartItemsString}`,
+                premade_items: cart.map(item => ({
+                    cake_id: item.id,
+                    quantity: item.amount || 1,
+                })),
                 total_price: premadeTotal,
                 image: cartImages.length > 0 ? cartImages[0] : null,
                 uploaded_images: cartImages

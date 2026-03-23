@@ -8,6 +8,10 @@ from .models import (
     Discount, DiscountUsage
 )
 from decimal import Decimal
+from inventory.models import Recipe
+from inventory.serializers import RecipeSerializer
+from inventory.models import Ingredient
+from inventory.services import deduct_ingredient_totals
 
 
 class DiscountSerializer(serializers.ModelSerializer):
@@ -84,14 +88,40 @@ class ProductSerializer(serializers.ModelSerializer):
     )
 
     variants = ProductVariantSerializer(many=True)
+    recipe_details = RecipeSerializer(source='recipe', read_only=True)
+    recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all(), required=False, allow_null=True)
+    recipe_available = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description',
             'categories', 'category_ids',
-            'image', 'is_archived', 'variants'
+            'image', 'is_archived', 'variants', 'has_recipe', 'recipe', 'recipe_details', 'recipe_available'
         ]
+
+    def validate(self, attrs):
+        has_recipe = attrs.get('has_recipe', self.instance.has_recipe if self.instance else False)
+        recipe = attrs.get('recipe', self.instance.recipe if self.instance else None)
+
+        if 'has_recipe' not in attrs:
+            attrs['has_recipe'] = recipe is not None
+        elif has_recipe and recipe is None:
+            raise serializers.ValidationError({'recipe': 'Recipe is required when Has Recipe is enabled.'})
+
+        if recipe is None:
+            attrs['has_recipe'] = False
+
+        return attrs
+
+    def get_recipe_available(self, obj):
+        if not obj.has_recipe:
+            return True
+
+        if obj.recipe is None:
+            return False
+
+        return obj.recipe.is_available()
 
     def create(self, validated_data):
         categories = validated_data.pop("categories", [])
@@ -200,6 +230,34 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         is_void = validated_data.pop('is_void', False)
         
         validated_data['cashier'] = self.context['request'].user
+
+        ingredient_totals = {}
+
+        for item in items_data:
+            product = item['product']
+            quantity = Decimal(str(item['quantity']))
+
+            if not product.recipe_id:
+                continue
+
+            for recipe_item in product.recipe.recipe_ingredients.select_related('ingredient').all():
+                ingredient_id = recipe_item.ingredient_id
+                amount_needed = Decimal(str(recipe_item.amount_needed)) * quantity
+                ingredient_totals[ingredient_id] = ingredient_totals.get(ingredient_id, Decimal('0')) + amount_needed
+
+        if not is_void and ingredient_totals:
+            stock_errors = []
+
+            for ingredient_id, amount_needed in ingredient_totals.items():
+                ingredient = Ingredient.objects.get(id=ingredient_id)
+
+                if ingredient.total_stock < amount_needed:
+                    stock_errors.append(
+                        f"Not enough {ingredient.name}. Need {amount_needed}, Have {ingredient.total_stock}"
+                    )
+
+            if stock_errors:
+                raise ValidationError({"transaction_items": stock_errors})
 
         with transaction.atomic():
             gross_total = sum(
@@ -310,6 +368,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 
                 locked_discount.used_count += 1
                 locked_discount.save(update_fields=['used_count'])
+
+            if not is_void and ingredient_totals:
+                deduct_ingredient_totals(ingredient_totals=ingredient_totals)
 
         return transaction_obj
     

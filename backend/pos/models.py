@@ -116,6 +116,8 @@ class Product(models.Model):
     description = models.CharField(max_length=255, blank=True, null=True)
     categories = models.ManyToManyField(Category, blank=True, related_name="products")
     image = models.CharField(max_length=500, blank=True, null=True)
+    has_recipe = models.BooleanField(default=False)
+    recipe = models.ForeignKey('inventory.Recipe', on_delete=models.SET_NULL, null=True, blank=True, related_name='pos_products')
     
     is_archived = models.BooleanField(default=False)
     

@@ -7,8 +7,12 @@ import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
 } from "@/api/constants";
+import useRecipe from '@/hooks/useRecipe';
+import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
+import { Dropdown } from '@/components/atoms';
 
 const EditCakeModal = ({ cake, onConfirm, onClose }) => {
+    const { data: recipeData, postRecipe } = useRecipe();
 
     const [cakeName, setCakeName] = useState(cake.name);
     const [price, setPrice] = useState(cake.price);
@@ -20,6 +24,8 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const [feedback, setFeedback] = useState(null);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [showArchiveConfirmationModal, setShowArchiveConfirmationModal] = useState(false);
+    const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [recipeId, setRecipeId] = useState(cake.recipe ? String(cake.recipe) : '');
 
     const handleCakeName = (e) => {
         e.preventDefault();
@@ -99,10 +105,10 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     };
 
     const validateFields = () => {
-        if (!cakeName || !price || !image) {
+        if (!cakeName || !price || !image || !recipeId) {
             setFeedback({
                 label: 'Incomplete details',
-                details: 'Please fill in all required fields.',
+                details: 'Please fill in all required fields including recipe.',
                 type: 'error'
             });
             return false;
@@ -133,6 +139,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                         ? await uploadToCloudinary(image)
                         : null
                     : image,
+                recipe: Number(recipeId),
             };
 
             await onConfirm(payload);
@@ -150,6 +157,14 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const toggleShowArchiveConfirmationModal = () => setShowArchiveConfirmationModal(!showArchiveConfirmationModal)
 
     const handleArchive = () => onConfirm({is_archived: true})
+
+    const handleCreateRecipe = async (payload) => {
+        const created = await postRecipe(payload);
+        setRecipeId(String(created.id));
+        setShowAddRecipeModal(false);
+    }
+
+    const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
 
 
     return (
@@ -217,6 +232,23 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                             />
                         </div>
 
+                        <div className='flex flex-col gap-2'>
+                            <Label variant='modal' text='Recipe' />
+                            <div className='flex items-center gap-2'>
+                                <div className='flex-1'>
+                                    <Dropdown
+                                        variant='modal'
+                                        value={recipeId}
+                                        selection='Select recipe'
+                                        size='full'
+                                        options={recipeOptions}
+                                        onSelect={(value) => setRecipeId(String(value))}
+                                    />
+                                </div>
+                                <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -274,6 +306,10 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
                         content="Are you sure you want to archive this cake? You can get it back from the archives" 
                         onReject={toggleShowArchiveConfirmationModal} 
                         onConfirm={handleArchive} />
+                }
+
+                {showAddRecipeModal &&
+                    <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
                 }
 
         </ModalBody>

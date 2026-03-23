@@ -7,8 +7,12 @@ import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
 } from "@/api/constants";
+import useRecipe from '@/hooks/useRecipe';
+import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
+import { Dropdown } from '@/components/atoms';
 
 const AddCakeModal = ({ onConfirm, onClose }) => {
+    const { data: recipeData, postRecipe } = useRecipe();
 
     const [cakeName, setCakeName] = useState("");
     const [price, setPrice] = useState("");
@@ -18,6 +22,8 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [recipeId, setRecipeId] = useState('');
 
     const handleCakeName = (e) => {
         e.preventDefault();
@@ -40,10 +46,10 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
     }
 
     const validateFields = () => {
-        if (!cakeName || !price || !image) {
+        if (!cakeName || !price || !image || !recipeId) {
             setFeedback({
                 label: 'Incomplete details',
-                details: 'Please fill in all required fields.',
+                details: 'Please fill in all required fields including recipe.',
                 type: 'error'
             });
             return false;
@@ -69,6 +75,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                 name: cakeName,
                 price: Number(price),
                 image: image ? await uploadToCloudinary(image) : null,
+                recipe: Number(recipeId),
             };
 
             await onConfirm(payload);
@@ -137,6 +144,14 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
         const data = await response.json();
         return data.secure_url;
     };
+
+    const handleCreateRecipe = async (payload) => {
+        const created = await postRecipe(payload);
+        setRecipeId(String(created.id));
+        setShowAddRecipeModal(false);
+    }
+
+    const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
 
     return (
         <ModalBody
@@ -208,6 +223,23 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                         />
                     </div>
 
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Recipe' />
+                        <div className='flex items-center gap-2'>
+                            <div className='flex-1'>
+                                <Dropdown
+                                    variant='modal'
+                                    value={recipeId}
+                                    selection='Select recipe'
+                                    size='full'
+                                    options={recipeOptions}
+                                    onSelect={(value) => setRecipeId(String(value))}
+                                />
+                            </div>
+                            <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -252,6 +284,10 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                     onReject={() => setShowConfirmationModal(false)}
                     onConfirm={addCake}
                 />
+            }
+
+            {showAddRecipeModal &&
+                <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
             }
         </ModalBody>
     );

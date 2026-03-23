@@ -20,7 +20,16 @@ export default function useTransaction() {
         { keepPreviousData: false }
     );
     const { create, update, remove, loading: mutateLoading, error: mutateError } =
-        useMutate(["transactions", user?.id ?? "guest"]);
+        useMutate("transactions", {
+            invalidateKeys: [
+                ["transactions"],
+                ["pos-dashboard"],
+                ["ingredients"],
+                ["ingredient-fetch-all"],
+                ["ingredient-dashboard"],
+                ["inventory-transactions"],
+            ],
+        });
 
     const postTransaction = async (params) => {
         const data = await create(API_ENDPOINTS.TRANSACTIONS, params);
