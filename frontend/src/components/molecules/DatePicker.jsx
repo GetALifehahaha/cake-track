@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 
@@ -25,7 +25,7 @@ const DatePicker = ({ selected, onSelect, className }) => {
           <CalendarIcon className="ml-auto" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent side="bottom" align="start" avoidCollisions={false} className="w-auto p-0 bg-main border-main-dark">
+      <PopoverContent side="bottom" align="start" collisionPadding={8} className="w-auto p-0 bg-main border-main-dark">
         <Calendar className="" mode="single" selected={selected} onSelect={(value) => onSelect(value)} />
       </PopoverContent>
     </Popover>

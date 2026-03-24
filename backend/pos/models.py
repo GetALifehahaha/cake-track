@@ -52,8 +52,8 @@ class Discount(models.Model):
         related_name="discounts"
     )
 
-    start_date = models.DateTimeField(default=timezone.now)
-    end_date = models.DateTimeField(default=timezone.now() + timezone.timedelta(days=30))
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
 
     min_order_total = models.DecimalField(
         max_digits=10,
@@ -77,7 +77,10 @@ class Discount(models.Model):
         if not self.active:
             return False
 
-        if now < self.start_date or now > self.end_date:
+        if self.start_date and now < self.start_date:
+            return False
+
+        if self.end_date and now > self.end_date:
             return False
 
         if self.usage_limit and self.used_count >= self.usage_limit:

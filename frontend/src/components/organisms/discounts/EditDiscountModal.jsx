@@ -10,6 +10,16 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
     const [feedback, setFeedback] = useState(null);
     const [showScopeSelector, setShowScopeSelector] = useState(false);
 
+    const now = new Date();
+    const future = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const formatLocalISO = (date) => {
+        const offset = date.getTimezoneOffset();
+        return new Date(date.getTime() - (offset * 60 * 1000)).toISOString().slice(0, 16);
+    };
+    const initialStartDate = discount.start_date ? new Date(discount.start_date).toISOString().slice(0, 16) : formatLocalISO(now);
+    const initialEndDate = discount.end_date ? new Date(discount.end_date).toISOString().slice(0, 16) : formatLocalISO(future);
+    const initialIndefinite = !discount.start_date && !discount.end_date;
+
     const [formData, setFormData] = useState({
         name: discount.name,
         discount_type: discount.discount_type,
@@ -17,8 +27,9 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
         scope: discount.scope,
         products: discount.products || [],
         categories: discount.categories || [],
-        start_date: new Date(discount.start_date).toISOString().slice(0, 16),
-        end_date: new Date(discount.end_date).toISOString().slice(0, 16),
+        start_date: initialStartDate,
+        end_date: initialEndDate,
+        is_indefinite: initialIndefinite,
         min_order_total: String(Math.trunc(Number(discount.min_order_total || 0))),
         usage_limit: discount.usage_limit === null || discount.usage_limit === undefined
             ? ""
@@ -60,6 +71,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
     };
 
     const handleDateUpdate = (field, selectedDate) => {
+        if (formData.is_indefinite) return;
         if (!selectedDate) return;
         setFormData(prev => {
             const timePart = prev[field].split('T')[1];
@@ -70,11 +82,21 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
     };
 
     const handleTimeUpdate = (field, e) => {
+        if (formData.is_indefinite) return;
         const timePart = e.target.value;
         setFormData(prev => {
             const datePart = prev[field].split('T')[0];
             return { ...prev, [field]: `${datePart}T${timePart}` };
         });
+    };
+
+    const handleIndefiniteSchedule = (checked) => {
+        setFormData(prev => ({
+            ...prev,
+            is_indefinite: checked,
+            start_date: checked ? '' : (prev.start_date || formatLocalISO(now)),
+            end_date: checked ? '' : (prev.end_date || formatLocalISO(future)),
+        }));
     };
 
     const validate = () => {
@@ -84,6 +106,24 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
             setFeedback({ label: 'Invalid Fields', details: 'Please enter a valid name and discount value.', type: 'error' });
             return false;
         }
+
+        if (formData.discount_type === 'percentage' && parsedValue > 100) {
+            setFeedback({ label: 'Invalid Value', details: 'Percentage discount cannot exceed 100.', type: 'error' });
+            return false;
+        }
+
+        if (!formData.is_indefinite) {
+            if (!formData.start_date || !formData.end_date) {
+                setFeedback({ label: 'Invalid Schedule', details: 'Please provide both start and end date.', type: 'error' });
+                return false;
+            }
+
+            if (new Date(formData.start_date) > new Date(formData.end_date)) {
+                setFeedback({ label: 'Invalid Schedule', details: 'End date cannot be earlier than start date.', type: 'error' });
+                return false;
+            }
+        }
+
         return true;
     };
 
@@ -91,6 +131,11 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
         if (!validate()) return;
         setLoading(true);
         const payload = { ...formData };
+        delete payload.is_indefinite;
+        if (formData.is_indefinite) {
+            payload.start_date = null;
+            payload.end_date = null;
+        }
         if (payload.usage_limit === "") payload.usage_limit = null;
         if (payload.scope !== 'selected_products') payload.products = [];
         if (payload.scope !== 'selected_category') payload.categories = [];
@@ -135,26 +180,43 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                     {/* Schedule Section */}
                     <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Schedule</h6>
-                        
-                        <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Start Date & Time' />
-                            <div className='flex gap-2 items-center'>
-                                <div className='flex-1'>
-                                    <DatePicker date={new Date(formData.start_date.split('T')[0])} selected={formData['start_date']} onSelect={(d) => handleDateUpdate('start_date', d)} />
-                                </div>
-                                <input type='time' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none border border-border w-1/3' value={formData.start_date.split('T')[1]} onChange={(e) => handleTimeUpdate('start_date', e)} />
-                            </div>
+
+                        <div className='flex items-center gap-3'>
+                            <input
+                                type='checkbox'
+                                id='edit-discount-indefinite'
+                                checked={formData.is_indefinite}
+                                onChange={(e) => handleIndefiniteSchedule(e.target.checked)}
+                                className='w-4 h-4 accent-accent cursor-pointer'
+                            />
+                            <label htmlFor='edit-discount-indefinite' className='text-sm text-text font-medium cursor-pointer'>
+                                Permanent
+                            </label>
                         </div>
 
-                        <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='End Date & Time' />
-                            <div className='flex gap-2 items-center'>
-                                <div className='flex-1'>
-                                    <DatePicker date={new Date(formData.end_date.split('T')[0])} selected={formData['end_date']} onSelect={(d) => handleDateUpdate('end_date', d)} />
+                        {!formData.is_indefinite && (
+                            <>
+                                <div className='flex flex-col gap-2'>
+                                    <Label variant='modal' text='Start Date & Time' />
+                                    <div className='flex gap-2 items-center'>
+                                        <div className='flex-1'>
+                                            <DatePicker selected={formData.start_date ? new Date(formData.start_date) : null} onSelect={(d) => handleDateUpdate('start_date', d)} />
+                                        </div>
+                                        <input type='time' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none border border-border w-1/3' value={formData.start_date ? formData.start_date.split('T')[1] : '00:00'} onChange={(e) => handleTimeUpdate('start_date', e)} />
+                                    </div>
                                 </div>
-                                <input type='time' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none border border-border w-1/3' value={formData.end_date.split('T')[1]} onChange={(e) => handleTimeUpdate('end_date', e)} />
-                            </div>
-                        </div>
+
+                                <div className='flex flex-col gap-2'>
+                                    <Label variant='modal' text='End Date & Time' />
+                                    <div className='flex gap-2 items-center'>
+                                        <div className='flex-1'>
+                                            <DatePicker selected={formData.end_date ? new Date(formData.end_date) : null} onSelect={(d) => handleDateUpdate('end_date', d)} />
+                                        </div>
+                                        <input type='time' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none border border-border w-1/3' value={formData.end_date ? formData.end_date.split('T')[1] : '23:59'} onChange={(e) => handleTimeUpdate('end_date', e)} />
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 

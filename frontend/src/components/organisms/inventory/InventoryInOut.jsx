@@ -11,7 +11,7 @@ import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
 import { InventoryInOutSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
-import { limitedInput } from '@/utils/safeInput';
+import { inputText, limitedInput } from '@/utils/safeInput';
 
 const InventoryInOut = ({ onConfirm, onClose }) => {
 
@@ -249,10 +249,9 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 							type='text'
 							placeholder='e.g., Expired, Damaged, Adjustment'
 							value={stockOutReason}
-							onChange={(e) => {
-					<h5 className='text-sm font-medium text-text/70'>Stock-out Reason</h5>
-								if (raw.length <= 100) setStockOutReason(raw);
-							}}
+							onChange={(e) => 
+								setStockOutReason(inputText(e))
+							}
 							className='p-2.5 bg-main-white rounded-md focus:outline-none border border-border'
 						/>
 					</div>

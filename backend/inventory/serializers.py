@@ -150,7 +150,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'batches', 'conversions']
+        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'low_amount', 'batches', 'conversions']
 
     def validate_name(self, value):
         normalized_name = value.strip()
@@ -163,6 +163,11 @@ class IngredientSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An ingredient with this name already exists.")
 
         return normalized_name
+
+    def validate_low_amount(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Low stock threshold must be zero or greater.")
+        return value
 
     def _validate_conversions_data(self, base_unit, conversions_data):
         seen_from_units = set()

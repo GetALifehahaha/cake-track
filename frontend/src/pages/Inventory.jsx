@@ -141,7 +141,7 @@ const Inventory = () => {
                 </div>
                 <h5 className='flex-1 text-left'>{formatQty(item.total_stock)} {item.unit.abbreviation}</h5>
                 <div className='flex-1 text-left flex items-center'>
-                    <StockLabel amount={item.total_stock} />
+                    <StockLabel amount={item.total_stock} lowAmount={item.low_amount} />
 
                     <div className='w-fit flex flex-row gap-2 ml-4'>
                         {item.batches.some(batch => new Date(batch.expiration_date) < Date.now()) && (

@@ -93,7 +93,6 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const [search, setSearch] = useState('');
     const [selectedIngredients, setSelectedIngredients] = useState([]);
-    const [entryMode, setEntryMode] = useState('from-recipe');
     const [selectedRecipeId, setSelectedRecipeId] = useState('');
     const [savingRecipe, setSavingRecipe] = useState(false);
     const [deducting, setDeducting] = useState(false);
@@ -106,7 +105,6 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         setSelectedIngredients(mapRecipeToIngredientItems(initialRecipe));
     }, [orderDetails]);
 
-    const isPending = orderSnapshot?.status === 'pending';
     const isAccepted = orderSnapshot?.status === 'accepted';
     const isRejected = orderSnapshot?.status === 'rejected';
     const hasSavedRecipe = Boolean(orderSnapshot?.recipe);
@@ -248,7 +246,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             setSelectedIngredients(mapRecipeToIngredientItems(savedRecipe));
             setCurrentStep(3);
             addToast('Order recipe saved.', 'success');
-        } catch (error) {
+        } catch {
             addToast('Failed to save order recipe.', 'error');
         } finally {
             setSavingRecipe(false);
@@ -311,16 +309,6 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 </div>
             </div>
 
-            {isAccepted && (
-                <div className='bg-accent/10 border border-accent/20 rounded-xl p-4'>
-                    <p className='text-sm text-accent-dark'>
-                        {hasDeducted
-                            ? 'Ingredients have already been deducted. Recipe editing is now locked for this order.'
-                            : 'Proceed to step 2 to set ingredients. You can load from an existing recipe or encode manually.'}
-                    </p>
-                </div>
-            )}
-
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 <div className='border border-border rounded-2xl p-6 bg-main'>
                     <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Reference Image</h4>
@@ -360,6 +348,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 </div>
             </div>
 
+            {isAccepted && (
+                <div className='bg-accent/10 border border-accent/20 rounded-xl p-4'>
+                    <p className='text-sm text-accent-dark'>
+                        {hasDeducted
+                            ? 'Ingredients have already been deducted. Recipe editing is now locked for this order.'
+                            : 'Proceed to step 2 to set ingredients. You can load from an existing recipe or encode manually.'}
+                    </p>
+                </div>
+            )}
+
             {isRejected && (
                 <div className='mt-2 rounded-xl border border-error-border bg-error-fill p-4'>
                     <h4 className='text-xs font-bold uppercase tracking-widest text-error mb-1'>Reject Reason</h4>
@@ -372,22 +370,9 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const renderIngredientsStep = () => (
         <div className='flex-1 overflow-hidden flex flex-col border-t border-border'>
             <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
-                <button
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold ${entryMode === 'from-recipe' ? 'bg-accent-text text-main-white' : 'bg-main-white text-text border border-border'}`}
-                    onClick={() => !hasDeducted && setEntryMode('from-recipe')}
-                    disabled={hasDeducted}
-                >
-                    From Recipe
-                </button>
-                <button
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold ${entryMode === 'manual' ? 'bg-accent-text text-main-white' : 'bg-main-white text-text border border-border'}`}
-                    onClick={() => !hasDeducted && setEntryMode('manual')}
-                    disabled={hasDeducted}
-                >
-                    Manual Entry
-                </button>
 
                 <div className='ml-auto flex items-center gap-2'>
+                    <h5 className='text-sm font-semibold '>Load exiting recipe</h5>
                     <div className='w-48'>
                         <Dropdown
                             size='full'
@@ -397,18 +382,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             options={recipeOptions}
                             onSelect={(value) => {
                                 if (hasDeducted) return;
+                                if (value === null) {
+                                    setSelectedRecipeId('');
+                                    setSelectedIngredients([]);
+                                    return;
+                                }
                                 setSelectedRecipeId(String(value));
                                 loadRecipeById(value);
                             }}
                         />
                     </div>
-                    <button
-                        onClick={() => selectedRecipeId && loadRecipeById(selectedRecipeId)}
-                        disabled={!selectedRecipeId || hasDeducted}
-                        className='px-4 py-2 rounded-lg text-xs font-semibold bg-main-white border border-border disabled:opacity-50'
-                    >
-                        Load Recipe
-                    </button>
                 </div>
             </div>
 

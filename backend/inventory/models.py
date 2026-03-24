@@ -21,6 +21,7 @@ class Unit(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(max_length=20)
     total_stock = models.DecimalField(max_digits=14, decimal_places=4, default=0) #type: ignore
+    low_amount = models.PositiveIntegerField(default=0)
 
     unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name="ingredients")
 

@@ -6,6 +6,7 @@ import { X, Plus, Check } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
 import { EditInventorySkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
+import { limitedInput } from '@/utils/safeInput';
 import UnitModal from './UnitModal';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
@@ -13,6 +14,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
 
     const [name, setName] = useState(item.name);
     const [unit, setUnit] = useState(item.unit.id);
+    const [lowAmount, setLowAmount] = useState(String(item.low_amount ?? 0));
     const [creatingUnit, setCreatingUnit] = useState(false);
     const [newUnitName, setNewUnitName] = useState('');
     const [newUnitAbbreviation, setNewUnitAbbreviation] = useState('');
@@ -57,6 +59,12 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
 
     const handleUnit = (value) => {
         setUnit(value)
+    }
+
+    const handleLowAmount = (e) => {
+        const value = limitedInput(e, { maxLength: 9, isNumber: true });
+        if (value === undefined) return;
+        setLowAmount(value);
     }
 
     const handleCreateUnit = async () => {
@@ -117,7 +125,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     };
 
     const handleConfirm = () => {
-        if (!name || !unit) {
+        if (!name || !unit || lowAmount === '') {
             setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
             setShowModalFeedback(true);
             return;
@@ -130,7 +138,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                 multiplier_to_base: entry.multiplier_to_base,
             }));
 
-        onConfirm({ id: item.id, name, unit_id: unit, conversions: normalizedConversions })
+        onConfirm({ id: item.id, name, low_amount: Number(lowAmount || 0), unit_id: unit, conversions: normalizedConversions })
     }
 
     const handleDelete = () => {
@@ -186,6 +194,17 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                                 <Button variant='icon' text='' icon={Plus} onClick={openUnitModal} />
                             </div>
                         )}
+                    </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Low Stock Threshold' />
+                        <input
+                            type='text'
+                            value={lowAmount}
+                            placeholder='Enter low stock threshold'
+                            onChange={handleLowAmount}
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                        />
                     </div>
 
                     <div className='flex flex-col gap-2'>

@@ -11,13 +11,12 @@ import { useToast } from '@/context/ToastContext';
 const QueueAccepted = () => {
 
 	const { addToast } = useToast();
-	const { data, loading, error, patchOrder } = useOrder();
+	const { data, loading, patchOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
 	const [completeId, setCompleteId] = useState(null);
-	const [pageNum, setPageNum] = useState(1);
 
 	if (loading) return <Loading />
 
@@ -33,17 +32,6 @@ const QueueAccepted = () => {
 		setSearchParams(newParams)
 	}
 
-
-	const handleSetPageNum = (direction) => {
-		if (direction == "prev") {
-			if (pageNum - 1 == 0) return;
-
-			setPageNum(pageNum - 1);
-		} else if (direction == "next") {
-			setPageNum(pageNum + 1);
-		}
-	}
-
 	const completeOrder = async () => {
 		if (completeId === null) return;
 
@@ -52,7 +40,7 @@ const QueueAccepted = () => {
 
 			addToast("Order completed successfully");
 			setCompleteId(null);
-		} catch (err) {
+		} catch {
 			addToast("Failed to accept order.", "error")
 		}
 	}

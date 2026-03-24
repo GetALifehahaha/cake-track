@@ -60,6 +60,23 @@ class DiscountSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["used_count"]
 
+    def validate(self, attrs):
+        discount_type = attrs.get("discount_type", getattr(self.instance, "discount_type", None))
+        value = attrs.get("value", getattr(self.instance, "value", None))
+        start_date = attrs.get("start_date", getattr(self.instance, "start_date", None))
+        end_date = attrs.get("end_date", getattr(self.instance, "end_date", None))
+
+        if value is not None and value <= 0:
+            raise serializers.ValidationError({"value": "Discount value must be greater than 0."})
+
+        if discount_type == "percentage" and value is not None and value > 100:
+            raise serializers.ValidationError({"value": "Percentage discount cannot exceed 100."})
+
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError({"end_date": "End date cannot be earlier than start date."})
+
+        return attrs
+
 
 class DiscountUsageSerializer(serializers.ModelSerializer):
     class Meta:

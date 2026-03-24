@@ -14,6 +14,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     const {data: units, loading, error, postUnit, refresh} = useUnits()
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);
+    const [lowAmount, setLowAmount] = useState('0');
     const [unit, setUnit] = useState(null);
     const [creatingUnit, setCreatingUnit] = useState(false);
     const [newUnitName, setNewUnitName] = useState('');
@@ -57,6 +58,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
         onConfirm({
             name,
             amount,
+            low_amount: Number(lowAmount || 0),
             unit_id: unit,
             purchaseDate: purchaseDate.toLocaleDateString("en-CA"),
             expirationDate: expirationDate.toLocaleDateString("en-CA"),
@@ -89,6 +91,12 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
     const handleSetUnit = (value) => {
         setUnit(value)
+    }
+
+    const handleLowAmount = (e) => {
+        const value = limitedInput(e, { maxLength: 9, isNumber: true });
+        if (value === undefined) return;
+        setLowAmount(value);
     }
 
     const handleCreateUnit = async () => {
@@ -147,7 +155,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     };
 
     const handleSetShowConfirm = () => {
-        if (!name || !amount || !unit || !purchaseDate || !expirationDate) {
+        if (!name || !amount || lowAmount === '' || !unit || !purchaseDate || !expirationDate) {
             setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
             return;
         }
@@ -175,6 +183,17 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                         <Label variant='modal' text='Amount'/>
                         <input type='text' placeholder='Enter amount' value={amount} onChange={(e) => handleAmount(e)} onBlur={handleAmountBlur}
                                 className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
+                    </div>
+
+                    <div className='flex-1 flex flex-col gap-2'>
+                        <Label variant='modal' text='Low Stock Threshold'/>
+                        <input
+                            type='text'
+                            placeholder='Enter low stock threshold'
+                            value={lowAmount}
+                            onChange={handleLowAmount}
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                        />
                     </div>
 
                     <div className='flex-1 flex flex-col gap-2'>
