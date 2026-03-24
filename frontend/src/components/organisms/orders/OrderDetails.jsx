@@ -20,7 +20,7 @@ const buildIngredientUnitOptions = (ingredient) => {
 
     if (baseUnit?.id) {
         unique.set(baseUnit.id, {
-            value: baseUnit.id,
+            value: String(baseUnit.id),
             label: baseUnit.abbreviation || baseUnit.name,
             multiplierToBase: 1,
         });
@@ -29,7 +29,7 @@ const buildIngredientUnitOptions = (ingredient) => {
     conversionUnits.forEach(entry => {
         if (!unique.has(entry.unit.id)) {
             unique.set(entry.unit.id, {
-                value: entry.unit.id,
+                value: String(entry.unit.id),
                 label: entry.unit.abbreviation || entry.unit.name,
                 multiplierToBase: entry.multiplierToBase,
             });
@@ -44,13 +44,13 @@ const mapRecipeToIngredientItems = (recipe) => {
 
     return recipe.ingredients.map(item => {
         const unitOptions = (item.ingredient_units || []).map(unit => ({
-            value: unit.id,
+            value: String(unit.id),
             label: unit.abbreviation || unit.name,
             multiplierToBase: Number(unit.multiplier_to_base || 1),
         }));
 
-        const defaultUnitId = item.ingredient_unit_id || unitOptions[0]?.value || null;
-        const defaultLabel = unitOptions.find(option => option.value === defaultUnitId)?.label || item.ingredient_unit;
+        const defaultUnitId = item.ingredient_unit_id ? String(item.ingredient_unit_id) : unitOptions[0]?.value || null;
+        const defaultLabel = unitOptions.find(option => String(option.value) === String(defaultUnitId))?.label || item.ingredient_unit;
 
         return {
             ingredient_id: item.ingredient_id,
@@ -97,6 +97,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const [selectedRecipeId, setSelectedRecipeId] = useState('');
     const [savingRecipe, setSavingRecipe] = useState(false);
     const [deducting, setDeducting] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null);
 
     useEffect(() => {
         setOrderSnapshot(orderDetails);
@@ -110,6 +111,11 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const isRejected = orderSnapshot?.status === 'rejected';
     const hasSavedRecipe = Boolean(orderSnapshot?.recipe);
     const hasDeducted = Boolean(orderSnapshot?.ingredients_deducted_at);
+    const isRecipeEditable = isAccepted && !hasDeducted;
+    const referenceImage = orderSnapshot?.order_images?.[0]?.image_url || orderSnapshot?.image || null;
+    const payments = orderSnapshot?.payments || [];
+    const latestPayment = payments.length ? payments[payments.length - 1] : null;
+    const paymentStatus = latestPayment?.status || 'unpaid';
 
     const filteredIngredients = useMemo(() => {
         const key = search.toLowerCase();
@@ -129,8 +135,8 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         if (selectedIngredients.some(item => item.ingredient_id === ingredient.id)) return;
 
         const unitOptions = buildIngredientUnitOptions(ingredient);
-        const defaultUnitId = ingredient?.unit?.id || unitOptions[0]?.value || null;
-        const defaultUnitLabel = unitOptions.find(option => option.value === defaultUnitId)?.label || ingredient?.unit?.abbreviation || 'Unit';
+        const defaultUnitId = ingredient?.unit?.id ? String(ingredient.unit.id) : unitOptions[0]?.value || null;
+        const defaultUnitLabel = unitOptions.find(option => String(option.value) === String(defaultUnitId))?.label || ingredient?.unit?.abbreviation || 'Unit';
 
         setSelectedIngredients(prev => ([
             ...prev,
@@ -184,6 +190,12 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         }));
     };
 
+    const getAmountNeededInBaseUnit = (item) => {
+        const selectedOption = (item.unit_options || []).find(option => String(option.value) === String(item.display_unit_id));
+        const multiplierToBase = Number(selectedOption?.multiplierToBase || 1);
+        return Number(item.amount_needed || 0) * multiplierToBase;
+    };
+
     const validateIngredients = () => {
         if (selectedIngredients.length === 0) {
             addToast('Add at least one ingredient.', 'error');
@@ -210,7 +222,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             ingredients: selectedIngredients.map(item => ({
                 ingredient_id: item.ingredient_id,
                 amount_needed: Number(item.amount_needed),
-                input_unit_id: item.display_unit_id,
+                input_unit_id: Number(item.display_unit_id),
             })),
         };
 
@@ -302,10 +314,51 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             {isAccepted && (
                 <div className='bg-accent/10 border border-accent/20 rounded-xl p-4'>
                     <p className='text-sm text-accent-dark'>
-                        Proceed to step 2 to set ingredients. You can load from an existing recipe or encode manually.
+                        {hasDeducted
+                            ? 'Ingredients have already been deducted. Recipe editing is now locked for this order.'
+                            : 'Proceed to step 2 to set ingredients. You can load from an existing recipe or encode manually.'}
                     </p>
                 </div>
             )}
+
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div className='border border-border rounded-2xl p-6 bg-main'>
+                    <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Reference Image</h4>
+                    {referenceImage ? (
+                        <button type='button' onClick={() => setPreviewImage(referenceImage)} className='w-full'>
+                            <img
+                                src={referenceImage}
+                                alt='Order reference'
+                                className='w-full h-48 object-cover rounded-xl border border-border'
+                            />
+                        </button>
+                    ) : (
+                        <div className='w-full h-48 rounded-xl border border-border bg-main-white flex items-center justify-center text-text/50 text-sm font-medium'>
+                            No reference image
+                        </div>
+                    )}
+                </div>
+
+                <div className='border border-border rounded-2xl p-6 bg-main'>
+                    <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Contact Information</h4>
+                    <div className='space-y-3'>
+                        <DetailRow label='Customer' value={orderSnapshot?.full_name || 'N/A'} />
+                        <DetailRow label='Phone' value={orderSnapshot?.phone_number || 'N/A'} />
+                        <DetailRow label='Email' value={orderSnapshot?.email || 'N/A'} />
+                        <DetailRow label='Address' value={orderSnapshot?.address || 'N/A'} isLast />
+                    </div>
+                </div>
+            </div>
+
+            <div className='border border-border rounded-2xl p-6 bg-main'>
+                <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Payment Status</h4>
+                <div className='space-y-3'>
+                    <DetailRow label='Current Status' value={paymentStatus} />
+                    <DetailRow label='Payment Type' value={latestPayment?.payment_type || 'N/A'} />
+                    <DetailRow label='Amount Paid' value={latestPayment?.amount ? `₱ ${latestPayment.amount}` : 'N/A'} />
+                    <DetailRow label='Payment Records' value={payments.length} isLast />
+                </div>
+            </div>
 
             {isRejected && (
                 <div className='mt-2 rounded-xl border border-error-border bg-error-fill p-4'>
@@ -321,13 +374,15 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
                 <button
                     className={`px-4 py-1.5 rounded-full text-xs font-semibold ${entryMode === 'from-recipe' ? 'bg-accent-text text-main-white' : 'bg-main-white text-text border border-border'}`}
-                    onClick={() => setEntryMode('from-recipe')}
+                    onClick={() => !hasDeducted && setEntryMode('from-recipe')}
+                    disabled={hasDeducted}
                 >
                     From Recipe
                 </button>
                 <button
                     className={`px-4 py-1.5 rounded-full text-xs font-semibold ${entryMode === 'manual' ? 'bg-accent-text text-main-white' : 'bg-main-white text-text border border-border'}`}
-                    onClick={() => setEntryMode('manual')}
+                    onClick={() => !hasDeducted && setEntryMode('manual')}
+                    disabled={hasDeducted}
                 >
                     Manual Entry
                 </button>
@@ -341,6 +396,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             selection='Select recipe'
                             options={recipeOptions}
                             onSelect={(value) => {
+                                if (hasDeducted) return;
                                 setSelectedRecipeId(String(value));
                                 loadRecipeById(value);
                             }}
@@ -348,7 +404,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </div>
                     <button
                         onClick={() => selectedRecipeId && loadRecipeById(selectedRecipeId)}
-                        disabled={!selectedRecipeId}
+                        disabled={!selectedRecipeId || hasDeducted}
                         className='px-4 py-2 rounded-lg text-xs font-semibold bg-main-white border border-border disabled:opacity-50'
                     >
                         Load Recipe
@@ -368,6 +424,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                 type='text'
                                 value={search}
                                 onChange={(event) => setSearch(event.target.value)}
+                                disabled={hasDeducted}
                                 placeholder='Search an ingredient...'
                                 className='w-full pl-9 pr-3 py-2 text-sm bg-main-white border border-border rounded-lg focus:outline-none'
                             />
@@ -379,7 +436,8 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             <button
                                 key={ingredient.id}
                                 type='button'
-                                onClick={() => addIngredient(ingredient)}
+                                onClick={() => !hasDeducted && addIngredient(ingredient)}
+                                disabled={hasDeducted}
                                 className='w-full text-left p-3 rounded-lg border border-border bg-main-white hover:border-accent transition-colors'
                             >
                                 <h5 className='text-sm font-semibold text-text'>{ingredient.name}</h5>
@@ -417,7 +475,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                 </thead>
                                 <tbody>
                                     {selectedIngredients.map(item => {
-                                        const amountNeeded = Number(item.amount_needed || 0);
+                                        const amountNeeded = getAmountNeededInBaseUnit(item);
                                         const stock = Number(item.ingredient_stock || 0);
                                         const isMissing = amountNeeded > 0 && stock < amountNeeded;
 
@@ -432,20 +490,27 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                                         type='text'
                                                         value={item.amount_needed}
                                                         onChange={(event) => updateAmount(item.ingredient_id, event.target.value)}
+                                                        disabled={hasDeducted}
                                                         className='w-16 px-2 py-1 border border-border rounded bg-main-white focus:outline-none'
                                                     />
                                                 </td>
                                                 <td className='px-4 py-2'>
                                                     <div className='w-24'>
-                                                        <Dropdown
-                                                            size='full'
-                                                            variant='modal'
-                                                            value={item.display_unit_id}
-                                                            selection={item.display_unit_label || 'Unit'}
-                                                            options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
-                                                            onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
-                                                            allowNone={false}
-                                                        />
+                                                        {hasDeducted ? (
+                                                            <div className='px-2 py-1 border border-border rounded bg-main text-xs text-text/70'>
+                                                                {item.display_unit_label || 'Unit'}
+                                                            </div>
+                                                        ) : (
+                                                            <Dropdown
+                                                                size='full'
+                                                                variant='modal'
+                                                                value={item.display_unit_id}
+                                                                selection={item.display_unit_label || 'Unit'}
+                                                                options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
+                                                                onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
+                                                                allowNone={false}
+                                                            />
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
@@ -455,7 +520,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                                     </span>
                                                 </td>
                                                 <td className='px-4 py-2'>
-                                                    <button onClick={() => removeIngredient(item.ingredient_id)} className='text-text/60 hover:text-error'>
+                                                    <button onClick={() => !hasDeducted && removeIngredient(item.ingredient_id)} disabled={hasDeducted} className='text-text/60 hover:text-error disabled:opacity-40 disabled:cursor-not-allowed'>
                                                         <X size={16} />
                                                     </button>
                                                 </td>
@@ -479,8 +544,9 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     <p className='text-sm text-text/60'>Saved temporary recipe for this order.</p>
                 </div>
                 <button
-                    onClick={() => setCurrentStep(2)}
-                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main'
+                    onClick={() => !hasDeducted && setCurrentStep(2)}
+                    disabled={hasDeducted}
+                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main disabled:opacity-50 disabled:cursor-not-allowed'
                 >
                     Edit Recipe
                 </button>
@@ -498,7 +564,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </thead>
                     <tbody>
                         {selectedIngredients.map(item => {
-                            const missing = Number(item.amount_needed || 0) > Number(item.ingredient_stock || 0);
+                            const missing = getAmountNeededInBaseUnit(item) > Number(item.ingredient_stock || 0);
                             return (
                                 <tr key={item.ingredient_id} className='border-t border-border'>
                                     <td className='px-4 py-2 font-semibold text-text'>{item.ingredient_name}</td>
@@ -545,7 +611,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                         <div className='flex items-center gap-4'>
                             <StepMarker number={1} label='Order Info' onClick={() => setCurrentStep(1)} active={currentStep === 1} done={currentStep > 1} />
                             <div className='h-px w-8 bg-border' />
-                            <StepMarker number={2} label='Ingredients' onClick={() => setCurrentStep(2)} active={currentStep === 2} done={currentStep > 2} />
+                            <StepMarker number={2} label='Ingredients' onClick={() => !hasDeducted && setCurrentStep(2)} active={currentStep === 2} done={currentStep > 2} />
                             <div className='h-px w-8 bg-border' />
                             <StepMarker number={3} label='Review' onClick={() => setCurrentStep(3)} active={currentStep === 3} done={false} />
                         </div>
@@ -557,21 +623,21 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 </div>
 
                 {currentStep === 1 && renderOrderInfo()}
-                {isAccepted && currentStep === 2 && renderIngredientsStep()}
+                {isRecipeEditable && currentStep === 2 && renderIngredientsStep()}
                 {isAccepted && currentStep === 3 && renderReviewStep()}
 
                 {isAccepted && (
                     <div className='p-4 bg-main-white border-t border-border flex items-center justify-end gap-2'>
                         {currentStep > 1 && (
                             <button
-                                onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
+                                onClick={() => setCurrentStep(prev => (hasDeducted ? 1 : Math.max(1, prev - 1)))}
                                 className='px-5 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main'
                             >
                                 ← Back
                             </button>
                         )}
 
-                        {currentStep < 2 && (
+                        {currentStep === 1 && !hasDeducted && (
                             <button
                                 onClick={() => setCurrentStep(2)}
                                 className='px-6 py-2.5 rounded-lg bg-accent-text text-main-white text-sm font-semibold hover:opacity-90'
@@ -580,7 +646,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             </button>
                         )}
 
-                        {currentStep === 2 && (
+                        {currentStep === 1 && hasDeducted && (
+                            <button
+                                onClick={() => setCurrentStep(3)}
+                                className='px-6 py-2.5 rounded-lg bg-accent-text text-main-white text-sm font-semibold hover:opacity-90'
+                            >
+                                View Review
+                            </button>
+                        )}
+
+                        {currentStep === 2 && !hasDeducted && (
                             <button
                                 onClick={saveOrderRecipe}
                                 disabled={savingRecipe || ingredientLoading}
@@ -602,6 +677,17 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </div>
                 )}
             </div>
+
+            {previewImage && (
+                <div className='fixed inset-0 z-60 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4' onClick={() => setPreviewImage(null)}>
+                    <div className='relative max-w-[95vw] max-h-[95vh]' onClick={(event) => event.stopPropagation()}>
+                        <button onClick={() => setPreviewImage(null)} className='absolute -top-3 -right-3 p-2 rounded-full bg-main-white/90 hover:bg-main-white'>
+                            <X size={18} className='text-text/80' />
+                        </button>
+                        <img src={previewImage} alt='Reference preview' className='max-w-[95vw] max-h-[95vh] object-contain rounded-xl border border-main-white/30 shadow-xl' />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

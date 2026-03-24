@@ -21,7 +21,7 @@ const buildIngredientUnitOptions = (ingredient) => {
 
     if (baseUnit?.id) {
         unique.set(baseUnit.id, {
-            value: baseUnit.id,
+            value: String(baseUnit.id),
             label: baseUnit.abbreviation || baseUnit.name,
             multiplierToBase: 1,
         });
@@ -30,7 +30,7 @@ const buildIngredientUnitOptions = (ingredient) => {
     conversionUnits.forEach(entry => {
         if (!unique.has(entry.unit.id)) {
             unique.set(entry.unit.id, {
-                value: entry.unit.id,
+                value: String(entry.unit.id),
                 label: entry.unit.abbreviation || entry.unit.name,
                 multiplierToBase: entry.multiplierToBase,
             });
@@ -43,7 +43,7 @@ const buildIngredientUnitOptions = (ingredient) => {
 const buildRecipeIngredientUnitOptions = (ingredientRow) => {
     const units = ingredientRow?.ingredient_units || [];
     return units.map(unit => ({
-        value: unit.id,
+        value: String(unit.id),
         label: unit.abbreviation || unit.name,
         multiplierToBase: Number(unit.multiplier_to_base || 1),
     }));
@@ -75,9 +75,9 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                     const unitOptions = buildRecipeIngredientUnitOptions(item).length
                         ? buildRecipeIngredientUnitOptions(item)
                         : buildIngredientUnitOptions(ingredientMeta);
-                    const defaultUnitId = item.ingredient_unit_id || unitOptions[0]?.value || null;
-                    const defaultUnitLabel = unitOptions.find(option => option.value === defaultUnitId)?.label || item.ingredient_unit || '';
-                    const defaultUnitMultiplier = Number(unitOptions.find(option => option.value === defaultUnitId)?.multiplierToBase || 1);
+                    const defaultUnitId = item.ingredient_unit_id ? String(item.ingredient_unit_id) : unitOptions[0]?.value || null;
+                    const defaultUnitLabel = unitOptions.find(option => String(option.value) === String(defaultUnitId))?.label || item.ingredient_unit || '';
+                    const defaultUnitMultiplier = Number(unitOptions.find(option => String(option.value) === String(defaultUnitId))?.multiplierToBase || 1);
                     const displayAmount = defaultUnitMultiplier
                         ? Number(item.amount_needed || 0) / defaultUnitMultiplier
                         : Number(item.amount_needed || 0);
@@ -165,8 +165,8 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
     const handleAddIngredient = (ingredient) => {
         if (selectedIngredients.some(item => item.ingredient_id === ingredient.id)) return;
         const unitOptions = buildIngredientUnitOptions(ingredient);
-        const defaultUnitId = ingredient?.unit?.id || unitOptions[0]?.value || null;
-        const defaultUnitLabel = unitOptions.find(option => option.value === defaultUnitId)?.label || '';
+        const defaultUnitId = ingredient?.unit?.id ? String(ingredient.unit.id) : unitOptions[0]?.value || null;
+        const defaultUnitLabel = unitOptions.find(option => String(option.value) === String(defaultUnitId))?.label || '';
         
         setSelectedIngredients(prev => [
             ...prev, 
@@ -236,7 +236,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
             ingredients: selectedIngredients.map(item => ({
                 ingredient_id: item.ingredient_id,
                 amount_needed: parseFloat((item.amount_needed || 0)),
-                input_unit_id: item.display_unit_id,
+                input_unit_id: Number(item.display_unit_id),
             }))
         };
         await onConfirm(recipe.id, payload);
