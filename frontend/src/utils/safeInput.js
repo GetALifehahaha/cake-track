@@ -27,3 +27,14 @@ export const inputNumber = (e, maxLength=11) => {
 
     return raw
 }
+
+export const limitedInput = (e, options = {}) => {
+    const { maxLength = 50, isNumber = false } = options;
+    const value = e.target.value;
+
+    if (value.length > maxLength) return;
+
+    if (isNumber && !/^\d*$/.test(value)) return;
+
+    return value;
+}

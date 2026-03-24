@@ -50,6 +50,7 @@ export default function useTransaction() {
             invalidateKeys: [
                 ["transactions"],
                 ["transactions", "pending"],
+                ["discounts"],
                 ["pos-dashboard"],
                 ["ingredients"],
                 ["ingredient-fetch-all"],

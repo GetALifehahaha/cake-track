@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { Pagination, ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
@@ -63,11 +63,8 @@ const Products = () => {
         setShowArchivedModal(true);
     }
     
-    const handleShowDiscountModal = () => setShowDiscountModal(true);
-    const handleCloseDiscountModal = () => setShowDiscountModal(false);
     const handleShowCategoryModal = () => setShowCategoryModal(true);
     const handleCloseCategoryModal = () => setShowCategoryModal(false);
-
 
     const addProduct = async (value) => {
         if (value) {

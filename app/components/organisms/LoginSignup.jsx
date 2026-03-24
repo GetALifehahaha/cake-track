@@ -5,6 +5,7 @@ import React, { useState, useContext, useEffect } from 'react'
 import { Lock, Mail, Eye, EyeClosed, User2Icon, Loader2 } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
+import { isValidEmail } from '@/utils/validators';
 // 1. Import Google Sign-In
 // import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
@@ -65,14 +66,6 @@ const LoginSignup = ({ method }) => {
 	//   }
 	// };
 
-	const validateEmail = () => {
-		return String(emailAddress)
-		.toLowerCase()
-		.match(
-		/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-		);
-	}
-
 	const submitForm = async () => {
 		try {
 		setLoading(true);
@@ -99,7 +92,7 @@ const LoginSignup = ({ method }) => {
 					return;
 				}
 
-				if (!validateEmail()) {
+				if (!isValidEmail(emailAddress)) {
 					showToast("Please enter a valid email address", "error");
 					return;
 				}

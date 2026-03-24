@@ -6,6 +6,7 @@ import ConfirmationModal from '../ConfirmationModal';
 import useUnits from '@/hooks/useUnits';
 import { AddInventoryItemSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
+import { limitedInput } from '@/utils/safeInput';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
@@ -64,11 +65,9 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     }
 
     const handleName = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return;
-
-        setName(e.target.value);
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setName(value);
     }
 
     const handleAmount = (e) => {
@@ -183,14 +182,22 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                                     value={newUnitName}
                                     placeholder='Unit name (e.g., Kilogram)'
                                     className='flex-1 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
-                                    onChange={(e) => e.target.value.length <= 20 && setNewUnitName(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = limitedInput(e, { maxLength: 20 });
+                                        if (value === undefined) return;
+                                        setNewUnitName(value);
+                                    }}
                                 />
                                 <input
                                     type='text'
                                     value={newUnitAbbreviation}
                                     placeholder='Abbr (e.g., kg)'
                                     className='w-28 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
-                                    onChange={(e) => e.target.value.length <= 5 && setNewUnitAbbreviation(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = limitedInput(e, { maxLength: 5 });
+                                        if (value === undefined) return;
+                                        setNewUnitAbbreviation(value);
+                                    }}
                                 />
                                 <Button variant='icon' text='' icon={Check} onClick={handleCreateUnit} />
                                 <Button variant='icon' text='' icon={X} onClick={() => { setCreatingUnit(false); setNewUnitName(''); setNewUnitAbbreviation(''); }} />

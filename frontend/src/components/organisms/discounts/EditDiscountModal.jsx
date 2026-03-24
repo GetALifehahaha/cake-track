@@ -2,24 +2,27 @@ import React, { useState } from 'react';
 import { Button, Dropdown, Label } from '../../atoms';
 import { DatePicker, ModalBody, ModalFeedbackCard } from '../../molecules';
 import { Loader2 } from 'lucide-react';
-import { inputText } from '@/utils/safeInput';
+import ScopeSelectionModal from './ScopeSelectionModal';
+import { limitedInput } from '@/utils/safeInput';
 
 const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfirm, onDelete, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
-    const [search, setSearch] = useState("");
+    const [showScopeSelector, setShowScopeSelector] = useState(false);
 
     const [formData, setFormData] = useState({
         name: discount.name,
         discount_type: discount.discount_type,
-        value: discount.value,
+        value: String(Math.trunc(Number(discount.value || 0))),
         scope: discount.scope,
         products: discount.products || [],
         categories: discount.categories || [],
         start_date: new Date(discount.start_date).toISOString().slice(0, 16),
         end_date: new Date(discount.end_date).toISOString().slice(0, 16),
-        min_order_total: discount.min_order_total,
-        usage_limit: discount.usage_limit || "",
+        min_order_total: String(Math.trunc(Number(discount.min_order_total || 0))),
+        usage_limit: discount.usage_limit === null || discount.usage_limit === undefined
+            ? ""
+            : String(Math.trunc(Number(discount.usage_limit))),
         active: discount.active
     });
 
@@ -41,12 +44,19 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
 
     const handleSelection = (name, value) => setFormData(prev => ({ ...prev, [name]: value }));
 
-    const handleArraySelection = (name, value) => {
-        setFormData(prev => {
-            const arr = prev[name];
-            if (arr.includes(value)) return { ...prev, [name]: arr.filter(id => id !== value) };
-            return { ...prev, [name]: [...arr, value] };
-        });
+    const handleIntegerFieldChange = (field, e, maxLength = 11) => {
+        const value = limitedInput(e, { maxLength, isNumber: true });
+        if (value === undefined) return;
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleScopeSelectionConfirm = (selected) => {
+        if (formData.scope === 'selected_products') {
+            setFormData(prev => ({ ...prev, products: selected }));
+        } else if (formData.scope === 'selected_category') {
+            setFormData(prev => ({ ...prev, categories: selected }));
+        }
+        setShowScopeSelector(false);
     };
 
     const handleDateUpdate = (field, selectedDate) => {
@@ -68,7 +78,9 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
     };
 
     const validate = () => {
-        if (!formData.name.trim() || !formData.value || formData.value <= 0) {
+        const parsedValue = Number.parseInt(formData.value, 10);
+
+        if (!formData.name.trim() || !Number.isFinite(parsedValue) || parsedValue <= 0) {
             setFeedback({ label: 'Invalid Fields', details: 'Please enter a valid name and discount value.', type: 'error' });
             return false;
         }
@@ -86,8 +98,12 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
         onConfirm(payload);
     };
 
-    const filteredProducts = productOptions.filter(({key}) => key.toLowerCase().includes(search.toLowerCase()))
-    const filteredCategories = categoryOptions.filter(({key}) => key.toLowerCase().includes(search.toLowerCase()))
+    const scopeIsSelectable = formData.scope === 'selected_products' || formData.scope === 'selected_category';
+    const selectedScopeOptions = formData.scope === 'selected_products' ? formData.products : formData.categories;
+    const currentScopeOptions = formData.scope === 'selected_products' ? productOptions : categoryOptions;
+    const selectedSummary = currentScopeOptions.filter((option) => selectedScopeOptions.some((id) => String(id) === String(option.value)));
+    const summaryTopFive = selectedSummary.slice(0, 5);
+    const summaryOverflowCount = selectedSummary.length > 5 ? selectedSummary.length - 5 : 0;
 
 
     return (
@@ -111,7 +127,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                             </div>
                             <div className='flex flex-col gap-2 flex-1'>
                                 <Label variant='modal' text='Value' />
-                                <input name='value' type='number' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.value} onChange={handleInputChange} placeholder='0.00' />
+                                <input name='value' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.value} onChange={(e) => handleIntegerFieldChange('value', e)} placeholder='0' />
                             </div>
                         </div>
                     </div>
@@ -148,49 +164,45 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                     <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Rules & Limits</h6>
                         
-                        <div className='flex flex-col gap-2 w-1/2 pr-3'>
+                        <div className='flex flex-col gap-2 w-full pr-3'>
                             <Label variant='modal' text='Scope' />
-                            <Dropdown allowNone={false} variant='modal' value={formData.scope} options={scopeOptions} onSelect={(val) => handleSelection('scope', val)} />
+                            <div className='flex items-center justify-between gap-2'>
+                                <div className='flex-1'>
+                                    <Dropdown allowNone={false} variant='modal' value={formData.scope} options={scopeOptions} onSelect={(val) => handleSelection('scope', val)} />
+                                </div>
+                                {scopeIsSelectable && (
+                                    <Button
+                                        variant='modalOutline'
+                                        size='small'
+                                        text={formData.scope === 'selected_products' ? 'Select Products' : 'Select Categories'}
+                                        onClick={() => setShowScopeSelector(true)}
+                                        className='whitespace-nowrap'
+                                    />
+                                )}
+                            </div>
+                            {scopeIsSelectable && selectedSummary.length > 0 && (
+                                <div className='mt-2 rounded-md border border-border bg-main-white p-3'>
+                                    <h5 className='text-xs font-semibold text-text/60 uppercase tracking-wider mb-2'>Selected</h5>
+                                    <div className='flex flex-col gap-1'>
+                                        {summaryTopFive.map((item) => (
+                                            <h5 key={item.value} className='text-sm text-text'>{item.key}</h5>
+                                        ))}
+                                        {summaryOverflowCount > 0 && (
+                                            <h5 className='text-sm text-text/70 italic'>And {summaryOverflowCount} more {formData.scope === 'selected_products' ? 'products' : 'categories'}...</h5>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-
-                        {formData.scope === 'selected_products' && (
-                            <div className='flex flex-col gap-2'>
-                                <Label variant='modal' text='Select Products' />
-                                <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the product you want to discount' />
-                                <div className='grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-2 '>
-                                    {filteredProducts.map(p => (
-                                        <div key={p.value} onClick={() => handleArraySelection('products', p.value)} 
-                                            className={`h-fit px-3 py-1 text-sm rounded-sm cursor-pointer transition-colors ${formData.products.includes(p.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
-                                            {p.key}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {formData.scope === 'selected_category' && (
-                            <div className='flex flex-col gap-2'>
-                                <Label variant='modal' text='Select Categories' />
-                                <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={search} onChange={(e) => setSearch(inputText(e))} placeholder='Type the name of the category you want to discount' />
-                                <div className='grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-2 '>
-                                    {filteredCategories.map(c => (
-                                        <div key={c.value} onClick={() => handleArraySelection('categories', c.value)} 
-                                            className={`h-fit px-3 py-1 text-sm rounded-sm cursor-pointer transition-colors ${formData.categories.includes(c.value) ? 'bg-accent text-white' : 'bg-main-white border border-border text-text/70 hover:bg-main-dark/10'}`}>
-                                            {c.key}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
 
                         <div className='flex gap-4 mt-2'>
                             <div className='flex flex-col gap-2 flex-1'>
                                 <Label variant='modal' text='Min Order Total (₱)' />
-                                <input name='min_order_total' type='number' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.min_order_total} onChange={handleInputChange} />
+                                <input name='min_order_total' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.min_order_total} onChange={(e) => handleIntegerFieldChange('min_order_total', e)} />
                             </div>
                             <div className='flex flex-col gap-2 flex-1'>
                                 <Label variant='modal' text='Usage Limit' />
-                                <input name='usage_limit' type='number' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.usage_limit} onChange={handleInputChange} placeholder='No limit' />
+                                <input name='usage_limit' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.usage_limit} onChange={(e) => handleIntegerFieldChange('usage_limit', e)} placeholder='No limit' />
                             </div>
                         </div>
                     </div>
@@ -207,6 +219,17 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
             </div>
 
             {feedback && <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} className="mt-4" />}
+
+            {showScopeSelector && scopeIsSelectable && (
+                <ScopeSelectionModal
+                    title={formData.scope === 'selected_products' ? 'Select Products' : 'Select Categories'}
+                    itemLabel={formData.scope === 'selected_products' ? 'products' : 'categories'}
+                    options={currentScopeOptions}
+                    selectedValues={selectedScopeOptions}
+                    onConfirm={handleScopeSelectionConfirm}
+                    onClose={() => setShowScopeSelector(false)}
+                />
+            )}
 
             {/* ACTION FOOTER */}
             <div className='flex justify-end mt-6 pt-4 border-t border-main-dark/30'>

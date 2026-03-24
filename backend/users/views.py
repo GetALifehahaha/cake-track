@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
+import uuid
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
@@ -252,6 +253,9 @@ class ChangePasswordViaToken(viewsets.ModelViewSet):
 
         try:
             token = PasswordResetToken.objects.get(token=received_token)
+
+            if token.used:
+                return Response({'type': 'error', 'label': 'Token Already Used', 'details': 'This token has already been used. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
 
             if token.expires_at < timezone.localtime():
                 return Response({'type': 'error', 'label': 'Expired Token', 'details': 'Your token has expired. Please redo the process carefully'}, status=status.HTTP_400_BAD_REQUEST)

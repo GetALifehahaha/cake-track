@@ -15,6 +15,7 @@ import { useToast } from '@/context/ToastContext';
 import useOrder from '@/hooks/useOrder';
 import api from '@/api/api';
 import { locationStore } from '@/utils/locationStore';
+import { isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
 
 const Checkout = () => {
     
@@ -50,23 +51,18 @@ const Checkout = () => {
             return false;
         }
 
-        const cleanedNumber = phoneNumber.replace(/[\s-]/g, '');
-        const phoneRegex = /^(\+63\d{10}|09\d{9})$/;
-
         if (!phoneNumber.trim()) {
             showToast("Please enter your contact number", 'error');
             return false;
-        } else if (!phoneRegex.test(cleanedNumber.trim())) {
+        } else if (!isValidPHPhoneNumber(phoneNumber)) {
             showToast("Number must start with +63 or 09 (e.g. +639123456789 or 09123456789)", 'error');
             return false;
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
         if (!email.trim()) {
             showToast("Please enter your email address", 'error');
             return false;
-        } else if (!emailRegex.test(email.trim())) {
+        } else if (!isValidEmail(email)) {
             showToast("Please enter a valid email address", 'error');
             return false;
         }

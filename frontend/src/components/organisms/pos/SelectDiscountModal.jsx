@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ModalBody } from '../../molecules';
 import { Button } from '../../atoms';
-import { Tag, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Tag, Clock, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import Modal from '@/components/molecules/Modal';
 
 const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClose, currentDiscountId=null }) => {
+    const [selectedDiscountDetail, setSelectedDiscountDetail] = useState(null);
 
     const formatMoney = (value) => Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -20,6 +22,9 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
         const evaluated = discounts.map(discount => {
             let isApplicable = true;
             let reason = "";
+
+            const hasUsageLimit = discount.usage_limit !== null && discount.usage_limit !== undefined;
+            const usageLimitReached = hasUsageLimit && Number(discount.used_count || 0) >= Number(discount.usage_limit || 0);
 
             const eligibleItems = cartItems.filter(item => {
                 if (discount.scope === 'all_products') return true;
@@ -46,18 +51,49 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                 discountAmount = applicableBefore;
             }
 
+            const itemBreakdown = [];
+            let distributedDiscount = 0;
+
+            eligibleItems.forEach((item, index) => {
+                const itemBefore = getItemLineTotal(item);
+                let itemDiscount = 0;
+
+                if (applicableBefore > 0 && discountAmount > 0) {
+                    const rawShare = discountAmount * (itemBefore / applicableBefore);
+                    itemDiscount = index === eligibleItems.length - 1
+                        ? discountAmount - distributedDiscount
+                        : Math.round(rawShare * 100) / 100;
+                }
+
+                distributedDiscount += itemDiscount;
+
+                itemBreakdown.push({
+                    id: item.variant_id || item.id || `${item.name}-${index}`,
+                    name: item.name || 'Unnamed item',
+                    quantity: Number(item.amount || 0),
+                    before: itemBefore,
+                    after: Math.max(itemBefore - itemDiscount, 0),
+                });
+            });
+
             const applicableAfter = Math.max(applicableBefore - discountAmount, 0);
             const orderAfter = Math.max(grossTotal - discountAmount, 0);
 
             if (discount.start_date && new Date(discount.start_date) > new Date()) {
                 isApplicable = false;
                 reason = "Discount not active yet";
-                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
 
             } else if (discount.end_date && new Date(discount.end_date) < new Date()) {
                 isApplicable = false;
                 reason = "Discount has expired";
-                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+            }
+
+            if (usageLimitReached) {
+                isApplicable = false;
+                reason = "Usage limit reached";
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
             }
 
             if (grossTotal < parseFloat(discount.min_order_total)) {
@@ -77,7 +113,7 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                 }
             }
 
-            return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames };
+            return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
         });
 
         return evaluated.sort((a, b) => {
@@ -134,9 +170,22 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                             </div>
 
                             <div className="flex flex-col items-end gap-1">
-                                <span className="font-bold text-accent text-lg">
-                                    {discount.discount_type === 'percentage' ? `${parseFloat(discount.value)}%` : `₱${parseFloat(discount.value)}`}
-                                </span>
+                                <div className='flex items-center gap-2'>
+                                    <button
+                                        type='button'
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedDiscountDetail(discount);
+                                        }}
+                                        className='p-1 rounded-full border border-main-dark/20 text-text/70 hover:bg-main-dark/10'
+                                        aria-label={`Show details for ${discount.name}`}
+                                    >
+                                        <Info size={14} />
+                                    </button>
+                                    <span className="font-bold text-accent text-lg">
+                                        {discount.discount_type === 'percentage' ? `${parseFloat(discount.value)}%` : `₱${parseFloat(discount.value)}`}
+                                    </span>
+                                </div>
                                 <span className="text-xs text-text/50 uppercase font-bold tracking-wider">
                                     {discount.discount_type === 'percentage' ? 'OFF' : 'FLAT'}
                                 </span>
@@ -156,23 +205,6 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                                 </div>
                             )}
                         </div>
-
-                        <div className="flex flex-col gap-1 text-xs text-text/70">
-                            <div className="flex items-start justify-between gap-2">
-                                <span>Products</span>
-                                <span className="font-semibold text-right max-w-[65%] truncate" title={discount.applicableProductNames.join(', ')}>
-                                    {discount.applicableProductNames.length > 0 ? discount.applicableProductNames.join(', ') : 'None'}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span>Applicable Items</span>
-                                <span className="font-semibold">₱{formatMoney(discount.applicableBefore)} → ₱{formatMoney(discount.applicableAfter)}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span>Order Total</span>
-                                <span className="font-semibold">₱{formatMoney(grossTotal)} → ₱{formatMoney(discount.orderAfter)}</span>
-                            </div>
-                        </div>
                     </div>
                 ))}
 
@@ -187,6 +219,67 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
             <div className="flex justify-end mt-4 pt-4 border-t border-main-dark/30">
                 <Button variant="modalOutline" text="Close" onClick={onClose} />
             </div>
+
+            {selectedDiscountDetail &&
+                <Modal title="Discount Details" onClose={() => setSelectedDiscountDetail(null)} className="w-[680px]">
+                    <div className='flex flex-col gap-4'>
+                        <div className='flex items-start justify-between gap-3'>
+                            <div>
+                                <h5 className='font-semibold text-text text-base'>{selectedDiscountDetail.name}</h5>
+                                <h5 className='text-xs text-text/60 capitalize'>
+                                    {selectedDiscountDetail.scope.replace('_', ' ')}
+                                </h5>
+                            </div>
+                            <div className='text-right'>
+                                <h5 className='font-bold text-accent text-lg'>
+                                    {selectedDiscountDetail.discount_type === 'percentage'
+                                        ? `${parseFloat(selectedDiscountDetail.value)}%`
+                                        : `₱${parseFloat(selectedDiscountDetail.value)}`}
+                                </h5>
+                                <h5 className='text-xs text-text/50 uppercase font-bold tracking-wider'>
+                                    {selectedDiscountDetail.discount_type === 'percentage' ? 'OFF' : 'FLAT'}
+                                </h5>
+                            </div>
+                        </div>
+
+                        <div className='border border-border rounded-md overflow-hidden'>
+                            <div className='grid grid-cols-10 gap-2 bg-main-dark/10 px-3 py-2 text-xs font-semibold text-text/70'>
+                                <h5 className='col-span-6'>Affected Product</h5>
+                                <h5 className='col-span-1 text-right'>Qty</h5>
+                                <h5 className='col-span-3 text-right'>Price</h5>
+                            </div>
+
+                            <div className='max-h-[35vh] overflow-y-auto'>
+                                {selectedDiscountDetail.itemBreakdown?.length > 0 ? (
+                                    selectedDiscountDetail.itemBreakdown.map((item) => (
+                                        <div key={item.id} className='grid grid-cols-10 gap-2 px-3 py-2 border-t border-main-dark/10 text-sm'>
+                                            <h5 className='col-span-6 text-text'>{item.name}</h5>
+                                            <h5 className='col-span-1 text-right text-text/80'>{item.quantity}</h5>
+                                            <div className='col-span-3 text-right text-text/80 flex gap-2 items-center justify-end'>
+                                                <h5 className='line-through'>₱{formatMoney(item.before)} </h5>
+                                                <h5 className='font-bold'>₱{formatMoney(item.after)}</h5>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className='px-3 py-4 text-sm text-text/60'>No affected products in cart.</div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className='flex justify-end text-md'>
+                            <div className='rounded-md bg-main-dark/5 px-3 py-2'>
+                                <h5 className='text-xs text-text/60'>Order Total</h5>
+                                <h5 className='font-semibold text-text'>₱{formatMoney(grossTotal)} → ₱{formatMoney(selectedDiscountDetail.orderAfter)}</h5>
+                            </div>
+                        </div>
+
+                        <div className='flex justify-end'>
+                            <Button variant='modalOutline' text='Close' onClick={() => setSelectedDiscountDetail(null)} />
+                        </div>
+                    </div>
+                </Modal>
+            }
         </ModalBody>
     );
 };

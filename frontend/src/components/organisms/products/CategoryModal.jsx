@@ -7,6 +7,7 @@ import {ConfirmationModal} from '..';
 import { Plus, Pen } from 'lucide-react'
 import useCategory from '@/hooks/useCategory'
 import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
+import { limitedInput } from '@/utils/safeInput';
 
 const CategoryModal = ({onClose}) => {
 
@@ -51,9 +52,9 @@ const CategoryModal = ({onClose}) => {
     }
 
     const handleCategoryName = (e) => {
-        e.preventDefault();
-        if (e.target.value.length > 50) return;
-        setCategoryName(e.target.value)
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setCategoryName(value)
     }
 
     const handleShowConfirmToggleModal = () => setShowConfirmToggleModal(true);
@@ -90,8 +91,9 @@ const CategoryModal = ({onClose}) => {
     }
 
     const handleEditNameChange = (e) => {
-        if (e.target.value.length > 50) return;
-        setEditName(e.target.value);
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setEditName(value);
     }
 
     const handleSaveEdit = async () => {

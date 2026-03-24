@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { AlertCircle } from 'lucide-react';
 
 const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived, selected = [] }) => {
-    const hasRecipeError = product?.recipe_available === false && (product?.has_recipe || product?.recipe);
+    const hasRecipeError = product?.recipe_available === false && product?.has_recipe;
     
     const handleToggleClick = () => {
         if (hasRecipeError) return;
@@ -20,7 +20,7 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
                 selected.some(select => select === product.id) && 'border-accent-mute',
                 hasRecipeError ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-black/25')}
         >
-            {product?.recipe_available === false && (product?.has_recipe || product?.recipe) && (
+            {product?.recipe_available === false && product?.has_recipe && (
                 <div className='absolute top-2 right-2 flex items-center gap-1 bg-error-fill text-error p-1.5 rounded-full z-10'>
                     <AlertCircle size={16} />
                 </div>

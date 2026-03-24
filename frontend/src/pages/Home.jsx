@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/utils/cn'
 import Modal from '@/components/molecules/Modal'
 import useBusinessDetails from '@/hooks/useBusinessDetails'
+import api from '@/api/api'
 
 const Home = () => {
 
@@ -56,8 +57,7 @@ const Home = () => {
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
     const [completingOrderId, setCompletingOrderId] = useState(null);
-    const [actualAccessCode, setActualAccessCode] = useState();
-    const [accessCode, setAccessCode] = useState();
+    const [accessCode, setAccessCode] = useState('');
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -215,10 +215,6 @@ const Home = () => {
     }, [discountBreakdown.net])
 
     useEffect(() => {
-        setActualAccessCode(businessData?.secret_pin)
-    }, [businessData?.secret_pin])
-
-    useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(checkoutProducts));
     }, [checkoutProducts]);
 
@@ -248,8 +244,15 @@ const Home = () => {
         setModalFeedbackContent(null)
     }
 
-    // TODO: Apply discount
     const selectDiscount = (discount) => {
+        const hasUsageLimit = discount?.usage_limit !== null && discount?.usage_limit !== undefined;
+        const usageLimitReached = hasUsageLimit && Number(discount?.used_count || 0) >= Number(discount?.usage_limit || 0);
+
+        if (usageLimitReached) {
+            addToast('Discount usage limit has been reached.', 'error');
+            return;
+        }
+
         setDiscount({id: discount.id, name: discount.name})
 
         setShowDiscountModal(false);
@@ -292,19 +295,20 @@ const Home = () => {
 
     
     const confirmAccessCode = async () => {
-        const isValid = accessCode == actualAccessCode;
+        try {
+            await api.post('/pos/transactions/verify-void-pin/', {
+                pin: accessCode,
+            });
 
-        if (!isValid) {
+            voidPayment();
+        } catch {
             setModalFeedbackContent({
                 type: "error",
                 label: "Wrong Access Code",
                 details: "Please enter the correct access code"
             })
             setShowModalFeedback(true);
-            return;
         }
-
-        voidPayment();
     }
 
     const pendingTransactions = (Array.isArray(pendingData?.results) ? pendingData.results : [])
@@ -694,7 +698,6 @@ const Home = () => {
                 <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
             }
 
-            {/* TODO: Apply discount */}
             {showDiscountModal &&
                 <SelectDiscountModal discounts={discountData} cartItems={checkoutProducts} grossTotal={grossTotal} currentDiscountId={discount.id} onSelect={selectDiscount} onClose={() => setShowDiscountModal(false)} />
             }

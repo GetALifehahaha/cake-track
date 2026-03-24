@@ -10,6 +10,7 @@ import {
 import useRecipe from '@/hooks/useRecipe';
 import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
 import { Dropdown } from '@/components/atoms';
+import { limitedInput } from '@/utils/safeInput';
 
 const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const { data: recipeData, postRecipe } = useRecipe();
@@ -28,11 +29,9 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const [recipeId, setRecipeId] = useState(cake.recipe ? String(cake.recipe) : '');
 
     const handleCakeName = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return
-
-        setCakeName(e.target.value);
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setCakeName(value);
     }
 
     const handlePrice = (e) => {

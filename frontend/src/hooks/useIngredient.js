@@ -25,6 +25,9 @@ export default function useIngredient() {
                 ["ingredient-dashboard"],
                 ["inventory-transactions"],
                 ["recipes"],
+                ["products"],
+                ["products_all"],
+                ["cakes"],
             ],
         },
     );

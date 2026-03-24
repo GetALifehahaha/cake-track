@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 // 1. Setup Base URL

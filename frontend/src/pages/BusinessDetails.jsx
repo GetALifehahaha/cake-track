@@ -8,6 +8,7 @@ import { Eye, EyeClosed } from 'lucide-react';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
 import { BusinessDetailsSkeleton } from '@/components/molecules/Skeletons';
+import { limitedInput } from '@/utils/safeInput';
 
 
 const BusinessDetails = () => {
@@ -46,15 +47,9 @@ const BusinessDetails = () => {
     }, [data]);
 
     const createChangeHandler = (setState, options = {}) => {
-        const { maxLength = 50, isNumber = false } = options;
-
         return (e) => {
-            const value = e.target.value;
-
-            if (value.length > maxLength) return;
-
-            if (isNumber && !/^\d*$/.test(value)) return;
-
+            const value = limitedInput(e, options);
+            if (value === undefined) return;
             setState(value);
         };
     };

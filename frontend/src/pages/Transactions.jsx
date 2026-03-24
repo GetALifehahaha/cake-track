@@ -136,14 +136,20 @@ const Transactions = () => {
 
     const handleSubmitDeduction = async () => {
         const amount = Number.parseFloat(deductionAmount);
+        const trimmedReason = deductionNote.trim();
 
         if (!Number.isFinite(amount) || amount <= 0) {
             addToast('Enter a valid deduction amount.', 'error');
             return;
         }
 
+        if (!trimmedReason) {
+            addToast('Reason is required for register deduction.', 'error');
+            return;
+        }
+
         try {
-            await postDeduction({ amount, note: deductionNote });
+            await postDeduction({ amount, note: trimmedReason });
             await Promise.all([refreshRegisterMoney(), refreshRegisterTransactions()]);
             setDeductionAmount('');
             setDeductionNote('');
@@ -319,7 +325,7 @@ const Transactions = () => {
                                     const value = inputText(e, 255);
                                     if (value !== undefined) setDeductionNote(value);
                                 }}
-                                placeholder='Reason'
+                                placeholder='Reason (required)'
                                 className='focus:outline-none p-2 rounded-lg border border-border bg-main-white'
                             />
                         </div>

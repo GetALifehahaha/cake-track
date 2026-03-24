@@ -19,6 +19,10 @@ from .paymongo import PayMongoWrapper
 logger = logging.getLogger(__name__)
 
 
+def _can_access_order(user, order):
+    return bool(user and user.is_authenticated and (user.is_staff or order.customer_id == user.id))
+
+
 def get_order_downpayment(order):
     custom_flat = Decimal('500.00')
     rate = Decimal('0.15')
@@ -39,6 +43,9 @@ class InitiatePaymentView(APIView):
             return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
 
         order = serializer.order_instance # type: ignore
+
+        if not _can_access_order(request.user, order):
+            return Response({"error": "You do not have permission to access this order."}, status=http_status.HTTP_403_FORBIDDEN)
         
         # 1. Validation: Prevent paying for completed/rejected orders
         if order.status in ['completed', 'rejected']:
@@ -100,6 +107,12 @@ class PayMongoWebhookView(APIView):
 
     def post(self, request):
         try:
+            webhook_token = getattr(settings, 'PAYMONGO_WEBHOOK_TOKEN', '')
+            if webhook_token:
+                incoming_token = request.headers.get('X-Webhook-Token', '')
+                if incoming_token != webhook_token:
+                    return HttpResponse(status=403)
+
             payload = json.loads(request.body)
             event_type = payload['data']['attributes']['type']
             
@@ -223,6 +236,9 @@ class VerifyPaymentView(APIView):
                 status=http_status.HTTP_404_NOT_FOUND
             )
 
+        if not _can_access_order(request.user, order):
+            return Response({"error": "You do not have permission to access this order."}, status=http_status.HTTP_403_FORBIDDEN)
+
         # Already paid
         if order.payment.filter(status='success').exists():  # type: ignore
             return Response({"status": order.status, "verified": True})
@@ -321,6 +337,9 @@ class RepayOrderView(APIView):
                 {"error": "Order not found."}, 
                 status=http_status.HTTP_404_NOT_FOUND
             )
+
+        if not _can_access_order(request.user, order):
+            return Response({"error": "You do not have permission to access this order."}, status=http_status.HTTP_403_FORBIDDEN)
         
         # Only allow repay for unpaid orders
         if order.status != 'unpaid':
@@ -371,6 +390,9 @@ class PaymentHistoryView(APIView):
     """Web endpoint for cake-order payment history."""
     def get(self, request):
         queryset = Payment.objects.select_related('orders', 'payer').order_by('-created_at')
+
+        if not request.user.is_staff:
+            queryset = queryset.filter(payer=request.user)
 
         order_id = request.query_params.get('order_id')
         if order_id:

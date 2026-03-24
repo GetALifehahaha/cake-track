@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Title, Label, Button } from '../../atoms';
+import { Label } from '../../atoms';
 import { ModalBody, ModalFeedbackCard } from '../../molecules';
-import { X, EyeClosed, Eye } from 'lucide-react';
 import ConfirmationModalWrapper from '../ConfirmationModalWrapper';
+import { limitedInput } from '@/utils/safeInput';
+import { isValidEmail } from '@/utils/validators';
 
 const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
 
@@ -15,52 +16,34 @@ const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
     const [feedback, setFeedback] = useState("");
 
     const handleFirstName = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return
-
-        setFirstName(e.target.value)
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setFirstName(value)
     }
 
     const handleMiddleName = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return
-
-        setMiddleName(e.target.value)
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setMiddleName(value)
     }
 
     const handleLastName = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return
-
-        setLastName(e.target.value)
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setLastName(value)
     }
 
     const handleUserName = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return
-
-        setUsername(e.target.value)
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setUsername(value)
     }
 
     const handleEmailAddress = (e) => {
-        e.preventDefault();
-
-        if (e.target.value.length > 50) return
-
-        setEmailAddress(e.target.value)
+        const value = limitedInput(e, { maxLength: 50 });
+        if (value === undefined) return;
+        setEmailAddress(value)
     }
-
-    const validateEmail = () => {
-		return String(emailAddress)
-		.toLowerCase()
-		.match(
-		/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-		);
-	}
 
     const editCashier = () => {
         if (!firstName || !lastName ||!middleName ||!username || !emailAddress) {
@@ -72,7 +55,7 @@ const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
             return;
         }
 
-        if (!validateEmail()) {
+        if (!isValidEmail(emailAddress)) {
             setFeedback({
                 label: 'Invalid email address',
                 details: "Please enter a valid email address",
@@ -85,8 +68,8 @@ const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
         let payload = {}
         firstName !== cashier.first_name && (payload.first_name = firstName);
         lastName !== cashier.last_name && (payload.last_name = lastName);
-        middleName !== cashier.middle_name && (payload.middleName = middleName);
-        username !== cashier.username && (payload = username);
+        middleName !== cashier.middle_name && (payload.middle_name = middleName);
+        username !== cashier.username && (payload.username = username);
         emailAddress !== cashier.email && (payload.email = emailAddress);
 
         onConfirm(payload);

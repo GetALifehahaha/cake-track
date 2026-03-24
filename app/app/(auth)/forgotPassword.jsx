@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Mail, Lock, Eye, EyeClosed, ArrowLeft, ShieldCheck, KeyRound } from 'lucide-react-native';
 import { useToast } from '@/context/ToastContext';
 import api from '@/api/api';
+import { isValidEmail } from '@/utils/validators';
 
 const ForgotPassword = () => {
     const { showToast } = useToast();
@@ -26,14 +27,6 @@ const ForgotPassword = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    const validateEmail = (value) => {
-        return String(value)
-            .toLowerCase()
-            .match(
-                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-            );
-    };
-
     // ============ STEP 1: Send OTP ============
     const handleSendOtp = async () => {
         if (!email.trim()) {
@@ -41,7 +34,7 @@ const ForgotPassword = () => {
             return;
         }
 
-        if (!validateEmail(email)) {
+        if (!isValidEmail(email)) {
             showToast('Please enter a valid email address', 'error');
             return;
         }

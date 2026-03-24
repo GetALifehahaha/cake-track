@@ -11,6 +11,7 @@ import { useToast } from '@/context/ToastContext';
 import { cn } from '@/utils/cn';
 import { InventoryInOutSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
+import { limitedInput } from '@/utils/safeInput';
 
 const InventoryInOut = ({ onConfirm, onClose }) => {
 
@@ -26,11 +27,9 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	if (inventoryTransactionError) return <h5>Error</h5>
 
 	const handleSearch = (e) => {
-		e.preventDefault();
-
-		if (e.target.value.length > 50) return;
-
-		setSearch(e.target.value);
+		const value = limitedInput(e, { maxLength: 50 });
+		if (value === undefined) return;
+		setSearch(value);
 	}
 
 
@@ -58,8 +57,6 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	};
 
 	const updateIngredientItem = (index, field, e) => {
-		e.preventDefault();
-
 		const raw = e.target.value
 
 		const isNumericField = field === 'amount' || field === 'unit_purchase_price';
@@ -67,7 +64,8 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 		if (field === 'amount' && ingredientItems[index].transaction_type === "out" && e.target.value > ingredientItems[index].max_quantity) return
 
-		if (e.target.value.length > 13) return
+		if (isNumericField && raw.length > 13) return
+		if (field === 'reason' && raw.length > 100) return
 
 		const updatedField = ingredientItems.map((item, i) => {
 			return index === i ? { ...item, [field]: (field === "amount" || field === "unit_purchase_price") && e.target.value > 0 ? Number.parseFloat(e.target.value) : e.target.value }

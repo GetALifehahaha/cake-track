@@ -97,36 +97,9 @@ class ProductAllSerializer(serializers.ModelSerializer):
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductVariant
-        fields = ['id', 'label', 'price']
-
-
-class ProductSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(
-        many=True,
-        read_only=True
-    )
-
-    category_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Category.objects.all(),
-        write_only=True,
-        source="categories"
-    )
-
-    variants = ProductVariantSerializer(many=True)
     recipe_details = RecipeSerializer(source='recipe', read_only=True)
     recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all(), required=False, allow_null=True)
     recipe_available = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Product
-        fields = [
-            'id', 'name', 'description',
-            'categories', 'category_ids',
-            'image', 'is_archived', 'variants', 'has_recipe', 'recipe', 'recipe_details', 'recipe_available'
-        ]
 
     def validate(self, attrs):
         has_recipe = attrs.get('has_recipe', self.instance.has_recipe if self.instance else False)
@@ -151,6 +124,47 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return obj.recipe.is_available()
 
+    class Meta:
+        model = ProductVariant
+        fields = ['id', 'label', 'price', 'has_recipe', 'recipe', 'recipe_details', 'recipe_available']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    categories = CategorySerializer(
+        many=True,
+        read_only=True
+    )
+
+    category_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Category.objects.all(),
+        write_only=True,
+        source="categories"
+    )
+
+    variants = ProductVariantSerializer(many=True)
+    recipe_available = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'description',
+            'categories', 'category_ids',
+            'image', 'is_archived', 'variants', 'has_recipe', 'recipe_available'
+        ]
+
+    def get_recipe_available(self, obj):
+        recipe_variants = [variant for variant in obj.variants.all() if variant.has_recipe]
+
+        if not recipe_variants:
+            return True
+
+        for variant in recipe_variants:
+            if variant.recipe is None or not variant.recipe.is_available():
+                return False
+
+        return True
+
     def create(self, validated_data):
         categories = validated_data.pop("categories", [])
         variants_data = validated_data.pop("variants", [])
@@ -159,8 +173,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
         product.categories.set(categories)
 
+        has_recipe = False
         for variant_data in variants_data:
+            has_recipe = has_recipe or bool(variant_data.get('recipe'))
             ProductVariant.objects.create(product=product, **variant_data)
+
+        if product.has_recipe != has_recipe:
+            product.has_recipe = has_recipe
+            product.save(update_fields=['has_recipe'])
 
         return product
 
@@ -178,8 +198,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
         if variants_data is not None:
             instance.variants.all().delete()
+            has_recipe = False
             for variant_data in variants_data:
+                has_recipe = has_recipe or bool(variant_data.get('recipe'))
                 ProductVariant.objects.create(product=instance, **variant_data)
+
+            instance.has_recipe = has_recipe
+            instance.save(update_fields=['has_recipe'])
 
         return instance
 
@@ -235,6 +260,17 @@ class TransactionSerializer(serializers.ModelSerializer):
    
 
 class TransactionItemCreateSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        product = attrs.get('product')
+        product_variant = attrs.get('product_variant')
+
+        if product and product_variant and product_variant.product_id != product.id:
+            raise serializers.ValidationError(
+                {'product_variant': 'Selected variant does not belong to selected product.'}
+            )
+
+        return attrs
+
     class Meta:
         model = TransactionItem
         fields = ['product', 'product_variant', 'quantity']
@@ -282,15 +318,15 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         recipe_names = set()
         
         for item in items_data:
-            product = item['product']
+            product_variant = item['product_variant']
             quantity = Decimal(str(item['quantity']))
 
-            if not product.recipe_id:
+            if not product_variant or not product_variant.recipe_id:
                 continue
 
-            recipe_names.add(product.recipe.name)
+            recipe_names.add(product_variant.recipe.name)
             
-            for recipe_item in product.recipe.recipe_ingredients.select_related('ingredient').all():
+            for recipe_item in product_variant.recipe.recipe_ingredients.select_related('ingredient').all():
                 ingredient_id = recipe_item.ingredient_id
                 amount_needed = Decimal(str(recipe_item.amount_needed)) * quantity
                 ingredient_totals[ingredient_id] = ingredient_totals.get(ingredient_id, Decimal('0')) + amount_needed
@@ -342,9 +378,14 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
                 elif locked_discount.scope == 'selected_category':
                     valid_category_ids = set(locked_discount.categories.values_list('id', flat=True))
+
+                    def _matches_selected_category(product_obj):
+                        product_category_ids = set(product_obj.categories.values_list('id', flat=True))
+                        return bool(product_category_ids & valid_category_ids)
+
                     discountable_total = sum(
                         Decimal(str(item['product_variant'].price)) * item['quantity']
-                        for item in items_data if item['product'].category_id in valid_category_ids
+                        for item in items_data if _matches_selected_category(item['product'])
                     )
 
                 # Apply math only if there are eligible items
@@ -390,7 +431,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                         is_eligible = True
                     elif locked_discount.scope == 'selected_products' and item['product'].id in valid_product_ids:
                         is_eligible = True
-                    elif locked_discount.scope == 'selected_category' and item['product'].category_id in valid_category_ids:
+                    elif locked_discount.scope == 'selected_category' and _matches_selected_category(item['product']):
                         is_eligible = True
 
                 if is_eligible and discountable_total > Decimal('0.00'):
@@ -416,7 +457,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                     eligible_products = [
                         item['product'] for item in items_data 
                         if (locked_discount.scope == 'selected_products' and item['product'].id in valid_product_ids) or 
-                           (locked_discount.scope == 'selected_category' and item['product'].category_id in valid_category_ids)
+                           (locked_discount.scope == 'selected_category' and _matches_selected_category(item['product']))
                     ]
                     usage_record.products.set(eligible_products)
                 
@@ -454,12 +495,22 @@ class TransactionCompleteSerializer(serializers.Serializer):
         return attrs
 
     def update(self, instance, validated_data):
-        instance.is_completed = True
-        instance.completed_at = timezone.now()
-        instance.save(update_fields=['is_completed', 'completed_at'])
+        with transaction.atomic():
+            locked_instance = Transaction.objects.select_for_update().get(pk=instance.pk)
 
-        _apply_completed_transaction_to_register(instance)
-        return instance
+            if locked_instance.is_void:
+                raise serializers.ValidationError({"detail": "Void transactions cannot be completed."})
+
+            if locked_instance.is_completed:
+                raise serializers.ValidationError({"detail": "Transaction is already completed."})
+
+            locked_instance.is_completed = True
+            locked_instance.completed_at = timezone.now()
+            locked_instance.save(update_fields=['is_completed', 'completed_at'])
+
+            _apply_completed_transaction_to_register(locked_instance)
+
+        return locked_instance
 
 
 class RegisterMoneySerializer(serializers.ModelSerializer):
@@ -500,7 +551,7 @@ class RegisterDeductionSerializer(serializers.ModelSerializer):
 
 class RegisterDeductionCreateSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=11, decimal_places=2, min_value=Decimal('0.01'))
-    note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    note = serializers.CharField(required=True, allow_blank=False, max_length=255, trim_whitespace=True)
 
 
 class RegisterTransactionSerializer(serializers.ModelSerializer):

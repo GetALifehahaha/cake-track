@@ -122,7 +122,7 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
     
         
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related('variants__recipe', 'categories').all()
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = MediumPageSize
@@ -137,7 +137,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ['name']
     
     def get_queryset(self):
-        queryset = Product.objects.all()
+        queryset = Product.objects.prefetch_related('variants__recipe', 'categories').all()
         
         if self.action == "list":
             is_archived_param = self.request.query_params.get('is_archived'); #type: ignore
@@ -156,7 +156,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         updated = serializer.save()
 
         return Response (
-            {updated: updated},
+            {"updated": updated},
             status=status.HTTP_200_OK
         )
 
@@ -369,6 +369,20 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         serializer = RegisterTransactionSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='verify-void-pin')
+    def verify_void_pin(self, request):
+        submitted_pin = str(request.data.get('pin', '')).strip()
+        if not submitted_pin:
+            return Response({"detail": "PIN is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        settings_obj, _ = BusinessSettings.objects.get_or_create(pk=1)
+        is_valid = submitted_pin == str(settings_obj.secret_pin)
+
+        if not is_valid:
+            return Response({"detail": "Invalid PIN."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"valid": True}, status=status.HTTP_200_OK)
     
         
 class TransactionItemViewSet(viewsets.ModelViewSet):
@@ -389,11 +403,17 @@ class BusinessSettingsView(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object())
-        return Response(serializer.data)
+        payload = serializer.data.copy()
+        if not request.user.is_staff:
+            payload.pop('secret_pin', None)
+        return Response(payload)
 
     def retrieve(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object())
-        return Response(serializer.data)
+        payload = serializer.data.copy()
+        if not request.user.is_staff:
+            payload.pop('secret_pin', None)
+        return Response(payload)
 
     def update(self, request, *args, **kwargs):
         if not request.user.is_staff:

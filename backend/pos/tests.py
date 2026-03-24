@@ -284,9 +284,13 @@ class TransactionCreationTests(TestCase):
         category = Category.objects.create(name="Desserts")
         product_with_recipe = Product.objects.create(name="Chocolate Cake")
         product_with_recipe.categories.add(category)
-        product_with_recipe.recipe = cake_recipe
-        product_with_recipe.save()
-        variant = ProductVariant.objects.create(product=product_with_recipe, label="Whole Cake", price=Decimal("500.00"))
+        variant = ProductVariant.objects.create(
+            product=product_with_recipe,
+            label="Whole Cake",
+            price=Decimal("500.00"),
+            has_recipe=True,
+            recipe=cake_recipe,
+        )
         
         # Create transaction with the recipe product
         request = self.factory.post('/transactions/')
@@ -432,3 +436,13 @@ class RegisterMoneyFlowTests(APITestCase):
             format='json',
         )
         self.assertEqual(response.status_code, 201)
+
+    def test_register_deduction_requires_reason(self):
+        self.client.post("/pos/transactions/set-starting-money/", {"amount": "500.00"}, format='json')
+        response = self.client.post(
+            "/pos/transactions/deductions/",
+            {"amount": "100.00", "note": "   "},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('note', response.data)

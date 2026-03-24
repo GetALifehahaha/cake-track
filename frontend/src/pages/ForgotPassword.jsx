@@ -1,9 +1,11 @@
 import { Button } from '@/components/atoms'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { ModalFeedbackCard } from '@/components/molecules';
 import { ConfirmationModal } from '@/components/organisms';
 import api from '@/api/api';
 import { useNavigate } from 'react-router-dom';
+import { isValidEmail } from '@/utils/validators';
+import { limitedInput } from '@/utils/safeInput';
 
 const ForgotPassword = () => {
 
@@ -30,23 +32,13 @@ const ForgotPassword = () => {
 	const [email, setEmail] = useState("");
 
 	const handleEmail = (e) => {
-		e.preventDefault()
-
-		if (e.target.value.length > 50) return
-
-		setEmail(e.target.value)
-	}
-
-	const validateEmail = () => {
-		return String(email)
-		.toLowerCase()
-		.match(
-		/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-		);
+		const value = limitedInput(e, { maxLength: 50 });
+		if (value === undefined) return;
+		setEmail(value)
 	}
 
 	const submitEmail = async () => {
-		if (!validateEmail()) {
+		if (!isValidEmail(email)) {
 			setFeedback({
 				type: "error",
 				label: "Invalid Email Address",
@@ -62,7 +54,6 @@ const ForgotPassword = () => {
 			const res = await api.post('/request-otp/', {email: email})
 
 			if (res.status === 200) {
-				console.log(res.data)
 				setFeedback({
 					type: res.data.type,
 					label: res.data.label,
@@ -72,9 +63,9 @@ const ForgotPassword = () => {
 
 		} catch (err) {
 			setFeedback({
-				type: err.response.data.type,
-				label: err.response.data.label,
-				details: err.response.data.details
+				type: err?.response?.data?.type || 'error',
+				label: err?.response?.data?.label || 'Failed to send OTP',
+				details: err?.response?.data?.details || 'Please try again.'
 			})
 		}
 	}
@@ -101,27 +92,17 @@ const ForgotPassword = () => {
 	
 	const [otpMessage, setOtpMessage] = useState(null);
 	
-	const sendOtp = () => {
-		setOtpMessage("OTP has been sent! Check your email for the sent OTP.")
-		
-		// get an otp from the backend
-	}
-
 	const [otp, setOtp] = useState('');
 	const [token, setToken] = useState('');
 
 	const handleOtp = (e) => {
-		e.preventDefault()
-
-		if (e.target.value.length > 6) {
-			return
-		}
-
-		setOtp(e.target.value)
+		const value = limitedInput(e, { maxLength: 6, digitsOnly: true });
+		if (value === undefined) return;
+		setOtp(value)
 	}
 
 	const verifyOtp = async () => {
-		if (otp < 6) {
+		if (String(otp).length < 6) {
 			setFeedback({
 				type: 'error',
 				label: 'Missing or Incomplete OTP',
@@ -136,7 +117,6 @@ const ForgotPassword = () => {
 			const res = await api.post('/verify-otp/', {email: email, otp: otp});
 
 			if (res.status === 200) {
-				console.log(res.data)
 				setFeedback({
 					type: res.data.type,
 					label: res.data.label,
@@ -147,11 +127,10 @@ const ForgotPassword = () => {
 
 			handlePage('add');
 		} catch (err) {
-			console.log(err)
 			setFeedback({
-				type: err.response.data.type,
-				label: err.response.data.label,
-				details: err.response.data.details
+				type: err?.response?.data?.type || 'error',
+				label: err?.response?.data?.label || 'OTP verification failed',
+				details: err?.response?.data?.details || 'Please check your OTP and try again.'
 			})
 		}
 	}
@@ -187,8 +166,6 @@ const ForgotPassword = () => {
 
 		try {
 			const res = await api.post('/change-password-token/', {email: email, token: token, password: newPassword});
-
-			console.log(res)
 			if (res.status === 200) {
 				setFeedback({
 					type: "success",
@@ -201,7 +178,11 @@ const ForgotPassword = () => {
 				navigate('/login')
 			}, 3000)
 		} catch (err) {
-			console.log(err.response)
+			setFeedback({
+				type: err?.response?.data?.type || 'error',
+				label: err?.response?.data?.label || 'Password change failed',
+				details: err?.response?.data?.details || 'Please request a new OTP and try again.'
+			})
 		}
 	}
   	return (
@@ -222,7 +203,7 @@ const ForgotPassword = () => {
 							<>
 								<h5 className='text-sm text-accent-text font-medium'>Enter your OTP from your Email</h5>
 								<div className='flex gap-2 items-center justify-between'>
-									<input type='number' value={otp} onChange={(e) => handleOtp(e)} className='bg-accent-mute/20 p-1 rounded-md font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute flex-1' 
+									<input type='text' inputMode='numeric' value={otp} onChange={(e) => handleOtp(e)} className='bg-accent-mute/20 p-1 rounded-md font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute flex-1' 
 										placeholder='Enter OTP'/>
 								</div>
 								<Button className='mx-auto mt-2' text='Verify OTP' onClick={verifyOtp} />

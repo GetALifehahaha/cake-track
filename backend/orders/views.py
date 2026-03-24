@@ -363,6 +363,9 @@ class OpeningTimeView(APIView):
         return Response(serializer.data)
 
     def patch(self, request):
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return Response({"detail": "You do not have permission to edit opening time."}, status=status.HTTP_403_FORBIDDEN)
+
         instance = self._get_instance()
         serializer = OpeningTimeSerializer(instance, data=request.data, partial=True)
         if serializer.is_valid():

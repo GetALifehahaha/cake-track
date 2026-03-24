@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import { Button, Dropdown, Label, Title } from '../../atoms';
+import { Button, Dropdown, Label } from '../../atoms';
 import { X, Plus, Upload, Loader2, Minus, Check } from 'lucide-react'
 import { ModalBody, ModalFeedbackCard } from '../../molecules';
 import { ConfirmationModal } from '..';
@@ -19,7 +19,13 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
 
     const [productName, setProductName] = useState(product.name);
     const [categories, setCategories] = useState(product.categories?.length? [...product.categories]: [""])
-    const [variants, setVariants] = useState([...product.variants, {label: "", price: 0}])
+    const [variants, setVariants] = useState([
+        ...product.variants.map(variant => ({
+            ...variant,
+            recipe: variant.recipe ? String(variant.recipe) : '',
+        })),
+        {label: "", price: 0, recipe: ''}
+    ])
     const [image, setImage] = useState(product.image)
     const [loading, setLoading] = useState(false);
     const [imageChanged, setImageChanged] = useState(false);
@@ -27,7 +33,7 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
-    const [recipeId, setRecipeId] = useState(product.recipe ? String(product.recipe) : '');
+    const [recipeTargetIndex, setRecipeTargetIndex] = useState(null);
 
     const [imagePreview, setImagePreview] = useState(product.image);
 
@@ -41,18 +47,20 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith("image/")) {
-                setErrorMessages((prev) => [
-                    ...prev,
-                    "Please upload a valid image file",
-                ]);
+                setFeedback({
+                    label: 'Invalid file',
+                    details: 'Please upload a valid image file.',
+                    type: 'error',
+                });
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                setErrorMessages((prev) => [
-                    ...prev,
-                    "Image size should be less than 5MB",
-                ]);
+                setFeedback({
+                    label: 'File too large',
+                    details: 'Image size should be less than 5MB.',
+                    type: 'error',
+                });
                 return;
             }
 
@@ -111,11 +119,16 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
             name: productName,
             image: imageChanged ? image ? await uploadToCloudinary(image) : null : image,
             category_ids: [...categories.filter(Boolean).map(category => category.id)],
-            variants: variants.filter(
-                ({label, price}, index) =>
-                    index !== variants.length - 1 || (label && price)
-            ),
-            recipe: recipeId ? Number(recipeId) : null,
+            variants: variants
+                .filter(({label, price}, index) =>
+                    index !== variants.length - 1 || (label && Number(price) > 0)
+                )
+                .filter(({label, price}) => label?.trim() && Number(price) > 0)
+                .map(({label, price, recipe}) => ({
+                    label,
+                    price,
+                    recipe: recipe ? Number(recipe) : null,
+                })),
         }
         
         onConfirm(payload);
@@ -219,8 +232,13 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
 
     const handleCreateRecipe = async (payload) => {
         const created = await postRecipe(payload);
-        setRecipeId(String(created.id));
+        if (recipeTargetIndex !== null) {
+            setVariants(prev => prev.map((variant, index) => (
+                index === recipeTargetIndex ? { ...variant, recipe: String(created.id) } : variant
+            )));
+        }
         setShowAddRecipeModal(false);
+        setRecipeTargetIndex(null);
     }
 
     const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
@@ -319,8 +337,9 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                             <div className='flex items-center gap-2 flex-1'>
                                 <h5 className='text-xs font-medium flex-1'>Label</h5>
                                 <h5 className='text-xs font-medium flex-1 -ml-12'>Price</h5>
+                                <h5 className='text-xs font-medium flex-1 -ml-12'>Recipe (optional)</h5>
                             </div>
-                            {variants.map(({label, price}, index) => (
+                            {variants.map(({label, price, recipe}, index) => (
                                 <div className='flex items-center gap-2 flex-1'>
                                     <input
                                         type="text"
@@ -340,30 +359,34 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                                             "p-2 rounded w-full bg-main-dark/50",
                                         )}
                                     />
+                                    <div className='flex items-center gap-2 w-full'>
+                                        <div className='flex-1'>
+                                            <Dropdown
+                                                variant='modal'
+                                                value={recipe}
+                                                selection='Select recipe'
+                                                size='full'
+                                                options={recipeOptions}
+                                                onSelect={(value) => setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, recipe: value ? String(value) : ''} : item))}
+                                            />
+                                        </div>
+                                        <Button
+                                            variant='modalOutline'
+                                            size='small'
+                                            text='Create'
+                                            onClick={() => {
+                                                setRecipeTargetIndex(index);
+                                                setShowAddRecipeModal(true);
+                                            }}
+                                        />
+                                    </div>
                                     {index === variants.length-1 ?
-                                        <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0}])} />
+                                        <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0, recipe: ''}])} />
                                         :
                                         <Button text='' icon={Minus} variant='icon' onClick={() => removeVariant(index)} />
                                     }
                                 </div>
                             ))}
-                        </div>
-                    </div>
-
-                    <div className='flex flex-col gap-2'>
-                        <Label variant='modal' text='Recipe' />
-                        <div className='flex items-center gap-2'>
-                            <div className='flex-1'>
-                                <Dropdown
-                                    variant='modal'
-                                    value={recipeId}
-                                    selection='Select recipe (optional)'
-                                    size='full'
-                                    options={recipeOptions}
-                                    onSelect={(value) => setRecipeId(value ? String(value) : '')}
-                                />
-                            </div>
-                            <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
                         </div>
                     </div>
                 </div>
