@@ -26,30 +26,37 @@ const TransactionHistoryModal = ({ onClose }) => {
                     </div>
                     <div className='flex-col gap-2 '>
                         {transactions?.results?.map((tx) => (
-                            <div key={tx.id} className='flex flex-row border-b border-b-border items-center hover:-translate-x-1 transition'>
-                                <h5 className='flex-1 px-2 py-3 text-left text-sm'>
-                                    {tx.purchase_date || 'N/A'}
-                                </h5>
-                                <h5 className='flex-1 px-2 py-3 text-left text-sm font-semibold'>
-                                    {tx.ingredient_name}
-                                </h5>
-                                <h5 className='flex-1 px-2 py-3 text-left text-sm'>
-                                    <span className={cn(
-                                        'px-2 py-1 rounded text-[10px] font-bold uppercase',
-                                        tx.transaction_type === 'in' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                                    )}>
-                                        {tx.transaction_type}
-                                    </span>
-                                </h5>
-                                <h5 className='flex-1 px-2 py-3 text-left text-sm'>
-                                    {formatQty(tx.amount)} {tx.unit_abbreviation}
-                                </h5>
-                                <h5 className='flex-1 px-2 py-3 text-left text-sm text-text/60'>
-                                    {formatQty(tx.remaining_amount)}
-                                </h5>
-                                <h5 className='flex-1 px-2 py-3 text-left text-sm text-error font-medium'>
-                                    {tx.expiration_date || '-'}
-                                </h5>
+                            <div key={tx.id} className='flex flex-col border-b border-b-border'>
+                                <div className='flex flex-row items-center hover:-translate-x-1 transition'>
+                                    <h5 className='flex-1 px-2 py-3 text-left text-sm'>
+                                        {tx.purchase_date || 'N/A'}
+                                    </h5>
+                                    <h5 className='flex-1 px-2 py-3 text-left text-sm font-semibold'>
+                                        {tx.ingredient_name}
+                                    </h5>
+                                    <h5 className='flex-1 px-2 py-3 text-left text-sm'>
+                                        <span className={cn(
+                                            'px-2 py-1 rounded text-[10px] font-bold uppercase',
+                                            tx.transaction_type === 'in' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+                                        )}>
+                                            {tx.transaction_type}
+                                        </span>
+                                    </h5>
+                                    <h5 className='flex-1 px-2 py-3 text-left text-sm'>
+                                        {formatQty(tx.amount)} {tx.unit_abbreviation}
+                                    </h5>
+                                    <h5 className='flex-1 px-2 py-3 text-left text-sm text-text/60'>
+                                        {formatQty(tx.remaining_amount)}
+                                    </h5>
+                                    <h5 className='flex-1 px-2 py-3 text-left text-sm text-error font-medium'>
+                                        {tx.expiration_date || '-'}
+                                    </h5>
+                                </div>
+                                {tx.reason && (
+                                    <div className='flex flex-row px-2 pb-3'>
+                                        <h5 className='text-xs text-text/60 italic'>Reason: {tx.reason}</h5>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

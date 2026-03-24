@@ -490,6 +490,7 @@ const Home = () => {
 
         await postTransaction({
             is_void: true,
+            is_completed: true,
             payment_method: "cash",
             transaction_items: voidProductsPayload,
             paid_amount: 0,
@@ -554,14 +555,16 @@ const Home = () => {
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row gap-1 items-center'>
                     <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter} />
-                    <div className='ml-auto'>
-                        <Button
-                            variant='modalOutline'
-                            size='small'
-                            text={pendingLoading ? 'Pending Orders (...)' : `Pending Orders (${pendingOrdersCount})`}
-                            onClick={() => setShowPendingOrdersModal(true)}
-                        />
-                    </div>
+                    {(pendingLoading || pendingOrdersCount > 0) && (
+                        <div className='ml-auto'>
+                            <Button
+                                variant='modalOutline'
+                                size='small'
+                                text={pendingLoading ? 'Pending Orders (...)' : `Pending Orders (${pendingOrdersCount})`}
+                                onClick={() => setShowPendingOrdersModal(true)}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Product Section */}

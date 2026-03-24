@@ -50,6 +50,12 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                     <h5>Payment Completed!</h5>
                 </div>
 
+                {transactionData?.order_number && (
+                    <div className='flex flex-row items-center justify-center'>
+                        <h5 className='text-accent-dark font-semibold text-lg'>Order #{transactionData.order_number}</h5>
+                    </div>
+                )}
+
                 <div>
                     <div className='flex flex-row items-center justify-between'>
                         <Label variant='modal' text='Total Amount:' />

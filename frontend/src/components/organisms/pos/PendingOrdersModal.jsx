@@ -2,18 +2,6 @@ import React, { useMemo } from 'react';
 import { Button, Label, Title } from '../../atoms';
 import { X } from 'lucide-react';
 
-const toDateKey = (value) => {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return 'Invalid Date';
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-};
-
 const formatPrice = (value) =>
     Number(value || 0).toLocaleString('en-PH', {
         minimumFractionDigits: 2,
@@ -32,23 +20,6 @@ const PendingOrdersModal = ({
         );
     }, [pendingTransactions]);
 
-    const numberedTransactions = useMemo(() => {
-        const orderCounterByDate = new Map();
-
-        return sortedTransactions.map((transaction) => {
-            const dateKey = toDateKey(transaction.created_at);
-            const currentCount = orderCounterByDate.get(dateKey) || 0;
-            const nextCount = currentCount + 1;
-
-            orderCounterByDate.set(dateKey, nextCount);
-
-            return {
-                ...transaction,
-                order_number: nextCount,
-            };
-        });
-    }, [sortedTransactions]);
-
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-20'>
             <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[45vw] max-w-[90vw] max-h-[85vh] flex flex-col gap-6'>
@@ -58,13 +29,13 @@ const PendingOrdersModal = ({
                 </div>
 
                 <div className='overflow-y-auto flex flex-col gap-3 pr-1'>
-                    {numberedTransactions.length === 0 && (
+                    {sortedTransactions.length === 0 && (
                         <div className='py-16 flex justify-center'>
                             <h5 className='text-text/60 font-medium'>No pending orders found.</h5>
                         </div>
                     )}
 
-                    {numberedTransactions.map((transaction) => {
+                    {sortedTransactions.map((transaction) => {
                         const customerName = transaction.customer_name?.trim() || 'Walk-in Customer';
                         const items = transaction.transaction_items || [];
                         const isCompleting = completingOrderId === transaction.id;
@@ -73,7 +44,7 @@ const PendingOrdersModal = ({
                             <div key={transaction.id} className='border border-border rounded-xl p-4 flex flex-col gap-3'>
                                 <div className='flex items-center justify-between'>
                                     <div className='flex flex-col gap-0.5'>
-                                        <h5 className='font-bold text-text'>Order #{transaction.order_number}</h5>
+                                        <h5 className='font-bold text-text'>Order #{transaction.order_number ?? '-'}</h5>
                                         <h5 className='text-text/70 text-sm'>Customer: {customerName}</h5>
                                     </div>
                                     <Button

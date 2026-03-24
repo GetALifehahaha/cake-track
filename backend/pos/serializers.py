@@ -222,11 +222,12 @@ class TransactionSerializer(serializers.ModelSerializer):
     cashier = UserSerializer(read_only=True)
     discount = DiscountSerializer(read_only=True)
     transaction_items = TransactionItemSerializer(many=True, read_only=True)
+    order_number = serializers.IntegerField(source='sequence_number', read_only=True)
     
     class Meta:
         model = Transaction
         fields = [
-            'id', 'cashier', 'discount', 'is_void', 
+            'id', 'order_number', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
             'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
             'is_completed', 'customer_name', 'completed_at', 'is_register_counted',
@@ -269,11 +270,17 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         paid_amount = validated_data.get('paid_amount', Decimal('0.00'))
         is_void = validated_data.pop('is_void', False)
         is_completed = validated_data.pop('is_completed', False)
+
+        if is_void:
+            is_completed = True
         
         validated_data['cashier'] = self.context['request'].user
 
         ingredient_totals = {}
 
+        # Collect recipe names for ingredient deduction tracking
+        recipe_names = set()
+        
         for item in items_data:
             product = item['product']
             quantity = Decimal(str(item['quantity']))
@@ -281,6 +288,8 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             if not product.recipe_id:
                 continue
 
+            recipe_names.add(product.recipe.name)
+            
             for recipe_item in product.recipe.recipe_ingredients.select_related('ingredient').all():
                 ingredient_id = recipe_item.ingredient_id
                 amount_needed = Decimal(str(recipe_item.amount_needed)) * quantity
@@ -415,9 +424,15 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 locked_discount.save(update_fields=['used_count'])
 
             if not is_void and ingredient_totals:
+                reason_parts = [f"Transaction #{transaction_obj.id}"]
+                if recipe_names:
+                    reason_parts.insert(0, f"Recipes: {', '.join(sorted(recipe_names))}")
+                reason = " | ".join(reason_parts)
+                
                 deduct_ingredient_totals(
                     ingredient_totals=ingredient_totals,
-                    reason=f"Stock out done for transaction #{transaction_obj.id}.",
+                    purchase_date=timezone.now().date(),
+                    reason=reason,
                 )
 
             if transaction_obj.is_completed and not transaction_obj.is_void:

@@ -6,6 +6,7 @@ from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from .models import Category, Product, ProductVariant, Discount, Transaction, TransactionItem, DiscountUsage, RegisterMoney
 from .serializers import TransactionCreateSerializer
+from inventory.models import Recipe, Ingredient, RecipeIngredient, Unit, Transaction as InventoryTransaction
 
 class TransactionCreationTests(TestCase):
     def setUp(self):
@@ -186,6 +187,150 @@ class TransactionCreationTests(TestCase):
         self.assertTrue(transaction.is_completed)
         self.assertIsNotNone(transaction.completed_at)
         self.assertEqual(transaction.customer_name, "Walk-in Customer")
+
+    def test_void_transaction_is_auto_completed(self):
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+
+        data = {
+            "payment_method": "cash",
+            "paid_amount": Decimal("0.00"),
+            "order_type": "dine-in",
+            "is_void": True,
+            "is_completed": False,
+            "transaction_items": [
+                {"product": self.product_a.id, "product_variant": self.variant_a.id, "quantity": 1}
+            ]
+        }
+
+        serializer = TransactionCreateSerializer(data=data, context={'request': request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        transaction = serializer.save()
+
+        self.assertTrue(transaction.is_void)
+        self.assertTrue(transaction.is_completed)
+        self.assertIsNotNone(transaction.completed_at)
+
+    def test_daily_order_sequence_increments_globally(self):
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+
+        base_payload = {
+            "payment_method": "cash",
+            "order_type": "dine-in",
+            "transaction_items": [
+                {"product": self.product_a.id, "product_variant": self.variant_a.id, "quantity": 1}
+            ]
+        }
+
+        first = TransactionCreateSerializer(
+            data={**base_payload, "paid_amount": Decimal("0.00"), "is_completed": False},
+            context={'request': request},
+        )
+        self.assertTrue(first.is_valid(), first.errors)
+        first_tx = first.save()
+
+        second = TransactionCreateSerializer(
+            data={**base_payload, "paid_amount": Decimal("500.00"), "is_completed": True},
+            context={'request': request},
+        )
+        self.assertTrue(second.is_valid(), second.errors)
+        second_tx = second.save()
+
+        third = TransactionCreateSerializer(
+            data={**base_payload, "paid_amount": Decimal("0.00"), "is_completed": False},
+            context={'request': request},
+        )
+        self.assertTrue(third.is_valid(), third.errors)
+        third_tx = third.save()
+
+        self.assertEqual(first_tx.sequence_number, 1)
+        self.assertEqual(second_tx.sequence_number, 2)
+        self.assertEqual(third_tx.sequence_number, 3)
+        self.assertEqual(first_tx.sequence_date, second_tx.sequence_date)
+        self.assertEqual(second_tx.sequence_date, third_tx.sequence_date)
+
+    def test_transaction_with_recipe_includes_recipe_name_in_deduction_reason(self):
+        """Verify that ingredient deductions include recipe names in the reason field."""
+        # Create units and ingredients with sufficient stock
+        kg_unit = Unit.objects.create(name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000'))
+        butter = Ingredient.objects.create(name='Butter', total_stock=Decimal('100'), unit=kg_unit)
+        flour = Ingredient.objects.create(name='Flour', total_stock=Decimal('200'), unit=kg_unit)
+        
+        # Create inventory transactions to provide stock
+        InventoryTransaction.objects.create(
+            ingredient=butter,
+            amount=Decimal('100'),
+            remaining_amount=Decimal('100'),
+            transaction_type='in',
+            purchase_date=timezone.now().date(),
+            unit_purchase_price=Decimal('50.00'),
+        )
+        InventoryTransaction.objects.create(
+            ingredient=flour,
+            amount=Decimal('200'),
+            remaining_amount=Decimal('200'),
+            transaction_type='in',
+            purchase_date=timezone.now().date(),
+            unit_purchase_price=Decimal('20.00'),
+        )
+        
+        # Create a recipe with ingredients
+        cake_recipe = Recipe.objects.create(name='Chocolate Cake', is_temporary=False)
+        RecipeIngredient.objects.create(recipe=cake_recipe, ingredient=butter, amount_needed=Decimal('0.5'))
+        RecipeIngredient.objects.create(recipe=cake_recipe, ingredient=flour, amount_needed=Decimal('2.0'))
+        
+        # Create a product linked to the recipe
+        category = Category.objects.create(name="Desserts")
+        product_with_recipe = Product.objects.create(name="Chocolate Cake")
+        product_with_recipe.categories.add(category)
+        product_with_recipe.recipe = cake_recipe
+        product_with_recipe.save()
+        variant = ProductVariant.objects.create(product=product_with_recipe, label="Whole Cake", price=Decimal("500.00"))
+        
+        # Create transaction with the recipe product
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+        
+        data = {
+            "payment_method": "cash",
+            "paid_amount": Decimal("1000.00"),
+            "order_type": "dine-in",
+            "is_completed": True,
+            "transaction_items": [
+                {"product": product_with_recipe.id, "product_variant": variant.id, "quantity": 2}
+            ]
+        }
+        
+        serializer = TransactionCreateSerializer(data=data, context={'request': request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        transaction = serializer.save()
+        
+        # Verify that inventory transactions were created with recipe name in reason
+        butter_deductions = InventoryTransaction.objects.filter(ingredient=butter, transaction_type='out')
+        flour_deductions = InventoryTransaction.objects.filter(ingredient=flour, transaction_type='out')
+        
+        self.assertTrue(butter_deductions.exists(), "Butter deduction not found")
+        self.assertTrue(flour_deductions.exists(), "Flour deduction not found")
+        
+        # Check that reason includes "Chocolate Cake"
+        for deduction in butter_deductions:
+            self.assertIn("Chocolate Cake", deduction.reason, 
+                         f"Recipe name not found in reason: {deduction.reason}")
+            self.assertIn(f"Transaction #{transaction.id}", deduction.reason,
+                         f"Transaction ID not found in reason: {deduction.reason}")
+        
+        for deduction in flour_deductions:
+            self.assertIn("Chocolate Cake", deduction.reason,
+                         f"Recipe name not found in reason: {deduction.reason}")
+            self.assertIn(f"Transaction #{transaction.id}", deduction.reason,
+                         f"Transaction ID not found in reason: {deduction.reason}")
+        
+        # Verify stock was deducted correctly (2 cakes, each needs 0.5 kg butter and 2 kg flour)
+        butter.refresh_from_db()
+        flour.refresh_from_db()
+        self.assertEqual(butter.total_stock, Decimal('99'))  # 100 - (0.5 * 2)
+        self.assertEqual(flour.total_stock, Decimal('196'))  # 200 - (2 * 2)
 
 
 class TransactionCompletionActionTests(APITestCase):

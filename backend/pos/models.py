@@ -1,4 +1,4 @@
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.contrib.auth.models import User
 from django.utils import timezone
 from backend.utils import generate_id
@@ -149,6 +149,8 @@ class Transaction(models.Model):
     is_register_counted = models.BooleanField(default=False)
     customer_name = models.CharField(max_length=255, blank=True, null=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    sequence_date = models.DateField(null=True, blank=True, editable=False, db_index=True)
+    sequence_number = models.PositiveIntegerField(null=True, blank=True, editable=False)
     
     def __str__(self):
         return f"Transaction #{self.pk}"
@@ -170,7 +172,42 @@ class Transaction(models.Model):
     net_total = models.DecimalField(max_digits=11, decimal_places=2)
     change = models.DecimalField(max_digits=11, decimal_places=2)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sequence_date', 'sequence_number'],
+                name='unique_daily_transaction_sequence_number',
+            )
+        ]
+
+    def _assign_sequence(self):
+        if self.sequence_date and self.sequence_number:
+            return
+
+        sequence_date = timezone.localdate()
+
+        for _ in range(10):
+            try:
+                with transaction.atomic():
+                    counter, _ = DailyOrderCounter.objects.select_for_update().get_or_create(
+                        sequence_date=sequence_date,
+                        defaults={'last_number': 0},
+                    )
+                    counter.last_number += 1
+                    counter.save(update_fields=['last_number'])
+
+                    self.sequence_date = sequence_date
+                    self.sequence_number = counter.last_number
+                    return
+            except IntegrityError:
+                continue
+
+        raise IntegrityError('Failed to assign a unique daily transaction sequence number')
+
     def save(self, *args, **kwargs):
+        if self._state.adding and (not self.sequence_date or not self.sequence_number):
+            self._assign_sequence()
+
         if not self.id:
             while True:
                 try:
@@ -207,6 +244,17 @@ class TransactionItem(models.Model):
     def __str__(self):
         variant_name = f" - {self.product_variant.label}" if self.product_variant else ""
         return f"{self.quantity} × {self.product.name}{variant_name}"
+
+
+class DailyOrderCounter(models.Model):
+    sequence_date = models.DateField(unique=True)
+    last_number = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-sequence_date']
+
+    def __str__(self):
+        return f"{self.sequence_date} - {self.last_number}"
 
 
 class RegisterMoney(models.Model):
