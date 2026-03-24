@@ -443,6 +443,7 @@ from django.db.models.functions import TruncDay, TruncMonth, TruncWeek, Coalesce
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
 from decimal import Decimal
+from collections import defaultdict
 from datetime import datetime
 from payment.models import Payment
 from inventory.models import Transaction as InventoryTransaction
@@ -536,7 +537,15 @@ class DashboardAnalyticsView(APIView):
             .filter(transaction__in=valid_transactions)
             .values('product__name')
             .annotate(total_sold=Sum('quantity'))
-            .order_by('-total_sold')[:16]
+            .order_by('-total_sold', 'product__name')
+        )[:10]
+
+        least_products = (
+            TransactionItem.objects
+            .filter(transaction__in=valid_transactions)
+            .values('product__name')
+            .annotate(total_sold=Sum('quantity'))
+            .order_by('total_sold', 'product__name')[:10]
         )
 
         # 5️⃣ Sales Trend
@@ -555,7 +564,35 @@ class DashboardAnalyticsView(APIView):
             .order_by('period')
         )
 
-        formatted_trend = [{"period": item["period"], "amount": item["amount"]} for item in trend_data]
+        trend_top_products_qs = (
+            TransactionItem.objects
+            .filter(transaction__in=valid_transactions)
+            .annotate(period=trunc)
+            .values('period', 'product__name')
+            .annotate(total_sold=Sum('quantity'))
+            .order_by('period', '-total_sold', 'product__name')
+        )
+
+        period_top_products_map = defaultdict(list)
+        for row in trend_top_products_qs:
+            period = row.get('period')
+            if period is None:
+                continue
+            if len(period_top_products_map[period]) >= 3:
+                continue
+            period_top_products_map[period].append({
+                'product__name': row.get('product__name') or 'Unknown Product',
+                'total_sold': row.get('total_sold') or 0,
+            })
+
+        formatted_trend = [
+            {
+                "period": item["period"],
+                "amount": item["amount"],
+                "top_products": period_top_products_map.get(item["period"], []),
+            }
+            for item in trend_data
+        ]
 
         # 5b️⃣ Revenue Trend (same grouping as sales trend, but sums net_total)
         if frequency == "monthly":
@@ -655,6 +692,7 @@ class DashboardAnalyticsView(APIView):
             "total_capital": round(total_capital, 2),
             "total_profit": round(total_profit, 2),
             "top_selling_products": list(top_products),
+            "least_selling_products": list(least_products),
             "sales_trend": formatted_trend,
             "revenue_trend": formatted_revenue_trend,
             "cashier_performance": cashier_performance,

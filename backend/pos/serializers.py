@@ -582,6 +582,9 @@ class DashboardMetricsSerializer(serializers.Serializer):
     top_selling_products = serializers.ListField(
         child=serializers.DictField()
     )
+    least_selling_products = serializers.ListField(
+        child=serializers.DictField()
+    )
     sales_trend = serializers.ListField(
         child=serializers.DictField()
     )

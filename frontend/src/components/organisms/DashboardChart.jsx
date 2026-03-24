@@ -16,7 +16,6 @@ import {
 import {
 	ChartContainer,
 	ChartTooltip,
-	ChartTooltipContent,
 } from "@/components/ui/chart"
 
 import { Button } from "@/components/atoms"
@@ -53,8 +52,56 @@ const DashboardChart = ({ salesData, revenueData }) => {
 		return value;
 	};
 
+	const formatTooltipDate = (value) => {
+		if (!value) return "";
+		const date = new Date(value);
+		if (Number.isNaN(date.getTime())) return String(value);
+		return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+	};
+
+	const SalesTrendTooltip = ({ active, payload }) => {
+		if (!active || !payload?.length) return null;
+		const point = payload[0]?.payload || {};
+		const topProducts = Array.isArray(point.top_products) ? point.top_products.slice(0, 3) : [];
+
+		return (
+			<div className="border-border/50 bg-background grid min-w-56 items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+				<div className="grid gap-1">
+					<span className="text-muted-foreground">Date: <strong>{formatTooltipDate(point.period)}</strong></span>
+					{topProducts.length > 0 ? (
+						<>
+							<span className="text-muted-foreground">Top 3 Products:</span>
+							{topProducts.map((product, index) => (
+								<span key={`${product.product__name}-${index}`} className="text-muted-foreground">
+									<strong>{index + 1}.</strong> {product.product__name} ({product.total_sold})
+								</span>
+							))}
+						</>
+					) : (
+						<span className="text-muted-foreground">Top 3 Products: <strong>No sales</strong></span>
+					)}
+				</div>
+			</div>
+		);
+	};
+
+	const RevenueTrendTooltip = ({ active, payload }) => {
+		if (!active || !payload?.length) return null;
+		const point = payload[0]?.payload || {};
+		const revenue = Number(point.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+		return (
+			<div className="border-border/50 bg-background grid min-w-56 items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+				<div className="grid gap-1">
+					<span className="text-muted-foreground">Date: <strong>{formatTooltipDate(point.period)}</strong></span>
+					<span className="text-muted-foreground">Revenue: <strong>₱{revenue}</strong></span>
+				</div>
+			</div>
+		);
+	};
+
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 			{/* Products Sold Trend */}
 			<Card className="border-none bg-main-white shadow-md">
 				<CardHeader className="flex flex-row justify-between items-center">
@@ -113,13 +160,7 @@ const DashboardChart = ({ salesData, revenueData }) => {
 
 							<ChartTooltip
 								cursor={false}
-								content={
-									<ChartTooltipContent
-										indicator="line"
-										nameKey="amount"
-										hideLabel
-									/>
-								}
+								content={<SalesTrendTooltip />}
 							/>
 
 							<Line
@@ -177,14 +218,7 @@ const DashboardChart = ({ salesData, revenueData }) => {
 
 							<ChartTooltip
 								cursor={false}
-								content={
-									<ChartTooltipContent
-										indicator="line"
-										nameKey="amount"
-										hideLabel
-										formatter={(value) => `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-									/>
-								}
+								content={<RevenueTrendTooltip />}
 							/>
 
 							<Line
