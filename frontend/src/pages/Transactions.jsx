@@ -1,25 +1,37 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Title } from '../components/atoms';
+import { Button, Title } from '../components/atoms';
 import { TransactionDetails } from '../components/organisms';
 import { Ellipsis, X } from 'lucide-react';
 import useTransaction from '@/hooks/useTransaction';
-import { Pagination } from '@/components/molecules';
-import Loading from '@/components/molecules/Loading';
+import { ModalBody, Pagination } from '@/components/molecules';
 import { DatePicker } from '@/components/molecules';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { AuthContext } from '@/context/AuthContext';
 import { formatToDecimal } from '@/utils/formatToDecimal';
 import { TransactionsSkeleton } from '@/components/molecules/Skeletons';
+import { useToast } from '@/context/ToastContext';
+import { inputNumber, inputText } from '@/utils/safeInput';
 
 const Transactions = () => {
+    const {
+        data,
+        loading,
+        error,
+        registerMoney,
+        refreshRegisterMoney,
+        setStartingMoney,
+        postDeduction,
+        registerTransactions,
+        refreshRegisterTransactions,
+    } = useTransaction();
 
-    const { data, loading, error } = useTransaction();
     const { user } = useContext(AuthContext);
+    const { addToast } = useToast();
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const currentDateParams = searchParams.get('created_at')
-    const selectedDate = currentDateParams ? new Date(currentDateParams) : null
+    const currentDateParams = searchParams.get('created_at');
+    const selectedDate = currentDateParams ? new Date(currentDateParams) : null;
 
     useEffect(() => {
         if (searchParams.get('is_completed') === 'true') return;
@@ -30,39 +42,47 @@ const Transactions = () => {
     }, [searchParams, setSearchParams]);
 
     const tableHeader = ['Time', 'Receipt ID', 'Cashier', 'Status', 'Total'];
-    const basis = `basis-1/${tableHeader.length}`
+    const basis = `basis-1/${tableHeader.length}`;
+
     const date = new Date();
-    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',]
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const fullDate = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const fullDate = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 
     const [transactionDetails, setTransactionDetails] = useState(null);
     const [showTransactionDetails, setShowTransactionDetails] = useState(false);
 
-    if (loading) return <TransactionsSkeleton />
-    if (error) return <h5>Error loading transactions</h5>
+    const [showRegisterMoneyModal, setShowRegisterMoneyModal] = useState(false);
+    const [showRegisterTransactionsModal, setShowRegisterTransactionsModal] = useState(false);
 
-    console.log(data)
+    const [startingMoneyInput, setStartingMoneyInput] = useState('');
+    const [deductionAmount, setDeductionAmount] = useState('');
+    const [deductionNote, setDeductionNote] = useState('');
 
-    const handleSetDateFilter = (date) => {
+    if (loading) return <TransactionsSkeleton />;
+    if (error) return <h5>Error loading transactions</h5>;
+
+    const handleSetDateFilter = (dateValue) => {
         const newParams = Object.fromEntries(searchParams.entries());
 
-        if (date) {
-            newParams.created_at = formatDateForAPI(date)
+        if (dateValue) {
+            newParams.created_at = formatDateForAPI(dateValue);
         } else {
-            delete newParams.created_at
+            delete newParams.created_at;
         }
 
         newParams.is_completed = 'true';
-
-        setSearchParams(newParams)
-    }
+        setSearchParams(newParams);
+    };
 
     const getGroupKey = (dateString) => {
         return new Date(dateString).toLocaleDateString('default', {
             month: 'long',
             day: 'numeric',
-            year: 'numeric'
+            year: 'numeric',
         });
     };
 
@@ -76,51 +96,88 @@ const Transactions = () => {
         }
 
         groups[dateKey].push(item);
-
         return groups;
     }, {});
 
     const sortedDates = Object.keys(groupedTransactions).sort((a, b) => new Date(b) - new Date(a));
 
     const capitalize = (string) => {
-        if (string) return string[0].toUpperCase() + string.slice(1)
+        if (string) return string[0].toUpperCase() + string.slice(1);
     };
 
     const handleSetTransactionDetails = (transaction) => {
         setTransactionDetails(transaction);
-        handleSetShowTransactionDetails();
-    }
-
-    const handleSetShowTransactionDetails = () => {
-        setShowTransactionDetails(!showTransactionDetails);
-    }
+        setShowTransactionDetails(true);
+    };
 
     const handleCloseTransactionDetails = () => {
-        handleSetTransactionDetails(null);
-        handleSetShowTransactionDetails();
-    }
+        setTransactionDetails(null);
+        setShowTransactionDetails(false);
+    };
 
-    const listHeaders = [...tableHeader, ''].map((item, index) => <h5 key={index} className={`text-main-white font-semibold text-center py-1 ${basis}`}>{capitalize(item)}</h5>)
+    const handleSubmitStartingMoney = async () => {
+        const amount = Number.parseFloat(startingMoneyInput);
 
-    const listContent = sortedDates.map((date, dateIndex) => (
-        <div key={dateIndex} className="w-full flex flex-col mb-6">
+        if (!Number.isFinite(amount) || amount < 0) {
+            addToast('Enter a valid starting money amount.', 'error');
+            return;
+        }
 
-            {user.is_staff && new Date(date).toDateString() !== new Date().toDateString() &&
-                <div className="w-full py-2 px-4 bg-accent-mute/10 rounded-md mb-2 flex items-center justify-between">
-                    <h5 className="text-text font-bold text-sm opacity-70 uppercase tracking-wider">
-                        {date}
-                    </h5>
+        try {
+            await setStartingMoney(amount);
+            await Promise.all([refreshRegisterMoney(), refreshRegisterTransactions()]);
+            setStartingMoneyInput('');
+            addToast('Starting money updated.', 'success');
+        } catch (err) {
+            const detail = err?.response?.data?.detail || 'Failed to update starting money.';
+            addToast(detail, 'error');
+        }
+    };
+
+    const handleSubmitDeduction = async () => {
+        const amount = Number.parseFloat(deductionAmount);
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            addToast('Enter a valid deduction amount.', 'error');
+            return;
+        }
+
+        try {
+            await postDeduction({ amount, note: deductionNote });
+            await Promise.all([refreshRegisterMoney(), refreshRegisterTransactions()]);
+            setDeductionAmount('');
+            setDeductionNote('');
+            addToast('Deduction recorded.', 'success');
+        } catch (err) {
+            const detail = err?.response?.data?.detail || 'Failed to record deduction.';
+            addToast(detail, 'error');
+        }
+    };
+
+    const listHeaders = [...tableHeader, ''].map((item, index) => (
+        <h5 key={index} className={`text-main-white font-semibold text-center py-1 ${basis}`}>
+            {capitalize(item)}
+        </h5>
+    ));
+
+    const registerTransactionItems = Array.isArray(registerTransactions?.results)
+        ? registerTransactions.results
+        : [];
+
+    const listContent = sortedDates.map((dateLabel, dateIndex) => (
+        <div key={dateIndex} className='w-full flex flex-col mb-6'>
+            {user.is_staff && new Date(dateLabel).toDateString() !== new Date().toDateString() && (
+                <div className='w-full py-2 px-4 bg-accent-mute/10 rounded-md mb-2 flex items-center justify-between'>
+                    <h5 className='text-text font-bold text-sm opacity-70 uppercase tracking-wider'>{dateLabel}</h5>
                 </div>
-            }
+            )}
 
-            <div className="flex flex-col gap-2">
-                {groupedTransactions[date].map((item, index) => (
+            <div className='flex flex-col gap-2'>
+                {groupedTransactions[dateLabel].map((item) => (
                     <div className='flex w-full hover:bg-black/5 p-1 rounded transition-colors' key={item.id}>
-                        {
-                            <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
-                                {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </h5>
-                        }
+                        <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
+                            {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </h5>
 
                         <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>
                             {item?.display_id || item.id}
@@ -138,7 +195,6 @@ const Transactions = () => {
                             ₱ {formatToDecimal(item.net_total)}
                         </h5>
 
-
                         <Ellipsis
                             className={`text-text ${basis} cursor-pointer`}
                             onClick={() => handleSetTransactionDetails(item)}
@@ -149,48 +205,181 @@ const Transactions = () => {
         </div>
     ));
 
-
     return (
         <div className='w-[90%] mx-auto flex flex-col gap-8'>
             <Title variant='page' text='Transaction History' />
+
             <div className='px-4 py-2.5 rounded-md border border-border'>
-                <h5 className='text-accent-text font-medium text-md'>Today's Revenue: <strong className='ml-4 text-accent-dark'>₱ {(data.daily_total_revenue).toFixed(2)}</strong></h5>
+                <div className='flex items-center gap-4 flex-wrap'>
+                    <h5 className='text-accent-text font-medium text-md'>
+                        Today's Revenue: <strong className='ml-2 text-accent-dark'>₱ {(data.daily_total_revenue).toFixed(2)}</strong>
+                    </h5>
+                    <h5 className='text-accent-text font-medium text-md'>
+                        Register Money: <strong className='ml-2 text-accent-dark'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
+                    </h5>
+
+                    <div className='ml-auto flex items-center gap-2'>
+                        <Button variant='modalOutline' size='small' text='Set Register Money' onClick={() => setShowRegisterMoneyModal(true)} />
+                        {user?.is_staff && (
+                            <Button
+                                variant='modalOutline'
+                                size='small'
+                                text='Register Transactions'
+                                onClick={() => setShowRegisterTransactionsModal(true)}
+                            />
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className='w-full p-4 border-border border-2 rounded-xl'>
-
                 <div className='flex items-center'>
                     <Title variant='block' text={fullDate} />
                     <div className='flex-1' />
-                    {selectedDate &&
-                        <>
-                            <X size={18} className='text-text/50 cursor-pointer mr-2' onClick={() => handleSetDateFilter(false)} />
-                        </>
-                    }
+                    {selectedDate && (
+                        <X size={18} className='text-text/50 cursor-pointer mr-2' onClick={() => handleSetDateFilter(false)} />
+                    )}
                     <span className='w-60'>
                         <DatePicker className='bg-white' selected={selectedDate} onSelect={handleSetDateFilter} />
                     </span>
                 </div>
+
                 <div className='flex flex-row items-center bg-accent-mute rounded-t-2xl mt-4'>
                     {listHeaders}
                 </div>
+
                 <div className='flex flex-col items-center gap-2 py-2 min-h-[40vh]'>
-                    {completedTransactions.length == 0 &&
-                        <h5 className='font-medium text-text/50 my-auto'>
-                            No transactions found
-                        </h5>
-                    }
+                    {completedTransactions.length === 0 && (
+                        <h5 className='font-medium text-text/50 my-auto'>No transactions found</h5>
+                    )}
                     {listContent}
                 </div>
             </div>
 
             <Pagination prev={data.previous} next={data.next} />
 
-            {showTransactionDetails &&
+            {showTransactionDetails && (
                 <TransactionDetails transactionDetail={transactionDetails} onClose={handleCloseTransactionDetails} />
-            }
+            )}
+
+            {showRegisterMoneyModal && (
+                <ModalBody
+                    title='Set Register Money'
+                    subtitle='Manage register balance for your shift.'
+                    onClose={() => setShowRegisterMoneyModal(false)}
+                    className='w-[520px]'
+                >
+                    <div className='flex flex-col gap-4'>
+                        <div className='rounded-lg border border-border p-3'>
+                            <h5 className='text-sm font-medium text-text'>Register Money</h5>
+                            <h5 className='text-lg font-bold text-accent-dark'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</h5>
+                        </div>
+
+                        <div className='rounded-lg border border-border p-3'>
+                            <h5 className='text-sm font-medium text-text'>Starting Money</h5>
+                            <h5 className='text-lg font-bold text-accent-dark'>₱ {formatToDecimal(registerMoney?.starting_money || 0)}</h5>
+                        </div>
+
+                        <div className='flex flex-col gap-2 border-t border-border pt-3'>
+                            <h5 className='text-sm font-semibold text-text'>Set Starting Money</h5>
+                            <div className='flex items-center gap-2'>
+                                <input
+                                    type='text'
+                                    value={startingMoneyInput}
+                                    onChange={(e) => {
+                                        const value = inputNumber(e);
+                                        if (value !== undefined) setStartingMoneyInput(value);
+                                    }}
+                                    placeholder='0.00'
+                                    className='focus:outline-none p-2 rounded-lg border border-border bg-main-white flex-1'
+                                />
+                                <Button variant='modalBlock' size='small' text='Save' onClick={handleSubmitStartingMoney} />
+                            </div>
+                        </div>
+
+                        <div className='flex flex-col gap-2 border-t border-border pt-3'>
+                            <h5 className='text-sm font-semibold text-text'>Register Deduction</h5>
+                            <div className='flex items-center gap-2'>
+                                <input
+                                    type='text'
+                                    value={deductionAmount}
+                                    onChange={(e) => {
+                                        const value = inputNumber(e);
+                                        if (value !== undefined) setDeductionAmount(value);
+                                    }}
+                                    placeholder='Amount'
+                                    className='focus:outline-none p-2 rounded-lg border border-border bg-main-white flex-1'
+                                />
+                                <Button variant='modalBlock' size='small' text='Deduct' onClick={handleSubmitDeduction} />
+                            </div>
+                            <input
+                                type='text'
+                                value={deductionNote}
+                                onChange={(e) => {
+                                    const value = inputText(e, 255);
+                                    if (value !== undefined) setDeductionNote(value);
+                                }}
+                                placeholder='Reason'
+                                className='focus:outline-none p-2 rounded-lg border border-border bg-main-white'
+                            />
+                        </div>
+
+                        <div className='flex justify-end'>
+                            <Button variant='modalOutline' size='modalSize' text='Close' onClick={() => setShowRegisterMoneyModal(false)} />
+                        </div>
+                    </div>
+                </ModalBody>
+            )}
+
+            {showRegisterTransactionsModal && user?.is_staff && (
+                <ModalBody
+                    title='Register Transactions'
+                    subtitle='History of additions and deductions.'
+                    onClose={() => setShowRegisterTransactionsModal(false)}
+                    className='w-[75vw]'
+                >
+                    <div className='flex flex-col gap-3 max-h-[70vh]'>
+                        <div className='grid grid-cols-4 gap-2 bg-accent-mute rounded-lg px-3 py-2'>
+                            <h5 className='text-main-white font-semibold text-sm'>Deductions/Additions</h5>
+                            <h5 className='text-main-white font-semibold text-sm'>Cashier</h5>
+                            <h5 className='text-main-white font-semibold text-sm'>Amount</h5>
+                            <h5 className='text-main-white font-semibold text-sm'>Timestamp</h5>
+                        </div>
+
+                        <div className='flex flex-col gap-2 overflow-y-auto'>
+                            {registerTransactionItems.length === 0 && (
+                                <h5 className='font-medium text-text/50 py-8 text-center'>No register transactions found.</h5>
+                            )}
+
+                            {registerTransactionItems.map((entry) => (
+                                <div key={entry.id} className='grid grid-cols-4 gap-2 border border-border rounded-lg px-3 py-2'>
+                                    <div className='flex flex-col'>
+                                        <h5 className={`text-sm font-medium ${entry.entry_type === 'addition' ? 'text-success' : 'text-error'}`}>
+                                            {entry.entry_type === 'addition' ? 'Addition' : 'Deduction'}
+                                        </h5>
+                                        {entry.entry_type === 'deduction' && entry.note && (
+                                            <h5 className='text-xs text-text/60 mt-0.5'>Reason: {entry.note}</h5>
+                                        )}
+                                    </div>
+                                    <h5 className='text-sm text-text'>
+                                        {entry?.cashier?.first_name} {entry?.cashier?.last_name}
+                                    </h5>
+                                    <h5 className='text-sm text-text'>₱ {formatToDecimal(entry.amount || 0)}</h5>
+                                    <h5 className='text-sm text-text/70'>{new Date(entry.created_at).toLocaleString()}</h5>
+                                </div>
+                            ))}
+                        </div>
+
+                        <Pagination
+                            prev={registerTransactions?.previous}
+                            next={registerTransactions?.next}
+                            pageParam='register_page'
+                        />
+                    </div>
+                </ModalBody>
+            )}
         </div>
-    )
-}
+    );
+};
 
 export default Transactions;

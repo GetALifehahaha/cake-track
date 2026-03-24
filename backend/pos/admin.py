@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Discount, Category, Product, ProductVariant,
-    Transaction, TransactionItem
+    Transaction, TransactionItem, RegisterMoney, RegisterDeduction
 )
 
 # -----------------------------
@@ -69,6 +69,19 @@ class TransactionItemAdmin(admin.ModelAdmin):
     list_display = ['id', 'transaction', 'product', 'product_variant', 'quantity']
     search_fields = ['product__name', 'transaction__id']
     list_filter = ['product']
+
+
+@admin.register(RegisterMoney)
+class RegisterMoneyAdmin(admin.ModelAdmin):
+    list_display = ['cashier', 'starting_money', 'current_amount', 'started_at', 'updated_at']
+    search_fields = ['cashier__username', 'cashier__first_name', 'cashier__last_name']
+
+
+@admin.register(RegisterDeduction)
+class RegisterDeductionAdmin(admin.ModelAdmin):
+    list_display = ['cashier', 'amount', 'created_at', 'created_by']
+    search_fields = ['cashier__username', 'created_by__username']
+    list_filter = ['created_at']
 
 
 admin.site.register(Discount)

@@ -29,9 +29,11 @@ from .serializers import (DiscountSerializer,
                           ProductSerializer, 
                           TransactionCreateSerializer, 
                           TransactionCompleteSerializer,
-                          CashSessionSerializer,
-                          CashSessionOpenSerializer,
-                          CashSessionCloseSerializer,
+                          RegisterMoneySerializer,
+                          RegisterMoneySetStartingSerializer,
+                          RegisterDeductionSerializer,
+                          RegisterDeductionCreateSerializer,
+                          RegisterTransactionSerializer,
                           TransactionSerializer, 
                           TransactionItemSerializer,
                           BusinessSettingsSerializer,
@@ -43,7 +45,9 @@ from .models import (Discount,
                      Category, 
                      ProductVariant, 
                      Product, 
-                     CashSession,
+                     RegisterMoney,
+                     RegisterDeduction,
+                     RegisterTransaction,
                      Transaction, 
                      TransactionItem,
                      BusinessSettings
@@ -180,34 +184,18 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id', 'created_at', 'payment_method']
     ordering = ['-created_at']
 
-    def _get_today_session(self, user):
-        return CashSession.objects.filter(
-            cashier=user,
-            business_date=timezone.localdate(),
-        ).first()
-
-    def _build_cash_summary(self, session):
-        if not session:
+    def _get_register_money(self, user):
+        if not user.is_authenticated:
             return None
 
-        sales_total = (
-            session.transactions.filter(is_void=False, is_completed=True)
-            .aggregate(total=Sum("net_total"))['total']
-            or Decimal('0.00')
-        )
-        expected_drawer_cash = session.opening_amount + sales_total - session.removed_amount
+        register_money, _ = RegisterMoney.objects.get_or_create(cashier=user)
+        return register_money
 
-        return {
-            "session_id": session.id,
-            "business_date": session.business_date,
-            "opening_amount": session.opening_amount,
-            "removed_amount": session.removed_amount,
-            "sales_total": sales_total,
-            "expected_drawer_cash": expected_drawer_cash,
-            "is_closed": session.is_closed,
-            "opened_at": session.opened_at,
-            "closed_at": session.closed_at,
-        }
+    def _build_register_summary(self, user):
+        register_money = self._get_register_money(user)
+        if not register_money:
+            return None
+        return RegisterMoneySerializer(register_money).data
 
     
     def get_serializer_class(self, *args, **kwargs):
@@ -223,7 +211,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         output_serializer = TransactionSerializer(transaction, context=self.get_serializer_context())
         headers = self.get_success_headers(output_serializer.data)
         payload = output_serializer.data
-        payload['cash_session_summary'] = self._build_cash_summary(self._get_today_session(request.user))
+        payload['register_money_summary'] = self._build_register_summary(request.user)
         return Response(payload, status=status.HTTP_201_CREATED, headers=headers)
 
     
@@ -244,7 +232,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         
         if isinstance(response.data, dict):
             response.data['daily_total_revenue'] = daily_revenue
-            response.data['cash_session_summary'] = self._build_cash_summary(self._get_today_session(request.user))
+            response.data['register_money_summary'] = self._build_register_summary(request.user)
             
         return response
     
@@ -283,59 +271,104 @@ class TransactionViewSet(viewsets.ModelViewSet):
             context=self.get_serializer_context(),
         )
         payload = output_serializer.data
-        payload['cash_session_summary'] = self._build_cash_summary(self._get_today_session(request.user))
+        payload['register_money_summary'] = self._build_register_summary(request.user)
         return Response(payload, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='open-day')
-    def open_day(self, request):
-        serializer = CashSessionOpenSerializer(data=request.data)
+    @action(detail=False, methods=['get'], url_path='register-money')
+    def register_money(self, request):
+        register_money = self._get_register_money(request.user)
+        return Response(RegisterMoneySerializer(register_money).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='set-starting-money')
+    def set_starting_money(self, request):
+        serializer = RegisterMoneySetStartingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        session, created = CashSession.objects.get_or_create(
-            cashier=request.user,
-            business_date=timezone.localdate(),
-            defaults={
-                'opening_amount': serializer.validated_data['opening_amount'],
-                'is_closed': False,
-            },
-        )
+        register_money = self._get_register_money(request.user)
+        amount = serializer.validated_data['amount']
+        previous_amount = register_money.current_amount
+        register_money.starting_money = amount
+        register_money.current_amount = amount
+        register_money.started_at = timezone.now()
+        register_money.save(update_fields=['starting_money', 'current_amount', 'started_at', 'updated_at'])
 
-        if not created and session.is_closed:
+        delta = amount - previous_amount
+        if delta != 0:
+            RegisterTransaction.objects.create(
+                register_money=register_money,
+                cashier=request.user,
+                entry_type='addition' if delta > 0 else 'deduction',
+                amount=abs(delta),
+                note='Starting money adjusted',
+                created_by=request.user,
+            )
+
+        return Response(RegisterMoneySerializer(register_money).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get', 'post'], url_path='deductions')
+    def deductions(self, request):
+        if request.method.lower() == 'get':
+            queryset = RegisterDeduction.objects.select_related('cashier', 'created_by', 'register_money')
+
+            if request.user.is_staff:
+                cashier_id = request.query_params.get('cashier_id')
+                if cashier_id:
+                    queryset = queryset.filter(cashier_id=cashier_id)
+            else:
+                queryset = queryset.filter(cashier=request.user)
+
+            serializer = RegisterDeductionSerializer(queryset[:200], many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = RegisterDeductionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        cashier = request.user
+        register_money, _ = RegisterMoney.objects.get_or_create(cashier=cashier)
+        amount = serializer.validated_data['amount']
+
+        if register_money.current_amount < amount:
             return Response(
-                {"detail": "Cash session is already closed for today."},
+                {"detail": "Deduction amount exceeds cashier register money."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not created:
-            return Response(CashSessionSerializer(session).data, status=status.HTTP_200_OK)
+        register_money.current_amount = register_money.current_amount - amount
+        register_money.save(update_fields=['current_amount', 'updated_at'])
 
-        return Response(CashSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+        deduction = RegisterDeduction.objects.create(
+            register_money=register_money,
+            cashier=cashier,
+            amount=amount,
+            note=serializer.validated_data.get('note', ''),
+            created_by=request.user,
+        )
 
-    @action(detail=False, methods=['get'], url_path='day-session')
-    def day_session(self, request):
-        session = self._get_today_session(request.user)
-        if not session:
-            return Response({"detail": "No cash session found for today."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(CashSessionSerializer(session).data, status=status.HTTP_200_OK)
+        RegisterTransaction.objects.create(
+            register_money=register_money,
+            cashier=cashier,
+            entry_type='deduction',
+            amount=amount,
+            note=serializer.validated_data.get('note', ''),
+            created_by=request.user,
+        )
 
-    @action(detail=False, methods=['post'], url_path='close-day')
-    def close_day(self, request):
-        session = self._get_today_session(request.user)
-        if not session:
-            return Response({"detail": "No cash session found for today."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(RegisterDeductionSerializer(deduction).data, status=status.HTTP_201_CREATED)
 
-        if session.is_closed:
-            return Response({"detail": "Cash session already closed."}, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=['get'], url_path='register-transactions')
+    def register_transactions(self, request):
+        queryset = RegisterTransaction.objects.select_related('cashier', 'created_by', 'register_money')
 
-        serializer = CashSessionCloseSerializer(data=request.data or {})
-        serializer.is_valid(raise_exception=True)
+        if not request.user.is_staff:
+            queryset = queryset.filter(cashier=request.user)
 
-        session.removed_amount = serializer.validated_data.get('removed_amount', Decimal('0.00'))
-        session.is_closed = True
-        session.closed_at = timezone.now()
-        session.save(update_fields=['removed_amount', 'is_closed', 'closed_at'])
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = RegisterTransactionSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-        return Response(CashSessionSerializer(session).data, status=status.HTTP_200_OK)
+        serializer = RegisterTransactionSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
         
 class TransactionItemViewSet(viewsets.ModelViewSet):

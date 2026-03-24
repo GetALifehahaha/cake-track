@@ -2,13 +2,13 @@ import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Pagination = ({ next, prev }) => {
+const Pagination = ({ next, prev, pageParam = 'page' }) => {
     // 1. Remove useState(pageNum) - The URL is the Source of Truth
 
     const [searchParams, setSearchParams] = useSearchParams();
 
     // 2. Derive current page directly from the URL (Safe and current)
-    const currentPage = parseInt(searchParams.get('page') || '1', 10);
+    const currentPage = parseInt(searchParams.get(pageParam) || '1', 10);
 
     const handleSetPageNum = (direction) => {
         // 3. Clone existing parameters (non-destructive update)
@@ -27,7 +27,7 @@ const Pagination = ({ next, prev }) => {
         }
 
         // 4. Update the 'page' parameter in the URL
-        newParams.set('page', newPage);
+        newParams.set(pageParam, newPage);
         setSearchParams(newParams);
 
         // 5. Scroll to top

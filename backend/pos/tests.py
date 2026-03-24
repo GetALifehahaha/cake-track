@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase, APIClient
 from decimal import Decimal
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
-from .models import Category, Product, ProductVariant, Discount, Transaction, TransactionItem, DiscountUsage
+from .models import Category, Product, ProductVariant, Discount, Transaction, TransactionItem, DiscountUsage, RegisterMoney
 from .serializers import TransactionCreateSerializer
 
 class TransactionCreationTests(TestCase):
@@ -237,7 +237,7 @@ class TransactionCompletionActionTests(APITestCase):
         self.assertEqual(response.status_code, 400)
 
 
-class CashSessionFlowTests(APITestCase):
+class RegisterMoneyFlowTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.cashier = User.objects.create_user(username="cashier_day", password="password123")
@@ -261,22 +261,29 @@ class CashSessionFlowTests(APITestCase):
             ]
         }
 
-    def test_cashier_cannot_create_transaction_without_open_session(self):
+    def test_cashier_can_create_completed_transaction_without_opening_prompt(self):
         response = self.client.post("/pos/transactions/", self._create_payload(), format='json')
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("cash_session", response.data)
+        self.assertEqual(response.status_code, 201)
 
-    def test_open_day_allows_transaction_and_assigns_session(self):
-        open_response = self.client.post("/pos/transactions/open-day/", {"opening_amount": "1500.00"}, format='json')
-        self.assertIn(open_response.status_code, [200, 201])
+    def test_set_starting_money_sets_register_amount(self):
+        response = self.client.post("/pos/transactions/set-starting-money/", {"amount": "1500.00"}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Decimal(str(response.data.get("starting_money"))), Decimal("1500.00"))
+        self.assertEqual(Decimal(str(response.data.get("current_amount"))), Decimal("1500.00"))
 
+    def test_completed_transaction_increases_register_money(self):
+        self.client.post("/pos/transactions/set-starting-money/", {"amount": "1000.00"}, format='json')
         create_response = self.client.post("/pos/transactions/", self._create_payload(), format='json')
         self.assertEqual(create_response.status_code, 201)
-        self.assertIsNotNone(create_response.data.get("cash_session"))
 
-    def test_close_day_marks_session_closed(self):
-        self.client.post("/pos/transactions/open-day/", {"opening_amount": "1200.00"}, format='json')
-        close_response = self.client.post("/pos/transactions/close-day/", {"removed_amount": "500.00"}, format='json')
+        register = RegisterMoney.objects.get(cashier=self.cashier)
+        self.assertEqual(register.current_amount, Decimal("1099.00"))
 
-        self.assertEqual(close_response.status_code, 200)
-        self.assertEqual(close_response.data.get("is_closed"), True)
+    def test_register_deduction_uses_authenticated_cashier(self):
+        self.client.post("/pos/transactions/set-starting-money/", {"amount": "500.00"}, format='json')
+        response = self.client.post(
+            "/pos/transactions/deductions/",
+            {"amount": "100.00", "note": "Drawer mismatch"},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 201)

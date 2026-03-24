@@ -6,7 +6,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from .models import (
     Discount, Category, Product, ProductVariant,
-    Transaction, TransactionItem, BusinessSettings, CashSession,
+    Transaction, TransactionItem, BusinessSettings, RegisterMoney, RegisterDeduction, RegisterTransaction,
     Discount, DiscountUsage
 )
 from decimal import Decimal
@@ -14,6 +14,32 @@ from inventory.models import Recipe
 from inventory.serializers import RecipeSerializer
 from inventory.models import Ingredient
 from inventory.services import deduct_ingredient_totals
+
+
+def _get_or_create_register_money(cashier):
+    register_money, _ = RegisterMoney.objects.get_or_create(cashier=cashier)
+    return register_money
+
+
+def _apply_completed_transaction_to_register(transaction_obj):
+    if transaction_obj.is_register_counted:
+        return
+
+    if transaction_obj.is_void or not transaction_obj.is_completed:
+        return
+
+    if transaction_obj.cashier is None:
+        return
+
+    register_money = RegisterMoney.objects.select_for_update().filter(cashier=transaction_obj.cashier).first()
+    if not register_money:
+        register_money = RegisterMoney.objects.create(cashier=transaction_obj.cashier)
+
+    register_money.current_amount = register_money.current_amount + transaction_obj.net_total
+    register_money.save(update_fields=['current_amount', 'updated_at'])
+
+    transaction_obj.is_register_counted = True
+    transaction_obj.save(update_fields=['is_register_counted'])
 
 
 class DiscountSerializer(serializers.ModelSerializer):
@@ -196,7 +222,6 @@ class TransactionSerializer(serializers.ModelSerializer):
     cashier = UserSerializer(read_only=True)
     discount = DiscountSerializer(read_only=True)
     transaction_items = TransactionItemSerializer(many=True, read_only=True)
-    cash_session = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = Transaction
@@ -204,7 +229,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
             'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
-            'is_completed', 'customer_name', 'completed_at', 'cash_session',
+            'is_completed', 'customer_name', 'completed_at', 'is_register_counted',
         ]
    
 
@@ -246,19 +271,6 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         is_completed = validated_data.pop('is_completed', False)
         
         validated_data['cashier'] = self.context['request'].user
-
-        cashier = validated_data['cashier']
-        if cashier.groups.filter(name="cashier").exists():
-            active_session = CashSession.objects.filter(
-                cashier=cashier,
-                business_date=timezone.localdate(),
-                is_closed=False,
-            ).first()
-
-            if not active_session:
-                raise ValidationError({"cash_session": "No open cash session found for today. Open day first."})
-
-            validated_data['cash_session'] = active_session
 
         ingredient_totals = {}
 
@@ -408,6 +420,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                     reason=f"Stock out done for transaction #{transaction_obj.id}.",
                 )
 
+            if transaction_obj.is_completed and not transaction_obj.is_void:
+                _apply_completed_transaction_to_register(transaction_obj)
+
         return transaction_obj
 
 
@@ -424,51 +439,63 @@ class TransactionCompleteSerializer(serializers.Serializer):
         return attrs
 
     def update(self, instance, validated_data):
-        if instance.cashier and instance.cashier.groups.filter(name="cashier").exists() and instance.cash_session is None:
-            active_session = CashSession.objects.filter(
-                cashier=instance.cashier,
-                business_date=timezone.localdate(),
-                is_closed=False,
-            ).first()
-
-            if not active_session:
-                raise serializers.ValidationError({"cash_session": "No open cash session found for today. Open day first."})
-
-            instance.cash_session = active_session
-
         instance.is_completed = True
         instance.completed_at = timezone.now()
-        instance.save(update_fields=['is_completed', 'completed_at', 'cash_session'])
+        instance.save(update_fields=['is_completed', 'completed_at'])
+
+        _apply_completed_transaction_to_register(instance)
         return instance
 
 
-class CashSessionSerializer(serializers.ModelSerializer):
-    sales_total = serializers.SerializerMethodField()
-    expected_drawer_cash = serializers.SerializerMethodField()
+class RegisterMoneySerializer(serializers.ModelSerializer):
+    cashier = UserSerializer(read_only=True)
+    total_deductions = serializers.SerializerMethodField()
 
     class Meta:
-        model = CashSession
+        model = RegisterMoney
         fields = [
-            'id', 'cashier', 'business_date', 'opening_amount', 'removed_amount',
-            'is_closed', 'opened_at', 'closed_at', 'sales_total', 'expected_drawer_cash'
+            'id',
+            'cashier',
+            'starting_money',
+            'current_amount',
+            'started_at',
+            'updated_at',
+            'total_deductions',
         ]
-        read_only_fields = ['cashier', 'business_date', 'opened_at', 'closed_at', 'sales_total', 'expected_drawer_cash']
+        read_only_fields = fields
 
-    def get_sales_total(self, obj):
-        total = obj.transactions.filter(is_void=False, is_completed=True).aggregate(total=Sum('net_total'))['total']
+    def get_total_deductions(self, obj):
+        total = obj.deductions.aggregate(total=Sum('amount'))['total']
         return total or Decimal('0.00')
 
-    def get_expected_drawer_cash(self, obj):
-        sales_total = self.get_sales_total(obj)
-        return (obj.opening_amount + sales_total - obj.removed_amount)
+
+class RegisterMoneySetStartingSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=11, decimal_places=2, min_value=Decimal('0.00'))
 
 
-class CashSessionOpenSerializer(serializers.Serializer):
-    opening_amount = serializers.DecimalField(max_digits=11, decimal_places=2)
+class RegisterDeductionSerializer(serializers.ModelSerializer):
+    cashier = UserSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True)
+
+    class Meta:
+        model = RegisterDeduction
+        fields = ['id', 'cashier', 'amount', 'note', 'created_by', 'created_at']
+        read_only_fields = fields
 
 
-class CashSessionCloseSerializer(serializers.Serializer):
-    removed_amount = serializers.DecimalField(max_digits=11, decimal_places=2, required=False, default=Decimal('0.00'))
+class RegisterDeductionCreateSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=11, decimal_places=2, min_value=Decimal('0.01'))
+    note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+class RegisterTransactionSerializer(serializers.ModelSerializer):
+    cashier = UserSerializer(read_only=True)
+    created_by = UserSerializer(read_only=True)
+
+    class Meta:
+        model = RegisterTransaction
+        fields = ['id', 'entry_type', 'amount', 'note', 'cashier', 'created_by', 'created_at']
+        read_only_fields = fields
     
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:

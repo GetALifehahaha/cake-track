@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function useTransaction() {
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
+    const registerPage = searchParams.get('register_page') || '1';
 
     const apiParams = useMemo(() => {
         return Object.fromEntries(searchParams.entries());
@@ -25,10 +26,22 @@ export default function useTransaction() {
         { is_completed: false, is_void: false },
         { keepPreviousData: false }
     );
-    const daySessionQuery = useQueryFetch(
-        ["transactions", "day-session", user?.id ?? "guest"],
-        API_ENDPOINTS.TRANSACTIONS_DAY_SESSION,
+    const registerMoneyQuery = useQueryFetch(
+        ["transactions", "register-money", user?.id ?? "guest"],
+        API_ENDPOINTS.TRANSACTIONS_REGISTER_MONEY,
         {},
+        { keepPreviousData: false }
+    );
+    const deductionsQuery = useQueryFetch(
+        ["transactions", "deductions", user?.id ?? "guest"],
+        API_ENDPOINTS.TRANSACTIONS_DEDUCTIONS,
+        {},
+        { keepPreviousData: false }
+    );
+    const registerTransactionsQuery = useQueryFetch(
+        ["transactions", "register-transactions", user?.id ?? "guest", registerPage],
+        API_ENDPOINTS.TRANSACTIONS_REGISTER_TRANSACTIONS,
+        { page: registerPage },
         { keepPreviousData: false }
     );
 
@@ -58,10 +71,10 @@ export default function useTransaction() {
         postTransaction,
         patchTransaction: (id, data) => update(`${API_ENDPOINTS.TRANSACTIONS}${id}/`, data),
         completeTransaction: (id) => request("post", `${API_ENDPOINTS.TRANSACTIONS}${id}/complete/`),
-        openDaySession: (openingAmount) =>
-            request("post", API_ENDPOINTS.TRANSACTIONS_OPEN_DAY, { opening_amount: openingAmount }),
-        closeDaySession: (removedAmount) =>
-            request("post", API_ENDPOINTS.TRANSACTIONS_CLOSE_DAY, { removed_amount: removedAmount }),
+        setStartingMoney: (amount) =>
+            request("post", API_ENDPOINTS.TRANSACTIONS_SET_STARTING_MONEY, { amount }),
+        postDeduction: (payload) =>
+            request("post", API_ENDPOINTS.TRANSACTIONS_DEDUCTIONS, payload),
         deleteTransaction: (id) => remove(`${API_ENDPOINTS.TRANSACTIONS}${id}/`),
         refresh: () => transactionQuery.refetch(),
 
@@ -70,9 +83,19 @@ export default function useTransaction() {
         pendingError: pendingTransactionsQuery.error,
         refreshPending: () => pendingTransactionsQuery.refetch(),
 
-        daySession: daySessionQuery?.data || null,
-        daySessionLoading: daySessionQuery.isPending,
-        daySessionError: daySessionQuery.error,
-        refreshDaySession: () => daySessionQuery.refetch(),
+        registerMoney: registerMoneyQuery?.data || null,
+        registerMoneyLoading: registerMoneyQuery.isPending,
+        registerMoneyError: registerMoneyQuery.error,
+        refreshRegisterMoney: () => registerMoneyQuery.refetch(),
+
+        deductions: deductionsQuery?.data || [],
+        deductionsLoading: deductionsQuery.isPending,
+        deductionsError: deductionsQuery.error,
+        refreshDeductions: () => deductionsQuery.refetch(),
+
+        registerTransactions: registerTransactionsQuery?.data || { results: [], next: null, previous: null },
+        registerTransactionsLoading: registerTransactionsQuery.isPending,
+        registerTransactionsError: registerTransactionsQuery.error,
+        refreshRegisterTransactions: () => registerTransactionsQuery.refetch(),
     };
 }

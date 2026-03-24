@@ -141,12 +141,12 @@ class Transaction(models.Model):
     id = models.CharField(primary_key=True, max_length=20, editable=False)
 
     cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="transactions")
-    cash_session = models.ForeignKey('CashSession', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True)
     is_void = models.BooleanField(default=False)
     paid_amount = models.DecimalField(decimal_places=2, max_digits=11, default=0) #type: ignore
 
     is_completed = models.BooleanField(default=False)
+    is_register_counted = models.BooleanField(default=False)
     customer_name = models.CharField(max_length=255, blank=True, null=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     
@@ -209,21 +209,54 @@ class TransactionItem(models.Model):
         return f"{self.quantity} × {self.product.name}{variant_name}"
 
 
-class CashSession(models.Model):
-    cashier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cash_sessions')
-    business_date = models.DateField(default=timezone.localdate)
-    opening_amount = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
-    removed_amount = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
-    is_closed = models.BooleanField(default=False)
-    opened_at = models.DateTimeField(auto_now_add=True)
-    closed_at = models.DateTimeField(null=True, blank=True)
+class RegisterMoney(models.Model):
+    cashier = models.OneToOneField(User, on_delete=models.CASCADE, related_name='register_money')
+    starting_money = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
+    current_amount = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
+    started_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('cashier', 'business_date')
-        ordering = ['-business_date', '-opened_at']
+        ordering = ['cashier__username']
 
     def __str__(self):
-        return f"{self.cashier.username} - {self.business_date}"
+        return f"{self.cashier.username} register"
+
+
+class RegisterDeduction(models.Model):
+    register_money = models.ForeignKey(RegisterMoney, on_delete=models.CASCADE, related_name='deductions')
+    cashier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='register_deductions')
+    amount = models.DecimalField(max_digits=11, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True, default='')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recorded_register_deductions')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.cashier.username} deduction - {self.amount}"
+
+
+class RegisterTransaction(models.Model):
+    ENTRY_TYPES = [
+        ('addition', 'Addition'),
+        ('deduction', 'Deduction'),
+    ]
+
+    register_money = models.ForeignKey(RegisterMoney, on_delete=models.CASCADE, related_name='register_transactions')
+    cashier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='register_transactions')
+    entry_type = models.CharField(max_length=20, choices=ENTRY_TYPES)
+    amount = models.DecimalField(max_digits=11, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True, default='')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recorded_register_transactions')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.cashier.username} {self.entry_type} - {self.amount}"
 
 
 class BusinessSettings(models.Model):

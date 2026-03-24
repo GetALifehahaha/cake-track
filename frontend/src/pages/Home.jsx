@@ -19,19 +19,14 @@ const Home = () => {
     const { addToast } = useToast();
     const { user } = useAuth();
 
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [, setSearchParams] = useSearchParams();
     const {data: productData, loading: productLoading, error: productError} = useProduct();
     const {
         postTransaction,
         completeTransaction,
-        openDaySession,
         pendingData,
         pendingLoading,
         refreshPending,
-        daySession,
-        daySessionLoading,
-        daySessionError,
-        refreshDaySession,
         loading: transactionLoading,
         error: transactionError,
     } = useTransaction();
@@ -61,16 +56,11 @@ const Home = () => {
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
     const [completingOrderId, setCompletingOrderId] = useState(null);
-    const [openingAmount, setOpeningAmount] = useState('');
-
-
     const [actualAccessCode, setActualAccessCode] = useState();
     const [accessCode, setAccessCode] = useState();
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
-
-    const needsOpenSession = !daySessionLoading && !daySession && daySessionError?.response?.status === 404;
 
     // SET AND TOGGLES
 
@@ -296,31 +286,8 @@ const Home = () => {
     }
 
     const proceedToCheckout = () => {
-        if (!daySession || daySession?.is_closed) {
-            addToast('Open day session first before accepting payments.', 'error');
-            return;
-        }
-
         if (!netTotal) return
         setShowPaymentModal(true);
-    }
-
-    const handleOpenDaySession = async () => {
-        const parsedOpeningAmount = Number.parseFloat(openingAmount);
-
-        if (!Number.isFinite(parsedOpeningAmount) || parsedOpeningAmount < 0) {
-            addToast('Enter a valid opening cash amount.', 'error');
-            return;
-        }
-
-        try {
-            await openDaySession(parsedOpeningAmount);
-            await refreshDaySession();
-            addToast('Cash session opened for today.', 'success');
-        } catch (error) {
-            const detail = error?.response?.data?.detail || 'Failed to open day session.';
-            addToast(detail, 'error');
-        }
     }
 
     
@@ -581,8 +548,6 @@ const Home = () => {
     )
 
     const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } });
-    const discountOptions = discountData.map((dis) => { return { key: dis.name, value: dis.id } });
-
     return (
         <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
@@ -590,11 +555,6 @@ const Home = () => {
                 <div className='flex flex-row gap-1 items-center'>
                     <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter} />
                     <div className='ml-auto'>
-                        {daySession &&
-                            <h5 className='text-xs text-text/70 text-right mb-1'>
-                                Opening: ₱ {Number(daySession.opening_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </h5>
-                        }
                         <Button
                             variant='modalOutline'
                             size='small'
@@ -743,25 +703,6 @@ const Home = () => {
                     onClose={() => setShowPendingOrdersModal(false)}
                     onComplete={handleCompletePendingOrder}
                 />
-            }
-
-            {needsOpenSession &&
-                <Modal onClose={() => {}}>
-                    <div className='flex flex-col gap-3'>
-                        <Title variant='modal' text='Open Cash Session' />
-                        <h5 className='text-sm text-text/70'>Enter your starting cash for today before accepting orders.</h5>
-                        <input
-                            type='text'
-                            value={openingAmount}
-                            onChange={(e) => setOpeningAmount(e.target.value)}
-                            placeholder='0.00'
-                            className='focus:outline-none p-3 rounded-lg border-main-dark/50 border bg-main-white'
-                        />
-                        <div className='flex justify-end'>
-                            <Button variant='modalBlock' size='modalSize' text='Open Day' onClick={handleOpenDaySession} />
-                        </div>
-                    </div>
-                </Modal>
             }
         </div>
     )
