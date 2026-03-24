@@ -103,6 +103,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
             )
 
         affected_ingredients = {}
+        affected_costs = {}
         total_stocked_out = Decimal("0")
 
         with transaction.atomic():
@@ -112,8 +113,10 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
                 if ingredient.id not in affected_ingredients:
                     affected_ingredients[ingredient.id] = Decimal("0")
+                    affected_costs[ingredient.id] = Decimal("0")
 
                 affected_ingredients[ingredient.id] += remaining
+                affected_costs[ingredient.id] += remaining * Decimal(str(batch.unit_purchase_price or "0.00"))
                 total_stocked_out += remaining
 
                 batch.remaining_amount = Decimal("0")
@@ -131,7 +134,9 @@ class IngredientViewSet(viewsets.ModelViewSet):
                     amount=deducted_amount,
                     remaining_amount=Decimal("0"), 
                     transaction_type='out',
-                    purchase_date=today 
+                    purchase_date=today,
+                    cost_amount=affected_costs.get(ingredient_id, Decimal("0.00")),
+                    reason='Stocked out expired ingredients',
                 )
 
         return Response(

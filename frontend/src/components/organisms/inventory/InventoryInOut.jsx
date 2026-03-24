@@ -39,7 +39,17 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 		setIngredientItems(prev => [
 			...prev,
-			{ ingredient_id: id, name: name, amount: 0, transaction_type: 'in', expiration_date: '', purchase_date: '', max_quantity: Number.parseFloat(max_quantity) }
+			{
+				ingredient_id: id,
+				name: name,
+				amount: 0,
+				transaction_type: 'in',
+				expiration_date: '',
+				purchase_date: '',
+				unit_purchase_price: '',
+				reason: '',
+				max_quantity: Number.parseFloat(max_quantity),
+			}
 		]);
 	};
 
@@ -52,14 +62,15 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 		const raw = e.target.value
 
-		if (!/^\d*\.?\d{0,2}$/.test(raw)) return
+		const isNumericField = field === 'amount' || field === 'unit_purchase_price';
+		if (isNumericField && !/^\d*\.?\d{0,2}$/.test(raw)) return
 
-		if (ingredientItems[index].transaction_type === "out" && e.target.value > ingredientItems[index].max_quantity) return
+		if (field === 'amount' && ingredientItems[index].transaction_type === "out" && e.target.value > ingredientItems[index].max_quantity) return
 
 		if (e.target.value.length > 13) return
 
 		const updatedField = ingredientItems.map((item, i) => {
-			return index === i ? { ...item, [field]: field === "amount" && e.target.value > 0 ? Number.parseFloat(e.target.value) : e.target.value }
+			return index === i ? { ...item, [field]: (field === "amount" || field === "unit_purchase_price") && e.target.value > 0 ? Number.parseFloat(e.target.value) : e.target.value }
 				:
 				item
 		}
@@ -80,6 +91,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 			updatedField[index].expiration_date = '',
 			updatedField[index].purchase_date = '';
 			updatedField[index].amount = 0
+			updatedField[index].unit_purchase_price = ''
 		}
 
 		setIngredientItems(updatedField)
@@ -113,6 +125,18 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	};
 
 	const updateIngredients = async () => {
+		const missingPurchasePrice = ingredientItems.find(item => item.transaction_type === 'in' && Number.parseFloat(item.unit_purchase_price) <= 0);
+		if (missingPurchasePrice) {
+			addToast(`Add purchase price for ${missingPurchasePrice.name}.`, 'error');
+			return;
+		}
+
+		const missingReason = ingredientItems.find(item => item.transaction_type === 'out' && !item.reason?.trim());
+		if (missingReason) {
+			addToast(`Add a stock-out reason for ${missingReason.name}.`, 'error');
+			return;
+		}
+
 		const payload = {
 			transactions: ingredientItems.map(item => ({
 				ingredient_id: item.ingredient_id,
@@ -121,8 +145,10 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				purchase_date: item.transaction_type === 'in' 
 					? formatDate(item.purchase_date) 
 					: formatDate(new Date()), 
+				reason: item.reason || null,
 				...(item.transaction_type === 'in' && {
-					expiration_date: formatDate(item.expiration_date)
+					expiration_date: formatDate(item.expiration_date),
+					unit_purchase_price: Number.parseFloat(item.unit_purchase_price),
 				})
 			}))
 		};
@@ -179,6 +205,32 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				</div>
 				<X size={16} className='text-text cursor-pointer mx-4' onClick={() => removeIngredientItem(index)} />
 			</div>
+
+			{ingredient.transaction_type === 'in' &&
+				<div className='px-2 pb-2'>
+					<h5 className='text-xs text-left uppercase font-medium text-text/50 mb-1'>Purchase Price (per unit)</h5>
+					<input
+						type='text'
+						className='p-2 py-1.5 bg-main-dark/50 rounded-md focus:outline-none w-full'
+						placeholder='Enter purchase price'
+						value={ingredient.unit_purchase_price}
+						onChange={(e) => updateIngredientItem(index, 'unit_purchase_price', e)}
+					/>
+				</div>
+			}
+
+			{ingredient.transaction_type === 'out' &&
+				<div className='px-2 pb-2'>
+					<h5 className='text-xs text-left uppercase font-medium text-text/50 mb-1'>Stock-out Reason</h5>
+					<input
+						type='text'
+						className='p-2 py-1.5 bg-main-dark/50 rounded-md focus:outline-none w-full'
+						placeholder='Enter reason'
+						value={ingredient.reason}
+						onChange={(e) => updateIngredientItem(index, 'reason', e)}
+					/>
+				</div>
+			}
 
 		</div>
 	)

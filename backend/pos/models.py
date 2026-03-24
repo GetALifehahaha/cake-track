@@ -141,6 +141,7 @@ class Transaction(models.Model):
     id = models.CharField(primary_key=True, max_length=20, editable=False)
 
     cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="transactions")
+    cash_session = models.ForeignKey('CashSession', on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True)
     is_void = models.BooleanField(default=False)
     paid_amount = models.DecimalField(decimal_places=2, max_digits=11, default=0) #type: ignore
@@ -206,6 +207,23 @@ class TransactionItem(models.Model):
     def __str__(self):
         variant_name = f" - {self.product_variant.label}" if self.product_variant else ""
         return f"{self.quantity} × {self.product.name}{variant_name}"
+
+
+class CashSession(models.Model):
+    cashier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cash_sessions')
+    business_date = models.DateField(default=timezone.localdate)
+    opening_amount = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
+    removed_amount = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
+    is_closed = models.BooleanField(default=False)
+    opened_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('cashier', 'business_date')
+        ordering = ['-business_date', '-opened_at']
+
+    def __str__(self):
+        return f"{self.cashier.username} - {self.business_date}"
 
 
 class BusinessSettings(models.Model):

@@ -6,7 +6,8 @@ from rest_framework.serializers import ValidationError
 
 from .conversions import get_unit_conversion_factor
 from .models import Ingredient, IngredientUnitConversion, Recipe, RecipeIngredient, Transaction, Unit
-from .serializers import IngredientSerializer, RecipeSerializer
+from .serializers import IngredientSerializer, RecipeSerializer, TransactionCreateSerializer
+from .services import deduct_ingredient_stock
 
 
 class ConversionUtilityTests(TestCase):
@@ -135,3 +136,46 @@ class IngredientUnitAutoConversionTests(TestCase):
 		self.assertEqual(in_batch.remaining_amount, Decimal('2000'))
 		self.assertEqual(recipe_ingredient.amount_needed, Decimal('500'))
 		self.assertEqual(conversion.multiplier_to_base, Decimal('200'))
+
+
+class InventoryReasonAndCostTests(TestCase):
+	def setUp(self):
+		self.kg = Unit.objects.create(name='Kilogram-2', abbreviation='kg2', dimension='mass', multiplier_to_reference=Decimal('1000'))
+		self.ingredient = Ingredient.objects.create(name='Butter', total_stock=Decimal('5'), unit=self.kg)
+
+		Transaction.objects.create(
+			ingredient=self.ingredient,
+			amount=Decimal('5'),
+			remaining_amount=Decimal('5'),
+			transaction_type='in',
+			purchase_date=timezone.now().date(),
+			expiration_date=timezone.now().date(),
+			unit_purchase_price=Decimal('120.00'),
+		)
+
+	def test_manual_out_requires_reason(self):
+		serializer = TransactionCreateSerializer(data={
+			'transactions': [
+				{
+					'ingredient_id': self.ingredient.id,
+					'amount': '1',
+					'transaction_type': 'out',
+					'purchase_date': str(timezone.now().date()),
+				}
+			]
+		})
+
+		self.assertTrue(serializer.is_valid(), serializer.errors)
+		with self.assertRaises(ValidationError):
+			serializer.save()
+
+	def test_automatic_deduction_persists_reason(self):
+		reason = 'Stock out done for transaction #TRX0001.'
+		stock_out = deduct_ingredient_stock(
+			ingredient=self.ingredient,
+			amount=Decimal('1'),
+			purchase_date=timezone.now().date(),
+			reason=reason,
+		)
+
+		self.assertEqual(stock_out.reason, reason)

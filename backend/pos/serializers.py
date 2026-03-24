@@ -2,10 +2,11 @@ from rest_framework import serializers
 from users.serializers import UserSerializer
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from .models import (
     Discount, Category, Product, ProductVariant,
-    Transaction, TransactionItem, BusinessSettings,
+    Transaction, TransactionItem, BusinessSettings, CashSession,
     Discount, DiscountUsage
 )
 from decimal import Decimal
@@ -195,6 +196,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     cashier = UserSerializer(read_only=True)
     discount = DiscountSerializer(read_only=True)
     transaction_items = TransactionItemSerializer(many=True, read_only=True)
+    cash_session = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = Transaction
@@ -202,7 +204,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id', 'cashier', 'discount', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
             'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
-            'is_completed', 'customer_name', 'completed_at',
+            'is_completed', 'customer_name', 'completed_at', 'cash_session',
         ]
    
 
@@ -244,6 +246,19 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         is_completed = validated_data.pop('is_completed', False)
         
         validated_data['cashier'] = self.context['request'].user
+
+        cashier = validated_data['cashier']
+        if cashier.groups.filter(name="cashier").exists():
+            active_session = CashSession.objects.filter(
+                cashier=cashier,
+                business_date=timezone.localdate(),
+                is_closed=False,
+            ).first()
+
+            if not active_session:
+                raise ValidationError({"cash_session": "No open cash session found for today. Open day first."})
+
+            validated_data['cash_session'] = active_session
 
         ingredient_totals = {}
 
@@ -388,7 +403,10 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 locked_discount.save(update_fields=['used_count'])
 
             if not is_void and ingredient_totals:
-                deduct_ingredient_totals(ingredient_totals=ingredient_totals)
+                deduct_ingredient_totals(
+                    ingredient_totals=ingredient_totals,
+                    reason=f"Stock out done for transaction #{transaction_obj.id}.",
+                )
 
         return transaction_obj
 
@@ -406,10 +424,51 @@ class TransactionCompleteSerializer(serializers.Serializer):
         return attrs
 
     def update(self, instance, validated_data):
+        if instance.cashier and instance.cashier.groups.filter(name="cashier").exists() and instance.cash_session is None:
+            active_session = CashSession.objects.filter(
+                cashier=instance.cashier,
+                business_date=timezone.localdate(),
+                is_closed=False,
+            ).first()
+
+            if not active_session:
+                raise serializers.ValidationError({"cash_session": "No open cash session found for today. Open day first."})
+
+            instance.cash_session = active_session
+
         instance.is_completed = True
         instance.completed_at = timezone.now()
-        instance.save(update_fields=['is_completed', 'completed_at'])
+        instance.save(update_fields=['is_completed', 'completed_at', 'cash_session'])
         return instance
+
+
+class CashSessionSerializer(serializers.ModelSerializer):
+    sales_total = serializers.SerializerMethodField()
+    expected_drawer_cash = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CashSession
+        fields = [
+            'id', 'cashier', 'business_date', 'opening_amount', 'removed_amount',
+            'is_closed', 'opened_at', 'closed_at', 'sales_total', 'expected_drawer_cash'
+        ]
+        read_only_fields = ['cashier', 'business_date', 'opened_at', 'closed_at', 'sales_total', 'expected_drawer_cash']
+
+    def get_sales_total(self, obj):
+        total = obj.transactions.filter(is_void=False, is_completed=True).aggregate(total=Sum('net_total'))['total']
+        return total or Decimal('0.00')
+
+    def get_expected_drawer_cash(self, obj):
+        sales_total = self.get_sales_total(obj)
+        return (obj.opening_amount + sales_total - obj.removed_amount)
+
+
+class CashSessionOpenSerializer(serializers.Serializer):
+    opening_amount = serializers.DecimalField(max_digits=11, decimal_places=2)
+
+
+class CashSessionCloseSerializer(serializers.Serializer):
+    removed_amount = serializers.DecimalField(max_digits=11, decimal_places=2, required=False, default=Decimal('0.00'))
     
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -423,6 +482,10 @@ class DashboardMetricsSerializer(serializers.Serializer):
     total_products_sold = serializers.IntegerField()
     avg_daily_transactions = serializers.FloatField()
     total_revenue_generated = serializers.FloatField() 
+    order_paid_revenue = serializers.FloatField()
+    total_combined_revenue = serializers.FloatField()
+    total_capital = serializers.FloatField()
+    total_profit = serializers.FloatField()
     top_selling_products = serializers.ListField(
         child=serializers.DictField()
     )

@@ -37,7 +37,10 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['id', 'amount', 'transaction_type', 'expiration_date', 'remaining_amount', 'purchase_date', 'ingredient_id']
+        fields = [
+            'id', 'amount', 'transaction_type', 'expiration_date', 'remaining_amount',
+            'purchase_date', 'ingredient_id', 'unit_purchase_price', 'cost_amount', 'reason'
+        ]
         extra_kwargs = {
             'ingredient': {'read_only': True}
         }
@@ -65,6 +68,14 @@ class TransactionCreateSerializer(serializers.Serializer):
                 amount = item['amount']
                 transaction_type = item['transaction_type']
                 purchase_date = item.get("purchase_date") or timezone.now().date()
+                reason = item.get("reason")
+                unit_purchase_price = item.get("unit_purchase_price")
+
+                if transaction_type == 'in' and unit_purchase_price in [None, '']:
+                    raise ValidationError({"unit_purchase_price": "Purchase price is required for stock in."})
+
+                if transaction_type == 'out' and not reason:
+                    raise ValidationError({"reason": "Reason is required for manual stock out."})
                 
                 
                 if transaction_type == 'in':
@@ -75,7 +86,10 @@ class TransactionCreateSerializer(serializers.Serializer):
                         remaining_amount=amount,
                         transaction_type=transaction_type,
                         expiration_date=item.get("expiration_date"),
-                        purchase_date=purchase_date
+                        purchase_date=purchase_date,
+                        unit_purchase_price=unit_purchase_price,
+                        cost_amount=Decimal(str(amount)) * Decimal(str(unit_purchase_price)),
+                        reason=reason,
                     )
                     ingredient.total_stock += amount
                     ingredient.save()
@@ -87,6 +101,7 @@ class TransactionCreateSerializer(serializers.Serializer):
                         ingredient=ingredient,
                         amount=Decimal(str(amount)),
                         purchase_date=purchase_date,
+                        reason=reason,
                     )
                     created_transactions.append(transaction_object)
                 
@@ -171,6 +186,7 @@ class IngredientSerializer(serializers.ModelSerializer):
             amount = data.get("amount")
             purchase_date = data.get("purchaseDate")
             expiration_date = data.get("expirationDate")
+            purchase_price = data.get("purchasePrice")
 
             if amount is None or Decimal(str(amount)) <= 0:
                 raise serializers.ValidationError({"amount": "Initial amount must be greater than zero."})
@@ -180,6 +196,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 
             if not expiration_date:
                 raise serializers.ValidationError({"expirationDate": "Expiration date is required."})
+
+            if purchase_price is None or Decimal(str(purchase_price)) <= 0:
+                raise serializers.ValidationError({"purchasePrice": "Purchase price is required and must be greater than zero."})
 
             try:
                 parsed_purchase = date.fromisoformat(str(purchase_date))
@@ -216,6 +235,7 @@ class IngredientSerializer(serializers.ModelSerializer):
         amount = data.get("amount")
         purchase_date = data.get("purchaseDate")
         expiration_date = data.get("expirationDate")
+        purchase_price = data.get("purchasePrice")
 
         # 1. Create Ingredient
         ingredient = Ingredient.objects.create(**validated_data)
@@ -235,6 +255,9 @@ class IngredientSerializer(serializers.ModelSerializer):
             transaction_type='in',
             purchase_date=purchase_date,
             expiration_date=expiration_date,
+            unit_purchase_price=purchase_price,
+            cost_amount=Decimal(str(amount)) * Decimal(str(purchase_price)),
+            reason='Initial stock in',
         )
 
         # 3. Update ingredient total_stock
@@ -527,5 +550,8 @@ class TransactionHistorySerializer(serializers.ModelSerializer):
             'transaction_type', 
             'remaining_amount', 
             'purchase_date', 
-            'expiration_date'
+            'expiration_date',
+            'unit_purchase_price',
+            'cost_amount',
+            'reason',
         ]

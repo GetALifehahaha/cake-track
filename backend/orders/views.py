@@ -222,7 +222,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            order.recipe.cook()
+            order.recipe.cook(reason=f"Stock out done for order #{order.id}.")
         except ValidationError as error:
             return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 

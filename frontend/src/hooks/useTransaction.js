@@ -25,6 +25,12 @@ export default function useTransaction() {
         { is_completed: false, is_void: false },
         { keepPreviousData: false }
     );
+    const daySessionQuery = useQueryFetch(
+        ["transactions", "day-session", user?.id ?? "guest"],
+        API_ENDPOINTS.TRANSACTIONS_DAY_SESSION,
+        {},
+        { keepPreviousData: false }
+    );
 
     const { create, update, remove, request, loading: mutateLoading, error: mutateError } =
         useMutate("transactions", {
@@ -52,6 +58,10 @@ export default function useTransaction() {
         postTransaction,
         patchTransaction: (id, data) => update(`${API_ENDPOINTS.TRANSACTIONS}${id}/`, data),
         completeTransaction: (id) => request("post", `${API_ENDPOINTS.TRANSACTIONS}${id}/complete/`),
+        openDaySession: (openingAmount) =>
+            request("post", API_ENDPOINTS.TRANSACTIONS_OPEN_DAY, { opening_amount: openingAmount }),
+        closeDaySession: (removedAmount) =>
+            request("post", API_ENDPOINTS.TRANSACTIONS_CLOSE_DAY, { removed_amount: removedAmount }),
         deleteTransaction: (id) => remove(`${API_ENDPOINTS.TRANSACTIONS}${id}/`),
         refresh: () => transactionQuery.refetch(),
 
@@ -59,5 +69,10 @@ export default function useTransaction() {
         pendingLoading: pendingTransactionsQuery.isPending,
         pendingError: pendingTransactionsQuery.error,
         refreshPending: () => pendingTransactionsQuery.refetch(),
+
+        daySession: daySessionQuery?.data || null,
+        daySessionLoading: daySessionQuery.isPending,
+        daySessionError: daySessionQuery.error,
+        refreshDaySession: () => daySessionQuery.refetch(),
     };
 }

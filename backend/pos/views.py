@@ -29,6 +29,9 @@ from .serializers import (DiscountSerializer,
                           ProductSerializer, 
                           TransactionCreateSerializer, 
                           TransactionCompleteSerializer,
+                          CashSessionSerializer,
+                          CashSessionOpenSerializer,
+                          CashSessionCloseSerializer,
                           TransactionSerializer, 
                           TransactionItemSerializer,
                           BusinessSettingsSerializer,
@@ -40,6 +43,7 @@ from .models import (Discount,
                      Category, 
                      ProductVariant, 
                      Product, 
+                     CashSession,
                      Transaction, 
                      TransactionItem,
                      BusinessSettings
@@ -176,6 +180,35 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id', 'created_at', 'payment_method']
     ordering = ['-created_at']
 
+    def _get_today_session(self, user):
+        return CashSession.objects.filter(
+            cashier=user,
+            business_date=timezone.localdate(),
+        ).first()
+
+    def _build_cash_summary(self, session):
+        if not session:
+            return None
+
+        sales_total = (
+            session.transactions.filter(is_void=False, is_completed=True)
+            .aggregate(total=Sum("net_total"))['total']
+            or Decimal('0.00')
+        )
+        expected_drawer_cash = session.opening_amount + sales_total - session.removed_amount
+
+        return {
+            "session_id": session.id,
+            "business_date": session.business_date,
+            "opening_amount": session.opening_amount,
+            "removed_amount": session.removed_amount,
+            "sales_total": sales_total,
+            "expected_drawer_cash": expected_drawer_cash,
+            "is_closed": session.is_closed,
+            "opened_at": session.opened_at,
+            "closed_at": session.closed_at,
+        }
+
     
     def get_serializer_class(self, *args, **kwargs):
         if self.action in ['create', 'update', 'partial_update']:
@@ -189,7 +222,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         output_serializer = TransactionSerializer(transaction, context=self.get_serializer_context())
         headers = self.get_success_headers(output_serializer.data)
-        return Response(output_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        payload = output_serializer.data
+        payload['cash_session_summary'] = self._build_cash_summary(self._get_today_session(request.user))
+        return Response(payload, status=status.HTTP_201_CREATED, headers=headers)
 
     
     def list(self, request, *args, **kwargs):
@@ -209,6 +244,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         
         if isinstance(response.data, dict):
             response.data['daily_total_revenue'] = daily_revenue
+            response.data['cash_session_summary'] = self._build_cash_summary(self._get_today_session(request.user))
             
         return response
     
@@ -234,7 +270,11 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='complete', url_name='complete')
     def complete(self, request, *args, **kwargs):
         transaction = self.get_object()
-        serializer = TransactionCompleteSerializer(instance=transaction, data=request.data or {})
+        serializer = TransactionCompleteSerializer(
+            instance=transaction,
+            data=request.data or {},
+            context=self.get_serializer_context(),
+        )
         serializer.is_valid(raise_exception=True)
         completed_transaction = serializer.save()
 
@@ -242,7 +282,60 @@ class TransactionViewSet(viewsets.ModelViewSet):
             completed_transaction,
             context=self.get_serializer_context(),
         )
-        return Response(output_serializer.data, status=status.HTTP_200_OK)
+        payload = output_serializer.data
+        payload['cash_session_summary'] = self._build_cash_summary(self._get_today_session(request.user))
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='open-day')
+    def open_day(self, request):
+        serializer = CashSessionOpenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session, created = CashSession.objects.get_or_create(
+            cashier=request.user,
+            business_date=timezone.localdate(),
+            defaults={
+                'opening_amount': serializer.validated_data['opening_amount'],
+                'is_closed': False,
+            },
+        )
+
+        if not created and session.is_closed:
+            return Response(
+                {"detail": "Cash session is already closed for today."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not created:
+            return Response(CashSessionSerializer(session).data, status=status.HTTP_200_OK)
+
+        return Response(CashSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='day-session')
+    def day_session(self, request):
+        session = self._get_today_session(request.user)
+        if not session:
+            return Response({"detail": "No cash session found for today."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CashSessionSerializer(session).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='close-day')
+    def close_day(self, request):
+        session = self._get_today_session(request.user)
+        if not session:
+            return Response({"detail": "No cash session found for today."}, status=status.HTTP_404_NOT_FOUND)
+
+        if session.is_closed:
+            return Response({"detail": "Cash session already closed."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = CashSessionCloseSerializer(data=request.data or {})
+        serializer.is_valid(raise_exception=True)
+
+        session.removed_amount = serializer.validated_data.get('removed_amount', Decimal('0.00'))
+        session.is_closed = True
+        session.closed_at = timezone.now()
+        session.save(update_fields=['removed_amount', 'is_closed', 'closed_at'])
+
+        return Response(CashSessionSerializer(session).data, status=status.HTTP_200_OK)
     
         
 class TransactionItemViewSet(viewsets.ModelViewSet):
@@ -298,6 +391,8 @@ from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
 from decimal import Decimal
 from datetime import datetime
+from payment.models import Payment
+from inventory.models import Transaction as InventoryTransaction
 
 
 class DashboardAnalyticsView(APIView):
@@ -358,6 +453,30 @@ class DashboardAnalyticsView(APIView):
         total_revenue_generated = (
             valid_transactions.aggregate(total=Sum('net_total'))['total'] or 0
         )
+
+        order_payments = Payment.objects.filter(status='success')
+        if start_date:
+            order_payments = order_payments.filter(created_at__gte=start_date)
+        if end_date:
+            order_payments = order_payments.filter(created_at__lte=end_date)
+
+        order_paid_revenue = order_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        inventory_out_costs = InventoryTransaction.objects.filter(
+            transaction_type='out',
+        ).filter(
+            Q(reason__startswith='Stock out done for transaction #') |
+            Q(reason__startswith='Stock out done for order #')
+        )
+
+        if start_date:
+            inventory_out_costs = inventory_out_costs.filter(purchase_date__gte=start_date.date())
+        if end_date:
+            inventory_out_costs = inventory_out_costs.filter(purchase_date__lte=end_date.date())
+
+        total_capital = inventory_out_costs.aggregate(total=Sum('cost_amount'))['total'] or Decimal('0.00')
+        total_combined_revenue = Decimal(str(total_revenue_generated)) + Decimal(str(order_paid_revenue))
+        total_profit = total_combined_revenue - Decimal(str(total_capital))
 
         top_products = (
             TransactionItem.objects
@@ -478,6 +597,10 @@ class DashboardAnalyticsView(APIView):
             "total_successful_transactions": successful_count,
             "total_products_sold": total_products_sold,
             "total_revenue_generated": round(total_revenue_generated, 2),
+            "order_paid_revenue": round(order_paid_revenue, 2),
+            "total_combined_revenue": round(total_combined_revenue, 2),
+            "total_capital": round(total_capital, 2),
+            "total_profit": round(total_profit, 2),
             "top_selling_products": list(top_products),
             "sales_trend": formatted_trend,
             "revenue_trend": formatted_revenue_trend,

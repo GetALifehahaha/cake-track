@@ -43,6 +43,9 @@ class Transaction(models.Model):
     # Extra fields needed for inventory logic
     purchase_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)  # only used for IN
+    unit_purchase_price = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
+    cost_amount = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
+    reason = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"{self.ingredient.name} - {self.transaction_type} {self.amount}"
@@ -68,7 +71,7 @@ class Recipe(models.Model):
                 return False
         return True
 
-    def cook(self, quantity=1):
+    def cook(self, quantity=1, reason=None):
         """
         Deducts ingredients for this recipe. 
         quantity: How many of this recipe are being made (default 1).
@@ -94,6 +97,7 @@ class Recipe(models.Model):
         deduct_ingredient_totals(
             ingredient_totals=ingredient_totals,
             purchase_date=timezone.now().date(),
+            reason=reason,
         )
                 
 

@@ -2,7 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import APITestCase, APIClient
 from decimal import Decimal
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from .models import Category, Product, ProductVariant, Discount, Transaction, TransactionItem, DiscountUsage
 from .serializers import TransactionCreateSerializer
@@ -235,3 +235,48 @@ class TransactionCompletionActionTests(APITestCase):
 
         response = self.client.post(f"/pos/transactions/{self.pending_transaction.id}/complete/", {}, format='json')
         self.assertEqual(response.status_code, 400)
+
+
+class CashSessionFlowTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.cashier = User.objects.create_user(username="cashier_day", password="password123")
+        cashier_group, _ = Group.objects.get_or_create(name="cashier")
+        self.cashier.groups.add(cashier_group)
+        self.client.force_authenticate(user=self.cashier)
+
+        category = Category.objects.create(name="Session Test")
+        self.product = Product.objects.create(name="Cookie")
+        self.product.categories.add(category)
+        self.variant = ProductVariant.objects.create(product=self.product, label="Regular", price=Decimal("99.00"))
+
+    def _create_payload(self):
+        return {
+            "payment_method": "cash",
+            "paid_amount": "100.00",
+            "order_type": "dine-in",
+            "is_completed": True,
+            "transaction_items": [
+                {"product": self.product.id, "product_variant": self.variant.id, "quantity": 1}
+            ]
+        }
+
+    def test_cashier_cannot_create_transaction_without_open_session(self):
+        response = self.client.post("/pos/transactions/", self._create_payload(), format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("cash_session", response.data)
+
+    def test_open_day_allows_transaction_and_assigns_session(self):
+        open_response = self.client.post("/pos/transactions/open-day/", {"opening_amount": "1500.00"}, format='json')
+        self.assertIn(open_response.status_code, [200, 201])
+
+        create_response = self.client.post("/pos/transactions/", self._create_payload(), format='json')
+        self.assertEqual(create_response.status_code, 201)
+        self.assertIsNotNone(create_response.data.get("cash_session"))
+
+    def test_close_day_marks_session_closed(self):
+        self.client.post("/pos/transactions/open-day/", {"opening_amount": "1200.00"}, format='json')
+        close_response = self.client.post("/pos/transactions/close-day/", {"removed_amount": "500.00"}, format='json')
+
+        self.assertEqual(close_response.status_code, 200)
+        self.assertEqual(close_response.data.get("is_closed"), True)
