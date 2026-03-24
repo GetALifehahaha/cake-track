@@ -7,6 +7,7 @@ import useUnits from '@/hooks/useUnits';
 import { AddInventoryItemSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
 import { limitedInput } from '@/utils/safeInput';
+import UnitModal from './UnitModal';
 
 const InventoryAddItem = ({onConfirm, onClose}) => {
 
@@ -20,10 +21,10 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     const [conversions, setConversions] = useState([]);
     const [purchaseDate, setPurchaseDate] = useState();
     const [expirationDate, setExpirationDate] = useState();
-    const [purchasePrice, setPurchasePrice] = useState('');
     const [modalFeedbackContent, setModalFeedbackContent] = useState('');
     const [showModalFeedback, setShowModalFeedback] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showUnitModal, setShowUnitModal] = useState(false);
 
     useEffect(() => {
         if (modalFeedbackContent) {
@@ -59,7 +60,6 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
             unit_id: unit,
             purchaseDate: purchaseDate.toLocaleDateString("en-CA"),
             expirationDate: expirationDate.toLocaleDateString("en-CA"),
-            purchasePrice,
             conversions: normalizedConversions,
         });
     }
@@ -118,6 +118,15 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
         }
     }
 
+    const openUnitModal = () => {
+        setShowUnitModal(true);
+    };
+
+    const closeUnitModal = async () => {
+        setShowUnitModal(false);
+        await refresh();
+    };
+
     const addConversionRow = () => {
         setConversions(prev => [...prev, { from_unit_id: null, multiplier_to_base: '' }]);
     };
@@ -138,13 +147,8 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
     };
 
     const handleSetShowConfirm = () => {
-        if (!name || !amount || !unit || !purchaseDate || !expirationDate || !purchasePrice) {
+        if (!name || !amount || !unit || !purchaseDate || !expirationDate) {
             setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
-            return;
-        }
-
-        if (Number.parseFloat(purchasePrice) <= 0) {
-            setModalFeedbackContent({type: "error", label: "Invalid Purchase Price", details: 'Purchase price must be greater than zero.'})
             return;
         }
         
@@ -205,7 +209,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                         ) : (
                             <div className='flex gap-2 items-center'>
                                 <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
-                                <Button variant='icon' text='' icon={Plus} onClick={() => setCreatingUnit(true)} />
+                                <Button variant='icon' text='' icon={Plus} onClick={openUnitModal} />
                             </div>
                         )}
                     </div>
@@ -258,21 +262,6 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                 </div>
 
                 <div className='flex-1 flex flex-col gap-2'>
-                    <Label variant='modal' text='Purchase Price (per unit)'/>
-                    <input
-                        type='text'
-                        placeholder='Enter purchase price'
-                        value={purchasePrice}
-                        onChange={(e) => {
-                            const raw = e.target.value;
-                            if (!/^\d*\.?\d{0,2}$/.test(raw)) return;
-                            setPurchasePrice(raw);
-                        }}
-                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
-                    />
-                </div>
-
-                <div className='flex-1 flex flex-col gap-2'>
                     <Label variant='modal' text='Expiration Date'/>
                     <DatePicker selected={expirationDate} onSelect={setExpirationDate} />
                 </div>
@@ -289,6 +278,10 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
             {showConfirm &&
                 <ConfirmationModal title={"Add Item?"} content={"Are you sure you want to add this item?"} onReject={handleSetCloseConfirm} onConfirm={handleConfirm} />
+            }
+
+            {showUnitModal &&
+                <UnitModal onClose={closeUnitModal} />
             }
         </ModalBody>
     )

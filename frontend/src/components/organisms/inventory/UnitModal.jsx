@@ -9,9 +9,12 @@ import useUnits from '@/hooks/useUnits';
 import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 
 const UnitModal = ({ onClose }) => {
-    const { data: unitData, loading: unitLoading, error: unitError, postUnit, refresh, deleteUnit } = useUnits();
+    const { data: unitData, loading: unitLoading, error: unitError, postUnit, patchUnit, refresh, deleteUnit } = useUnits();
     const [unitName, setUnitName] = useState('');
     const [unitAbbreviation, setUnitAbbreviation] = useState('');
+    const [editingUnitId, setEditingUnitId] = useState(null);
+    const [editUnitName, setEditUnitName] = useState('');
+    const [editUnitAbbreviation, setEditUnitAbbreviation] = useState('');
     const [feedback, setFeedback] = useState('');
     const [showConfirmPostModal, setShowConfirmPostModal] = useState(false);
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
@@ -73,6 +76,38 @@ const UnitModal = ({ onClose }) => {
         removePrepDeleteUnit();
     };
 
+    const startEditUnit = (unit) => {
+        setEditingUnitId(unit.id);
+        setEditUnitName(unit.name || '');
+        setEditUnitAbbreviation(unit.abbreviation || '');
+    };
+
+    const cancelEditUnit = () => {
+        setEditingUnitId(null);
+        setEditUnitName('');
+        setEditUnitAbbreviation('');
+    };
+
+    const handleSaveUnit = async (unitId) => {
+        if (!editUnitName.trim()) {
+            setFeedback({
+                label: 'Incomplete details',
+                details: 'Unit name is required.',
+                type: 'error'
+            });
+            return;
+        }
+
+        await patchUnit(unitId, {
+            name: editUnitName.trim(),
+            abbreviation: editUnitAbbreviation.trim(),
+        });
+
+        await refresh();
+        cancelEditUnit();
+        resetFeedback();
+    };
+
     const handleUnitNameChange = (e) => {
         e.preventDefault();
         if (e.target.value.length > 20) return;
@@ -92,25 +127,49 @@ const UnitModal = ({ onClose }) => {
             key={index} 
             className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white"
         >
-            <span className="flex-1 font-medium text-text">
-                {capitalize(unit.name)} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
-            </span>
+            {editingUnitId === unit.id ? (
+                <>
+                    <input
+                        type='text'
+                        value={editUnitName}
+                        placeholder='Unit Name'
+                        className='flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text'
+                        onChange={(e) => e.target.value.length <= 20 && setEditUnitName(e.target.value)}
+                    />
+                    <input
+                        type='text'
+                        value={editUnitAbbreviation}
+                        placeholder='Abbr'
+                        className='w-24 rounded-md px-3 py-2 bg-main-dark/50 text-text'
+                        onChange={(e) => e.target.value.length <= 5 && setEditUnitAbbreviation(e.target.value)}
+                    />
+                    <Button text="Save" variant="modalOutline" size="fit" onClick={() => handleSaveUnit(unit.id)} />
+                    <Button text="Cancel" variant="modalOutline" size="fit" onClick={cancelEditUnit} />
+                </>
+            ) : (
+                <>
+                    <span className="flex-1 font-medium text-text">
+                        {capitalize(unit.name)} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
+                    </span>
 
-            <Button 
-                text="Edit" 
-                variant="modalOutline" 
-                size="fit" 
-                icon={Pen} 
-            />
+                    <Button 
+                        text="Edit" 
+                        variant="modalOutline" 
+                        size="fit" 
+                        icon={Pen}
+                        onClick={() => startEditUnit(unit)}
+                    />
 
-            <Button 
-                text="Delete" 
-                variant="modalBlock" 
-                className='bg-error' 
-                size="fit" 
-                icon={Trash} 
-                onClick={() => prepDeleteUnit(unit.id)} 
-            />
+                    <Button 
+                        text="Delete" 
+                        variant="modalBlock" 
+                        className='bg-error' 
+                        size="fit" 
+                        icon={Trash} 
+                        onClick={() => prepDeleteUnit(unit.id)} 
+                    />
+                </>
+            )}
         </div>
     ));
 

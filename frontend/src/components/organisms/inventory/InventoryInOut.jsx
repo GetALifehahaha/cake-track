@@ -19,6 +19,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
 	const { postInventoryTransaction, inventoryTransactionLoading, inventoryTransactionError } = useInventoryTransaction();
 	const [ingredientItems, setIngredientItems] = useState([]);
+	const [stockOutReason, setStockOutReason] = useState('');
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [search, setSearch] = useState('');
 	
@@ -33,7 +34,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	}
 
 
-	const addIngredientItem = (id, name, max_quantity) => {
+	const addIngredientItem = (id, name, max_quantity, unitAbbreviation) => {
 		if (ingredientItems.some(ingredient => ingredient.ingredient_id === id)) return;
 
 		setIngredientItems(prev => [
@@ -45,8 +46,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				transaction_type: 'in',
 				expiration_date: '',
 				purchase_date: '',
-				unit_purchase_price: '',
-				reason: '',
+				unit_abbreviation: unitAbbreviation,
 				max_quantity: Number.parseFloat(max_quantity),
 			}
 		]);
@@ -59,16 +59,15 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	const updateIngredientItem = (index, field, e) => {
 		const raw = e.target.value
 
-		const isNumericField = field === 'amount' || field === 'unit_purchase_price';
+		const isNumericField = field === 'amount';
 		if (isNumericField && !/^\d*\.?\d{0,2}$/.test(raw)) return
 
 		if (field === 'amount' && ingredientItems[index].transaction_type === "out" && e.target.value > ingredientItems[index].max_quantity) return
 
 		if (isNumericField && raw.length > 13) return
-		if (field === 'reason' && raw.length > 100) return
 
 		const updatedField = ingredientItems.map((item, i) => {
-			return index === i ? { ...item, [field]: (field === "amount" || field === "unit_purchase_price") && e.target.value > 0 ? Number.parseFloat(e.target.value) : e.target.value }
+			return index === i ? { ...item, [field]: (field === "amount") && e.target.value > 0 ? Number.parseFloat(e.target.value) : e.target.value }
 				:
 				item
 		}
@@ -89,7 +88,6 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 			updatedField[index].expiration_date = '',
 			updatedField[index].purchase_date = '';
 			updatedField[index].amount = 0
-			updatedField[index].unit_purchase_price = ''
 		}
 
 		setIngredientItems(updatedField)
@@ -123,15 +121,9 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	};
 
 	const updateIngredients = async () => {
-		const missingPurchasePrice = ingredientItems.find(item => item.transaction_type === 'in' && Number.parseFloat(item.unit_purchase_price) <= 0);
-		if (missingPurchasePrice) {
-			addToast(`Add purchase price for ${missingPurchasePrice.name}.`, 'error');
-			return;
-		}
-
-		const missingReason = ingredientItems.find(item => item.transaction_type === 'out' && !item.reason?.trim());
-		if (missingReason) {
-			addToast(`Add a stock-out reason for ${missingReason.name}.`, 'error');
+		const hasStockOut = ingredientItems.some(item => item.transaction_type === 'out');
+		if (hasStockOut && !stockOutReason?.trim()) {
+			addToast('Provide a stock-out reason for all outbound items.', 'error');
 			return;
 		}
 
@@ -143,10 +135,9 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				purchase_date: item.transaction_type === 'in' 
 					? formatDate(item.purchase_date) 
 					: formatDate(new Date()), 
-				reason: item.reason || null,
+				reason: item.transaction_type === 'out' ? stockOutReason : 'Stock In',
 				...(item.transaction_type === 'in' && {
 					expiration_date: formatDate(item.expiration_date),
-					unit_purchase_price: Number.parseFloat(item.unit_purchase_price),
 				})
 			}))
 		};
@@ -168,7 +159,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
     );
 
 	const listIngredients = filteredIngredients.map((ingredient) =>
-		<div key={ingredient.id} className='flex flex-col gap-2 px-4 py-2 rounded-md bg-main-white text-sm font-medium transition-all cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name, ingredient.total_stock)}>
+		<div key={ingredient.id} className='flex flex-col gap-2 px-4 py-2 rounded-md bg-main-white text-sm font-medium transition-all cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name, ingredient.total_stock, ingredient.unit.abbreviation)}>
 			<h5 className='text-text line-clamp-2'>{ingredient.name}</h5>
 			<h5 className='text-text/50'>Stock: {formatQty(ingredient.total_stock)} {ingredient.unit.abbreviation}</h5>
 		</div>
@@ -193,7 +184,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				}
 
 				<div className='flex flex-col gap-1 pb-2'>
-					<h5 className='text-xs text-left uppercase font-medium text-text/50'>Quantity</h5>
+					<h5 className='text-xs text-left uppercase font-medium text-text/50'>Quantity ({ingredient.unit_abbreviation})</h5>
 					<input type='text' className='p-2 py-1.5 bg-main-dark/50 rounded-md focus:outline-none' placeholder='Enter Amount' value={ingredient.amount} onChange={(e) => updateIngredientItem(index, 'amount', e)} />
 				</div>
 
@@ -204,34 +195,10 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				<X size={16} className='text-text cursor-pointer mx-4' onClick={() => removeIngredientItem(index)} />
 			</div>
 
-			{ingredient.transaction_type === 'in' &&
-				<div className='px-2 pb-2'>
-					<h5 className='text-xs text-left uppercase font-medium text-text/50 mb-1'>Purchase Price (per unit)</h5>
-					<input
-						type='text'
-						className='p-2 py-1.5 bg-main-dark/50 rounded-md focus:outline-none w-full'
-						placeholder='Enter purchase price'
-						value={ingredient.unit_purchase_price}
-						onChange={(e) => updateIngredientItem(index, 'unit_purchase_price', e)}
-					/>
-				</div>
-			}
-
-			{ingredient.transaction_type === 'out' &&
-				<div className='px-2 pb-2'>
-					<h5 className='text-xs text-left uppercase font-medium text-text/50 mb-1'>Stock-out Reason</h5>
-					<input
-						type='text'
-						className='p-2 py-1.5 bg-main-dark/50 rounded-md focus:outline-none w-full'
-						placeholder='Enter reason'
-						value={ingredient.reason}
-						onChange={(e) => updateIngredientItem(index, 'reason', e)}
-					/>
-				</div>
-			}
-
 		</div>
 	)
+
+	const hasStockOut = ingredientItems.some(item => item.transaction_type === 'out');
 
 	return (
 		<ModalBody title='Inventory Management' onClose={onClose} className='w-[90vw] h-[90vh]'>
@@ -274,9 +241,26 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 			</div>
 
 			{/* Footer */}
-			<div className='flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50'>
-				<Button variant='modalOutline' text='Cancel' onClick={onClose} />
-				<Button variant='modalBlock' text='Update Stocks' onClick={validateUpdate} className={ingredientItems.length == 0 && 'opacity-50'} />
+			<div className='flex flex-col gap-4 px-6 py-4 border-t border-gray-200 bg-gray-50'>
+				{hasStockOut && (
+					<div className='flex flex-col gap-2'>
+						<h5 className='text-sm font-medium text-text/70'>Stock-out Reason (applies to all outbound items)</h5>
+						<input
+							type='text'
+							placeholder='e.g., Expired, Damaged, Adjustment'
+							value={stockOutReason}
+							onChange={(e) => {
+					<h5 className='text-sm font-medium text-text/70'>Stock-out Reason</h5>
+								if (raw.length <= 100) setStockOutReason(raw);
+							}}
+							className='p-2.5 bg-main-white rounded-md focus:outline-none border border-border'
+						/>
+					</div>
+				)}
+				<div className='flex justify-end gap-3'>
+					<Button variant='modalOutline' text='Cancel' onClick={onClose} />
+					<Button variant='modalBlock' text='Update Stocks' onClick={validateUpdate} className={ingredientItems.length == 0 && 'opacity-50'} />
+				</div>
 			</div>
 
 			{showConfirm &&

@@ -30,7 +30,7 @@ class UnitViewSet(viewsets.ModelViewSet):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all().order_by('-purchase_date', '-id')
+    queryset = Transaction.objects.all().order_by('-created_at', '-id')
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     
     def get_serializer_class(self):

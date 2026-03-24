@@ -6,6 +6,7 @@ import { X, Plus, Check } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
 import { EditInventorySkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
+import UnitModal from './UnitModal';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const {data: units, loading, error, postUnit, refresh} = useUnits()
@@ -29,6 +30,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
 
     const [showDeleteConfirmationModal, setShowDeleteConfirmationModal] = useState(false);
     const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
+    const [showUnitModal, setShowUnitModal] = useState(false);
 
     const unitSelection = useMemo(() => {
         return units.map(unit => ({
@@ -84,6 +86,15 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             setModalFeedbackContent({ type: "error", label: "Create Unit Failed", details })
             setShowModalFeedback(true);
         }
+    }
+
+    const openUnitModal = () => {
+        setShowUnitModal(true);
+    }
+
+    const closeUnitModal = async () => {
+        setShowUnitModal(false);
+        await refresh();
     }
 
     const addConversionRow = () => {
@@ -172,7 +183,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                         ) : (
                             <div className='flex gap-2 items-center'>
                                 <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleUnit} />
-                                <Button variant='icon' text='' icon={Plus} onClick={() => setCreatingUnit(true)} />
+                                <Button variant='icon' text='' icon={Plus} onClick={openUnitModal} />
                             </div>
                         )}
                     </div>
@@ -235,6 +246,10 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
 
             {showDeleteConfirmationModal &&
                 <ConfirmationModal title="Delete Inventory Item?" content="Are you sure you want to delete this item?" onConfirm={handleDelete} onReject={toggleDeleteConfirmationModal} />
+            }
+
+            {showUnitModal &&
+                <UnitModal onClose={closeUnitModal} />
             }
         </ModalBody>
     )

@@ -186,11 +186,11 @@ const Inventory = () => {
                                     </div>
                                     <div className='flex-1 flex flex-col items-start gap-2'>
                                         <h5 className='text-text/50'>Purchase Date</h5>
-                                        <h5 className='flex-1'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                        <h5 className='flex-1 break-all whitespace-normal'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
                                     </div>
                                     <div className='flex-1 flex flex-col items-start gap-2'>
                                         <h5 className='text-text/50'>Expiration Date</h5>
-                                        <h5 className={cn(status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text' )}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status=='expired' && '(Expired)'}{status=='near'=='(Due soon)'}</h5>
+                                        <h5 className={cn('break-all whitespace-normal', status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text' )}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status=='expired' && '(Expired)'}{status=='near'=='(Due soon)'}</h5>
                                     </div>
                                 </div>
                                 )
