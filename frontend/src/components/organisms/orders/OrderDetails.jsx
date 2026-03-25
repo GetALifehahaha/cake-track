@@ -6,6 +6,7 @@ import useOrder from '@/hooks/useOrders';
 import useRecipe from '@/hooks/useRecipe';
 import { useToast } from '@/context/ToastContext';
 import { formatQty } from '@/utils/recipeUnits';
+import { capitalizeSnakeCase } from '@/utils/capitalize';
 
 const buildIngredientUnitOptions = (ingredient) => {
     const baseUnit = ingredient?.unit;
@@ -293,7 +294,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                         <DetailRow label='Flavor' value={orderSnapshot?.cake_orders?.base_flavor} />
                         <DetailRow label='Filling' value={orderSnapshot?.cake_orders?.filling} />
                         <DetailRow label='Shape' value={orderSnapshot?.cake_orders?.shape} />
-                        <DetailRow label='Inscription' value={orderSnapshot?.cake_orders?.message_type} />
+                        <DetailRow label='Inscription' value={capitalizeSnakeCase(orderSnapshot?.cake_orders?.message_type)} />
                         <DetailRow label='Message' value={orderSnapshot?.cake_orders?.message || 'N/A'} isLast />
                     </div>
                 </div>

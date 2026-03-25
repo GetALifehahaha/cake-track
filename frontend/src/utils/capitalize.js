@@ -9,3 +9,11 @@ export const capitalize = (str) => {
     // 2. Perform capitalization only on valid strings
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
+
+export const capitalizeSnakeCase = (str) => {
+    if (typeof str !== 'string' || !str) {
+        return '';
+    }
+
+    return str.split('_').map(word => capitalize(word)).join(' ');
+}
