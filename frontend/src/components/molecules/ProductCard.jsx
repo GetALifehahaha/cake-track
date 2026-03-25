@@ -1,12 +1,12 @@
 import { cn } from '@/utils/cn';
-import React, { useState } from 'react'
 import { AlertCircle } from 'lucide-react';
 
-const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived, selected = [] }) => {
-    const hasRecipeError = product?.recipe_available === false && product?.has_recipe;
+const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived, selected = [], isPOS = false }) => {
+    const isUnavailable = product?.recipe_available === false && product?.has_recipe;
     
     const handleToggleClick = () => {
-        if (hasRecipeError) return;
+        if (isPOS && isUnavailable) return;
+
         if (isArchived) {
             onToggle(product.id)
         } else {
@@ -16,11 +16,11 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
 
     return (
         <div onClick={handleToggleClick} 
-            className={cn('relative flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 duration-200 ease-in-out min-h-60 bg-main-white border-2 border-white', 
-                selected.some(select => select === product.id) && 'border-accent-mute',
-                hasRecipeError ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-black/25')}
+            className={cn('relative flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 duration-200 ease-in-out min-h-60 bg-main-white border-2 border-white cursor-pointer', 
+                isPOS && isUnavailable && 'opacity-60 cursor-not-allowed',
+                selected.some(select => select === product.id) && 'border-accent-mute cursor-pointer hover:shadow-black/25')}
         >
-            {product?.recipe_available === false && product?.has_recipe && (
+            {isUnavailable && (
                 <div className='absolute top-2 right-2 flex items-center gap-1 bg-error-fill text-error p-1.5 rounded-full z-10'>
                     <AlertCircle size={16} />
                 </div>

@@ -241,7 +241,7 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
     const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
 
     return (
-        <ModalBody title='Add New Item' onClose={onClose} subtitle='Create a new product by filling in the details below'>
+        <ModalBody title='Add New Item' onClose={onClose} subtitle='Create a new product by filling in the details below' className='min-w-[34vw] max-w-[94vw]'>
                 <div className='flex gap-8'>
                     <div className='flex flex-col gap-2 relative'>
                         <div className='flex justify-between items-center w-full mb-2'>
@@ -272,10 +272,10 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
                         
                     </div>
 
-                    <div className='flex flex-col gap-8 w-120'>
+                    <div className='flex flex-col gap-8 w-136'>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Product Name' />
-                            <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} max={50} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
+                            <input type='text' className='h-10 px-3 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} max={50} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
                         </div>
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Categories' />
@@ -289,7 +289,7 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
                                                         value={newCategoryName}
                                                         onChange={(e) => { if (e.target.value.length <= 50) setNewCategoryName(e.target.value) }}
                                                         placeholder='New category name'
-                                                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none flex-1'
+                                                        className='h-10 px-3 rounded-sm bg-main-dark/50 focus:outline-none flex-1'
                                                         autoFocus
                                                         onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
                                                     />
@@ -332,51 +332,43 @@ const AddProductModal = ({categoryOptions: initialCategoryOptions, onConfirm, on
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Variants' />
                             <div className="flex flex-col gap-2 w-full max-h-40 overflow-auto">
-                                <div className='flex items-center gap-2 flex-1'>
-                                    <h5 className='text-xs font-medium flex-1'>Label</h5>
-                                    <h5 className='text-xs font-medium flex-1 -ml-12'>Price</h5>
-                                    <h5 className='text-xs font-medium flex-1 -ml-12'>Recipe (optional)</h5>
+                                <div className='grid grid-cols-[1fr_7rem_1fr_5rem_2.5rem] items-center gap-2'>
+                                    <h5 className='text-xs font-medium'>Label</h5>
+                                    <h5 className='text-xs font-medium'>Price</h5>
+                                    <h5 className='text-xs font-medium'>Recipe (optional)</h5>
                                 </div>  
                                 {variants.map(({label, price, recipe}, index) => (
-                                    <div className='flex items-center gap-2 flex-1'>
+                                    <div className='grid grid-cols-[1fr_7rem_1fr_5rem_2.5rem] items-center gap-2'>
                                         <input
                                             type="text"
                                             value={label}
                                             placeholder='Label'
                                             onChange={(e) => updateLabel(index, e)}
-                                            className={cn(
-                                                "p-2 rounded w-full bg-main-dark/50",
-                                            )}
+                                            className='h-10 px-3 rounded w-full bg-main-dark/50'
                                         />
                                         <input
                                             type="text"
                                             value={price}
                                             onChange={(e) => updatePrice(index, e)}
-                                            className={cn(
-                                                "p-2 rounded w-full bg-main-dark/50",
-                                            )}
+                                            className='h-10 px-3 rounded w-full bg-main-dark/50'
                                         />
-                                        <div className='flex items-center gap-2 w-full'>
-                                            <div className='flex-1'>
-                                                <Dropdown
-                                                    variant='modal'
-                                                    value={recipe}
-                                                    selection='Select recipe'
-                                                    size='full'
-                                                    options={recipeOptions}
-                                                    onSelect={(value) => setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, recipe: value ? String(value) : ''} : item))}
-                                                />
-                                            </div>
-                                            <Button
-                                                variant='modalOutline'
-                                                size='small'
-                                                text='Create'
-                                                onClick={() => {
-                                                    setRecipeTargetIndex(index);
-                                                    setShowAddRecipeModal(true);
-                                                }}
-                                            />
-                                        </div>
+                                        <Dropdown
+                                            variant='modal'
+                                            value={recipe}
+                                            selection='Select recipe'
+                                            size='full'
+                                            options={recipeOptions}
+                                            onSelect={(value) => setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, recipe: value ? String(value) : ''} : item))}
+                                        />
+                                        <Button
+                                            variant='modalOutline'
+                                            size='small'
+                                            text='Create'
+                                            onClick={() => {
+                                                setRecipeTargetIndex(index);
+                                                setShowAddRecipeModal(true);
+                                            }}
+                                        />
                                         {index === variants.length-1 ?
                                             <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0, recipe: ''}])} />
                                             :

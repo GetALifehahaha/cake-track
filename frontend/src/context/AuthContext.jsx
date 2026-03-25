@@ -109,6 +109,7 @@ export const AuthProvider = ({children}) => {
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
             await getUserData();
+            window.dispatchEvent(new CustomEvent('auth:login'));
             navigate('/')
             setIsAuthorized(true);
             return { success: true };
@@ -126,6 +127,7 @@ export const AuthProvider = ({children}) => {
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
             await getUserData();
+            window.dispatchEvent(new CustomEvent('auth:login'));
             setIsAuthorized(true);
             return { success: true };
         } catch (err) {

@@ -1,23 +1,72 @@
 import React, {useContext, useState} from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar, Searchbar, ProfileCard } from '../components/molecules'
-import userImage from '../assets/image/user_image.jpg'
 import { AuthContext } from '@/context/AuthContext'
 import { Button } from '@/components/atoms'
-import { Search } from 'lucide-react'
+import { Search, Bell } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
+import useQueryFetch from '@/hooks/useQueryFetch'
+import API_ENDPOINTS from '@/api/endpoints'
+import { useNavigate } from 'react-router-dom'
 
 const Layout = () => {
 
     const [searchText, setSearchText] = useState('');
+    const [showNotifications, setShowNotifications] = useState(false);
     const {user} = useContext(AuthContext);
+    const navigate = useNavigate();
     const [searchParams, setSearchParam] = useSearchParams();
     const location = useLocation();
     const path = location.pathname;
+    const isAdmin = Boolean(user?.is_staff);
     const hideSearchbar =
         path.includes('reports') ||
         path.endsWith('/queue') ||
         path.includes('details');
+
+    const ordersDashboardQuery = useQueryFetch(
+        ['admin-notifications-orders-dashboard'],
+        API_ENDPOINTS.ORDERS_DASHBOARD,
+        undefined,
+        { enabled: isAdmin, staleTime: 60 * 1000 }
+    );
+
+    const ingredientAllQuery = useQueryFetch(
+        ['admin-notifications-ingredients-all'],
+        API_ENDPOINTS.INGREDIENTS_ALL,
+        undefined,
+        { enabled: isAdmin, staleTime: 60 * 1000 }
+    );
+
+    const pendingOrdersCount = Number(ordersDashboardQuery.data?.pending_orders || 0);
+    const ingredientList = ingredientAllQuery.data || [];
+    const lowStockCount = ingredientList.filter(item => Number(item.total_stock || 0) > 0 && Number(item.total_stock || 0) < Number(item.low_amount || 0)).length;
+    const outOfStockCount = ingredientList.filter(item => Number(item.total_stock || 0) <= 0).length;
+    const totalNotificationCount = pendingOrdersCount + lowStockCount + outOfStockCount;
+
+    const notifications = [
+        {
+            id: 'new-orders',
+            label: 'New Orders',
+            details: pendingOrdersCount > 0 ? `${pendingOrdersCount} pending order${pendingOrdersCount > 1 ? 's' : ''}` : 'No new orders',
+            count: pendingOrdersCount,
+            onClick: () => navigate('/queue/pending'),
+        },
+        {
+            id: 'inventory-low',
+            label: 'Inventory Low Stock',
+            details: lowStockCount > 0 ? `${lowStockCount} item${lowStockCount > 1 ? 's' : ''} below threshold` : 'No low stock items',
+            count: lowStockCount,
+            onClick: () => navigate('/inventory?filter=available'),
+        },
+        {
+            id: 'inventory-out',
+            label: 'Inventory Out of Stock',
+            details: outOfStockCount > 0 ? `${outOfStockCount} item${outOfStockCount > 1 ? 's' : ''} out of stock` : 'No out-of-stock items',
+            count: outOfStockCount,
+            onClick: () => navigate('/inventory?filter=out_of_stock'),
+        },
+    ];
     
     const handleSetSearchText = (value) => {
         setSearchText(value)
@@ -50,6 +99,50 @@ const Layout = () => {
                     </span>
 
                     <div className='flex gap-2'>
+                    {isAdmin && (
+                        <div className='relative'>
+                            <button
+                                onClick={() => setShowNotifications(prev => !prev)}
+                                className='relative w-10 h-10 rounded-full bg-main-white border border-border flex items-center justify-center hover:bg-main/70'
+                            >
+                                <Bell size={18} className='text-text/80' />
+                                {totalNotificationCount > 0 && (
+                                    <span className='absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-error text-main-white text-[10px] font-bold flex items-center justify-center'>
+                                        {totalNotificationCount > 99 ? '99+' : totalNotificationCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {showNotifications && (
+                                <div className='absolute right-0 mt-2 w-80 bg-main-white border border-border rounded-lg shadow-lg z-30'>
+                                    <div className='px-4 py-3 border-b border-border'>
+                                        <h5 className='font-semibold text-text'>Notifications</h5>
+                                    </div>
+
+                                    <div className='p-2 flex flex-col gap-1'>
+                                        {notifications.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => {
+                                                    setShowNotifications(false);
+                                                    item.onClick();
+                                                }}
+                                                className='w-full text-left px-3 py-2 rounded-md hover:bg-main/70 border border-transparent hover:border-border transition'
+                                            >
+                                                <div className='flex items-center justify-between'>
+                                                    <h5 className='text-sm font-semibold text-text'>{item.label}</h5>
+                                                    {item.count > 0 && (
+                                                        <span className='text-xs font-bold text-error'>{item.count}</span>
+                                                    )}
+                                                </div>
+                                                <h5 className='text-xs text-text/60 mt-0.5'>{item.details}</h5>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <ProfileCard user={user}/>
                     </div>
                 </div>

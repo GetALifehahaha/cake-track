@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -31,6 +32,15 @@ import { ProtectedRoute } from './components/organisms'
 const queryClient = new QueryClient();
 
 const App = () => {
+	useEffect(() => {
+		const handleAuthLogin = () => {
+			queryClient.clear();
+		};
+
+		window.addEventListener('auth:login', handleAuthLogin);
+		return () => window.removeEventListener('auth:login', handleAuthLogin);
+	}, []);
+
 	return (
 		<QueryClientProvider client={queryClient}>
 			<Routes>

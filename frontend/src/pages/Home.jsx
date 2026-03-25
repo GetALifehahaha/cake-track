@@ -14,6 +14,7 @@ import { cn } from '@/utils/cn'
 import Modal from '@/components/molecules/Modal'
 import useBusinessDetails from '@/hooks/useBusinessDetails'
 import api from '@/api/api'
+import API_ENDPOINTS from '@/api/endpoints'
 
 const Home = () => {
 
@@ -61,6 +62,66 @@ const Home = () => {
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
+
+    const sanitizeCheckoutProducts = async (items, { notify = true } = {}) => {
+        if (!Array.isArray(items) || items.length === 0) {
+            return { sanitized: [], removedCount: 0 };
+        }
+
+        const validShapeItems = items.filter((item) => {
+            const productId = Number(item?.id);
+            const variantId = Number(item?.variant_id);
+            const quantity = Number(item?.amount);
+
+            return Number.isFinite(productId) && Number.isFinite(variantId) && Number.isFinite(quantity) && quantity > 0;
+        });
+
+        const productIds = [...new Set(validShapeItems.map((item) => Number(item.id)))];
+        const productMap = new Map();
+
+        await Promise.all(productIds.map(async (productId) => {
+            try {
+                const response = await api.get(`${API_ENDPOINTS.PRODUCTS}${productId}/`);
+                productMap.set(productId, response.data);
+            } catch {
+                productMap.set(productId, null);
+            }
+        }));
+
+        const sanitized = validShapeItems.reduce((list, item) => {
+            const productId = Number(item.id);
+            const variantId = Number(item.variant_id);
+            const product = productMap.get(productId);
+
+            if (!product || product.is_archived) return list;
+
+            const variant = Array.isArray(product.variants)
+                ? product.variants.find((entry) => Number(entry.id) === variantId)
+                : null;
+
+            if (!variant) return list;
+
+            list.push({
+                ...item,
+                id: product.id,
+                name: product.name,
+                variant_id: variant.id,
+                label: variant.label,
+                price: Number(variant.price),
+                amount: Number(item.amount),
+            });
+
+            return list;
+        }, []);
+
+        const removedCount = items.length - sanitized.length;
+
+        if (notify && removedCount > 0) {
+            addToast(`${removedCount} outdated cart item(s) were removed after product updates.`, 'info');
+        }
+
+        return { sanitized, removedCount };
+    };
 
     // SET AND TOGGLES
 
@@ -218,6 +279,26 @@ const Home = () => {
         localStorage.setItem('cart', JSON.stringify(checkoutProducts));
     }, [checkoutProducts]);
 
+    useEffect(() => {
+        let mounted = true;
+
+        const syncPersistedCart = async () => {
+            if (!checkoutProducts.length) return;
+
+            const { sanitized, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
+            if (!mounted || removedCount <= 0) return;
+
+            setCheckoutProducts(sanitized);
+            setVoidProducts((current) => current.filter((item) => sanitized.some((validItem) => validItem.variant_id === item.variant_id)));
+        };
+
+        syncPersistedCart();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
 
     // GUARDS
 
@@ -331,6 +412,13 @@ const Home = () => {
 
     const completePayment = async (payload) => {
         if (payload) {
+            const { sanitized: sanitizedCheckoutProducts, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
+
+            if (removedCount > 0) {
+                setCheckoutProducts(sanitizedCheckoutProducts);
+                setVoidProducts((current) => current.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id)));
+            }
+
             const parsedValue = parseFloat(
                 typeof payload === 'object' ? payload?.receivedPayment : payload,
             );
@@ -338,13 +426,13 @@ const Home = () => {
                 typeof payload === 'object' ? payload?.customerName : (customerName?.trim() || null);
 
             // Validation
-            if (!checkoutProducts || checkoutProducts.length === 0) {
+            if (!sanitizedCheckoutProducts || sanitizedCheckoutProducts.length === 0) {
                 setModalFeedbackContent({ type: "error", label: "No Items", details: "Add at least one product before completing a transaction." });
                 setShowModalFeedback(true);
                 return;
             }
 
-            const invalidItem = checkoutProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
+            const invalidItem = sanitizedCheckoutProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
             if (invalidItem) {
                 setModalFeedbackContent({ type: "error", label: "Invalid Item", details: `Item "${invalidItem.name || 'Unknown'}" is missing required details (variant or quantity).` });
                 setShowModalFeedback(true);
@@ -369,7 +457,7 @@ const Home = () => {
                 return;
             }
 
-            const checkoutProductsPayload = checkoutProducts.map(p => ({
+            const checkoutProductsPayload = sanitizedCheckoutProducts.map(p => ({
                 product: p.id,
                 product_variant: p.variant_id,
                 quantity: p.amount,
@@ -388,7 +476,7 @@ const Home = () => {
 
             refreshPending();
 
-            const receiptItems = checkoutProducts.map(p => {
+            const receiptItems = sanitizedCheckoutProducts.map(p => {
                 const pricing = discountBreakdown.itemPricing[p.variant_id] || {
                     before: Number(p.price || 0) * Number(p.amount || 0),
                     after: Number(p.price || 0) * Number(p.amount || 0),
@@ -467,13 +555,22 @@ const Home = () => {
     }
 
     const voidPayment = async () => {
-        if (!voidProducts || voidProducts.length === 0) {
+        const { sanitized: sanitizedCheckoutProducts, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
+
+        if (removedCount > 0) {
+            setCheckoutProducts(sanitizedCheckoutProducts);
+            setVoidProducts((current) => current.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id)));
+        }
+
+        const sanitizedVoidProducts = voidProducts.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id));
+
+        if (!sanitizedVoidProducts || sanitizedVoidProducts.length === 0) {
             setModalFeedbackContent({ type: "error", label: "No Items", details: "Select at least one item to void." });
             setShowModalFeedback(true);
             return;
         }
 
-        const invalidVoidItem = voidProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
+        const invalidVoidItem = sanitizedVoidProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
         if (invalidVoidItem) {
             setModalFeedbackContent({ type: "error", label: "Invalid Item", details: `Item "${invalidVoidItem.name || 'Unknown'}" is missing required details and cannot be voided.` });
             setShowModalFeedback(true);
@@ -486,7 +583,7 @@ const Home = () => {
             return;
         }
 
-        const voidProductsPayload = voidProducts.map(p => ({
+        const voidProductsPayload = sanitizedVoidProducts.map(p => ({
             product: p.id,
             product_variant: p.variant_id,
             quantity: p.amount,
@@ -528,6 +625,7 @@ const Home = () => {
         <ProductCard
             product={product}
             key={product.id}
+            isPOS={true}
             isSelected={checkoutProducts.some(p => p.variant_id == product.variant_id)}
             onToggle={handlePrepProduct} />
     )

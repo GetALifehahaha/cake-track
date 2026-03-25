@@ -43,6 +43,11 @@ const QueueOverview = () => {
 		return `${mm}/${dd}/${year}`;
 	};
 
+	const getFirstName = (fullName) => {
+		if (!fullName) return '';
+		return String(fullName).trim().split(/\s+/)[0] || '';
+	};
+
 	const isDueSoon = (dateString) => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
@@ -92,7 +97,7 @@ const QueueOverview = () => {
 	// LISTS
 	const listPending = data.results.filter((item) => item.status.toLowerCase() == "pending").slice(0, 5).map((order, index) =>
 		<div key={index} className='flex w-full text-sm items-center'>
-			<h5 className='basis-1/4 '>{order.full_name}</h5>
+			<h5 className='basis-1/4 '>{getFirstName(order.full_name)}</h5>
 			<h5 className='basis-1/4 px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold text-center text-xs'>{capitalize(order.cake_orders.occasion)}</h5>
 			<h5 className='basis-1/4 text-right'>{parseDate(order.due_date)}</h5>
 			<div className='basis-1/4 flex items-center gap-2 justify-end'>
