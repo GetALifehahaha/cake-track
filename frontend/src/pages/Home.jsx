@@ -22,7 +22,7 @@ const Home = () => {
     const { user } = useAuth();
 
     const [, setSearchParams] = useSearchParams();
-    const {data: productData, loading: productLoading, error: productError} = useProduct();
+        const {data: productData, loading: productLoading, error: productError, refresh: refreshProducts} = useProduct();
     const {
         postTransaction,
         completeTransaction,
@@ -63,6 +63,49 @@ const Home = () => {
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
 
+    const productResults = Array.isArray(productData?.results) ? productData.results : [];
+
+    const getVariantMaxOrderable = (variant) => {
+        if (!variant) return 0;
+
+        if (!variant.has_recipe) return 99;
+        if (variant.recipe_available === false) return 0;
+
+        const ingredients = Array.isArray(variant?.recipe_details?.ingredients)
+            ? variant.recipe_details.ingredients
+            : [];
+
+        if (!ingredients.length) return 0;
+
+        let maxOrderable = Infinity;
+
+        for (const ingredient of ingredients) {
+            const amountNeeded = Number(ingredient?.amount_needed || 0);
+            const ingredientStock = Number(ingredient?.ingredient_stock || 0);
+
+            if (!Number.isFinite(amountNeeded) || amountNeeded <= 0) {
+                return 0;
+            }
+
+            const perIngredientMax = Math.floor(ingredientStock / amountNeeded);
+            maxOrderable = Math.min(maxOrderable, perIngredientMax);
+        }
+
+        if (!Number.isFinite(maxOrderable)) return 0;
+        if (maxOrderable < 0) return 0;
+
+        return Math.min(maxOrderable, 99);
+    };
+
+    const getProductAndVariantByVariantId = (variantId) => {
+        const matchedProduct = productResults.find((product) =>
+            Array.isArray(product?.variants) && product.variants.some((variant) => Number(variant.id) === Number(variantId)),
+        );
+        const matchedVariant = matchedProduct?.variants?.find((variant) => Number(variant.id) === Number(variantId));
+
+        return { matchedProduct, matchedVariant };
+    };
+
     const sanitizeCheckoutProducts = async (items, { notify = true } = {}) => {
         if (!Array.isArray(items) || items.length === 0) {
             return { sanitized: [], removedCount: 0 };
@@ -101,6 +144,11 @@ const Home = () => {
 
             if (!variant) return list;
 
+            const maxOrderable = getVariantMaxOrderable(variant);
+            if (maxOrderable < 1) return list;
+
+            const boundedAmount = Math.max(1, Math.min(Number(item.amount), maxOrderable));
+
             list.push({
                 ...item,
                 id: product.id,
@@ -108,7 +156,7 @@ const Home = () => {
                 variant_id: variant.id,
                 label: variant.label,
                 price: Number(variant.price),
-                amount: Number(item.amount),
+                amount: boundedAmount,
             });
 
             return list;
@@ -145,16 +193,24 @@ const Home = () => {
     }
 
     const handleSetAmount = (id, value) => {
+        const { matchedVariant } = getProductAndVariantByVariantId(id);
+        const maxOrderable = getVariantMaxOrderable(matchedVariant);
+
         setCheckoutProducts(prod => {
             let products = prod;
 
             products = products.map(product => {
                 if (product.variant_id == id) {
-                    product.amount = value
+                    const clampedValue = Math.max(1, Math.min(Number(value || 1), maxOrderable || 1));
+                    product.amount = clampedValue
                 }
 
                 return product;
             })
+
+            if (maxOrderable < 1) {
+                return products.filter((product) => Number(product.variant_id) !== Number(id));
+            }
 
             return products
 
@@ -313,12 +369,21 @@ const Home = () => {
     // MAIN FUNCTIONS
 
     const addToCheckout = (product, amount) => {
+        const { matchedVariant } = getProductAndVariantByVariantId(product.variant_id);
+        const maxOrderable = getVariantMaxOrderable(matchedVariant);
+
+        if (maxOrderable < 1) {
+            addToast('Insufficient ingredients for this variant.', 'error');
+            return;
+        }
+
         setCheckoutProducts(prev => {
             if (prev.some(prod => prod.variant_id === product.variant_id)) {
                 return prev
             }
 
-            return [...prev, {...product, amount}]
+            const boundedAmount = Math.max(1, Math.min(Number(amount || 1), maxOrderable));
+            return [...prev, {...product, amount: boundedAmount}]
         })
 
         setPrepProduct(null)
@@ -341,12 +406,22 @@ const Home = () => {
 
 
     const handlePrepProduct = (product) => {
-        if (product.variants.length === 1) addToCheckout({
-            ...product, 
-            variant_id: product.variants[0].id, 
-            label: product.variants[0].label, 
-            price: product.variants[0].price, 
-        }, 1)
+        if (product.variants.length === 1) {
+            const singleVariant = product.variants[0];
+            const maxOrderable = getVariantMaxOrderable(singleVariant);
+
+            if (maxOrderable < 1) {
+                addToast('Insufficient ingredients for this variant.', 'error');
+                return;
+            }
+
+            addToCheckout({
+                ...product,
+                variant_id: singleVariant.id,
+                label: singleVariant.label,
+                price: singleVariant.price,
+            }, 1)
+        }
         else setPrepProduct(product)
     }
 
@@ -400,6 +475,7 @@ const Home = () => {
         try {
             setCompletingOrderId(transactionId);
             await completeTransaction(transactionId);
+            await refreshProducts();
             addToast('Order marked as completed', 'success');
             refreshPending();
         } catch (error) {
@@ -474,6 +550,7 @@ const Home = () => {
                 discount: discount.id !== -1 ? discount.id : null
             })
 
+                await refreshProducts();
             refreshPending();
 
             const receiptItems = sanitizedCheckoutProducts.map(p => {
@@ -610,18 +687,39 @@ const Home = () => {
 
     // LISTS AND OPTIONS
 
+    const enrichedProductResults = productResults.map((product) => {
+        const variants = (product?.variants || []).map((variant) => {
+            const maxOrderable = getVariantMaxOrderable(variant);
+            return {
+                ...variant,
+                maxOrderable,
+                isInsufficient: maxOrderable < 1,
+            };
+        });
+
+        const allVariantsInsufficient = variants.length > 0 && variants.every((variant) => variant.isInsufficient);
+
+        return {
+            ...product,
+            variants,
+            isUnavailable: allVariantsInsufficient,
+        };
+    });
+
     const listCheckoutProducts = checkoutProducts.map((product, index) =>
         <CheckoutProduct
             key={index}
             product={product}
+            maxAmount={(() => {
+                const { matchedVariant } = getProductAndVariantByVariantId(product.variant_id);
+                return getVariantMaxOrderable(matchedVariant);
+            })()}
             pricing={discountBreakdown.itemPricing[product.variant_id]}
             onChangeAmount={handleSetAmount}
             onToggle={handleRemoveProductFromCheckout} />
     )
 
-    const productResults = Array.isArray(productData?.results) ? productData.results : [];
-
-    const listProduct = productResults.map((product) =>
+    const listProduct = enrichedProductResults.map((product) =>
         <ProductCard
             product={product}
             key={product.id}
@@ -670,7 +768,7 @@ const Home = () => {
                 </div>
 
                 {/* Product Section */}
-                {productResults.length == 0 ?
+                {enrichedProductResults.length == 0 ?
                     <div className='flex justify-center items-center h-full'>
                         <h5 className='text-sm font-medium text-text/50'>
                             No products to show

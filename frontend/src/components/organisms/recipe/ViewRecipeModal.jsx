@@ -7,7 +7,7 @@ import { ModalBody } from '@/components/molecules';
 import { cn } from '@/utils/cn';
 import { formatQty, getBestDisplay } from '@/utils/recipeUnits';
 
-const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
+const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete, onCook, isCooking = false }) => {
     if (!recipe) return null;
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -87,6 +87,12 @@ const ViewRecipeModal = ({ recipe, onClose, onEdit, onDelete }) => {
                 <div className="shrink-0 p-6 border-t border-border bg-main-white flex gap-2 justify-end items-center z-10">
                     <Button variant='error' text='Delete Recipe' onClick={() => handleConfirmDelete(true)} />
                     <Button variant='modalOutline' text='Close View' onClick={onClose} />
+                    <Button
+                        variant='modalBlock'
+                        text={isCooking ? 'Cooking...' : 'Cook'}
+                        className={!recipe?.is_available || isCooking ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}
+                        onClick={() => onCook?.(recipe)}
+                    />
                     <Button variant='modalBlock' text='Edit Recipe' onClick={() => onEdit(recipe)} />
                 </div>
 

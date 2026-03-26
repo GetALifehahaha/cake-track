@@ -13,8 +13,9 @@ import { formatQty, getBestDisplay } from '@/utils/recipeUnits';
 const Recipe = () => {
 
     const { addToast } = useToast();
-    const { data, loading, error, postRecipe, patchRecipe, deleteRecipe } = useRecipe();
+    const { data, loading, error, postRecipe, patchRecipe, deleteRecipe, cookRecipe } = useRecipe();
     const [showAddRecipe, setShowAddRecipe] = useState(false);
+    const [cookingRecipeId, setCookingRecipeId] = useState(null);
 
     const [viewRecipe, setViewRecipe] = useState(null);
     const [showEditRecipe, setShowEditRecipe] = useState(null);
@@ -63,6 +64,25 @@ const Recipe = () => {
             addToast("A recipe has been deleted!");
         } catch (err) {
             addToast("Failed to delete recipe", "error");
+        }
+    }
+
+    const handleCookRecipe = async (recipe) => {
+        if (!recipe?.is_available) return;
+
+        try {
+            setCookingRecipeId(recipe.id);
+            await cookRecipe({
+                orders: [
+                    { recipe_id: recipe.id, quantity: 1 },
+                ],
+            });
+            addToast(`${recipe.name} cooked successfully!`, 'success');
+        } catch (error) {
+            const detail = error?.response?.data?.detail || 'Failed to cook recipe';
+            addToast(detail, 'error');
+        } finally {
+            setCookingRecipeId(null);
         }
     }
 
@@ -118,7 +138,14 @@ const Recipe = () => {
 
             {showAddRecipe && <AddRecipeModal onConfirm={addRecipe} onClose={handleSetShowAddRecipe}/>}
 
-            <ViewRecipeModal recipe={viewRecipe} onClose={() => selectViewRecipe(null)} onEdit={handleShowEditRecipe} onDelete={handleDeleteRecipe} />
+            <ViewRecipeModal
+                recipe={viewRecipe}
+                onClose={() => selectViewRecipe(null)}
+                onEdit={handleShowEditRecipe}
+                onDelete={handleDeleteRecipe}
+                onCook={handleCookRecipe}
+                isCooking={cookingRecipeId === viewRecipe?.id}
+            />
 
             {showEditRecipe &&
             <EditRecipeModal recipe={showEditRecipe} onClose={() => handleShowEditRecipe(null)} onConfirm={editRecipe} />

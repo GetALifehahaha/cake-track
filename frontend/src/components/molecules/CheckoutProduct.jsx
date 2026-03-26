@@ -1,11 +1,12 @@
 import {X, Plus, Minus} from 'lucide-react'
 import { cn } from '@/lib/utils';
 
-const CheckoutProduct = ({product, pricing, onChangeAmount}) => {
+const CheckoutProduct = ({product, pricing, onChangeAmount, maxAmount = 99}) => {
 
     const beforePrice = Number(pricing?.before ?? (product.price * product.amount || 0));
     const afterPrice = Number(pricing?.after ?? beforePrice);
     const isDiscounted = Boolean(pricing?.isApplicable && afterPrice < beforePrice);
+    const disableAdd = Number(product.amount) >= Number(maxAmount);
 
     const handleSetAmount = (method) => {
         if (method == "minus") {
@@ -15,6 +16,7 @@ const CheckoutProduct = ({product, pricing, onChangeAmount}) => {
 
             onChangeAmount(product.variant_id, product.amount-1);
         } else if (method == "add") {
+            if (disableAdd) return
             if (product.amount + 1 === 100) return
             onChangeAmount(product.variant_id, product.amount+1);
         }
@@ -41,7 +43,13 @@ const CheckoutProduct = ({product, pricing, onChangeAmount}) => {
             <div className='flex flex-row items-center gap-2 ml-auto'>
                 <button className='text-accent border border-accent p-0.5 rounded-full cursor-pointer' onClick={() => handleSetAmount("minus")}><Minus size={12}/></button>
                 <h5 className={cn('text-text font-sm w-6 text-center', product.amount == 99 && 'font-semibold')}>{product.amount}</h5>
-                <button className='text-accent border border-accent p-0.5 rounded-full cursor-pointer' onClick={() => handleSetAmount("add")}><Plus size={12}/></button>
+                <button
+                    disabled={disableAdd}
+                    className={cn('text-accent border border-accent p-0.5 rounded-full cursor-pointer', disableAdd && 'opacity-40 cursor-not-allowed')}
+                    onClick={() => handleSetAmount("add")}
+                >
+                    <Plus size={12}/>
+                </button>
             </div>
         </div>
     )

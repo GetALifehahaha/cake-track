@@ -516,9 +516,31 @@ class BulkRecipeCookSerializer(serializers.Serializer):
         """
         ingredient_totals = self.context['ingredient_totals']
         created_transactions = []
+        orders = validated_data.get('orders', [])
+
+        recipe_names = []
+        for order in orders:
+            recipe = Recipe.objects.filter(id=order['recipe_id']).first()
+            if recipe:
+                recipe_names.append(recipe.name)
+
+        unique_recipe_names = sorted(set(recipe_names))
+
+        if len(unique_recipe_names) == 1:
+            reason = f"Cooked for Recipe: {unique_recipe_names[0]}"
+        elif len(unique_recipe_names) > 1:
+            reason = f"Cooked for Recipes: {', '.join(unique_recipe_names)}"
+        else:
+            reason = "Cooked for Recipe"
+
+        purchase_date = timezone.now().date()
 
         with transaction.atomic():
-            created_transactions = deduct_ingredient_totals(ingredient_totals=ingredient_totals)
+            created_transactions = deduct_ingredient_totals(
+                ingredient_totals=ingredient_totals,
+                purchase_date=purchase_date,
+                reason=reason,
+            )
 
         return {
             'status': 'success',

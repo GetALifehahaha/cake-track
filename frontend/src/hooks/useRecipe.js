@@ -10,8 +10,16 @@ export default function useRecipe(params = {}){
     const apiParams = { ...params, ...(q ? { q } : {}) };
 
     const recipeQuery = useQueryFetch("recipes", API_ENDPOINTS.RECIPES, apiParams);
-    const { create, update, remove, loading: mutateLoading, error: mutateError } =
-        useMutate("recipes");
+    const { create, update, remove, request, loading: mutateLoading, error: mutateError } =
+        useMutate("recipes", {
+            invalidateKeys: [
+                ["recipes"],
+                ["ingredients"],
+                ["ingredient-fetch-all"],
+                ["ingredient-dashboard"],
+                ["inventory-transactions"],
+            ],
+        });
 
     return {
         // Automatically extracts results if the API is paginated
@@ -26,6 +34,7 @@ export default function useRecipe(params = {}){
         postRecipe: (data) => create(API_ENDPOINTS.RECIPES, data),
         patchRecipe: (id, data) => update(`${API_ENDPOINTS.RECIPES}${id}/`, data),
         deleteRecipe: (id) => remove(`${API_ENDPOINTS.RECIPES}${id}/`),
+        cookRecipe: (payload) => request("post", `${API_ENDPOINTS.RECIPES}cook/`, payload),
         refresh: () => recipeQuery.refetch(),
     };
 };

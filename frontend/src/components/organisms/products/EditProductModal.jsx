@@ -241,11 +241,29 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
         setRecipeTargetIndex(null);
     }
 
-    const recipeOptions = (recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }));
+    const recipeOptions = [
+        { key: 'Create New Recipe', value: '__create_recipe__' },
+        ...(recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id })),
+    ];
+
+    const handleRecipeSelect = (value, index) => {
+        if (!value) {
+            setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, recipe: '' } : item));
+            return;
+        }
+
+        if (value === '__create_recipe__') {
+            setRecipeTargetIndex(index);
+            setShowAddRecipeModal(true);
+            return;
+        }
+
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, recipe: String(value) } : item));
+    }
 
     return (
         <ModalBody title='Edit product details' onClose={onClose} className='min-w-[34vw] max-w-[94vw]'>
-            <div className='flex gap-8'>
+            <div className='grid grid-cols-[15rem_1fr] gap-8'>
                 <div className='flex flex-col gap-2'>
                     <div className='flex justify-between items-center w-full mb-2'>
                         <Label variant='modal' text='Product Image' />
@@ -273,7 +291,7 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                     </label>
                 </div>
 
-                <div className='flex flex-col gap-8 w-136'>
+                <div className='grid gap-8 w-136'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Product Name' />
                         <input type='text' className='h-10 px-3 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
@@ -333,14 +351,14 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
 
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Variants' />
-                        <div className="flex flex-col gap-2 w-full max-h-40 overflow-auto">
-                            <div className='grid grid-cols-[1fr_7rem_1fr_5rem_2.5rem] items-center gap-2'>
+                        <div className="grid gap-2 w-full max-h-40 overflow-auto">
+                            <div className='grid grid-cols-[1fr_7rem_minmax(0,1fr)_2.5rem] items-center gap-2'>
                                 <h5 className='text-xs font-medium'>Label</h5>
                                 <h5 className='text-xs font-medium'>Price</h5>
                                 <h5 className='text-xs font-medium'>Recipe (optional)</h5>
                             </div>
                             {variants.map(({label, price, recipe}, index) => (
-                                <div className='grid grid-cols-[1fr_7rem_1fr_5rem_2.5rem] items-center gap-2'>
+                                <div className='grid grid-cols-[1fr_7rem_minmax(0,1fr)_2.5rem] items-center gap-2'>
                                     <input
                                         type="text"
                                         value={label}
@@ -360,16 +378,7 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                                         selection='Select recipe'
                                         size='full'
                                         options={recipeOptions}
-                                        onSelect={(value) => setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, recipe: value ? String(value) : ''} : item))}
-                                    />
-                                    <Button
-                                        variant='modalOutline'
-                                        size='small'
-                                        text='Create'
-                                        onClick={() => {
-                                            setRecipeTargetIndex(index);
-                                            setShowAddRecipeModal(true);
-                                        }}
+                                        onSelect={(value) => handleRecipeSelect(value, index)}
                                     />
                                     {index === variants.length-1 ?
                                         <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0, recipe: ''}])} />

@@ -27,7 +27,9 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
     const normalizedValue = value === null || value === undefined ? "" : String(value);
 
     const listOptions = options.map(({key, value}, index) => (
-        <SelectItem key={index} value={String(forPageFilter ? key : value)}>{capitalize(key)}</SelectItem>
+        <SelectItem key={index} value={String(forPageFilter ? key : value)}>
+            <span className='block truncate'>{capitalize(key)}</span>
+        </SelectItem>
     ))
 
     return (
@@ -36,8 +38,8 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
             onValueChange={(val) => {
             if (onSelect) onSelect(val === "__none__" ? null : val);
         }}>
-            <SelectTrigger className={`${variants[variant]} ${sizes[size]}`}>
-                <SelectValue placeholder={selection} />
+            <SelectTrigger className={`${variants[variant]} ${sizes[size]} min-w-0`}>
+                <SelectValue placeholder={selection} className='truncate' />
             </SelectTrigger>
             <SelectContent className='right-0'>
                 {listOptions}

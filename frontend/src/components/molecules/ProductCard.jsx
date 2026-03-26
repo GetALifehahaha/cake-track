@@ -2,7 +2,23 @@ import { cn } from '@/utils/cn';
 import { AlertCircle } from 'lucide-react';
 
 const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived, selected = [], isPOS = false }) => {
-    const isUnavailable = product?.recipe_available === false && product?.has_recipe;
+    const isUnavailable = Boolean(product?.isUnavailable);
+
+    const variantPrices = Array.isArray(product?.variants)
+        ? product.variants
+            .map((variant) => Number(variant?.price))
+            .filter((price) => Number.isFinite(price) && price > 0)
+        : [];
+
+    const baseProductPrice = Number(product?.price || 0);
+
+    const minPrice = variantPrices.length ? Math.min(...variantPrices) : 0;
+    const maxPrice = variantPrices.length ? Math.max(...variantPrices) : 0;
+    const hasMultiplePrices = variantPrices.length > 1 && minPrice !== maxPrice;
+
+    const formattedPrice = hasMultiplePrices
+        ? `₱ ${minPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - ₱ ${maxPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : `₱ ${(maxPrice || minPrice || baseProductPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     
     const handleToggleClick = () => {
         if (isPOS && isUnavailable) return;
@@ -37,6 +53,7 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
             </div>
 
             <div className='text-center mt-auto'>
+                <h5 className='font-semibold text-xs text-accent-mute'>{formattedPrice}</h5>
                 <h5 className='font-semibold text-sm'>{product.name}</h5>
             </div>
         </div>

@@ -52,6 +52,8 @@ export default function useTransaction() {
                 ["transactions", "pending"],
                 ["discounts"],
                 ["pos-dashboard"],
+                ["products"],
+                ["products_all"],
                 ["ingredients"],
                 ["ingredient-fetch-all"],
                 ["ingredient-dashboard"],
