@@ -7,6 +7,9 @@ import useRecipe from '@/hooks/useRecipe';
 import { useToast } from '@/context/ToastContext';
 import { formatQty } from '@/utils/recipeUnits';
 import { capitalizeSnakeCase } from '@/utils/capitalize';
+import { useQueryClient } from '@tanstack/react-query';
+import api from '@/api/api';
+import API_ENDPOINTS from '@/api/endpoints';
 
 const buildIngredientUnitOptions = (ingredient) => {
     const baseUnit = ingredient?.unit;
@@ -85,6 +88,7 @@ const StepMarker = ({ number, label, active, done, onClick }) => {
 };
 
 const OrderDetails = ({ orderDetails, onClose }) => {
+    const queryClient = useQueryClient();
     const { addToast } = useToast();
     const { ingredientAll, ingredientLoading } = useIngredient();
     const { data: recipeData, postRecipe, patchRecipe } = useRecipe();
@@ -264,10 +268,12 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             setDeducting(true);
             await deductOrderIngredients(orderSnapshot.id);
 
-            setOrderSnapshot(prev => ({
-                ...prev,
-                ingredients_deducted_at: new Date().toISOString(),
-            }));
+            await queryClient.invalidateQueries({ queryKey: ['orders'] });
+
+            const { data: refreshedOrder } = await api.get(`${API_ENDPOINTS.ORDERS}${orderSnapshot.id}/`);
+
+            setOrderSnapshot(refreshedOrder);
+            setSelectedIngredients(mapRecipeToIngredientItems(refreshedOrder?.recipe_details));
 
             addToast('Ingredients deducted successfully.', 'success');
         } catch (error) {
@@ -343,7 +349,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Payment Status</h4>
                 <div className='space-y-3'>
                     <DetailRow label='Current Status' value={paymentStatus} />
-                    <DetailRow label='Payment Type' value={latestPayment?.payment_type || 'N/A'} />
+                    <DetailRow label='Payment Type' value={capitalizeSnakeCase(latestPayment?.payment_type) || 'N/A'} />
                     <DetailRow label='Amount Paid' value={latestPayment?.amount ? `₱ ${latestPayment.amount}` : 'N/A'} />
                     <DetailRow label='Payment Records' value={payments.length} isLast />
                 </div>

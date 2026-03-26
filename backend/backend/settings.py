@@ -195,3 +195,4 @@ ANYMAIL = {
     }
 
 FRONTEND_URL = config('FRONTEND_URL')
+BACKEND_URL = config('BACKEND_URL')

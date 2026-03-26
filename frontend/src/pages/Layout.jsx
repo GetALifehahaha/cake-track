@@ -28,14 +28,22 @@ const Layout = () => {
         ['admin-notifications-orders-dashboard'],
         API_ENDPOINTS.ORDERS_DASHBOARD,
         undefined,
-        { enabled: isAdmin, staleTime: 60 * 1000 }
+        {
+            enabled: isAdmin,
+            staleTime: 60 * 1000,
+            refetchInterval: isAdmin ? 15 * 60 * 1000 : false,
+        }
     );
 
     const ingredientAllQuery = useQueryFetch(
         ['admin-notifications-ingredients-all'],
         API_ENDPOINTS.INGREDIENTS_ALL,
         undefined,
-        { enabled: isAdmin, staleTime: 60 * 1000 }
+        {
+            enabled: isAdmin,
+            staleTime: 60 * 1000,
+            refetchInterval: isAdmin ? 15 * 60 * 1000 : false,
+        }
     );
 
     const pendingOrdersCount = Number(ordersDashboardQuery.data?.pending_orders || 0);

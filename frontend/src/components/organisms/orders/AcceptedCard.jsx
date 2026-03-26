@@ -7,6 +7,7 @@ import { parseTimeString } from '@/utils/time';
 const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 
 	const [showOptions, setShowOptions] = useState(false);
+	const canReadyForPickup = Boolean(order?.ingredients_deducted_at);
 
 	return (
 		<div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md min-h-60 cursor-pointer	'
@@ -14,7 +15,17 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 			{showOptions &&
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(false) }}>
-					<Button variant='success' text='READY FOR PICKUP' onClick={(e) => { e.stopPropagation(); onComplete(order.id); setShowOptions(false); }} />
+					<Button
+						variant='success'
+						text={!canReadyForPickup ? 'ORDER NOT READY' : 'READY FOR PICKUP' }
+						onClick={(e) => {
+							e.stopPropagation();
+							if (!canReadyForPickup) return;
+							onComplete(order.id);
+							setShowOptions(false);
+						}}
+						className={!canReadyForPickup ? 'opacity-60 cursor-not-allowed' : ''}
+					/>
 					{/* <Button variant='error' text='CANCEL' onClick={(e) => { e.stopPropagation(); setShowOptions(false) }} /> */}
 				</div>
 			}

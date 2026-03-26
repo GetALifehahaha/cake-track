@@ -35,9 +35,12 @@ export default function useOrder() {
             invalidateKeys: [
                 ['orders'],
                 ['orders-dashboard'],
+                ['payment-history'],
                 ['ingredients'],
                 ['ingredient-fetch-all'],
                 ['ingredient-dashboard'],
+                ['admin-notifications-orders-dashboard'],
+                ['admin-notifications-ingredients-all'],
                 ['inventory-transactions'],
                 ['recipes'],
             ],

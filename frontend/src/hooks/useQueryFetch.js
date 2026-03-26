@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
 
 const useQueryFetch = (key, url, params, options = {}) => {
-    const { keepPreviousData = true, staleTime = 10 * 60 * 1000, enabled = true } = options;
+    const {
+        keepPreviousData = true,
+        staleTime = 10 * 60 * 1000,
+        enabled = true,
+        refetchInterval = false,
+        refetchIntervalInBackground = false,
+    } = options;
     const normalizedKey = Array.isArray(key) ? key : [key];
 
     return useQuery({
@@ -11,6 +17,8 @@ const useQueryFetch = (key, url, params, options = {}) => {
         placeholderData: keepPreviousData ? (previousData => previousData) : undefined,
         staleTime,
         enabled,
+        refetchInterval,
+        refetchIntervalInBackground,
     });
 }
 

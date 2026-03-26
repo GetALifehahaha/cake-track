@@ -310,7 +310,7 @@ const Transactions = () => {
                                     type='text'
                                     value={deductionAmount}
                                     onChange={(e) => {
-                                        const value = inputNumber(e);
+                                        const value = inputNumber(e, 11, registerMoney?.current_amount);
                                         if (value !== undefined) setDeductionAmount(value);
                                     }}
                                     placeholder='Amount'

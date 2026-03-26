@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from decimal import Decimal, ROUND_HALF_UP
+from django.db import models
 from django.utils import timezone
 
 from rest_framework import permissions, viewsets, filters, status, generics
@@ -32,6 +33,26 @@ from .models import (
 
 from users.permissions import IsCashier, IsCustomerOrAdmin
 from .filters import OrderFilter
+
+
+def _get_remaining_payment_amount(order):
+    from payment.models import Payment
+
+    total_price = Decimal(order.total_price or 0)
+    if total_price <= 0:
+        return Decimal('0.00')
+
+    paid_downpayment = Payment.objects.filter(
+        orders=order,
+        payment_type='downpayment',
+        status='success',
+    ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+
+    remaining_amount = total_price - Decimal(paid_downpayment)
+    if remaining_amount < 0:
+        return Decimal('0.00')
+
+    return remaining_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 class CakeOrderViewSet(viewsets.ModelViewSet):
     queryset = CakeOrder.objects.all()
@@ -89,6 +110,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         old_status = instance.status
         new_status = self.request.data.get("status", old_status) #type: ignore
 
+        if new_status == "ready" and instance.ingredients_deducted_at is None:
+            raise ValidationError({"status": "Ingredients must be deducted before marking this order as ready for pickup."})
+
         # If completing a custom order, allow setting total_price from the request
         if new_status == "completed" and self.request.data.get("total_price") is not None:
             instance.total_price = Decimal(str(self.request.data["total_price"]))
@@ -101,17 +125,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             existing_full = Payment.objects.filter(orders=updated_order, payment_type='full_payment', status='success').exists()
             if not existing_full:
-                total_price = Decimal(updated_order.total_price or 0)
-                downpayment_amount = Decimal('0.00')
-
-                if total_price > 0:
-                    downpayment_amount = (total_price * Decimal('0.15')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                else:
-                    downpayment_amount = Decimal('500.00')
-
-                full_payment_amount = total_price - downpayment_amount if total_price > 0 else Decimal('0.00')
-                if full_payment_amount < 0:
-                    full_payment_amount = Decimal('0.00')
+                full_payment_amount = _get_remaining_payment_amount(updated_order)
 
                 # Use amount_received from request if provided
                 amount_received = self.request.data.get("amount_received")
@@ -159,6 +173,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                 errors.append(f"Order {order.id} is not pending.") #type: ignore
                 continue
 
+            if new_status == "ready" and order.ingredients_deducted_at is None:
+                errors.append(f"Order {order.id} cannot be marked ready until ingredients are deducted.")
+                continue
+
             order.status = new_status
             if new_status == "rejected":
                 order.reject_reason = reason
@@ -172,17 +190,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
                 existing_full = Payment.objects.filter(orders=order, payment_type='full_payment', status='success').exists()
                 if not existing_full:
-                    total_price = Decimal(order.total_price or 0)
-                    downpayment_amount = Decimal('0.00')
-
-                    if total_price > 0:
-                        downpayment_amount = (total_price * Decimal('0.15')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                    else:
-                        downpayment_amount = Decimal('500.00')
-
-                    full_payment_amount = total_price - downpayment_amount if total_price > 0 else Decimal('0.00')
-                    if full_payment_amount < 0:
-                        full_payment_amount = Decimal('0.00')
+                    full_payment_amount = _get_remaining_payment_amount(order)
 
                     Payment.objects.create(
                         payer=order.customer,

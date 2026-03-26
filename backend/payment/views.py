@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status as http_status
 
-from backend.settings import NGROK_URL
+from backend.settings import BACKEND_URL
 from orders.models import Order
 from .models import Payment
 from .serializers import PaymentInitializeSerializers, PaymentSerializer
@@ -65,8 +65,8 @@ class InitiatePaymentView(APIView):
         pm = PayMongoWrapper()
         try:
             # Use NGROK_URL so the React Native WebView can intercept it correctly
-            success_url = f"{NGROK_URL}/payment/success"
-            failed_url = f"{NGROK_URL}/payment/failed"
+            success_url = f"{BACKEND_URL}/payment/success"
+            failed_url = f"{BACKEND_URL}/payment/failed"
             downpayment = get_order_downpayment(order)
 
             source_data = pm.create_source(
@@ -357,8 +357,8 @@ class RepayOrderView(APIView):
         
         pm = PayMongoWrapper()
         try:
-            success_url = f"{NGROK_URL}/payment/success"
-            failed_url = f"{NGROK_URL}/payment/failed"
+            success_url = f"{BACKEND_URL}/payment/success"
+            failed_url = f"{BACKEND_URL}/payment/failed"
             downpayment = get_order_downpayment(order)
 
             source_data = pm.create_source(
