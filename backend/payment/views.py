@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status as http_status
 
-from backend.settings import BACKEND_URL
+from django.conf import settings
 from orders.models import Order
 from .models import Payment
 from .serializers import PaymentInitializeSerializers, PaymentSerializer
@@ -31,6 +31,15 @@ def get_order_downpayment(order):
         return (Decimal(order.total_price) * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     return custom_flat
+
+
+def _build_redirect_urls(order_id):
+    base = settings.FRONTEND_URL.rstrip("/")
+    return (
+        f"{base}/payment/success?order_id={order_id}",
+        f"{base}/payment/failed?order_id={order_id}",
+    )
+
 
 class InitiatePaymentView(APIView):
     """
@@ -65,13 +74,12 @@ class InitiatePaymentView(APIView):
         pm = PayMongoWrapper()
         try:
             # Use NGROK_URL so the React Native WebView can intercept it correctly
-            success_url = f"{BACKEND_URL}/payment/success"
-            failed_url = f"{BACKEND_URL}/payment/failed"
+            success_url, failed_url = _build_redirect_urls(order.id)
             downpayment = get_order_downpayment(order)
 
             source_data = pm.create_source(
                 amount=downpayment,
-                redirect_success=success_url, 
+                redirect_success=success_url,
                 redirect_failed=failed_url
             )
             
@@ -357,8 +365,7 @@ class RepayOrderView(APIView):
         
         pm = PayMongoWrapper()
         try:
-            success_url = f"{BACKEND_URL}/payment/success"
-            failed_url = f"{BACKEND_URL}/payment/failed"
+            success_url, failed_url = _build_redirect_urls(order.id)
             downpayment = get_order_downpayment(order)
 
             source_data = pm.create_source(
