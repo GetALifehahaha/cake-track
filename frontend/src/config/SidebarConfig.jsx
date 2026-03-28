@@ -5,7 +5,7 @@ export const SidebarConfig = [
         label: "POS",
         link: '/',
         icon: Monitor,
-        allowedRoles: ['admin', 'cashier'] // Cashier allowed
+        allowedRoles: ['admin', 'cashier']
     },
     {
         label: "PRODUCTS",
@@ -23,7 +23,7 @@ export const SidebarConfig = [
         label: "TRANSACTIONS",
         link: '/transactions',
         icon: File,
-        allowedRoles: ['admin', 'cashier'] // Cashier allowed
+        allowedRoles: ['admin', 'cashier']
     },
     {
         label: "REPORTS",

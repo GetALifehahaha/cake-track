@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react'
+import React, {useContext, useEffect, useRef, useState} from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar, Searchbar, ProfileCard } from '../components/molecules'
 import { AuthContext } from '@/context/AuthContext'
@@ -13,6 +13,7 @@ const Layout = () => {
 
     const [searchText, setSearchText] = useState('');
     const [showNotifications, setShowNotifications] = useState(false);
+    const notificationRef = useRef(null);
     const {user} = useContext(AuthContext);
     const navigate = useNavigate();
     const [searchParams, setSearchParam] = useSearchParams();
@@ -91,6 +92,24 @@ const Layout = () => {
         setSearchParam(params);
     }
 
+    useEffect(() => {
+        if (!showNotifications) {
+            return;
+        }
+
+        const handleClickOutside = (event) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setShowNotifications(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showNotifications]);
+
     return (
         <div className='w-full h-screen bg-main flex'>
             <Sidebar />
@@ -108,7 +127,7 @@ const Layout = () => {
 
                     <div className='flex gap-2'>
                     {isAdmin && (
-                        <div className='relative'>
+                        <div ref={notificationRef} className='relative'>
                             <button
                                 onClick={() => setShowNotifications(prev => !prev)}
                                 className='relative w-10 h-10 rounded-full bg-main-white border border-border flex items-center justify-center hover:bg-main/70'
