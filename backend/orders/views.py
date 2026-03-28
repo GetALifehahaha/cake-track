@@ -272,11 +272,17 @@ class DashboardView(APIView):
         if start_date_str and end_date_str and parsed_start > parsed_end:
             return Response({"detail": "start_date cannot be after end_date."}, status=400)
 
+        completed_orders = orders.filter(status="completed")
+        total_revenue_generated = completed_orders.aggregate(
+            total=models.Sum('total_price')
+        )['total'] or Decimal('0.00')
+
         data = {
             "total_orders": orders.count(),
             "pending_orders": orders.filter(status="pending").count(),
-            "completed_orders": orders.filter(status="completed").count(),
+            "completed_orders": completed_orders.count(),
             "rejected_orders": orders.filter(status="rejected").count(),
+            "total_revenue_generated": round(float(total_revenue_generated), 2),
         }
 
         serializer = DashboardSerializer(data)

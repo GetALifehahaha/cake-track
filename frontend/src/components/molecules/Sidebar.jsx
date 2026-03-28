@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { Menu, LogOut } from 'lucide-react'
 import { AuthContext } from '@/context/AuthContext'
 import { ConfirmationModal } from '@/components/organisms'
+import logo from '@/assets/image/cake_icon_web.png'
 
 const Sidebar = () => {
 
@@ -48,7 +49,7 @@ const Sidebar = () => {
             `}
         >
             <button onClick={handleSetExpanded} className={navStyle + 'font-extrabold text-sm'}>
-                <Menu size={28} />
+                <img src={logo} alt='CakeTrack Logo' className='w-6 scale-200'/>
                 {expanded && (
                     <div className={navText + ' text-lg'}>
                         <h5 className='text-accent font-extrabold'>Cake</h5>

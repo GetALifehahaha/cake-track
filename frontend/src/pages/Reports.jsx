@@ -144,7 +144,7 @@ const Reports = () => {
         }
 
         // --- Orders Dashboard ---
-        if (selected.some(key => ['total_orders','pending','completed','rejected'].includes(key))) {
+        if (selected.some(key => ['total_orders','pending','completed','rejected', 'order_total_revenue'].includes(key))) {
             csvContent += "Orders Dashboard\n";
             csvContent += "Metric,Value\n";
 
@@ -159,6 +159,9 @@ const Reports = () => {
 
             if (selected.includes('rejected'))
             csvContent += `Rejected Orders,${ordersDashboardData.rejected_orders}\n`;
+
+            if (selected.includes('order_total_revenue'))
+            csvContent += `Total Revenue Generated,${ordersDashboardData.total_revenue_generated}\n`;
 
             csvContent += "\n";
         }
@@ -378,6 +381,15 @@ const Reports = () => {
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.rejected_orders}</h5>
                     <h5 className='text-sm text-error'>Cancelled</h5>
+                </div>
+
+                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+                    <div className='flex justify-between items-center'>
+                        <h5 className='text-lg font-medium'>Total Revenue</h5>
+                        {/* <XCircle className='text-accent' size={16} /> */}
+                    </div>
+                    <h5 className='text-2xl font-bold mt-8'>₱ {Number(ordersDashboardData.total_revenue_generated || 0).toFixed(2)}</h5>
+                    <h5 className='text-sm text-success'>Revenue Generated</h5>
                 </div>
             </div>
 
