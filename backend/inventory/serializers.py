@@ -49,10 +49,54 @@ class TransactionSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise ValidationError("Amount must be greater then zero")
         return value
+
+    def validate(self, attrs):
+        transaction_type = attrs.get('transaction_type')
+        purchase_date = attrs.get('purchase_date')
+        expiration_date = attrs.get('expiration_date')
+
+        if transaction_type == 'in' and purchase_date and expiration_date and expiration_date < purchase_date:
+            raise ValidationError({"expiration_date": "Expiration date cannot be earlier than purchase date."})
+
+        return attrs
         
 
 class TransactionCreateSerializer(serializers.Serializer):
     transactions = serializers.ListField(child=serializers.DictField())
+
+    @staticmethod
+    def _parse_date_value(value, field_name):
+        if value in [None, '']:
+            return None
+
+        if isinstance(value, date):
+            return value
+
+        try:
+            return date.fromisoformat(str(value))
+        except ValueError as error:
+            raise ValidationError({field_name: "Invalid date format. Use YYYY-MM-DD."}) from error
+
+    def validate(self, attrs):
+        transactions_data = attrs.get('transactions', [])
+
+        for index, item in enumerate(transactions_data):
+            transaction_type = item.get('transaction_type')
+            if transaction_type != 'in':
+                continue
+
+            purchase_date = self._parse_date_value(
+                item.get('purchase_date') or timezone.now().date(),
+                'purchase_date'
+            )
+            expiration_date = self._parse_date_value(item.get('expiration_date'), 'expiration_date')
+
+            if purchase_date and expiration_date and expiration_date < purchase_date:
+                raise ValidationError({
+                    'transactions': f"Transaction item #{index + 1}: Expiration date cannot be earlier than purchase date."
+                })
+
+        return attrs
     
     # class Meta:
     #     model = Transaction

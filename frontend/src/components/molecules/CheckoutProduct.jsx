@@ -28,15 +28,15 @@ const CheckoutProduct = ({product, pricing, onChangeAmount, maxAmount = 99}) => 
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
                 <div className='flex items-center gap-2'>
-                    <h5 className='font-medium text-sm text-text/50'>{product.label}</h5>
                     {isDiscounted ? (
                         <div className='flex items-center gap-1.5'>
-                            <h5 className='font-semibold text-accent-text text-sm'>₱ {afterPrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                            <h5 className='font-semibold text-accent-text text-xs'>₱ {afterPrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                             <h5 className='font-medium text-xs text-text/40 line-through'>₱ {beforePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                         </div>
                     ) : (
                         <h5 className='font-semibold text-accent-text text-sm'>₱ {beforePrice.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                     )}
+                    <h5 className='font-semibold text-xs p-0.5 bg-white text-accent border rounded-md px-1 min-w-8 text-center border-accent'>{product.label}</h5>
                 </div>
             </div>
 

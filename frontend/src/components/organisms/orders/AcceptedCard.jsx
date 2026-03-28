@@ -16,7 +16,7 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(false) }}>
 					<Button
-						variant='success'
+						variant={!canReadyForPickup ? 'error' : 'success' }
 						text={!canReadyForPickup ? 'ORDER NOT READY' : 'READY FOR PICKUP' }
 						onClick={(e) => {
 							e.stopPropagation();

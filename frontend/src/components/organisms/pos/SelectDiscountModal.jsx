@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { ModalBody } from '../../molecules';
 import { Button } from '../../atoms';
-import { Tag, Clock, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Tag, Clock, AlertCircle, CheckCircle2, Info, Search } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import Modal from '@/components/molecules/Modal';
 
 const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClose, currentDiscountId=null }) => {
     const [selectedDiscountDetail, setSelectedDiscountDetail] = useState(null);
+    const [searchText, setSearchText] = useState('');
 
     const formatMoney = (value) => Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -127,9 +128,37 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const filteredDiscounts = useMemo(() => {
+        const keyword = searchText.trim().toLowerCase();
+
+        if (!keyword) {
+            return processedDiscounts;
+        }
+
+        return processedDiscounts.filter((discount) => {
+            const name = String(discount.name || '').toLowerCase();
+            const scope = String(discount.scope || '').replaceAll('_', ' ').toLowerCase();
+            const products = (discount.applicableProductNames || []).join(' ').toLowerCase();
+
+            return name.includes(keyword) || scope.includes(keyword) || products.includes(keyword);
+        });
+    }, [processedDiscounts, searchText]);
+
     return (
         <ModalBody title="Select Discount" subtitle="Choose an applicable discount for this transaction" onClose={onClose} className="w-[600px]">
             <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2 pb-2">
+                <div className='sticky top-0 z-10 bg-main pt-1 pb-2'>
+                    <div className='flex items-center gap-2 rounded-md border border-border bg-main-white px-3 py-2'>
+                        <Search size={14} className='text-text/40' />
+                        <input
+                            type='text'
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            placeholder='Search discount name, scope, or product'
+                            className='w-full bg-transparent text-sm focus:outline-none'
+                        />
+                    </div>
+                </div>
                 
                 <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-main-white cursor-pointer hover:bg-main-dark/10 transition-colors" onClick={() => onSelect({id: -1, name: ""})}>
                     <div className="flex items-center gap-3">
@@ -141,7 +170,7 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                     {currentDiscountId == -1 && <CheckCircle2 size={20} className="text-accent" />}
                 </div>
 
-                {processedDiscounts.map((discount) => (
+                {filteredDiscounts.map((discount) => (
                     <div 
                         key={discount.id} 
                         onClick={() => discount.isApplicable && onSelect(discount)}
@@ -208,10 +237,12 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                     </div>
                 ))}
 
-                {processedDiscounts.length === 0 && (
+                {filteredDiscounts.length === 0 && (
                     <div className="p-8 flex flex-col items-center justify-center text-center">
                         <Tag size={48} className="text-text/20 mb-4" />
-                        <h5 className="text-text/50 font-medium">No discounts available</h5>
+                        <h5 className="text-text/50 font-medium">
+                            {searchText.trim() ? 'No discounts match your search' : 'No discounts available'}
+                        </h5>
                     </div>
                 )}
             </div>

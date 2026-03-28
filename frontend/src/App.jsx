@@ -68,6 +68,7 @@ const App = () => {
 				</Route>
 
 				<Route path='/login' element={<Login />} />
+				<Route path='/404' element={<NotFound />} />
 				<Route path='/setAccount' element={<SetAccount />}/>
 				<Route path='/forgotPassword' element={<ForgotPassword />}/>
 				<Route path='*' element={<NotFound />} />

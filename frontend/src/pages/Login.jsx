@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Button, Label, Title } from '../components/atoms';
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import loginImage1 from '../assets/image/login-image-1.webp'
 import loginImage2 from '../assets/image/login-image-2.png'
 import loginImage3 from '../assets/image/login-image-3.png'

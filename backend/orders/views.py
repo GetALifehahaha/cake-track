@@ -91,7 +91,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     filterset_class = OrderFilter
     
     search_fields = ['customer__first_name', 'customer__last_name', '=id']
-    ordering_fields = ['created_at', 'status']
+    ordering_fields = ['created_at', 'updated_at', 'status']
     
     def get_queryset(self):
         user = self.request.user
@@ -99,6 +99,10 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         if not user.is_staff:
             queryset = queryset.filter(customer=user)
+
+        status_filter = (self.request.query_params.get('status') or '').lower()
+        if status_filter in ['completed', 'rejected']:
+            return queryset.order_by('updated_at', 'created_at')
             
         return queryset.order_by('created_at')
     

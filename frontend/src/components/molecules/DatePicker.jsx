@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-const DatePicker = ({ selected, onSelect, className }) => {
+const DatePicker = ({ selected, onSelect, className, ...calendarProps }) => {
 
   return (
     <Popover>
@@ -26,7 +26,13 @@ const DatePicker = ({ selected, onSelect, className }) => {
         </Button>
       </PopoverTrigger>
       <PopoverContent side="bottom" align="start" collisionPadding={8} className="w-auto p-0 bg-main border-main-dark">
-        <Calendar className="" mode="single" selected={selected} onSelect={(value) => onSelect(value)} />
+        <Calendar
+          className=""
+          mode="single"
+          selected={selected}
+          onSelect={(value) => onSelect(value)}
+          {...calendarProps}
+        />
       </PopoverContent>
     </Popover>
   )

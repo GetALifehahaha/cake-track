@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '../../atoms';
 import { ModalBody, DatePicker } from '../../molecules'
 import useIngredient from '@/hooks/useIngredient';
@@ -13,13 +13,12 @@ import { InventoryInOutSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
 import { inputText, limitedInput } from '@/utils/safeInput';
 
-const InventoryInOut = ({ onConfirm, onClose }) => {
+const InventoryInOut = ({ onClose }) => {
 
 	const { addToast } = useToast();
 	const { ingredientAll, ingredientLoading, ingredientError } = useIngredient();
 	const { postInventoryTransaction, inventoryTransactionLoading, inventoryTransactionError } = useInventoryTransaction();
 	const [ingredientItems, setIngredientItems] = useState([]);
-	const [stockOutReason, setStockOutReason] = useState('');
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [search, setSearch] = useState('');
 	
@@ -44,6 +43,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				name: name,
 				amount: 0,
 				transaction_type: 'in',
+				reason: '',
 				expiration_date: '',
 				purchase_date: '',
 				unit_abbreviation: unitAbbreviation,
@@ -88,27 +88,86 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 			updatedField[index].expiration_date = '',
 			updatedField[index].purchase_date = '';
 			updatedField[index].amount = 0
+			updatedField[index].reason = ''
+		} else {
+			updatedField[index].reason = ''
 		}
 
 		setIngredientItems(updatedField)
 	}
 
 	const updateIngredientDates = (index, field, value) => {
-		const updatedField = ingredientItems.map((item, i) => {
-			return index === i ? { ...item, [field]: field === "amount" && value > 0 ? Number.parseFloat(value) : value }
-				:
-				item
+		if (!value) {
+			const updatedField = ingredientItems.map((item, i) => (
+				index === i ? { ...item, [field]: '' } : item
+			));
+
+			setIngredientItems(updatedField);
+			return;
 		}
-		)
+
+		const normalizeDate = (dateValue) => {
+			const parsed = new Date(dateValue);
+			parsed.setHours(0, 0, 0, 0);
+			return parsed;
+		};
+
+		const currentItem = ingredientItems[index];
+		const nextValueDate = normalizeDate(value);
+		const purchaseDate = currentItem.purchase_date ? normalizeDate(currentItem.purchase_date) : null;
+		const expirationDate = currentItem.expiration_date ? normalizeDate(currentItem.expiration_date) : null;
+
+		if (field === 'expiration_date' && purchaseDate && nextValueDate < purchaseDate) {
+			addToast('Expiration date cannot be earlier than purchase date.', 'error');
+			return;
+		}
+
+		if (field === 'purchase_date' && expirationDate && expirationDate < nextValueDate) {
+			addToast('Expiration date was cleared because it cannot be earlier than purchase date.', 'error');
+		}
+
+		const updatedField = ingredientItems.map((item, i) => {
+			if (index !== i) return item;
+
+			const nextItem = { ...item, [field]: value };
+
+			if (field === 'purchase_date' && item.expiration_date) {
+				const nextPurchase = normalizeDate(value);
+				const nextExpiration = normalizeDate(item.expiration_date);
+
+				if (nextExpiration < nextPurchase) {
+					nextItem.expiration_date = '';
+				}
+			}
+
+			return nextItem;
+		});
 
 		setIngredientItems(updatedField)
 	}
 
-	const handleSetShowConfirm = () => setShowConfirm(true);
 	const handleSetCloseConfirm = () => setShowConfirm(false);
 
 	const validateUpdate = () => {
 		if (ingredientItems.length === 0) return;
+
+		const hasInvalidDates = ingredientItems.some((item) => {
+			if (item.transaction_type !== 'in' || !item.purchase_date || !item.expiration_date) {
+				return false;
+			}
+
+			const purchase = new Date(item.purchase_date);
+			const expiration = new Date(item.expiration_date);
+			purchase.setHours(0, 0, 0, 0);
+			expiration.setHours(0, 0, 0, 0);
+
+			return expiration < purchase;
+		});
+
+		if (hasInvalidDates) {
+			addToast('Expiration date cannot be earlier than purchase date.', 'error');
+			return;
+		}
 
 		setShowConfirm(true);
 	}
@@ -121,9 +180,12 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 	};
 
 	const updateIngredients = async () => {
-		const hasStockOut = ingredientItems.some(item => item.transaction_type === 'out');
-		if (hasStockOut && !stockOutReason?.trim()) {
-			addToast('Provide a stock-out reason for all outbound items.', 'error');
+		const hasMissingStockOutReason = ingredientItems.some(
+			(item) => item.transaction_type === 'out' && !String(item.reason || '').trim()
+		);
+
+		if (hasMissingStockOutReason) {
+			addToast('Each stock-out ingredient requires its own reason.', 'error');
 			return;
 		}
 
@@ -135,7 +197,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				purchase_date: item.transaction_type === 'in' 
 					? formatDate(item.purchase_date) 
 					: formatDate(new Date()), 
-				reason: item.transaction_type === 'out' ? stockOutReason : 'Stock In',
+				reason: item.transaction_type === 'out' ? String(item.reason || '').trim() : 'Stock In',
 				...(item.transaction_type === 'in' && {
 					expiration_date: formatDate(item.expiration_date),
 				})
@@ -145,7 +207,7 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 		try {
 			await postInventoryTransaction(payload);
 			addToast("Ingredients updated successfully")
-		} catch (err) {
+		} catch {
 			addToast("Failed to update ingredients")
 		}
 
@@ -178,7 +240,12 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 						</div>
 						<div className='flex flex-col gap-1 w-full'>
 							<h5 className='text-xs text-left uppercase font-medium text-text/50'>Expiration Date</h5>
-							<DatePicker className='rounded-md' selected={ingredient.expiration_date} onSelect={(value) => updateIngredientDates(index, 'expiration_date', value)} />
+							<DatePicker
+								className='rounded-md'
+								selected={ingredient.expiration_date}
+								onSelect={(value) => updateIngredientDates(index, 'expiration_date', value)}
+								disabled={(date) => ingredient.purchase_date ? date < ingredient.purchase_date : false}
+							/>
 						</div>
 					</div>
 				}
@@ -195,10 +262,21 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 				<X size={16} className='text-text cursor-pointer mx-4' onClick={() => removeIngredientItem(index)} />
 			</div>
 
+			{ingredient.transaction_type === 'out' && (
+				<div className='px-2 pb-2'>
+					<h5 className='text-xs text-left uppercase font-medium text-text/50 mb-1'>Stock-out Reason</h5>
+					<input
+						type='text'
+						placeholder='e.g., Expired, Damaged, Adjustment'
+						value={ingredient.reason || ''}
+						onChange={(e) => updateIngredientItem(index, 'reason', { target: { value: inputText(e) } })}
+						className='p-2 py-1.5 bg-main-dark/50 rounded-md focus:outline-none w-full'
+					/>
+				</div>
+			)}
+
 		</div>
 	)
-
-	const hasStockOut = ingredientItems.some(item => item.transaction_type === 'out');
 
 	return (
 		<ModalBody title='Inventory Management' onClose={onClose} className='w-[90vw] h-[90vh]'>
@@ -242,20 +320,6 @@ const InventoryInOut = ({ onConfirm, onClose }) => {
 
 			{/* Footer */}
 			<div className='flex flex-col gap-4 px-6 py-4 border-t border-gray-200 bg-gray-50'>
-				{hasStockOut && (
-					<div className='flex flex-col gap-2'>
-						<h5 className='text-sm font-medium text-text/70'>Stock-out Reason (applies to all outbound items)</h5>
-						<input
-							type='text'
-							placeholder='e.g., Expired, Damaged, Adjustment'
-							value={stockOutReason}
-							onChange={(e) => 
-								setStockOutReason(inputText(e))
-							}
-							className='p-2.5 bg-main-white rounded-md focus:outline-none border border-border'
-						/>
-					</div>
-				)}
 				<div className='flex justify-end gap-3'>
 					<Button variant='modalOutline' text='Cancel' onClick={onClose} />
 					<Button variant='modalBlock' text='Update Stocks' onClick={validateUpdate} className={ingredientItems.length == 0 && 'opacity-50'} />

@@ -741,14 +741,15 @@ const Home = () => {
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
                 <div className='flex items-center gap-2'>
-                    <h5 className='font-medium text-sm text-text/50'>{product.label}</h5>
                     <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                    <h5 className='font-semibold text-xs p-0.5 bg-white text-accent border rounded-md px-1 min-w-8 text-center border-accent'>{product.label}</h5>
                 </div>
             </div>
         </div>
     )
 
     const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } });
+
     return (
         <div className='flex gap-4 w-full h-full'>
             {/* Middle */}
@@ -797,13 +798,18 @@ const Home = () => {
                         <Button variant='outline' text={showVoid ? 'Cancel' : 'Clear'} onClick={() => setShowVoid(!showVoid)} />
                     </div>
 
-                    <div className='flex flex-row gap-2 px-4'>
-                        <Button variant={(orderType == "dine-in") ? 'active' : 'inactive'} size='small' text='Dine In' onClick={() => handleSetOrderType("dine-in")} />
-                        <Button variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")} />
+                    <div className='flex flex-row gap-2 p-1.5 bg-main-dark/25 w-[97.5%] mx-auto rounded-xl'>
+                        <Button 
+                            className='flex-1 rounded-lg'
+                            variant={(orderType == "dine-in") ? 'active' : 'inactive'} size='small' text='Dine In' onClick={() => handleSetOrderType("dine-in")} />
+                        <Button
+                            className='flex-1 rounded-lg' 
+                            variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")} />
                     </div>
 
                     <div className={cn('px-4 py-8 flex flex-col gap-4 h-[45vh] overflow-y-auto', showVoid && 'h-[50vh]')}>
                         {showVoid ?
+                        
                             listVoidProducts
                             :
                             listCheckoutProducts

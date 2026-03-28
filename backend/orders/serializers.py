@@ -48,9 +48,9 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
+            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
-        read_only_fields = ['id', 'created_at', 'customer']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'customer']
 
     def _create_premade_recipe(self, order, premade_items):
         ingredient_totals = {}

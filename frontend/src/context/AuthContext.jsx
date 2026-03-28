@@ -20,6 +20,22 @@ export const AuthProvider = ({children}) => {
     const [sessionMinutesRemaining, setSessionMinutesRemaining] = useState(refreshTokenMinutesRemaining());
     const sessionWarning = isAuthorized && sessionMinutesRemaining > 0 && sessionMinutesRemaining < 60
 
+    const getUserRole = (userData) => {
+        if (userData?.is_staff) return 'admin';
+        if (Array.isArray(userData?.groups) && userData.groups[0] === 'cashier') return 'cashier';
+        return null;
+    };
+
+    const isAllowedDashboardUser = (userData) => getUserRole(userData) !== null;
+
+    const handleDisallowedRoleLogout = () => {
+        localStorage.removeItem(ACCESS_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN);
+        setUser(null);
+        setIsAuthorized(false);
+        navigate('/login');
+    };
+
 
     useEffect(() => {
         auth().finally(() => setLoading(false));
@@ -57,7 +73,13 @@ export const AuthProvider = ({children}) => {
 
     const auth = async () => {
         try {
-            await getUserData();
+            const userData = await getUserData();
+
+            if (!isAllowedDashboardUser(userData)) {
+                handleDisallowedRoleLogout();
+                return;
+            }
+
             setIsAuthorized(true);
         } catch (err) {
             setUser(null);
@@ -95,6 +117,7 @@ export const AuthProvider = ({children}) => {
             const response = await api.get('/me/');
             const userData = response.data
             setUser(userData);
+            return userData;
         } catch (err) {
             setUser(null);
             throw err
@@ -108,7 +131,13 @@ export const AuthProvider = ({children}) => {
             localStorage.setItem(ACCESS_TOKEN, response.data.access);
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
-            await getUserData();
+            const userData = await getUserData();
+
+            if (!isAllowedDashboardUser(userData)) {
+                handleDisallowedRoleLogout();
+                return { success: false, error: 'role_not_allowed' };
+            }
+
             window.dispatchEvent(new CustomEvent('auth:login'));
             navigate('/')
             setIsAuthorized(true);
@@ -126,7 +155,13 @@ export const AuthProvider = ({children}) => {
             localStorage.setItem(ACCESS_TOKEN, response.data.access);
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
 
-            await getUserData();
+            const userData = await getUserData();
+
+            if (!isAllowedDashboardUser(userData)) {
+                handleDisallowedRoleLogout();
+                return { success: false, error: 'role_not_allowed' };
+            }
+
             window.dispatchEvent(new CustomEvent('auth:login'));
             setIsAuthorized(true);
             return { success: true };

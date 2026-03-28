@@ -16,6 +16,13 @@
       "problemMatcher": []
     },
     {
+      "label": "migraet",
+      "type": "shell",
+      "command": "bash -c 'source venv/bin/activate && cd backend && python3 manage.py migrate'",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
       "label": "dev",
       "dependsOn": ["backend", "frontend"],
       "dependsOrder": "parallel"
