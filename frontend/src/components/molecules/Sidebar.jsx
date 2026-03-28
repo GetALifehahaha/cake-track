@@ -9,11 +9,10 @@ const Sidebar = () => {
 
     const { user, logout } = useContext(AuthContext);
 
-    const isAdmin = user?.is_staff || false
+    const isAdmin = user?.is_staff ? 'admin' : null
+    const role = user.groups[0] || null
 
-    const filteredSidebar = isAdmin
-        ? SidebarConfig
-        : SidebarConfig.filter((item) => ['/products', '/transactions'].includes(item.link))
+    const filteredSidebar = SidebarConfig.filter(({allowedRoles}) => allowedRoles.includes(isAdmin || role))
 
     const [expanded, setExpanded] = useState(true);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
