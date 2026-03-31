@@ -89,14 +89,17 @@ const CustomOrders = () => {
     ]
 
 
-    // Map dropdown values to cakeImages asset keys
-    // (Dropdown already sends 'choco'/'straw' directly, so map is identity fallback)
-    const fillingKeyMap = {
-        choco: 'choco',
-        straw: 'straw',
-        frosting: 'frosting',
-        chocolate: 'choco',
-        strawberry: 'straw',
+    // Map dropdown values to cakeImages asset keys based on tier
+    // Handles inconsistency: round tier1 uses 'straw', but tier2-3 use 'strawberry'
+    const getFillingKey = (fillingValue, shape, tier) => {
+        if (fillingValue === 'strawberry' && shape === 'round' && tier > 1) {
+            return 'strawberry';
+        } else if (fillingValue === 'strawberry' && shape === 'round' && tier === 1) {
+            return 'straw';
+        } else if (fillingValue === 'strawberry') {
+            return 'straw'; // sheet uses 'straw' for all tiers
+        }
+        return fillingValue; // choco and vanilla are consistent
     };
 
     // Listen for address selected from locationPicker (via locationStore)
@@ -108,6 +111,13 @@ const CustomOrders = () => {
             }
         }, [])
     );
+
+    // Set vanilla as default filling when tier is selected
+    useEffect(() => {
+        if (tier && !filling) {
+            setFilling('vanilla');
+        }
+    }, [tier]);
 
     useEffect(() => {
         if (!shape || !tier || shape === 'other') {
@@ -138,7 +148,7 @@ const CustomOrders = () => {
 
             // Page 3 only: show filling on top of base
             if (page === 3 && filling) {
-                const fillKey = fillingKeyMap[filling] || filling;
+                const fillKey = getFillingKey(filling, shape, tier);
                 const fill = assets.fillings?.[tierKey]?.[fillKey];
                 if (fill) newLayers.push(fill);
             }
@@ -168,10 +178,16 @@ const CustomOrders = () => {
                 const sprinkle = assets.sprinkles?.[sprinkleVariant]?.[tierKey];
                 if (sprinkle) newLayers.push(sprinkle);
             }
+
+            // 4. Candle — add if selected as add-on
+            if (page >= 6 && addOn === 'candle') {
+                const candle = assets.accessories?.candle;
+                if (candle) newLayers.push(candle);
+            }
         }
 
         setCustomLayers(newLayers);
-    }, [page, shape, tier, filling, coatingColor, border, borderColor, toppings]);
+    }, [page, shape, tier, filling, coatingColor, border, borderColor, toppings, addOn]);
 
 
 
