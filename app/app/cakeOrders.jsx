@@ -60,6 +60,7 @@ const CakeOrders = () => {
             price={cake.price} 
             image={{ uri: cake.image }} // Pass the Cloudinary URL
             name={cake.name} 
+            baseFlavor={cake.base_flavor}
             description={""} // Omitted description
             addedToCart={cart.some((prod) => prod.id === cake.id)} 
             addToCart={addToCart} 

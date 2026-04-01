@@ -8,6 +8,9 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/round/bases/tier_1/red tier 1.png'),
         white: require('../assets/cakes/round/bases/tier_1/white tier 1.png'),
         yellow: require('../assets/cakes/round/bases/tier_1/yellow tier 1.png'),
+        choco: require('../assets/cakes/round/bases/tier_1/choco_1.png'),
+        vanilla: require('../assets/cakes/round/bases/tier_1/vanilla_1.png'),
+        strawberry: require('../assets/cakes/round/bases/tier_1/straw_1.png')
       },
       tier2: {
         black: require('../assets/cakes/round/bases/tier_2/black tier 2.png'),
@@ -16,6 +19,9 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/round/bases/tier_2/red tier 2.png'),
         white: require('../assets/cakes/round/bases/tier_2/white tier 2.png'),
         yellow: require('../assets/cakes/round/bases/tier_2/yellow tier 2.png'),
+        choco: require('../assets/cakes/round/bases/tier_2/choco_2.png'),
+        vanilla: require('../assets/cakes/round/bases/tier_2/vanilla_2.png'),
+        strawberry: require('../assets/cakes/round/bases/tier_2/strawberry_2.png')
       },
       tier3: {
         black: require('../assets/cakes/round/bases/tier_3/black tier 3.png'),
@@ -24,10 +30,11 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/round/bases/tier_3/red tier 3.png'),
         white: require('../assets/cakes/round/bases/tier_3/white tier 3.png'),
         yellow: require('../assets/cakes/round/bases/tier_3/yellow tier 3.png'),
+        choco: require('../assets/cakes/round/bases/tier_3/choco_3.png'),
+        vanilla: require('../assets/cakes/round/bases/tier_3/vanilla_3.png'),
+        strawberry: require('../assets/cakes/round/bases/tier_3/strawberry_3.png')
       },
     },
-    // Filling overlays — each tier image is a single PNG that already includes
-    // all positions up to that tier (tier1 = bottom, tier2 = bottom+middle, tier3 = all three).
     fillings: {
       tier1: {
         choco: require('../assets/cakes/round/fillings/tier 1/choco.png'),
@@ -71,6 +78,32 @@ export const CAKE_ASSETS = {
         yellow: require('../assets/cakes/round/pipings/tier_3/yellow piping.png'),
       },
     },
+    drips: {
+      tier1: {
+        black: require('../assets/cakes/round/drips/tier_1/black.png'),
+        blue: require('../assets/cakes/round/drips/tier_1/blue.png'),
+        purple: require('../assets/cakes/round/drips/tier_1/purple.png'),
+        red: require('../assets/cakes/round/drips/tier_1/red.png'),
+        white: require('../assets/cakes/round/drips/tier_1/white.png'),
+        yellow: require('../assets/cakes/round/drips/tier_1/yellow.png'),
+      },
+      tier2: {
+        black: require('../assets/cakes/round/drips/tier_2/black.png'),
+        blue: require('../assets/cakes/round/drips/tier_2/blue.png'),
+        purple: require('../assets/cakes/round/drips/tier_2/purple.png'),
+        red: require('../assets/cakes/round/drips/tier_2/red.png'),
+        white: require('../assets/cakes/round/drips/tier_2/white.png'),
+        yellow: require('../assets/cakes/round/drips/tier_2/yellow.png'),
+      },
+      tier3: {
+        black: require('../assets/cakes/round/drips/tier_3/black.png'),
+        blue: require('../assets/cakes/round/drips/tier_3/blue.png'),
+        purple: require('../assets/cakes/round/drips/tier_3/purple.png'),
+        red: require('../assets/cakes/round/drips/tier_3/red.png'),
+        white: require('../assets/cakes/round/drips/tier_3/white.png'),
+        yellow: require('../assets/cakes/round/drips/tier_3/yellow.png'),
+      },
+    },
     sprinkles: {
       drip: {
         tier1: require('../assets/cakes/round/sprinkles/drip/Drip TIER 1 C.png'),
@@ -93,6 +126,9 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/sheet/bases/tier_1/red tier 1.png'),
         white: require('../assets/cakes/sheet/bases/tier_1/white tier 1.png'),
         yellow: require('../assets/cakes/sheet/bases/tier_1/yellow tier 1.png'),
+        choco: require('../assets/cakes/sheet/bases/tier_1/choco_1.png'),
+        vanilla: require('../assets/cakes/sheet/bases/tier_1/vanilla_1.png'),
+        strawberry: require('../assets/cakes/sheet/bases/tier_1/strawberry_1.png')
       },
       tier2: {
         black: require('../assets/cakes/sheet/bases/tier_2/black tier 2.png'),
@@ -101,6 +137,9 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/sheet/bases/tier_2/red tier 2.png'),
         white: require('../assets/cakes/sheet/bases/tier_2/white tier 2.png'),
         yellow: require('../assets/cakes/sheet/bases/tier_2/yellow tier 2.png'),
+        choco: require('../assets/cakes/sheet/bases/tier_2/choco_2.png'),
+        vanilla: require('../assets/cakes/sheet/bases/tier_2/vanilla_2.png'),
+        strawberry: require('../assets/cakes/sheet/bases/tier_2/strawberry_2.png')
       },
       tier3: {
         black: require('../assets/cakes/sheet/bases/tier_3/black tier 3.png'),
@@ -109,10 +148,11 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/sheet/bases/tier_3/red tier 3.png'),
         white: require('../assets/cakes/sheet/bases/tier_3/white tier 3.png'),
         yellow: require('../assets/cakes/sheet/bases/tier_3/yellow tier 3.png'),
+        choco: require('../assets/cakes/sheet/bases/tier_3/choco_3.png'),
+        vanilla: require('../assets/cakes/sheet/bases/tier_3/vanilla_3.png'),
+        strawberry: require('../assets/cakes/sheet/bases/tier_3/strawberry_3.png')
       },
     },
-    // Filling overlays — each tier image is a single PNG that already includes
-    // all positions up to that tier (tier1 = bottom, tier2 = bottom+middle, tier3 = all three).
     fillings: {
       tier1: {
         choco: require('../assets/cakes/sheet/fillings/tier 1/choco.png'),
@@ -158,6 +198,32 @@ export const CAKE_ASSETS = {
         red: require('../assets/cakes/sheet/drips/tier 3/red.png'),
         white: require('../assets/cakes/sheet/drips/tier 3/white.png'),
         yellow: require('../assets/cakes/sheet/drips/tier 3/yellow.png'),
+      },
+    },
+    pipings: {
+      tier1: {
+        black: require('../assets/cakes/sheet/pipings/tier_1/black.png'),
+        blue: require('../assets/cakes/sheet/pipings/tier_1/blue.png'),
+        purple: require('../assets/cakes/sheet/pipings/tier_1/purple.png'),
+        red: require('../assets/cakes/sheet/pipings/tier_1/red.png'),
+        white: require('../assets/cakes/sheet/pipings/tier_1/white.png'),
+        yellow: require('../assets/cakes/sheet/pipings/tier_1/yellow.png'),
+      },
+      tier2: {
+        black: require('../assets/cakes/sheet/pipings/tier_2/black.png'),
+        blue: require('../assets/cakes/sheet/pipings/tier_2/blue.png'),
+        purple: require('../assets/cakes/sheet/pipings/tier_2/purple.png'),
+        red: require('../assets/cakes/sheet/pipings/tier_2/red.png'),
+        white: require('../assets/cakes/sheet/pipings/tier_2/white.png'),
+        yellow: require('../assets/cakes/sheet/pipings/tier_2/yellow.png'),
+      },
+      tier3: {
+        black: require('../assets/cakes/sheet/pipings/tier_3/black.png'),
+        blue: require('../assets/cakes/sheet/pipings/tier_3/blue.png'),
+        purple: require('../assets/cakes/sheet/pipings/tier_3/purple.png'),
+        red: require('../assets/cakes/sheet/pipings/tier_3/red.png'),
+        white: require('../assets/cakes/sheet/pipings/tier_3/white.png'),
+        yellow: require('../assets/cakes/sheet/pipings/tier_3/yellow.png'),
       },
     },
     sprinkles: {

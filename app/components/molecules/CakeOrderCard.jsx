@@ -2,7 +2,7 @@ import { View, Text, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { Minus, Plus } from 'lucide-react-native'
 
-const CakeOrderCard = ({ id, image, name, price, description, addedToCart, addToCart, amount, onSetAmount }) => {
+const CakeOrderCard = ({ id, image, name, price, description, baseFlavor, addedToCart, addToCart, amount, onSetAmount }) => {
 
     const handleAddToCart = () => {
         addToCart({ id, name, price, amount: 1, image });
@@ -10,28 +10,24 @@ const CakeOrderCard = ({ id, image, name, price, description, addedToCart, addTo
 
     return (
         <View className='flex-row px-6 py-4 border-b border-b-gray-300 w-full items-center bg-white gap-4'>
-            {/* Image Section */}
             <Image
                 style={{ width: 100, height: 100 }}
                 resizeMode='contain'
                 source={image}
             />
 
-            {/* Content Section (Takes remaining width) */}
+
             <View className='flex-1 pl-4 justify-center'>
-
-                {/* Title */}
                 <Text className='font-extrabold text-lg mb-1'>{name}</Text>
-
-                {/* Row containing Description and Action Button */}
+                {baseFlavor && (
+                    <Text className='text-base text-gray-500 mb-1'>Flavor: {baseFlavor.charAt(0).toUpperCase() + baseFlavor.slice(1)}</Text>
+                )}
                 <View className='flex-row items-center justify-between mt-2 '>
 
-                    {/* Description (flex-1 to allow text wrapping) */}
-                    <Text className='text-2xl font-semibold text-gray-400 w-1/2 pr-4 leading-5'>
+                    <Text className='text-xl font-semibold text-gray-400 w-1/2 pr-4 leading-5'>
                         ₱ {(price)}
                     </Text>
 
-                    {/* Button Logic */}
                     <View>
                         {addedToCart ? (
                             <View

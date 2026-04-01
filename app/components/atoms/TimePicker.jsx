@@ -38,10 +38,6 @@ const TimePicker = ({ onSelectTime }) => {
         return `${openFormatted} - ${closeFormatted}`;
     }
 
-    /**
-     * Validate only the TIME portion against business hours.
-     * Date / blocked-date validation is handled separately by the DatePicker.
-     */
     const isTimeWithinBusinessHours = (selectedDate) => {
         if (!openingTime) return true; // no opening config → allow any time
 
@@ -53,7 +49,6 @@ const TimePicker = ({ onSelectTime }) => {
 
         const minutes = selectedDate.getHours() * 60 + selectedDate.getMinutes();
 
-        // Handle overnight ranges (e.g. 22:00 – 06:00)
         if (closeM <= openM) {
             return minutes >= openM || minutes < closeM;
         }
@@ -65,14 +60,13 @@ const TimePicker = ({ onSelectTime }) => {
         if (selectedTime) {
             if (!isTimeWithinBusinessHours(selectedTime)) {
                 showToast?.(`Selected time is outside business hours (${getAllowedRangeString()})`, 'error');
-                // Do not set time if invalid
             } else {
                 const hh = selectedTime.getHours().toString().padStart(2, '0');
                 const mm = selectedTime.getMinutes().toString().padStart(2, '0');
                 const formatted = `${hh}:${mm}`;
 
                 setTime(formatToAmPm(formatted));
-                // pass Date object back so consumers can format for backend; keep original Date
+
                 onSelectTime(selectedTime);
             }
         }
@@ -93,24 +87,12 @@ const TimePicker = ({ onSelectTime }) => {
 
             {open && (
                 <Modal transparent animationType="slide">
-                    <View className="flex-1 bg-black/30 justify-center">
-                        {/* <View className="bg-white mx-4 rounded-lg overflow-hidden">
-
-                            <View className="flex-row items-center justify-between p-3 border-b">
-                                <Text className="font-semibold text-lg">Select Time</Text>
-                                <TouchableOpacity onPress={() => setOpen(false)}>
-                                    <X />
-                                </TouchableOpacity>
-                            </View>
-
-                        </View> */}
-                        <DateTimePicker
-                            mode="time"
-                            value={new Date()}
-                            onChange={handleChange}
-                            is24Hour={false} // show AM/PM
-                        />
-                    </View>
+                    <DateTimePicker
+                        mode="time"
+                        value={new Date()}
+                        onChange={handleChange}
+                        is24Hour={false} // show AM/PM
+                    />
                 </Modal>
             )}
         </>

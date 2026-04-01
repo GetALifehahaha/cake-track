@@ -9,7 +9,7 @@ const FlavorPage = ({ baseFlavor, setBaseFlavor, filling, setFilling }) => (
             <Dropdown
                 items={[
                     { label: 'Chocolate', value: 'choco' },
-                    { label: 'Strawberry', value: 'straw' },
+                    { label: 'Strawberry', value: 'strawberry' },
                     { label: 'Vanilla', value: 'vanilla' },
                 ]}
                 placeholder={"Select base flavor"}

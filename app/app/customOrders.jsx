@@ -131,19 +131,14 @@ const CustomOrders = () => {
             return;
         }
 
-        // Each "tier" image is a COMPLETE cake at that tier level.
-        // tier1 = 1-tier cake, tier2 = 2-tier cake (already includes bottom+middle),
-        // tier3 = 3-tier cake (already includes bottom+middle+top).
-        // So we only need ONE image per category (base, filling, piping, sprinkle)
-        // matching the selected tier — no position-based stacking needed.
-
         const tierKey = `tier${tier}`; // e.g. 'tier1', 'tier2', 'tier3'
-
         let newLayers = [];
 
+        // --- BASE FLAVOR PREVIEW FIX ---
         if (page === 2 || page === 3) {
-            // Pages 2-3: Yellow base + optional filling preview
-            const base = assets.bases?.[tierKey]?.yellow;
+            // Use selected base flavor for preview, fallback to yellow
+            const baseKey = baseFlavor || 'yellow';
+            const base = assets.bases?.[tierKey]?.[baseKey];
             if (base) newLayers.push(base);
 
             // Page 3 only: show filling on top of base
@@ -156,19 +151,16 @@ const CustomOrders = () => {
         } else if (page >= 4) {
             // Page 4+: Coating color replaces yellow. Fillings are hidden by coating.
             const activeCoating = coatingColor || 'yellow';
-
-            // 1. Base for the selected tier
             const base = assets.bases?.[tierKey]?.[activeCoating];
             if (base) newLayers.push(base);
 
-            // 2. Borders (piping or drip) — on top of the base
-            if (border) {
-                if (border === 'piping' && borderColor) {
-                    const pipe = assets.pipings?.[tierKey]?.[borderColor];
-                    if (pipe) newLayers.push(pipe);
-                } else if (border === 'drip' && borderColor) {
-                    const drip = assets.drips?.[tierKey]?.[borderColor];
-                    if (drip) newLayers.push(drip);
+            // --- PIPINGS/DRIPS LOGIC FIX ---
+            if (border && borderColor) {
+                // Try both pipings and drips for both shapes
+                if (border === 'piping' && assets.pipings?.[tierKey]?.[borderColor]) {
+                    newLayers.push(assets.pipings[tierKey][borderColor]);
+                } else if (border === 'drip' && assets.drips?.[tierKey]?.[borderColor]) {
+                    newLayers.push(assets.drips[tierKey][borderColor]);
                 }
             }
 
@@ -179,15 +171,16 @@ const CustomOrders = () => {
                 if (sprinkle) newLayers.push(sprinkle);
             }
 
-            // 4. Candle — add if selected as add-on
+            // --- CANDLE ADD-ON FIX ---
             if (page >= 6 && addOn === 'candle') {
-                const candle = assets.accessories?.candle;
+                // Always use the global accessories path for candle
+                const candle = cakeImages.accessories?.candle;
                 if (candle) newLayers.push(candle);
             }
         }
 
         setCustomLayers(newLayers);
-    }, [page, shape, tier, filling, coatingColor, border, borderColor, toppings, addOn]);
+    }, [page, shape, tier, baseFlavor, filling, coatingColor, border, borderColor, toppings, addOn]);
 
 
 

@@ -70,8 +70,6 @@ class OrderSerializer(serializers.ModelSerializer):
             except Cake.DoesNotExist as error:
                 raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} does not exist.'}) from error
 
-            if cake.recipe is None:
-                raise serializers.ValidationError({'premade_items': f'Cake {cake.name} has no recipe configured.'})
 
             for recipe_item in cake.recipe.recipe_ingredients.select_related('ingredient').all():
                 ingredient_id = recipe_item.ingredient_id
