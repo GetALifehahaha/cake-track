@@ -115,10 +115,20 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const hasSavedRecipe = Boolean(orderSnapshot?.recipe);
     const hasDeducted = Boolean(orderSnapshot?.ingredients_deducted_at);
     const isRecipeEditable = isAccepted && !hasDeducted;
-    const referenceImage = orderSnapshot?.order_images?.[0]?.image_url || orderSnapshot?.image || null;
     const payments = orderSnapshot?.payments || [];
     const latestPayment = payments.length ? payments[payments.length - 1] : null;
     const paymentStatus = latestPayment?.status || 'unpaid';
+
+    const displayImages = useMemo(() => {
+        let imgs = [];
+        if (orderSnapshot?.order_images?.length > 0) {
+            imgs = orderSnapshot.order_images.map(img => img.image_url).filter(Boolean);
+        }
+        if (imgs.length === 0 && orderSnapshot?.image) {
+            imgs = [orderSnapshot.image];
+        }
+        return imgs.slice(0, 6);
+    }, [orderSnapshot]);
 
     const filteredIngredients = useMemo(() => {
         const key = search.toLowerCase();
@@ -318,18 +328,22 @@ const OrderDetails = ({ orderDetails, onClose }) => {
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 <div className='border border-border rounded-2xl p-6 bg-main'>
-                    <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Reference Image</h4>
-                    {referenceImage ? (
-                        <button type='button' onClick={() => setPreviewImage(referenceImage)} className='w-full'>
-                            <img
-                                src={referenceImage}
-                                alt='Order reference'
-                                className='w-full h-48 object-cover rounded-xl border border-border'
-                            />
-                        </button>
+                    <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Reference Images</h4>
+                    {displayImages.length > 0 ? (
+                        <div className={`grid gap-3 ${displayImages.length === 1 ? 'grid-cols-1' : displayImages.length === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'}`}>
+                            {displayImages.map((imgUrl, index) => (
+                                <button key={index} type='button' onClick={() => setPreviewImage(imgUrl)} className='w-full'>
+                                    <img
+                                        src={imgUrl}
+                                        alt={`Order reference ${index + 1}`}
+                                        className={`w-full object-cover rounded-xl border border-border ${displayImages.length === 1 ? 'h-48' : 'h-24'}`}
+                                    />
+                                </button>
+                            ))}
+                        </div>
                     ) : (
                         <div className='w-full h-48 rounded-xl border border-border bg-main-white flex items-center justify-center text-text/50 text-sm font-medium'>
-                            No reference image
+                            No reference images
                         </div>
                     )}
                 </div>

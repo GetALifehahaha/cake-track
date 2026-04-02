@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction, IntegrityError
 from django.contrib.auth.models import User
 from inventory.models import Recipe
 from backend.utils import generate_id
@@ -39,10 +39,16 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.id:
-            self.id = generate_id("ORD")
-            while Order.objects.filter(id=self.id).exists():
+            while True:
                 self.id = generate_id("ORD")
-        super().save(*args, **kwargs)
+                try:
+                    with transaction.atomic():
+                        super().save(*args, **kwargs)
+                    break # Exit the loop if the save is successful
+                except IntegrityError:
+                    continue
+        else:
+            super().save(*args, **kwargs)
     
 
 class OrderImage(models.Model):
@@ -80,7 +86,7 @@ from django.db import models
 
 class Cake(models.Model):
     name = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=15, decimal_places=2)
     image = models.CharField(max_length=500, blank=True, null=True)
     recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True, blank=True, related_name='premade_cakes')
 

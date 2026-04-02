@@ -219,15 +219,13 @@ class Transaction(models.Model):
         raise IntegrityError('Failed to assign a unique daily transaction sequence number')
 
     def save(self, *args, **kwargs):
-        if self._state.adding and (not self.sequence_date or not self.sequence_number):
-            self._assign_sequence()
-
         if not self.id:
             while True:
+                self.id = generate_id("ORD")
                 try:
-                    self.id = generate_id("TRX")
-                    super().save(*args, **kwargs)
-                    break
+                    with transaction.atomic():
+                        super().save(*args, **kwargs)
+                    break # Exit the loop if the save is successful
                 except IntegrityError:
                     continue
         else:
