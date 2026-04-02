@@ -45,8 +45,8 @@ class Transaction(models.Model):
     # Extra fields needed for inventory logic
     purchase_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)  # only used for IN
-    unit_purchase_price = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
-    cost_amount = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
+    unit_purchase_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    cost_amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     reason = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):

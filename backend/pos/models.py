@@ -99,7 +99,7 @@ class DiscountUsage(models.Model):
     products = models.ManyToManyField("Product", blank=True)
     discount_snapshot = models.JSONField(null=True, blank=True)
 
-    amount = models.DecimalField(max_digits=11, decimal_places=2)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -157,7 +157,7 @@ class Transaction(models.Model):
     discount_snapshot = models.JSONField(null=True, blank=True)
     
     is_void = models.BooleanField(default=False)
-    paid_amount = models.DecimalField(decimal_places=2, max_digits=11, default=0) #type: ignore
+    paid_amount = models.DecimalField(decimal_places=2, max_digits=15, default=0) #type: ignore
 
     is_completed = models.BooleanField(default=False)
     is_register_counted = models.BooleanField(default=False)
@@ -181,10 +181,10 @@ class Transaction(models.Model):
 
     order_type = models.CharField(max_length=10, default='dine-in')
 
-    gross_total = models.DecimalField(max_digits=11, decimal_places=2)
-    discount_amount = models.DecimalField(max_digits=11, decimal_places=2)
-    net_total = models.DecimalField(max_digits=11, decimal_places=2)
-    change = models.DecimalField(max_digits=11, decimal_places=2)
+    gross_total = models.DecimalField(max_digits=15, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    net_total = models.DecimalField(max_digits=15, decimal_places=2)
+    change = models.DecimalField(max_digits=15, decimal_places=2)
 
     class Meta:
         constraints = [
@@ -273,8 +273,8 @@ class DailyOrderCounter(models.Model):
 
 class RegisterMoney(models.Model):
     cashier = models.OneToOneField(User, on_delete=models.CASCADE, related_name='register_money')
-    starting_money = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
-    current_amount = models.DecimalField(max_digits=11, decimal_places=2, default=Decimal('0.00'))
+    starting_money = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
+    current_amount = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     started_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -288,7 +288,7 @@ class RegisterMoney(models.Model):
 class RegisterDeduction(models.Model):
     register_money = models.ForeignKey(RegisterMoney, on_delete=models.CASCADE, related_name='deductions')
     cashier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='register_deductions')
-    amount = models.DecimalField(max_digits=11, decimal_places=2)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
     note = models.CharField(max_length=255, blank=True, default='')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recorded_register_deductions')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -309,7 +309,7 @@ class RegisterTransaction(models.Model):
     register_money = models.ForeignKey(RegisterMoney, on_delete=models.CASCADE, related_name='register_transactions')
     cashier = models.ForeignKey(User, on_delete=models.CASCADE, related_name='register_transactions')
     entry_type = models.CharField(max_length=20, choices=ENTRY_TYPES)
-    amount = models.DecimalField(max_digits=11, decimal_places=2)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
     note = models.CharField(max_length=255, blank=True, default='')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recorded_register_transactions')
     created_at = models.DateTimeField(auto_now_add=True)
