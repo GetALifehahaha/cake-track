@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Dropdown, Label } from '../../atoms';
 import { DatePicker, ModalBody, ModalFeedbackCard } from '../../molecules';
+import ConfirmationModal from '../ConfirmationModal';
 import { Loader2 } from 'lucide-react';
 import ScopeSelectionModal from './ScopeSelectionModal';
 import { limitedInput } from '@/utils/safeInput';
@@ -9,6 +10,8 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
     const [showScopeSelector, setShowScopeSelector] = useState(false);
+
+    const [confirmation, setConfirmation] = useState(null);
 
     const now = new Date();
     const future = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -99,6 +102,17 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
         }));
     };
 
+    const handleDelete = (id) => {
+        setConfirmation({
+            title: "Delete Discount",
+            content: `Are you sure you want to delete the discount "${discount.name}"? This action cannot be undone.`,
+            confirm: () => {
+                setConfirmation(null);
+                onDelete(id);
+            }
+        });
+    }
+
     const validate = () => {
         const parsedValue = Number.parseInt(formData.value, 10);
 
@@ -139,7 +153,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
         if (payload.usage_limit === "") payload.usage_limit = null;
         if (payload.scope !== 'selected_products') payload.products = [];
         if (payload.scope !== 'selected_category') payload.categories = [];
-        
+
         onConfirm(payload);
     };
 
@@ -159,7 +173,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                     {/* Details Section */}
                     <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Details</h6>
-                        
+
                         <div className='flex flex-col gap-2'>
                             <Label variant='modal' text='Discount Name' />
                             <input name='name' type='text' className='px-4 py-2 rounded-sm bg-main-white focus:outline-none w-full border border-border' value={formData.name} onChange={handleInputChange} placeholder='e.g., Summer Sale' />
@@ -225,7 +239,7 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                     {/* Rules & Limits Section */}
                     <div className='flex flex-col gap-4'>
                         <h6 className='text-xs text-text/50 font-bold uppercase tracking-wider'>Rules & Limits</h6>
-                        
+
                         <div className='flex flex-col gap-2 w-full pr-3'>
                             <Label variant='modal' text='Scope' />
                             <div className='flex items-center justify-between gap-2'>
@@ -303,13 +317,22 @@ const EditDiscountModal = ({ discount, productOptions, categoryOptions, onConfir
                         </div>
                     ) : (
                         <>
-                            <Button variant='error' text='Delete' onClick={() => onDelete(discount.id)} />
+                            <Button variant='error' text='Delete' onClick={() => handleDelete(discount.id)} />
                             <Button variant='modalOutline' text='Cancel' onClick={onClose} />
                             <Button variant='modalBlock' text='Update Discount' onClick={submit} />
                         </>
                     )}
                 </div>
             </div>
+
+            {confirmation &&
+                <ConfirmationModal
+                    title={confirmation?.title || ""}
+                    content={confirmation?.content || ""}
+                    onConfirm={confirmation?.confirm || null}
+                    onReject={() => setConfirmation(null)}
+                />
+            }
         </ModalBody>
     );
 };

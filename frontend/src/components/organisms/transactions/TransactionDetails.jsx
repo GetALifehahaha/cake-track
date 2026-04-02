@@ -107,8 +107,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                 <div className="w-1/2 md:w-1/3 space-y-2 text-sm text-text">
                     {transactionDetail?.discount && (
                         <div className="flex justify-between">
-                            <span className="text-text/50">Discount ({transactionDetail.discount?.name})</span>
-                            <span className="text-error">- {(transactionDetail.discount?.rate ?? 0) * 100}%</span>
+                            <span className="text-text/50">Discount ({transactionDetail.discount_usage?.name})</span>
+                            <span className="text-error">- {(transactionDetail.discount_usage?.rate ?? 0) * 100}%</span>
                         </div>
                     )}
                     <div className="flex justify-between font-bold text-xl pt-4 border-t border-border mt-2">
@@ -125,7 +125,7 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
     return (
         <div className='absolute top-0 left-0 w-full bg-black/5 backdrop-blur-xs h-screen flex flex-col justify-center items-center z-10'>
             <div className={`relative bg-main-white shadow-sm transition-all duration-300 rounded-lg ${showReceiptView ? 'w-[380px]' : 'w-[800px]'}`}>
-                
+
                 <div>
                     {showReceiptView ? renderReceiptView() : renderCleanView()}
                 </div>
@@ -139,12 +139,12 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                 <div className='absolute top-0 -right-2 translate-x-full p-2 w-fit flex-col bg-main-white rounded-md shadow-md shadow-black/25 flex justify-between items-center gap-4'>
                     <Button text='' variant='modalOutline' size='fit' icon={X} onClick={onClose} />
                     {!transactionDetail?.is_void && (
-                        <Button 
-                            text='' 
-                            variant='modalOutline' 
-                            size='fit' 
-                            icon={isReceiptView ? LayoutList : ReceiptText} 
-                            onClick={() => setIsReceiptView(!isReceiptView)} 
+                        <Button
+                            text=''
+                            variant='modalOutline'
+                            size='fit'
+                            icon={isReceiptView ? LayoutList : ReceiptText}
+                            onClick={() => setIsReceiptView(!isReceiptView)}
                         />
                     )}
                     {!transactionDetail?.is_void && (

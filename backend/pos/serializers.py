@@ -83,9 +83,30 @@ class DiscountUsageSerializer(serializers.ModelSerializer):
         model = DiscountUsage
         fields = [
             "id", "discount", "transaction", "products", 
-            "amount", "created_at"
+            "amount", "created_at", "discount_snapshot"
         ]
         read_only_fields = ["amount", "created_at"]
+
+    def create(self, validated_data):
+        discount = validated_data.get("discount")
+
+        if discount:
+            validated_data["discount_snapshot"] = {
+                "id": discount.id,
+                "name": discount.name,
+                "type": discount.type,
+                "value": str(discount.value),
+            }
+
+        return super().create(validated_data)
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if not instance.discount and instance.discount_snapshot:
+            data["discount"] = instance.discount_snapshot
+
+        return data
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -263,17 +284,23 @@ class TransactionItemSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     cashier = UserSerializer(read_only=True)
     discount = DiscountSerializer(read_only=True)
+    discount_snapshot = serializers.SerializerMethodField()
     transaction_items = TransactionItemSerializer(many=True, read_only=True)
     order_number = serializers.IntegerField(source='sequence_number', read_only=True)
     
     class Meta:
         model = Transaction
         fields = [
-            'id', 'order_number', 'cashier', 'discount', 'is_void', 
+            'id', 'order_number', 'cashier', 'discount', 'discount_snapshot', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
             'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
             'is_completed', 'customer_name', 'completed_at', 'is_register_counted',
         ]
+
+    def get_discount_snapshot(self, obj):
+        # Get the discount snapshot from the related DiscountUsage record
+        usage = obj.discount_usages.first() 
+        return usage.discount_snapshot if usage else None
    
 
 class TransactionItemCreateSerializer(serializers.ModelSerializer):
@@ -466,7 +493,15 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 usage_record = DiscountUsage.objects.create(
                     discount=locked_discount,
                     transaction=transaction_obj,
-                    amount=discount_amount
+                    amount=discount_amount,
+                    discount_snapshot={
+                        "id": locked_discount.id,
+                        "name": locked_discount.name,
+                        "type": locked_discount.discount_type,
+                        "value": str(locked_discount.value),
+                        "scope": locked_discount.scope,
+                        "min_order_total": str(locked_discount.min_order_total),
+                    }
                 )
                 
                 # Optional: Record exactly which products triggered the discount
@@ -584,6 +619,7 @@ class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
         fields = ['business_name', 'address', 'tin', 'contact_number', 'message', 'secret_pin']
+        extra_kwargs = {'secret_pin': {'write_only': True}}
         
         
 class DashboardMetricsSerializer(serializers.Serializer):

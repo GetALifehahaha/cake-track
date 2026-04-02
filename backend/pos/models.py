@@ -94,10 +94,11 @@ class Discount(models.Model):
     
 
 class DiscountUsage(models.Model):
-    discount = models.ForeignKey(Discount, on_delete=models.PROTECT, related_name="usages")
+    discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, related_name="usages", null=True, blank=True)
     transaction = models.ForeignKey("Transaction", on_delete=models.CASCADE, related_name="discount_usages")
     products = models.ManyToManyField("Product", blank=True)
-    
+    discount_snapshot = models.JSONField(null=True, blank=True)
+
     amount = models.DecimalField(max_digits=11, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -153,6 +154,8 @@ class Transaction(models.Model):
 
     cashier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="transactions")
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True)
+    discount_snapshot = models.JSONField(null=True, blank=True)
+    
     is_void = models.BooleanField(default=False)
     paid_amount = models.DecimalField(decimal_places=2, max_digits=11, default=0) #type: ignore
 

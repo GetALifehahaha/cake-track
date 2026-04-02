@@ -18,6 +18,7 @@ const Discounts = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [prepEditDiscount, setPrepEditDiscount] = useState(null);
 
+
     if (discountLoading || productLoading || categoryLoading) return <Loading />;
     if (discountError) return <h5>Error loading discount data</h5>;
 
@@ -47,13 +48,12 @@ const Discounts = () => {
     };
 
     const handleDeleteDiscount = async (id) => {
-        if(window.confirm("Are you sure you want to delete this discount?")) {
-            try {
-                await deleteDiscount(id);
-                addToast('Discount deleted', 'success');
-            } catch (error) {
-                addToast('Failed to delete discount', 'error');
-            }
+        try {
+            await deleteDiscount(id);
+            addToast('Discount deleted', 'success');
+            clear();
+        } catch (error) {
+            addToast('Failed to delete discount', 'error');
         }
     };
 
@@ -84,30 +84,30 @@ const Discounts = () => {
                         </div>
                         <div className='flex flex-col gap-2 mt-2'>
                             {discountData.map((discount) => (
-                                <div 
-                                onClick={() => setPrepEditDiscount(discount)}
-                                key={discount.id} className='p-2.5 flex flex-row items-center text-text font-medium text-sm text-center bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark cursor-pointer hover:-translate-y-1 transition'>
-                                    
+                                <div
+                                    onClick={() => setPrepEditDiscount(discount)}
+                                    key={discount.id} className='p-2.5 flex flex-row items-center text-text font-medium text-sm text-center bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark cursor-pointer hover:-translate-y-1 transition'>
+
                                     <div className='flex-1 text-left pl-2'>
                                         <h5>{discount.name}</h5>
                                     </div>
-                                    
+
                                     <h5 className='flex-1 text-left capitalize'>
                                         {discount.discount_type}
                                     </h5>
-                                    
+
                                     <h5 className='flex-1 text-left'>
                                         {discount.discount_type === 'percentage' ? `${discount.value}%` : `₱${discount.value}`}
                                     </h5>
-                                    
+
                                     <h5 className='flex-1 text-left capitalize'>
                                         {discount.scope.replace('_', ' ')}
                                     </h5>
-                                    
+
                                     <h5 className='flex-1 text-left'>
                                         {discount.used_count} / {discount.usage_limit || '∞'}
                                     </h5>
-                                    
+
                                     <div className='flex-1 text-left flex items-center'>
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${discount.active ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}`}>
                                             {discount.active ? 'Active' : 'Inactive'}
@@ -118,26 +118,27 @@ const Discounts = () => {
                         </div>
                     </div>
                 )}
-                
+
                 {/* <Pagination prev={discountData?.previous} next={discountData?.next} /> */}
             </div>
 
             {showAddModal && (
-                <AddDiscountModal 
-                    productOptions={productOptions} 
-                    categoryOptions={categoryOptions} 
-                    onConfirm={handleAddDiscount} 
-                    onClose={clear} 
+                <AddDiscountModal
+                    productOptions={productOptions}
+                    categoryOptions={categoryOptions}
+                    onConfirm={handleAddDiscount}
+                    onClose={clear}
                 />
             )}
 
             {prepEditDiscount && (
-                <EditDiscountModal 
-                    discount={prepEditDiscount} 
-                    productOptions={productOptions} 
-                    categoryOptions={categoryOptions} 
-                    onConfirm={handleEditDiscount} 
-                    onClose={clear} 
+                <EditDiscountModal
+                    discount={prepEditDiscount}
+                    productOptions={productOptions}
+                    categoryOptions={categoryOptions}
+                    onConfirm={handleEditDiscount}
+                    onClose={clear}
+                    onDelete={handleDeleteDiscount}
                 />
             )}
         </div>
