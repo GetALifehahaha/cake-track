@@ -59,6 +59,7 @@ const Home = () => {
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
     const [completingOrderId, setCompletingOrderId] = useState(null);
     const [accessCode, setAccessCode] = useState('');
+    const [loadingAccessCode, setLoadingAccessCode] = useState(false);
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -192,7 +193,6 @@ const Home = () => {
         setCheckoutProducts(checkoutProducts => checkoutProducts.filter(product => product.id != id))
     }
 
-    // TODO: void if value < 1
     const handleSetAmount = (id, value) => {
         const { matchedVariant } = getProductAndVariantByVariantId(id);
         const maxOrderable = getVariantMaxOrderable(matchedVariant);
@@ -458,6 +458,7 @@ const Home = () => {
 
 
     const confirmAccessCode = async () => {
+        setLoadingAccessCode(true);
         try {
             await api.post('/pos/transactions/verify-void-pin/', {
                 pin: accessCode,
@@ -471,6 +472,8 @@ const Home = () => {
                 details: "Please enter the correct access code"
             })
             setShowModalFeedback(true);
+        } finally {
+            setLoadingAccessCode(false);
         }
     }
 
@@ -895,9 +898,16 @@ const Home = () => {
                         <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
                     }
 
-                    <div className='flex gap-4 ml-auto'>
+                    <div className='flex items-center gap-4 ml-auto'>
                         <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => setShowClearCheckoutModal(false)} />
-                        <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode} />
+
+                        {loadingAccessCode ?
+                            <h5 disabled className='text-sm font-semibold text-accent-mute cursor-not-allowed'>
+                                Verifying...
+                            </h5>
+                            :
+                            <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode} />
+                        }
                     </div>
                 </Modal>
             }

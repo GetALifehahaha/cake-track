@@ -1,12 +1,9 @@
-import { jsPDF } from "jspdf"; 
-import autoTable from "jspdf-autotable";
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, X, Info, RefreshCw } from 'lucide-react';
 import useDashboard from '@/hooks/useDashboard';
 import Loading from '@/components/molecules/Loading';
 import { DashboardChart, DownloadReportModal } from '@/components/organisms';
 import { Button, Label, Dropdown } from "@/components/atoms";
-import { cn } from "@/utils/cn";
 import { useSearchParams } from "react-router-dom";
 import { DatePicker } from "@/components/molecules";
 import { formatDateForAPI } from "@/utils/date";
@@ -14,12 +11,11 @@ import { useToast } from "@/context/ToastContext";
 import { ReportsSkeleton } from "@/components/molecules/Skeletons";
 import Modal from "@/components/molecules/Modal";
 
-jsPDF.API.autoTable = autoTable;
 
 const Reports = () => {
 
-    const {addToast} = useToast();
-    
+    const { addToast } = useToast();
+
     const {
         posDashboardData,
         ordersDashboardData,
@@ -29,8 +25,7 @@ const Reports = () => {
     } = useDashboard();
 
     const [searchParams, setSearchParams] = useSearchParams();
-    
-    const [frequency, setFrequency] = useState('daily')
+
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
 
@@ -49,26 +44,10 @@ const Reports = () => {
 
         setSearchParams(params);
     }, [startDate, endDate])
-    
-    if (loading) return <ReportsSkeleton     />;
+
+    if (loading) return <ReportsSkeleton />;
     if (error) return <h5>Error...</h5>;
 
-    const months = [
-        { key: 'january', value: 1 },
-        { key: 'february', value: 2 },
-        { key: 'march', value: 3 },
-        { key: 'april', value: 4 },
-        { key: 'may', value: 5 },
-        { key: 'june', value: 6 },
-        { key: 'july', value: 7 },
-        { key: 'august', value: 8 },
-        { key: 'september', value: 9 },
-        { key: 'october', value: 10 },
-        { key: 'november', value: 11 },
-        { key: 'december', value: 12 },
-    ];
-
-    console.log(posDashboardData);
 
     const downloadCSV = (selected) => {
         const today = new Date().toISOString().split("T")[0];
@@ -76,29 +55,29 @@ const Reports = () => {
 
         // --- POS Dashboard Metrics ---
         if (selected.some(key => [
-            'voided_transactions', 
-            'total_transactions', 
-            'products_sold', 
-            'avg_daily_orders', 
+            'voided_transactions',
+            'total_transactions',
+            'products_sold',
+            'avg_daily_orders',
             'total_revenue'
         ].includes(key))) {
             csvContent += "POS Dashboard Metrics\n";
             csvContent += "Metric,Value\n";
 
             if (selected.includes('total_transactions'))
-            csvContent += `Total Successful Transactions,${posDashboardData.total_successful_transactions}\n`;
+                csvContent += `Total Successful Transactions,${posDashboardData.total_successful_transactions}\n`;
 
             if (selected.includes('products_sold'))
-            csvContent += `Total Products Sold,${posDashboardData.total_products_sold}\n`;
+                csvContent += `Total Products Sold,${posDashboardData.total_products_sold}\n`;
 
             if (selected.includes('avg_daily_orders'))
-            csvContent += `Average Daily Transactions,${posDashboardData.avg_daily_transactions}\n`;
+                csvContent += `Average Daily Transactions,${posDashboardData.avg_daily_transactions}\n`;
 
             if (selected.includes('voided_transactions'))
-            csvContent += `Total Voided Transactions,${posDashboardData.total_void_amount}\n`;
+                csvContent += `Total Voided Transactions,${posDashboardData.total_void_amount}\n`;
 
             if (selected.includes('total_revenue'))
-            csvContent += `Total Revenue,${posDashboardData.total_revenue_generated}\n`;
+                csvContent += `Total Revenue,${posDashboardData.total_revenue_generated}\n`;
 
             csvContent += "\n";
         }
@@ -108,7 +87,7 @@ const Reports = () => {
             csvContent += "Cashier Performance\n";
             csvContent += "Name,Daily Revenue,Weekly Revenue,Monthly Revenue,Total Revenue\n";
             posDashboardData.cashier_performance.forEach(c => {
-            csvContent += `${c.name},${c.daily_revenue.toFixed(2)},${c.weekly_revenue.toFixed(2)},${c.monthly_revenue.toFixed(2)},${c.total_revenue.toFixed(2)}\n`;
+                csvContent += `${c.name},${c.daily_revenue.toFixed(2)},${c.weekly_revenue.toFixed(2)},${c.monthly_revenue.toFixed(2)},${c.total_revenue.toFixed(2)}\n`;
             });
             csvContent += "\n";
         }
@@ -118,7 +97,7 @@ const Reports = () => {
             csvContent += "Top Selling Products\n";
             csvContent += "Product Name,Total Sold\n";
             posDashboardData.top_selling_products.forEach(p => {
-            csvContent += `${p.product__name},${p.total_sold}\n`;
+                csvContent += `${p.product__name},${p.total_sold}\n`;
             });
             csvContent += "\n";
         }
@@ -128,7 +107,7 @@ const Reports = () => {
             csvContent += "Sales Trend\n";
             csvContent += "Date,Items Sold\n";
             posDashboardData.sales_trend.forEach(t => {
-            csvContent += `${t.period},${t.amount}\n`;
+                csvContent += `${t.period},${t.amount}\n`;
             });
             csvContent += "\n";
         }
@@ -138,30 +117,30 @@ const Reports = () => {
             csvContent += "Revenue Trend\n";
             csvContent += "Date,Revenue\n";
             posDashboardData.revenue_trend.forEach(t => {
-            csvContent += `${t.period},${t.amount}\n`;
+                csvContent += `${t.period},${t.amount}\n`;
             });
             csvContent += "\n";
         }
 
         // --- Orders Dashboard ---
-        if (selected.some(key => ['total_orders','pending','completed','rejected', 'order_total_revenue'].includes(key))) {
+        if (selected.some(key => ['total_orders', 'pending', 'completed', 'rejected', 'order_total_revenue'].includes(key))) {
             csvContent += "Orders Dashboard\n";
             csvContent += "Metric,Value\n";
 
             if (selected.includes('total_orders'))
-            csvContent += `Total Orders,${ordersDashboardData.total_orders}\n`;
+                csvContent += `Total Orders,${ordersDashboardData.total_orders}\n`;
 
             if (selected.includes('pending'))
-            csvContent += `Pending Orders,${ordersDashboardData.pending_orders}\n`;
+                csvContent += `Pending Orders,${ordersDashboardData.pending_orders}\n`;
 
             if (selected.includes('completed'))
-            csvContent += `Completed Orders,${ordersDashboardData.completed_orders}\n`;
+                csvContent += `Completed Orders,${ordersDashboardData.completed_orders}\n`;
 
             if (selected.includes('rejected'))
-            csvContent += `Rejected Orders,${ordersDashboardData.rejected_orders}\n`;
+                csvContent += `Rejected Orders,${ordersDashboardData.rejected_orders}\n`;
 
             if (selected.includes('order_total_revenue'))
-            csvContent += `Total Revenue Generated,${ordersDashboardData.total_revenue_generated}\n`;
+                csvContent += `Total Revenue Generated,${ordersDashboardData.total_revenue_generated}\n`;
 
             csvContent += "\n";
         }
@@ -177,12 +156,6 @@ const Reports = () => {
     };
 
     // FILTERS AND PARAMETERS
-
-    const handleFrequency = (value) => {
-        if (value === frequency) {setFrequency('daily'); return;}
-
-        setFrequency(value)
-    }
 
     const handleStartDate = (value) => {
         if (endDate && new Date(value) > new Date(endDate)) {
@@ -244,7 +217,7 @@ const Reports = () => {
         "Total"
     ];
 
-    const listCashierTableHeader = cashierTableHeader.map((item, index) => 
+    const listCashierTableHeader = cashierTableHeader.map((item, index) =>
         <h5 key={index} className='flex-1 text-center font-medium text-sm text-white'>{item}</h5>
     );
 
@@ -267,7 +240,7 @@ const Reports = () => {
                     <div className="">
                         <h5 className="text-xs font-semibold text-text/50 mb-1">Start Date</h5>
                         <div className="flex gap-2 items-center">
-                            <DatePicker selected={startDate} onSelect={handleStartDate} className='w-fit bg-white gap-8 ml-4 shadow-sm text-xs font-semibold text-accent-mute border-accent-mute'/> 
+                            <DatePicker selected={startDate} onSelect={handleStartDate} className='w-fit bg-white gap-8 ml-4 shadow-sm text-xs font-semibold text-accent-mute border-accent-mute' />
                             {startDate &&
                                 <Button icon={X} onClick={() => handleStartDate(null)} variant="icon" text="" className="border-none font-semibold text-sm text-accent-mute" />
                             }
@@ -276,7 +249,7 @@ const Reports = () => {
                     <div>
                         <h5 className="text-xs font-semibold text-text/50 mb-1">End Date</h5>
                         <div className="flex gap-2 items-center">
-                            <DatePicker selected={endDate} onSelect={handleEndDate} className='w-fit bg-white gap-8 shadow-sm text-xs font-semibold text-accent-mute'/> 
+                            <DatePicker selected={endDate} onSelect={handleEndDate} className='w-fit bg-white gap-8 shadow-sm text-xs font-semibold text-accent-mute' />
                             {endDate &&
                                 <Button icon={X} onClick={() => handleEndDate(null)} variant="icon" text="" className="border-none font-semibold text-sm text-accent-mute" />
                             }
@@ -292,12 +265,12 @@ const Reports = () => {
                         <RefreshCw size={14} />
                         Refresh Reports
                     </button>
-                    <Button text="Download Report" size="small" variant="block" icon={Download} onClick={() => setDownloadModal(true)} className="rounded-sm py-2.5 px-4 h-fit"/>
+                    <Button text="Download Report" size="small" variant="block" icon={Download} onClick={() => setDownloadModal(true)} className="rounded-sm py-2.5 px-4 h-fit" />
                 </div>
             </div>
 
             {/* Existing POS dashboards */}
-            <Label variant="small" text="POS Sales Data"/>
+            <Label variant="small" text="POS Sales Data" />
             <div className='flex items-center gap-4 -mt-4'>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
@@ -345,7 +318,7 @@ const Reports = () => {
                 </div>
             </div>
 
-            <Label variant="small" text="Cake Order Sales Data"/>
+            <Label variant="small" text="Cake Order Sales Data" />
             <div className='flex items-center gap-4 -mt-4'>
                 <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
@@ -435,7 +408,7 @@ const Reports = () => {
                 </div>
 
                 <div className='flex-1'>
-                    <DashboardChart salesData={posDashboardData.sales_trend} revenueData={posDashboardData.revenue_trend}/>
+                    <DashboardChart salesData={posDashboardData.sales_trend} revenueData={posDashboardData.revenue_trend} />
                 </div>
             </div>
 
@@ -451,7 +424,7 @@ const Reports = () => {
             </div>
 
             {downloadModal &&
-                <DownloadReportModal onClose={() => setDownloadModal(false)} onConfirm={downloadCSV}/>
+                <DownloadReportModal onClose={() => setDownloadModal(false)} onConfirm={downloadCSV} />
             }
 
             {showTopSellingModal && (
