@@ -1,14 +1,18 @@
 from datetime import date
+from decimal import Decimal
 
 from django.db import transaction, models
+from django.core.validators import MaxValueValidator
 from rest_framework import serializers
-from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit, IngredientUnitConversion )
-from decimal import Decimal
 from rest_framework.serializers import ValidationError
 from django.utils import timezone
 
+from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit, IngredientUnitConversion)
 from .conversions import get_unit_conversion_factor
 from .services import deduct_ingredient_totals, deduct_ingredient_stock
+
+MAX_DECIMAL_VALUE = Decimal('999999.99')
+MAX_INTEGER_VALUE = 999999
 
 class UnitSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
@@ -32,8 +36,35 @@ class UnitSerializer(serializers.ModelSerializer):
         model = Unit
         fields = ['id', 'name', 'abbreviation', 'dimension', 'multiplier_to_reference']
 
+
 class TransactionSerializer(serializers.ModelSerializer):
     ingredient_id = serializers.IntegerField()
+    amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
+    )
+    remaining_amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)],
+        required=False,
+        allow_null=True
+    )
+    unit_purchase_price = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)],
+        required=False,
+        allow_null=True
+    )
+    cost_amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)],
+        required=False,
+        allow_null=True
+    )
     
     class Meta:
         model = Transaction
@@ -63,6 +94,16 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 class TransactionCreateSerializer(serializers.Serializer):
     transactions = serializers.ListField(child=serializers.DictField())
+
+    amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
+    )
+
+    class Meta:
+        model = Transaction
+        fields = ['ingredient', 'amount', 'transaction_type', 'purchase_date']
 
     @staticmethod
     def _parse_date_value(value, field_name):
@@ -98,10 +139,6 @@ class TransactionCreateSerializer(serializers.Serializer):
 
         return attrs
     
-    # class Meta:
-    #     model = Transaction
-    #     fields = ['transactions']
-    
     def create(self, validated_data):
         transactions_data = validated_data['transactions']
         created_transactions = []
@@ -121,9 +158,7 @@ class TransactionCreateSerializer(serializers.Serializer):
                 if transaction_type == 'out' and not reason:
                     raise ValidationError({"reason": "Reason is required for manual stock out."})
                 
-                
                 if transaction_type == 'in':
-                    # if transaction is IN, create a transaction object, add the amount, then save
                     transaction_object = Transaction.objects.create(
                         ingredient=ingredient,
                         amount=amount,
@@ -140,7 +175,6 @@ class TransactionCreateSerializer(serializers.Serializer):
                     created_transactions.append(transaction_object)
                     
                 else:
-                    # if out, get out_count, then get all the batches which has out
                     transaction_object = deduct_ingredient_stock(
                         ingredient=ingredient,
                         amount=Decimal(str(amount)),
@@ -152,13 +186,23 @@ class TransactionCreateSerializer(serializers.Serializer):
         return {'transactions': created_transactions}
     
     def to_representation(self, instance):
-        # Serialize the created transactions using TransactionSerializer
         return {
             'transactions': TransactionSerializer(instance['transactions'], many=True).data
         }
         
         
 class IngredientBatchSerializer(serializers.ModelSerializer):
+    amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
+    )
+    remaining_amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
+    )
+
     class Meta:
         model = Transaction
         fields = ['id', 'amount', 'expiration_date', 'purchase_date', 'remaining_amount']
@@ -190,6 +234,17 @@ class IngredientSerializer(serializers.ModelSerializer):
         write_only=True,
         queryset=Unit.objects.all(),
         source="unit"
+    )
+
+    total_stock = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
+    )
+    low_amount = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
     )
 
     class Meta:
@@ -268,12 +323,8 @@ class IngredientSerializer(serializers.ModelSerializer):
         return IngredientBatchSerializer(queryset, many=True).data
     
     def create(self, validated_data):
-        """
-        Create Ingredient and automatically create first batch.
-        """
         conversions_data = validated_data.pop('conversions', [])
 
-        # Extract fields passed from frontend
         request = self.context.get("request")
         data = request.data
 
@@ -281,7 +332,6 @@ class IngredientSerializer(serializers.ModelSerializer):
         purchase_date = data.get("purchaseDate")
         expiration_date = data.get("expirationDate")
 
-        # 1. Create Ingredient
         ingredient = Ingredient.objects.create(**validated_data)
 
         for conversion in conversions_data:
@@ -291,18 +341,16 @@ class IngredientSerializer(serializers.ModelSerializer):
                 multiplier_to_base=conversion['multiplier_to_base']
             )
 
-        # 2. Create first batch (Transaction)
         Transaction.objects.create(
             ingredient=ingredient,
             amount=amount,
-            remaining_amount=amount,      # First batch: full stock is remaining
+            remaining_amount=amount,
             transaction_type='in',
             purchase_date=purchase_date,
             expiration_date=expiration_date,
             reason='Initial stock in',
         )
 
-        # 3. Update ingredient total_stock
         ingredient.total_stock = ingredient.transactions.filter(
             transaction_type='in'
         ).aggregate(models.Sum('remaining_amount'))['remaining_amount__sum'] or 0
@@ -357,12 +405,16 @@ class IngredientSerializer(serializers.ModelSerializer):
     
     
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """
-    Used when viewing a recipe to see what's inside it.
-    """
     ingredient_name = serializers.CharField(source='ingredient.name', read_only=True)
     ingredient_unit = serializers.CharField(source='ingredient.unit.abbreviation', read_only=True)
     ingredient_stock = serializers.DecimalField(source='ingredient.total_stock', max_digits=14, decimal_places=4, read_only=True)
+    
+    amount_needed = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
+    )
+    
     is_missing = serializers.SerializerMethodField()
     ingredient_id = serializers.IntegerField()
     ingredient_unit_id = serializers.IntegerField(source='ingredient.unit.id', read_only=True)
@@ -436,11 +488,9 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         return attrs
         
 
-
 class RecipeOrderInputSerializer(serializers.Serializer):
-    """Simple input validator for the list of recipes"""
     recipe_id = serializers.IntegerField()
-    quantity = serializers.IntegerField(min_value=1)
+    quantity = serializers.IntegerField(min_value=1, max_value=MAX_INTEGER_VALUE)
     
     
 class RecipeSerializer(serializers.ModelSerializer):
@@ -510,16 +560,10 @@ class BulkRecipeCookSerializer(serializers.Serializer):
     orders = RecipeOrderInputSerializer(many=True)
 
     def validate(self, data):
-        """
-        1. Calculate TOTAL ingredients needed for the entire batch of recipes.
-        2. Check if enough TOTAL stock exists before starting any DB operations.
-        """
         orders = data.get('orders', [])
         
-        # Dictionary to aggregate totals: { ingredient_id: Decimal('amount_needed') }
         ingredient_totals = {}
         
-        # 1. Aggregation Phase
         for order in orders:
             try:
                 recipe = Recipe.objects.get(id=order['recipe_id'])
@@ -528,8 +572,6 @@ class BulkRecipeCookSerializer(serializers.Serializer):
 
             qty = Decimal(order['quantity'])
             
-            # Efficiently fetch ingredients
-            # Assuming related_name='recipe_ingredients' based on standard practice
             for ri in recipe.recipe_ingredients.all():
                 ing_id = ri.ingredient.id
                 needed = ri.amount_needed * qty
@@ -539,7 +581,6 @@ class BulkRecipeCookSerializer(serializers.Serializer):
                 else:
                     ingredient_totals[ing_id] = needed
 
-        # 2. Validation Phase (Check Global Stock)
         errors = []
         for ing_id, amount_needed in ingredient_totals.items():
             ingredient = Ingredient.objects.get(id=ing_id)
@@ -549,15 +590,10 @@ class BulkRecipeCookSerializer(serializers.Serializer):
         if errors:
             raise ValidationError(errors)
 
-        # Store the calculated totals in context to reuse in create()
         self.context['ingredient_totals'] = ingredient_totals
         return data
 
     def create(self, validated_data):
-        """
-        Performs the FIFO/FEFO deduction logic you defined in your 
-        TransactionCreateSerializer, but applied to the aggregated ingredients.
-        """
         ingredient_totals = self.context['ingredient_totals']
         created_transactions = []
         orders = validated_data.get('orders', [])
