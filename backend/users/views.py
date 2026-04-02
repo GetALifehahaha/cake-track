@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action
 
 from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer, AddressSerializer
-from .models import OTP, PasswordResetToken, Address
+from .models import OTP, PasswordResetToken, Address, UserProfile
 
 from .permissions import IsAdmin, IsCashier
 
@@ -281,20 +281,15 @@ class ChangePasswordViaToken(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'type': 'error', 'label': 'Invalid User', 'details': 'Your credentials does not exist in the system.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
-from django.contrib.auth.tokens import default_token_generator
 
 class ActivateAccountView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        uidb64 = request.data.get('uid')
         token = request.data.get('token')
         new_password = request.data.get('password')
 
-        if not uidb64 or not token or not new_password:
+        if not token or not new_password:
             return Response({
             "label": "Missing Details",
             "details": "You have missing data. Please try activating your account again.",
@@ -302,17 +297,19 @@ class ActivateAccountView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            profile = UserProfile.objects.get(activation_token=token)
+            user = profile.user
+
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist, UserProfile.DoesNotExist):
             user = None
 
-        if user is not None and default_token_generator.check_token(user, token):
+        if user is not None and profile is not None:
             user.is_active = True
             user.set_password(new_password)
             user.save()
 
-            refresh = RefreshToken.for_user(user)
+            profile.activation_token = None
+            profile.save(update_fields=['activation_token'])
 
             return Response({
                 "label": "Account Activated Successfully",

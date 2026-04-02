@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+import uuid
 
 from .models import (
     OTP, 
@@ -91,15 +92,14 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         validated_data['is_active'] = False
         middle_name = validated_data.pop('middle_name', '')
         user = User.objects.create_user(**validated_data)
-        UserProfile.objects.create(user=user, middle_name=middle_name)
+        profile = UserProfile.objects.create(user=user, middle_name=middle_name, activation_token=str(uuid.uuid4()))
 
         cashier_group, _ = Group.objects.get_or_create(name="cashier")
         user.groups.add(cashier_group)
 
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
+        user.save()
 
-        activation_link = f"{settings.FRONTEND_URL}/setAccount?uid={uid}&token={token}"
+        activation_link = f"{settings.FRONTEND_URL}/setAccount?token={profile.activation_token}"
 
         subject = 'Activate Your Cashier Account'
         
@@ -110,12 +110,11 @@ class CashierCreateSerializer(serializers.ModelSerializer):
             <a href="{activation_link}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                 Activate Account
             </a>
-            <p>If the button doesn't work, copy this link: {activation_link}</p>
         """
 
         send_mail(
             subject,
-            f"Activate your account: {activation_link}", # Plain text fallback
+            f"Activate your account: {activation_link}",
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             html_message=html_content,

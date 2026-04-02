@@ -194,5 +194,5 @@ ANYMAIL = {
     "BREVO_API_KEY": config('BREVO_API')
     }
 
-FRONTEND_URL = config('FRONTEND_URL')
-BACKEND_URL = config('BACKEND_URL')
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+BACKEND_URL = config('BACKEND_URL', default='http://127.0.0.1:8000/')
