@@ -452,7 +452,6 @@ const Home = () => {
     }
 
     const proceedToCheckout = () => {
-        if (!netTotal) return
         setShowPaymentModal(true);
     }
 
@@ -531,7 +530,7 @@ const Home = () => {
                 return;
             }
 
-            if (isNaN(parsedValue) || parsedValue <= 0) {
+            if (!Number.isFinite(parsedValue) || parsedValue < 0) {
                 setModalFeedbackContent({ type: "error", label: "Invalid Payment", details: "Please enter a valid payment amount." });
                 setShowModalFeedback(true);
                 return;
