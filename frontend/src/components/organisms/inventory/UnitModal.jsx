@@ -35,7 +35,7 @@ const UnitModal = ({ onClose }) => {
     };
 
     const handleShowConfirmPostModal = () => {
-        if (!unitName) {
+        if (!unitName || !unitAbbreviation) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -123,8 +123,8 @@ const UnitModal = ({ onClose }) => {
     const capitalize = (str) => str[0].toUpperCase() + str.slice(1);
 
     const listUnits = unitData.map((unit, index) => (
-        <div 
-            key={index} 
+        <div
+            key={index}
             className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white"
         >
             {editingUnitId === unit.id ? (
@@ -152,21 +152,21 @@ const UnitModal = ({ onClose }) => {
                         {capitalize(unit.name)} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
                     </span>
 
-                    <Button 
-                        text="Edit" 
-                        variant="modalOutline" 
-                        size="fit" 
+                    <Button
+                        text="Edit"
+                        variant="modalOutline"
+                        size="fit"
                         icon={Pen}
                         onClick={() => startEditUnit(unit)}
                     />
 
-                    <Button 
-                        text="Delete" 
-                        variant="modalBlock" 
-                        className='bg-error' 
-                        size="fit" 
-                        icon={Trash} 
-                        onClick={() => prepDeleteUnit(unit.id)} 
+                    <Button
+                        text="Delete"
+                        variant="modalBlock"
+                        className='bg-error'
+                        size="fit"
+                        icon={Trash}
+                        onClick={() => prepDeleteUnit(unit.id)}
                     />
                 </>
             )}
@@ -176,7 +176,7 @@ const UnitModal = ({ onClose }) => {
     return (
         <ModalBody className='w-[60vw]' title='Manage Units' subtitle='Add, edit, or delete units for measurements' onClose={onClose}>
             <div className='flex flex-col gap-2 w-full'>
-                
+
                 {/* Add New Section */}
                 <div className="flex flex-col gap-2">
                     <h5 className="text-text">Add New Unit</h5>
@@ -195,13 +195,13 @@ const UnitModal = ({ onClose }) => {
                             className="flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text"
                             onChange={handleUnitAbbreviationChange}
                         />
-                        <Button 
-                            text="Add" 
+                        <Button
+                            text="Add"
                             variant="modalBlock"
-                            className='bg-text/50' 
-                            size="fit" 
-                            icon={Plus} 
-                            onClick={handleShowConfirmPostModal} 
+                            className='bg-text/50'
+                            size="fit"
+                            icon={Plus}
+                            onClick={handleShowConfirmPostModal}
                         />
                     </div>
                 </div>

@@ -15,14 +15,14 @@ const Inventory = () => {
 
     const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
-    const {ingredientData, 
-        ingredientDashboard, 
-        ingredientError, 
-        ingredientLoading, 
-        postIngredient, 
-        patchIngredient, 
-        deleteIngredient, 
-        stockOutAllExpiredIngredient} = useIngredient();
+    const { ingredientData,
+        ingredientDashboard,
+        ingredientError,
+        ingredientLoading,
+        postIngredient,
+        patchIngredient,
+        deleteIngredient,
+        stockOutAllExpiredIngredient } = useIngredient();
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);
@@ -35,8 +35,8 @@ const Inventory = () => {
 
     if (ingredientLoading) return <InventorySkeleton />
     if (ingredientError) return <h5>Error</h5>
-    
-    
+
+
     const toggleTransactionHistoryModal = () => setShowTransactionHistoryModal(prev => !prev);
     const toggleStockOutAllConfirmationModal = () => setShowStockOutAllConfirmationModal(prev => !prev);
 
@@ -48,7 +48,7 @@ const Inventory = () => {
     }
 
     const handleShowEditItemModal = () => {
-        setShowEditItemModal(!showEditItemModal)    
+        setShowEditItemModal(!showEditItemModal)
     }
     const handleAddItem = async (value) => {
         try {
@@ -69,7 +69,7 @@ const Inventory = () => {
 
     const handleEditItem = async (value) => {
         try {
-            await patchIngredient(value.id, {...value})
+            await patchIngredient(value.id, { ...value })
             handlePrepEditItem(null);
             addToast("Ingredient has been edited successfully")
         } catch (err) {
@@ -105,7 +105,7 @@ const Inventory = () => {
     }
 
     const handleSetShowInOut = () => setShowInOut(true);
-    const handleSetCloseInOut = () => { setShowInOut(false)}
+    const handleSetCloseInOut = () => { setShowInOut(false) }
     const toggleUnitsModal = () => setShowUnitsModal(!showUnitsModal)
 
     const getBatchStatus = (expirationDate) => {
@@ -125,7 +125,7 @@ const Inventory = () => {
     const setFilter = (filter) => {
         const params = new URLSearchParams(searchParams);
 
-        if (filter == null) params.delete('filter') 
+        if (filter == null) params.delete('filter')
         else params.set('filter', filter);
 
         setSearchParams(params);
@@ -135,7 +135,7 @@ const Inventory = () => {
     const listIngredientData = ingredientData.results.map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
             <div className='p-2.5 flex flex-row items-center text-text font-medium text-md text-center bg-main-white border-b-main-dark border-b-2 cursor-pointer border-x border-x-main-dark' onClick={() => handleSetActiveIndex(index)}>
-                <div className='w-1/25'><ChevronDown size={18} className={`cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`}  /></div>
+                <div className='w-1/25'><ChevronDown size={18} className={`cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} /></div>
                 <div className='flex-1 text-left flex gap-2'>
                     <h5 >{item.name}</h5>
                 </div>
@@ -145,7 +145,7 @@ const Inventory = () => {
 
                     <div className='w-fit flex flex-row gap-2 ml-4'>
                         {item.batches.some(batch => new Date(batch.expiration_date) < Date.now()) && (
-                            <Clock9 size={20} className='text-error'/>
+                            <Clock9 size={20} className='text-error' />
                         )}
                         {item.batches.some(batch => {
                             const today = new Date();
@@ -153,8 +153,8 @@ const Inventory = () => {
                             const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
                             return diffDays >= 0 && diffDays <= 7;
                         }) && (
-                            <CircleAlert size={20} className='text-warning' />
-                        )}
+                                <CircleAlert size={20} className='text-warning' />
+                            )}
                     </div>
                 </div>
                 <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}>
@@ -190,11 +190,11 @@ const Inventory = () => {
                                     </div>
                                     <div className='flex-1 flex flex-col items-start gap-2'>
                                         <h5 className='text-text/50'>Expiration Date</h5>
-                                        <h5 className={cn('break-all whitespace-normal', status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text' )}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status=='expired' && '(Expired)'}{status=='near'=='(Due soon)'}</h5>
+                                        <h5 className={cn('break-all whitespace-normal', status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text')}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status == 'expired' && '(Expired)'}{status == 'near' == '(Due soon)'}</h5>
                                     </div>
                                 </div>
-                                )
-                            }
+                            )
+                        }
                         )}
                     </div>
                 </div>
@@ -205,38 +205,38 @@ const Inventory = () => {
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
             <div className='h-fit w-full flex gap-4'>
-                <InventoryDashboardCard 
-                    title='IN STOCK' 
-                    subtitle='AVAILABLE' 
-                    icon={CheckCircle2} 
-                    variant='success' 
-                    amount={ingredientDashboard.summary.in_stock_count} 
-                    onClick={setFilter} 
-                    type={'available'}/>
-                <InventoryDashboardCard 
-                    title='OUT OF STOCK' 
-                    subtitle='URGENT' 
-                    icon={XCircle} 
+                <InventoryDashboardCard
+                    title='IN STOCK'
+                    subtitle='AVAILABLE'
+                    icon={CheckCircle2}
+                    variant='success'
+                    amount={ingredientDashboard.summary.in_stock_count}
+                    onClick={setFilter}
+                    type={'available'} />
+                <InventoryDashboardCard
+                    title='OUT OF STOCK'
+                    subtitle='URGENT'
+                    icon={XCircle}
                     variant='error'
-                    amount={ingredientDashboard.summary.out_of_stock_count} 
-                    onClick={setFilter} 
-                    type={'out_of_stock'}/>
-                <InventoryDashboardCard 
-                    title='NEAR EXPIRATION' 
-                    subtitle='ATTENTION' 
-                    icon={CircleAlert} 
-                    variant='warning' 
-                    amount={ingredientDashboard.summary.near_expiration_count} 
-                    onClick={setFilter} 
-                    type={'near_expiration'}/>
-                <InventoryDashboardCard 
-                    title='EXPIRED' 
-                    subtitle='REVIEW' 
-                    icon={Clock9} 
-                    variant='none' 
-                    amount={ingredientDashboard.summary.expired_count} 
-                    onClick={setFilter} 
-                    type={'expired'}/>
+                    amount={ingredientDashboard.summary.out_of_stock_count}
+                    onClick={setFilter}
+                    type={'out_of_stock'} />
+                <InventoryDashboardCard
+                    title='NEAR EXPIRATION'
+                    subtitle='ATTENTION'
+                    icon={CircleAlert}
+                    variant='warning'
+                    amount={ingredientDashboard.summary.near_expiration_count}
+                    onClick={setFilter}
+                    type={'near_expiration'} />
+                <InventoryDashboardCard
+                    title='EXPIRED'
+                    subtitle='REVIEW'
+                    icon={Clock9}
+                    variant='none'
+                    amount={ingredientDashboard.summary.expired_count}
+                    onClick={setFilter}
+                    type={'expired'} />
             </div>
 
             <div className=''>
@@ -266,8 +266,8 @@ const Inventory = () => {
                     </div>
 
                     {listIngredientData}
-                    
-                    <div className='mt-2'/>
+
+                    <div className='mt-2' />
                     {/* Pagination */}
                     <div className='mt-auto mx-auto'>
                         <Pagination next={ingredientData.next} prev={ingredientData.previous} />

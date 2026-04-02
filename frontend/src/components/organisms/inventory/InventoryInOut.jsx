@@ -21,7 +21,7 @@ const InventoryInOut = ({ onClose }) => {
 	const [ingredientItems, setIngredientItems] = useState([]);
 	const [showConfirm, setShowConfirm] = useState(false);
 	const [search, setSearch] = useState('');
-	
+
 	if (ingredientLoading || inventoryTransactionLoading) return <InventoryInOutSkeleton onClose={onClose} />
 	if (ingredientError) return <h5>Error</h5>
 	if (inventoryTransactionError) return <h5>Error</h5>
@@ -78,7 +78,7 @@ const InventoryInOut = ({ onClose }) => {
 
 	const updateTransactionType = (index, value) => {
 		const updatedField = ingredientItems.map((item, i) => {
-			return index === i ? { ...item, transaction_type : value }
+			return index === i ? { ...item, transaction_type: value }
 				:
 				item
 		}
@@ -86,7 +86,7 @@ const InventoryInOut = ({ onClose }) => {
 
 		if (value == "out") {
 			updatedField[index].expiration_date = '',
-			updatedField[index].purchase_date = '';
+				updatedField[index].purchase_date = '';
 			updatedField[index].amount = 0
 			updatedField[index].reason = ''
 		} else {
@@ -164,11 +164,33 @@ const InventoryInOut = ({ onClose }) => {
 			return expiration < purchase;
 		});
 
+		const hasMissingDates = ingredientItems.some((item) => {
+			if (item.transaction_type !== 'in') {
+				return false;
+			}
+
+			return !item.purchase_date || !item.expiration_date;
+		});
+
+		if (hasMissingDates) {
+			addToast('Each stock-in ingredient requires purchase and expiration dates.', 'error');
+			return;
+		}
+
 		if (hasInvalidDates) {
 			addToast('Expiration date cannot be earlier than purchase date.', 'error');
 			return;
 		}
 
+		if (ingredientItems.some(item => item.transaction_type === 'out' && item.amount <= 0)) {
+			addToast('Stock-out quantity cannot be 0.', 'error');
+			return;
+		}
+
+		if (ingredientItems.some(item => item.transaction_type === 'out' && item.reason.trim() === '')) {
+			addToast('Each stock-out ingredient requires its own reason.', 'error');
+			return;
+		}
 		setShowConfirm(true);
 	}
 
@@ -194,9 +216,9 @@ const InventoryInOut = ({ onClose }) => {
 				ingredient_id: item.ingredient_id,
 				amount: item.amount,
 				transaction_type: item.transaction_type,
-				purchase_date: item.transaction_type === 'in' 
-					? formatDate(item.purchase_date) 
-					: formatDate(new Date()), 
+				purchase_date: item.transaction_type === 'in'
+					? formatDate(item.purchase_date)
+					: formatDate(new Date()),
 				reason: item.transaction_type === 'out' ? String(item.reason || '').trim() : 'Stock In',
 				...(item.transaction_type === 'in' && {
 					expiration_date: formatDate(item.expiration_date),
@@ -216,9 +238,9 @@ const InventoryInOut = ({ onClose }) => {
 		onClose()
 	}
 
-	const filteredIngredients = ingredientAll.filter(ing => 
-        ing.name.toLowerCase().includes(search.toLowerCase())
-    );
+	const filteredIngredients = ingredientAll.filter(ing =>
+		ing.name.toLowerCase().includes(search.toLowerCase())
+	);
 
 	const listIngredients = filteredIngredients.map((ingredient) =>
 		<div key={ingredient.id} className='flex flex-col gap-2 px-4 py-2 rounded-md bg-main-white text-sm font-medium transition-all cursor-pointer' onClick={() => addIngredientItem(ingredient.id, ingredient.name, ingredient.total_stock, ingredient.unit.abbreviation)}>
@@ -244,7 +266,7 @@ const InventoryInOut = ({ onClose }) => {
 								className='rounded-md'
 								selected={ingredient.expiration_date}
 								onSelect={(value) => updateIngredientDates(index, 'expiration_date', value)}
-								disabled={(date) => ingredient.purchase_date ? date < ingredient.purchase_date : false}
+								disabled={(date) => ingredient.purchase_date ? date <= ingredient.purchase_date : false}
 							/>
 						</div>
 					</div>
