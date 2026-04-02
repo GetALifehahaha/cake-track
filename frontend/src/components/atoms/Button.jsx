@@ -1,7 +1,7 @@
 import { cn } from '@/utils/cn'
 import React from 'react'
 
-const Button = ({variant="block", size="base",  text="Button", icon: Icon, onClick, className='', suffix=null}) => {
+const Button = ({ variant = "block", size = "base", text = "Button", icon: Icon, onClick, className = '', suffix = null }) => {
 
     const buttonVariants = {
         main: 'w-full p-2 rounded-full bg-accent justify-center items-center text-sm font-bold text-main-white',
@@ -22,15 +22,16 @@ const Button = ({variant="block", size="base",  text="Button", icon: Icon, onCli
         error: 'bg-error text-white px-6 py-3 rounded-lg font-semibold',
 
     }
-    
+
     return (
-        <button 
-        onClick={onClick}
-        className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className)}>
-            {Icon && <Icon width={18}/>}
+        <button
+            type='button'
+            onClick={onClick}
+            className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className)}>
+            {Icon && <Icon width={18} />}
             {text && text}
             {
-                suffix!=null &&
+                suffix != null &&
                 <h5 className='text-sm font-medium opacity-50 w-5'>{suffix}</h5>
             }
         </button>

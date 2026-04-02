@@ -22,7 +22,7 @@ const Home = () => {
     const { user } = useAuth();
 
     const [, setSearchParams] = useSearchParams();
-        const {data: productData, loading: productLoading, error: productError, refresh: refreshProducts} = useProduct();
+    const { data: productData, loading: productLoading, error: productError, refresh: refreshProducts } = useProduct();
     const {
         postTransaction,
         completeTransaction,
@@ -32,7 +32,7 @@ const Home = () => {
         loading: transactionLoading,
         error: transactionError,
     } = useTransaction();
-    const {data: businessData, loading: businessLoading, error: businessError} = useBusinessDetails();
+    const { data: businessData, loading: businessLoading, error: businessError } = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { discountData, discountLoading, discountError } = useDiscount();
     const [checkoutProducts, setCheckoutProducts] = useState(() => {
@@ -42,13 +42,13 @@ const Home = () => {
     const [voidProducts, setVoidProducts] = useState([]);
 
     const [grossTotal, setGrossTotal] = useState(0);
-    const [discount, setDiscount] = useState({id: -1, name: ""});
+    const [discount, setDiscount] = useState({ id: -1, name: "" });
     const [netTotal, setNetTotal] = useState(0);
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [completedTransaction, setCompletedTransaction] = useState(null);
     const [customerName, setCustomerName] = useState("");
     const [orderType, setOrderType] = useState("dine-in");
-    const [filter, setFilter] = useState(); 
+    const [filter, setFilter] = useState();
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false);
@@ -192,9 +192,15 @@ const Home = () => {
         setCheckoutProducts(checkoutProducts => checkoutProducts.filter(product => product.id != id))
     }
 
+    // TODO: void if value < 1
     const handleSetAmount = (id, value) => {
         const { matchedVariant } = getProductAndVariantByVariantId(id);
         const maxOrderable = getVariantMaxOrderable(matchedVariant);
+
+        if (value < 1) {
+            addToVoid(checkoutProducts.find(product => product.variant_id == id));
+            setShowVoid(true);
+        }
 
         setCheckoutProducts(prod => {
             let products = prod;
@@ -358,7 +364,7 @@ const Home = () => {
 
     // GUARDS
 
-    if (productLoading || categoryLoading || transactionLoading || discountLoading || businessLoading ) return <HomeSkeleton />
+    if (productLoading || categoryLoading || transactionLoading || discountLoading || businessLoading) return <HomeSkeleton />
     if (productError) return <h5>Error</h5>
     if (categoryError) return <h5>Error</h5>
     if (transactionError) return <h5>Error</h5>
@@ -383,7 +389,7 @@ const Home = () => {
             }
 
             const boundedAmount = Math.max(1, Math.min(Number(amount || 1), maxOrderable));
-            return [...prev, {...product, amount: boundedAmount}]
+            return [...prev, { ...product, amount: boundedAmount }]
         })
 
         setPrepProduct(null)
@@ -399,7 +405,7 @@ const Home = () => {
             return;
         }
 
-        setDiscount({id: discount.id, name: discount.name})
+        setDiscount({ id: discount.id, name: discount.name })
 
         setShowDiscountModal(false);
     }
@@ -427,11 +433,12 @@ const Home = () => {
 
     const toggleAllVoidItems = () => {
         if (checkoutProducts.length === voidProducts.length) {
-            setVoidProducts([]);        
+            setVoidProducts([]);
         } else {
             setVoidProducts(checkoutProducts);
         }
     }
+
     const addToVoid = (product) => {
         setVoidProducts(vp => {
             let prod = [...vp];
@@ -439,7 +446,7 @@ const Home = () => {
             if (itemInVoid(product.variant_id)) {
                 return prod.filter(p => p.variant_id != product.variant_id);
             }
-            
+
             return [...prod, product];
         })
     }
@@ -449,7 +456,7 @@ const Home = () => {
         setShowPaymentModal(true);
     }
 
-    
+
     const confirmAccessCode = async () => {
         try {
             await api.post('/pos/transactions/verify-void-pin/', {
@@ -550,7 +557,7 @@ const Home = () => {
                 discount: discount.id !== -1 ? discount.id : null
             })
 
-                await refreshProducts();
+            await refreshProducts();
             refreshPending();
 
             const receiptItems = sanitizedCheckoutProducts.map(p => {
@@ -613,7 +620,7 @@ const Home = () => {
             setCompletedTransaction(completedReceiptTransaction);
             setReceivedPayment(parsedValue);
             setCustomerName("");
-            setDiscount({id: -1, name: ''})
+            setDiscount({ id: -1, name: '' })
             setShowPaymentSuccessModal(true);
             removeAllProducts();
 
@@ -728,11 +735,11 @@ const Home = () => {
             onToggle={handlePrepProduct} />
     )
 
-    const listVoidProducts = checkoutProducts.map((product) => 
-        <div 
-        key={product.variant_id} 
-        className={cn('relative flex flex-row border-2 border-border rounded-xl gap-8 w-full items-center px-4 py-1.5 cursor-pointer hover:bg-border active:-translate-y-2 transition-transform duration-200', {'opacity-50': itemInVoid(product.variant_id)})}
-        onClick = {() => addToVoid(product)}
+    const listVoidProducts = checkoutProducts.map((product) =>
+        <div
+            key={product.variant_id}
+            className={cn('relative flex flex-row border-2 border-border rounded-xl gap-8 w-full items-center px-4 py-1.5 cursor-pointer hover:bg-border active:-translate-y-2 transition-transform duration-200', { 'opacity-50': itemInVoid(product.variant_id) })}
+            onClick={() => addToVoid(product)}
         >
             {itemInVoid(product.variant_id) &&
                 <div className='bg-error w-2 h-2 aspect-square rounded-sm absolute -translate-x-5' />
@@ -741,7 +748,7 @@ const Home = () => {
             <div>
                 <h5 className='font-medium text-sm'>{product.name}</h5>
                 <div className='flex items-center gap-2'>
-                    <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price || 0).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                    <h5 className='font-semibold text-accent-text text-sm'>₱ {Number(product.price || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                     <h5 className='font-semibold text-xs p-0.5 bg-white text-accent border rounded-md px-1 min-w-8 text-center border-accent'>{product.label}</h5>
                 </div>
             </div>
@@ -794,28 +801,27 @@ const Home = () => {
                         <div>
                             <h5 className='font-bold text-xl'>Current Order</h5>
                         </div>
-                        {/* <Button variant='outline' text='Clear' onClick={confirmVoidPayment} /> */}
-                        <Button variant='outline' text={showVoid ? 'Cancel' : 'Clear'} onClick={() => setShowVoid(!showVoid)} />
+                        <Button variant='outline' text={showVoid ? 'Cancel' : 'Clear'} onClick={() => { setShowVoid(!showVoid); setVoidProducts([]) }} />
                     </div>
 
                     <div className='flex flex-row gap-2 p-1.5 bg-main-dark/25 w-[97.5%] mx-auto rounded-xl'>
-                        <Button 
+                        <Button
                             className='flex-1 rounded-lg'
                             variant={(orderType == "dine-in") ? 'active' : 'inactive'} size='small' text='Dine In' onClick={() => handleSetOrderType("dine-in")} />
                         <Button
-                            className='flex-1 rounded-lg' 
+                            className='flex-1 rounded-lg'
                             variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")} />
                     </div>
 
                     <div className={cn('px-4 py-8 flex flex-col gap-4 h-[45vh] overflow-y-auto', showVoid && 'h-[50vh]')}>
                         {showVoid ?
-                        
+
                             listVoidProducts
                             :
                             listCheckoutProducts
                         }
                     </div>
-                    
+
                     {showVoid ?
                         <div className='mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4'>
                             <div className='flex flex-row items-center justify-between w-full mb-2'>
@@ -829,7 +835,7 @@ const Home = () => {
                         </div>
                         :
                         <div className={cn('mt-auto ml-auto w-full border-t border-l border-r py-6 px-8 border-border rounded-2xl flex flex-col gap-4',
-                            {'opacity-50 pointer-events-none': showVoid}
+                            { 'opacity-50 pointer-events-none': showVoid }
                         )}>
                             <div className='flex flex-col gap-2 '>
                                 <div className='flex items-center justify-between'>
@@ -837,7 +843,7 @@ const Home = () => {
                                     <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
                                 </div>
                                 <div className='flex items-center justify-between w-full gap-2'>
-                                    <Button text={discount?.name || 'Select Discount'}  variant='modalOutline' className='text-sm py-1' size='small' onClick={() => setShowDiscountModal(true)} />
+                                    <Button text={discount?.name || 'Select Discount'} variant='modalOutline' className='text-sm py-1' size='small' onClick={() => setShowDiscountModal(true)} />
                                     {discount.id !== -1 &&
                                         <h5 className='text-sm font-semibold text-success whitespace-nowrap'>
                                             -₱ {Number(discountBreakdown.totalDiscount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -877,27 +883,27 @@ const Home = () => {
                 <Modal onClose={() => setShowClearCheckoutModal(false)}>
                     <div className='flex flex-col justify-center items-center gap-4'>
                         <div className='bg-accent-mute/20 text-accent-mute p-4 rounded-full w-fit'>
-                            <Lock size={36}/>
+                            <Lock size={36} />
                         </div>
                         <h5 className='font-bold text-xl'>Access Code Required</h5>
                         <h5 className='text-text/75 font-medium'>Enter the 4-digit access code to void items</h5>
                     </div>
 
-                    <input value={accessCode} onChange={(e) => setAccessCode(e.target.value)} type='password' maxLength={4} className='mx-auto bg-accent-mute/20 p-4 rounded-xl border-4 border-border font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute' placeholder='ENTER CODE'/>
+                    <input value={accessCode} onChange={(e) => setAccessCode(e.target.value)} type='password' maxLength={4} className='mx-auto bg-accent-mute/20 p-4 rounded-xl border-4 border-border font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute' placeholder='ENTER CODE' />
 
-                    { showModalFeedback &&
+                    {showModalFeedback &&
                         <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
                     }
 
                     <div className='flex gap-4 ml-auto'>
-                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => setShowClearCheckoutModal(false)}/>
-                        <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode}/>
+                        <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={() => setShowClearCheckoutModal(false)} />
+                        <Button variant='modalBlock' size='modalSize' text='Verify' onClick={confirmAccessCode} />
                     </div>
                 </Modal>
             }
 
             {prepProduct &&
-                <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout}/>
+                <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout} />
             }
 
             {showDiscountModal &&
