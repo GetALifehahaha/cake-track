@@ -8,6 +8,7 @@ import useCategory from '@/hooks/useCategory';
 import { useToast } from '@/context/ToastContext';
 import { AddDiscountModal, EditDiscountModal } from '../components/organisms';
 import Loading from '@/components/molecules/Loading';
+import { cn } from '@/utils/cn';
 
 const Discounts = () => {
     const { addToast } = useToast();
@@ -47,6 +48,15 @@ const Discounts = () => {
         }
     };
 
+    const toggleStatus = async (discount) => {
+        try {
+            await patchDiscount(discount.id, { active: !discount.active });
+            addToast(`Discount ${discount.active ? 'deactivated' : 'activated'}`, 'success');
+        } catch (error) {
+            addToast('Failed to update discount status', 'error');
+        }
+    }
+
     const handleDeleteDiscount = async (id) => {
         try {
             await deleteDiscount(id);
@@ -81,12 +91,13 @@ const Discounts = () => {
                             <h5 className='flex-1 text-left'>Scope</h5>
                             <h5 className='flex-1 text-left'>Usage (Used/Limit)</h5>
                             <h5 className='flex-1 text-left'>Status</h5>
+                            <h5 className='flex-1 text-left'>Actions</h5>
                         </div>
                         <div className='flex flex-col gap-2 mt-2'>
                             {discountData.map((discount) => (
                                 <div
                                     onClick={() => setPrepEditDiscount(discount)}
-                                    key={discount.id} className='p-2.5 flex flex-row items-center text-text font-medium text-sm text-center bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark cursor-pointer hover:-translate-y-1 transition'>
+                                    key={discount.id} className='p-2.5 flex flex-row items-center text-text font-medium text-sm text-center bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark cursor-pointer transition'>
 
                                     <div className='flex-1 text-left pl-2'>
                                         <h5>{discount.name}</h5>
@@ -108,10 +119,21 @@ const Discounts = () => {
                                         {discount.used_count} / {discount.usage_limit || '∞'}
                                     </h5>
 
-                                    <div className='flex-1 text-left flex items-center'>
+                                    <div className='flex-1 text-left flex items-center gap-4'>
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${discount.active ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'}`}>
                                             {discount.active ? 'Active' : 'Inactive'}
                                         </span>
+                                    </div>
+
+                                    <div className='flex-1 flex justify-start'>
+                                        <button className={cn('bg-main-dark flex p-1 w-12 rounded-full cursor-pointer border 1.5 border-border', discount.active ? 'bg-success justify-end' : 'justify-start')}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleStatus(discount);
+                                            }}>
+                                            <div className={cn('h-5 w-5 rounded-full bg-white')}>
+                                            </div>
+                                        </button>
                                     </div>
                                 </div>
                             ))}
