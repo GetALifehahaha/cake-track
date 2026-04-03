@@ -32,9 +32,9 @@ const Login = () => {
 
         setPassword(e.target.value);
     }
-    
+
     const handleLogin = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
 
         setLoading(true)
 
@@ -65,44 +65,35 @@ const Login = () => {
             <div className='flex-1 flex flex-col justify-center items-center'>
                 <div className='flex flex-col justify-between items-center h-2/3 w-full my-auto'>
                     <div className='flex flex-col gap-4 items-center'>
-                        <Title variant='form' text='Hello, Friend!'/>
+                        <Title variant='form' text='Hello, Friend!' />
                         <h5 className='text-text text-sm'>Please enter your details</h5>
                     </div>
 
                     <div className='flex flex-col gap-6 items-center w-4/5'>
-                        {/* <button className='flex justify-between items-center rounded-2xl px-4 py-2 border-accent-mute border-4 w-1/2'>
-                            <img
-                                src="https://developers.google.com/identity/images/g-logo.png"
-                                alt="Google logo"
-                                className="w-5 h-5"
-                            />
-                            <span className="text-gray-700 font-medium">Continue with Google</span>
-                            <div></div>
-                        </button> */}
                         <GoogleLoginApi />
 
                         <h5 className='text-sm font-semibold'>OR</h5>
                     </div>
 
-                    <form onSubmit={(e) => handleLogin(e)} className='flex flex-col gap-8 w-3/5'>   
+                    <form onSubmit={handleLogin} className='flex flex-col gap-8 w-3/5'>
                         <div className='flex flex-col gap-4'>
                             <Label variant='login' text='USERNAME' />
-                            <input type='text' value={username} onChange={(e) => handleSetUsername(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your username'/>
+                            <input type='text' value={username} onChange={(e) => handleSetUsername(e)} className='py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your username' />
                         </div>
                         <div className='flex flex-col gap-4'>
                             <Label variant='login' text='PASSWORD' />
                             <div className='flex gap-2 w-full'>
                                 {showPassword ?
-                                <input type='text' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
+                                    <input type='text' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password' />
                                     :
-                                <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password'/>
+                                    <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password' />
                                 }
-                                
-                                <button type='button' className='p-1.5 bg-main cursor-pointer text-text/50' onClick={() => setShowPassword(!showPassword)}>
+
+                                <button type='submit' className='p-1.5 bg-main cursor-pointer text-text/50' onClick={() => setShowPassword(!showPassword)}>
                                     {showPassword ?
-                                        <EyeClosed />
-                                        :
                                         <Eye />
+                                        :
+                                        <EyeClosed />
                                     }
                                 </button>
                             </div>
@@ -114,7 +105,7 @@ const Login = () => {
                             </span>
                             <Link to='/forgotPassword' className='text-accent-text hover:underline hover:underline-offset-1'> Forgot Password</Link>
                         </div>
-                        
+
                         <span className='w-4/5 mx-auto flex gap-2 items-center justify-center'>
                             {loading ?
                                 <>
@@ -122,7 +113,7 @@ const Login = () => {
                                     <Loader2 size={14} className='text-accent animate-spin' />
                                 </>
                                 :
-                                <Button className='bg-accent' text='Login' variant='form' onClick={handleLogin}/>
+                                <Button className='bg-accent' text='Login' variant='form' onClick={handleLogin} />
                             }
                         </span>
                     </form>
