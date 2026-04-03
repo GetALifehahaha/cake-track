@@ -26,49 +26,9 @@ const LoginSignup = ({ method }) => {
 
 	const [loading, setLoading] = useState(false);
 
-	// 3. Configure Google Sign-In on mount
-	// useEffect(() => {
-	//   GoogleSignin.configure({
-	//     webClientId: 'YOUR_WEB_CLIENT_ID_FROM_GOOGLE_CONSOLE', // <--- REPLACE THIS
-	//     offlineAccess: true,
-	//   });
-	// }, []);
-
-	// // 4. Handle Google Login
-	// const handleGoogleSignIn = async () => {
-	//   try {
-	//     await GoogleSignin.hasPlayServices();
-	//     const userInfo = await GoogleSignin.signIn();
-
-	//     // Get the ID token to send to backend
-	//     const { idToken } = userInfo;
-
-	//     if (idToken) {
-	//       // Pass 'app' source to backend to allow account creation
-	//       const res = await googleLogin(idToken, 'app'); 
-
-	//       if (res.success) {
-	//         showToast("Logged in with Google!", "success");
-	//         router.replace('/(tabs)/');
-	//       } else {
-	//         showToast(res.error || "Google Auth failed", "error");
-	//       }
-	//     }
-	//   } catch (error) {
-	//     if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-	//       // User cancelled the login flow
-	//     } else if (error.code === statusCodes.IN_PROGRESS) {
-	//       showToast("Sign in is in progress", "info");
-	//     } else {
-	//       console.error(error);
-	//       showToast("Google Sign-In Error", "error");
-	//     }
-	//   }
-	// };
-
 	const submitForm = async () => {
 		try {
-		setLoading(true);
+			setLoading(true);
 			if (method === "login") {
 				if (!username || !password) {
 					showToast("Please fill in all fields", "error");
@@ -103,7 +63,7 @@ const LoginSignup = ({ method }) => {
 				}
 
 				const res = await register(username, password, firstName, lastName, emailAddress);
-				
+
 				if (res.success) {
 					showToast("Signed up successfully! Login with your credentials", "success");
 					router.replace('/login');
@@ -114,7 +74,7 @@ const LoginSignup = ({ method }) => {
 				}
 			}
 
-			
+
 		} catch (error) {
 			showToast(error.message || "Login failed", "error")
 		}
@@ -177,18 +137,6 @@ const LoginSignup = ({ method }) => {
 									Welcome back! Please login to continue
 								</Text>
 
-								{/* 5. GOOGLE LOGIN BUTTON */}
-								{/* <TouchableOpacity 
-                  onPress={handleGoogleSignIn}
-                  className="bg-white border border-gray-300 flex-row items-center justify-center p-3 rounded-md mt-4 shadow-sm"
-                >
-                  <Image 
-                    source={{ uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" }} 
-                    style={{ width: 20, height: 20, marginRight: 10 }} 
-                  />
-                  <Text className="text-gray-700 font-semibold">Continue with Google</Text>
-                </TouchableOpacity> */}
-
 								<View className='h-0.5 w-full bg-gray-300 my-8' />
 
 								<View className='flex-row gap-2 items-center'>
@@ -213,19 +161,19 @@ const LoginSignup = ({ method }) => {
 									<TextInput className='flex-1 text-black' placeholder="Enter password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
 										value={password} onChangeText={setPassword} />
 									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-										{showPassword ? <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} />}
+										{showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />}
 									</TouchableOpacity>
 								</View>
-								
+
 								{loading ?
-								<View className='p-4 rounded-md bg-secondary-strong flex-row justify-center items-center opacity-50'>
-									<Loader2 size={16} color="#fff" className="animate-spin" />
-									<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
-								</View>
-								:	
-								<TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
-									<Text className='text-center font-semibold text-white'>LOGIN</Text>
-								</TouchableOpacity>
+									<View className='p-4 rounded-md bg-secondary-strong flex-row justify-center items-center opacity-50'>
+										<Loader2 size={16} color="#fff" className="animate-spin" />
+										<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
+									</View>
+									:
+									<TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
+										<Text className='text-center font-semibold text-white'>LOGIN</Text>
+									</TouchableOpacity>
 								}
 
 								<TouchableOpacity className='mt-3' onPress={() => router.push('/(auth)/forgotPassword')}>
@@ -288,7 +236,7 @@ const LoginSignup = ({ method }) => {
 									<TextInput className='flex-1 text-black' placeholder="Enter password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
 										value={password} onChangeText={setPassword} />
 									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-										{showPassword ? <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} />}
+										{showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />}
 									</TouchableOpacity>
 								</View>
 
@@ -300,19 +248,19 @@ const LoginSignup = ({ method }) => {
 									<TextInput className='flex-1 text-black' placeholder="Re-enter your password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
 										value={confirmPassword} onChangeText={setConfirmPassword} />
 									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-										{showPassword ? <EyeClosed style={{ color: 'gray' }} /> : <Eye style={{ color: 'gray' }} />}
+										{showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />}
 									</TouchableOpacity>
 								</View>
-								
+
 								{loading ?
-								<View className='p-4 rounded-md bg-secondary-strong flex-row justify-center items-center opacity-50'>
-									<Loader2 size={16} color="#fff" className="animate-spin" />
-									<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
-								</View>
-								:
-								<TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
-									<Text className='text-center font-semibold text-white'>SIGN UP</Text>
-								</TouchableOpacity>
+									<View className='p-4 rounded-md bg-secondary-strong flex-row justify-center items-center opacity-50'>
+										<Loader2 size={16} color="#fff" className="animate-spin" />
+										<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
+									</View>
+									:
+									<TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
+										<Text className='text-center font-semibold text-white'>SIGN UP</Text>
+									</TouchableOpacity>
 								}
 							</View>
 						}

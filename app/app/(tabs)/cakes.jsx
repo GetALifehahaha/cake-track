@@ -12,7 +12,7 @@ const Cakes = () => {
 
   if (!user) {
     return (
-      <ImageBackground source={cakesTexture} style={{ flex: 1 }} resizeMode='cover'>
+      <ImageBackground source={cakesTexture} style={{ flex: 1 }} resizeMode='repeat'>
         <SafeAreaView className='flex-1 items-center justify-center p-6' style={{ backgroundColor: 'rgba(255, 255, 255, 0.84)' }}>
           <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='w-32 h-32 rounded-full mb-8' />
           <Text className='text-center text-lg font-bold mb-4'>Please log in to start ordering.</Text>
@@ -27,8 +27,8 @@ const Cakes = () => {
   }
 
   return (
-    <ImageBackground source={cakesTexture} style={{ flex: 1 }} resizeMode='cover'>
-      <SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(255, 255, 255, 0.74)' }}>
+    <ImageBackground source={cakesTexture} style={{ flex: 1 }} resizeMode='repeat'>
+      <SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
 
         <View className='pt-6 pb-8 w-full border-b border-b-gray-300' style={{ backgroundColor: 'rgba(255, 255, 255, 0.72)' }}>
           <Text className='font-bold text-3xl text-center'>Cakes</Text>

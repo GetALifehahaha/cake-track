@@ -22,9 +22,9 @@ const Orders = () => {
 	const [refreshing, setRefreshing] = useState(false);
 
 	const onRefresh = async () => {
-		setRefreshing(true); 
-		await refresh();      
-		setRefreshing(false); 
+		setRefreshing(true);
+		await refresh();
+		setRefreshing(false);
 	};
 
 	const handleFilterChoose = (selectedStatuses) => {
@@ -34,7 +34,7 @@ const Orders = () => {
 	if (!user) {
 		return (
 			<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
-				<SafeAreaView className='flex-1 items-center justify-center p-6' style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)' }}>
+				<SafeAreaView className='flex-1 items-center justify-center p-6' style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
 					<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='w-32 h-32 rounded-full mb-8' />
 					<Text className='text-center text-lg font-bold mb-4'>Please log in to view your orders.</Text>
 					<TouchableOpacity className='mt-4 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('/login')}>
@@ -94,102 +94,102 @@ const Orders = () => {
 	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>)
 
 	return (
-		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
-		<SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(245, 245, 245, 0.82)' }}>
-			<View className='flex-row p-6 gap-2 items-center'>
-				<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 rounded-full' />
+		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="repeat">
+			<SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(245, 245, 245, 0.02)' }}>
+				<View className='flex-row p-6 gap-2 items-center'>
+					<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 rounded-full' />
 
-				<View className='flex-1'>
-					<View className='flex-row'>
-						<Text className='text-primary font-semibold text-xl'>Cake</Text>
-						<Text className='text-secondary-strong font-semibold text-xl'>Track</Text>
+					<View className='flex-1'>
+						<View className='flex-row'>
+							<Text className='text-primary font-semibold text-xl'>Cake</Text>
+							<Text className='text-secondary-strong font-semibold text-xl'>Track</Text>
+						</View>
+						<Text className='text-gray-500 font-bold text-md'>Order Dashboard</Text>
 					</View>
-					<Text className='text-gray-500 font-bold text-md'>Order Dashboard</Text>
+
+					{/* Dynamic Stats Board */}
+					<View className='flex-row gap-2 rounded-2xl border-2 border-secondary-light bg-white h-16 items-center'>
+						<View className='px-3 border-r border-r-secondary-light items-center'>
+							<Text className='font-semibold text-xs'>Total</Text>
+							<Text className='text-lg text-gray-700'>{totalOrders}</Text>
+						</View>
+						<View className='px-3 border-r border-r-secondary-light items-center'>
+							<Text className='font-semibold text-xs'>Ready</Text>
+							<Text className='text-lg text-gray-700'>{readyOrders}</Text>
+						</View>
+						<View className='px-3 items-center'>
+							<Text className='font-semibold text-xs'>Pending</Text>
+							<Text className='text-lg text-gray-700'>{pendingOrders}</Text>
+						</View>
+					</View>
 				</View>
 
-				{/* Dynamic Stats Board */}
-				<View className='flex-row gap-2 rounded-2xl border-2 border-secondary-light bg-white h-16 items-center'>
-					<View className='px-3 border-r border-r-secondary-light items-center'>
-						<Text className='font-semibold text-xs'>Total</Text>
-						<Text className='text-lg text-gray-700'>{totalOrders}</Text>
-					</View>
-					<View className='px-3 border-r border-r-secondary-light items-center'>
-						<Text className='font-semibold text-xs'>Ready</Text>
-						<Text className='text-lg text-gray-700'>{readyOrders}</Text>
-					</View>
-					<View className='px-3 items-center'>
-						<Text className='font-semibold text-xs'>Pending</Text>
-						<Text className='text-lg text-gray-700'>{pendingOrders}</Text>
-					</View>
-				</View>
-			</View>
-
-			<ScrollView
-				contentContainerStyle={{ paddingBottom: 20 }}
-				refreshControl={
-					<RefreshControl
-						refreshing={refreshing}
-						onRefresh={onRefresh}
-						colors={['#8B5A3C']} // Android loading color (Brown)
-						tintColor="#8B5A3C"  // iOS loading spinner color (Brown)
-					/>}
-			>
-				<View className='flex px-6'>
-					<View className='flex-row items-center gap-2 bg-white shadow-md p-3 rounded-md border border-gray-200'>
-						<Search opacity={.50} color="gray" />
-						<TextInput
-							className='flex-1'
-							value={search}
-							onChangeText={(text) => setSearch(text)}
-							placeholder='Search orders...'
-						/>
-					</View>
-
-					<View className='mt-6 gap-4'>
-						<View className='flex-row items-center justify-between'>
-							<Text className='font-semibold text-lg'>Orders</Text>
-
-							<TouchableOpacity className='flex-row items-center gap-2' onPress={() => setShowFilter(true)}>
-								<View className='font-semibold text-lg text-gray-500 flex-row gap-2'>
-									{activeFilters}
-									{filters.length === 0 && <Text className='font-semibold text-lg text-gray-500'>Filters</Text>}
-								</View>
-								<SlidersHorizontal />
-							</TouchableOpacity>
+				<ScrollView
+					contentContainerStyle={{ paddingBottom: 20 }}
+					refreshControl={
+						<RefreshControl
+							refreshing={refreshing}
+							onRefresh={onRefresh}
+							colors={['#8B5A3C']} // Android loading color (Brown)
+							tintColor="#8B5A3C"  // iOS loading spinner color (Brown)
+						/>}
+				>
+					<View className='flex px-6'>
+						<View className='flex-row items-center gap-2 bg-white shadow-md p-3 rounded-md border border-gray-200'>
+							<Search opacity={.50} color="gray" />
+							<TextInput
+								className='flex-1'
+								value={search}
+								onChangeText={(text) => setSearch(text)}
+								placeholder='Search orders...'
+							/>
 						</View>
 
-						{/* 3. EMPTY STATE: Show this if there are no orders */}
-						{listOrders.length > 0 ?
-							<View>
-								{listOrders}
-							</View>
-							: (
-								<View className='items-center justify-center py-10 opacity-50'>
-									<Text>No orders found.</Text>
-								</View>
-							)}
-					</View>
+						<View className='mt-6 gap-4'>
+							<View className='flex-row items-center justify-between'>
+								<Text className='font-semibold text-lg'>Orders</Text>
 
-					<View className='mt-6 gap-4'>
-						<View className='flex-row items-center justify-between'>
-							<Text className='font-semibold text-lg'>Acquired</Text>
+								<TouchableOpacity className='flex-row items-center gap-2' onPress={() => setShowFilter(true)}>
+									<View className='font-semibold text-lg text-gray-500 flex-row gap-2'>
+										{activeFilters}
+										{filters.length === 0 && <Text className='font-semibold text-lg text-gray-500'>Filters</Text>}
+									</View>
+									<SlidersHorizontal />
+								</TouchableOpacity>
+							</View>
+
+							{/* 3. EMPTY STATE: Show this if there are no orders */}
+							{listOrders.length > 0 ?
+								<View>
+									{listOrders}
+								</View>
+								: (
+									<View className='items-center justify-center py-10 opacity-50'>
+										<Text>No orders found.</Text>
+									</View>
+								)}
 						</View>
 
-						{/* 3. EMPTY STATE: Show this if there are no orders */}
-						{listCompleteOrders.length > 0 ?
-							<View>
-								{listCompleteOrders}
+						<View className='mt-6 gap-4'>
+							<View className='flex-row items-center justify-between'>
+								<Text className='font-semibold text-lg'>Acquired</Text>
 							</View>
-							: (
-								<View className='items-center justify-center py-10 opacity-50'>
-									<Text>No finished orders yet.</Text>
+
+							{/* 3. EMPTY STATE: Show this if there are no orders */}
+							{listCompleteOrders.length > 0 ?
+								<View>
+									{listCompleteOrders}
 								</View>
-							)}
+								: (
+									<View className='items-center justify-center py-10 opacity-50'>
+										<Text>No finished orders yet.</Text>
+									</View>
+								)}
+						</View>
 					</View>
-				</View>
-			</ScrollView>
-			<OrderFilter activeFilters={filters} show={showFilter} onChoose={handleFilterChoose} onClose={() => setShowFilter(false)} />
-		</SafeAreaView>
+				</ScrollView>
+				<OrderFilter activeFilters={filters} show={showFilter} onChoose={handleFilterChoose} onClose={() => setShowFilter(false)} />
+			</SafeAreaView>
 		</ImageBackground>
 	)
 }
