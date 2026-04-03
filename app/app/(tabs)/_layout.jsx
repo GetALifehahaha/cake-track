@@ -14,7 +14,7 @@ const _layout = () => {
 	]
 
 	return (
-		<SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+		<SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: '#fff' }}>
 			<Tabs
 				screenOptions={{
 					headerShown: false,

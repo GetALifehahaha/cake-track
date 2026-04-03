@@ -142,19 +142,19 @@ const Checkout = () => {
                 pickup_time: formattedTime,
                 cake_orders: {
                     occasion: "pre-made",
-                    shape: "pre-made",
+                    shape: "N/A",
                     cake_tier: 1,
-                    base_flavor: "pre-made",
-                    filling: "pre-made",
-                    coating_color: "none",
-                    border: "none",
-                    border_color: "none",
+                    base_flavor: cartItemsString,
+                    filling: "N/A",
+                    coating_color: "N/A",
+                    border: "N/A",
+                    border_color: "N/A",
                     toppings: "none",
                     addons: "none",
-                    message_type: "none",
-                    message: ""
+                    message_type: "N/A",
+                    message: "N/A"
                 },
-                comments: `PRE-MADE ORDER: ${cartItemsString}`,
+                comments: "N/A",
                 premade_items: cart.map(item => ({
                     cake_id: item.id,
                     quantity: item.amount || 1,
@@ -167,9 +167,17 @@ const Checkout = () => {
             await postOrder(payload);
             // const newOrderId = response?.id || response?.data?.id;
 
+            const downpaymentAmount = (premadeTotal * 0.15).toFixed(2);
+
             setCart([]);
 
-            router.replace('/gcashInformation')
+            router.replace({
+                pathname: '/gcashInformation',
+                params: {
+                    amount: downpaymentAmount,
+                    paymentType: 'cake',
+                },
+            })
 
             // if (newOrderId) {
             //     await handlePayViaGCash(newOrderId);
@@ -268,7 +276,12 @@ const Checkout = () => {
 
                             <View className='mt-4 flex-row gap-2 p-4 rounded-md border border-secondary-light items-center'>
                                 <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />
-                                <Text className='font-medium text-secondary-strong flex-1'>I agree to the terms and conditions</Text>
+                                <Text className='font-medium text-secondary-strong flex-1'>
+                                    I agree to the{' '}
+                                    <Text className='font-bold text-primary' onPress={() => router.push('/termsAndConditions')}>
+                                        terms and conditions
+                                    </Text>
+                                </Text>
                             </View>
                         </View>
 

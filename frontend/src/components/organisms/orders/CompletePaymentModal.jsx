@@ -9,10 +9,13 @@ const CompletePaymentModal = ({ order, onConfirm, onClose }) => {
 
     const isPremade = order.recipe !== null && order.total_price !== null;
 
-    // For premade: remaining is total - downpayment
-    // For custom: user enters total price manually
-    const downpayment = order.payments?.find(p => p.payment_type === 'downpayment' && p.status === 'success');
-    const downpaymentAmount = Number(downpayment?.amount || 0);
+    // For premade: remaining is total - 15% downpayment (or recorded downpayment if present)
+    // For custom: remaining is total - 500 downpayment (or recorded downpayment if present)
+    const normalizedPayments = (order.payments || []).filter(payment => {
+        const status = String(payment?.status || '').toLowerCase();
+        return status === 'success' || status === 'completed' || status === 'paid';
+    });
+    const recordedDownpayment = normalizedPayments.find(payment => String(payment?.payment_type || '').toLowerCase() === 'downpayment');
 
     const [totalPrice, setTotalPrice] = useState(isPremade ? Number(order.total_price) : 0);
     const [amountReceived, setAmountReceived] = useState(0);
@@ -21,10 +24,14 @@ const CompletePaymentModal = ({ order, onConfirm, onClose }) => {
     const [modalFeedbackContent, setModalFeedbackContent] = useState({ type: "", label: "", details: "" });
     const [closing, setClosing] = useState(false);
 
+    const totalPriceNumber = Number(totalPrice) || 0;
+    const expectedDownpayment = isPremade ? totalPriceNumber * 0.15 : 500;
+    const downpaymentAmount = Number(recordedDownpayment?.amount || expectedDownpayment || 0);
+    const effectiveDownpayment = Math.min(downpaymentAmount, totalPriceNumber);
+
     const remainingBalance = useMemo(() => {
-        const total = Number(totalPrice) || 0;
-        return Math.max(total - downpaymentAmount, 0);
-    }, [totalPrice, downpaymentAmount]);
+        return Math.max(totalPriceNumber - effectiveDownpayment, 0);
+    }, [totalPriceNumber, effectiveDownpayment]);
 
     const formatCurrency = (value) => Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 

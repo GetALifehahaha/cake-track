@@ -125,6 +125,27 @@ const InitialLayout = () => {
           animation: 'slide_from_bottom'
         }}
       />
+      <Stack.Screen
+        name="faq"
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="termsOfService"
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right'
+        }}
+      />
+      <Stack.Screen
+        name="termsAndConditions"
+        options={{
+          presentation: 'card',
+          animation: 'slide_from_right'
+        }}
+      />
     </Stack>
   )
 }

@@ -13,6 +13,10 @@ const DatePicker = ({ onSelectDate }) => {
     const [date, setDate] = useState(null);
     const { blockedDates, isDateBlocked } = useOpening();
     const { showToast } = useToast();
+    const today = new Date();
+    const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const minimumPickupDate = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
     // Build markedDates map for disabled days
     const buildDisabledMap = () => {
@@ -94,6 +98,11 @@ const DatePicker = ({ onSelectDate }) => {
 
                         <Calendar
                             onDayPress={day => {
+                                if (day.dateString <= todayDateString) {
+                                    showToast?.('Pickup date must be after today.', 'error');
+                                    return;
+                                }
+
                                 // Prevent selecting blocked dates
                                 const selected = new Date(day.dateString);
                                 if (isDateBlocked && isDateBlocked(selected)) {
@@ -108,6 +117,7 @@ const DatePicker = ({ onSelectDate }) => {
                                 ...disabledMap,
                                 [date]: { selected: true, selectedColor: '#BE9B7B' },
                             }}
+                            minDate={minimumPickupDate}
                             // 1. Custom arrow rendering to add the border
                             renderArrow={(direction) => (
                                 <View style={{

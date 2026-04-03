@@ -618,7 +618,16 @@ class RegisterTransactionSerializer(serializers.ModelSerializer):
 class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
-        fields = ['business_name', 'address', 'tin', 'contact_number', 'message', 'secret_pin']
+        fields = [
+            'business_name',
+            'address',
+            'tin',
+            'contact_number',
+            'message',
+            'gcash_owner_name',
+            'gcash_owner_number',
+            'secret_pin',
+        ]
         extra_kwargs = {'secret_pin': {'write_only': True}}
         
         

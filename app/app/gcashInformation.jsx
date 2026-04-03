@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,16 +9,79 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import api from '@/api/api';
 
 const GCashPaymentScreen = () => {
+    const { amount, paymentType } = useLocalSearchParams();
     const [copied, setCopied] = useState(false);
+    const [gcashOwnerName, setGcashOwnerName] = useState('');
+    const [gcashOwnerNumber, setGcashOwnerNumber] = useState('');
     const toastOpacity = React.useRef(new Animated.Value(0)).current;
 
-    const handleCopy = async () => {
-        const number = '09942867630';
+    const formatGCashNumber = (value) => {
+        const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 4) return digits;
+        if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+    };
 
-        await Clipboard.setStringAsync(number);
+    const maskGCashOwnerName = (fullName) => {
+        const normalized = String(fullName || '').trim().replace(/\s+/g, ' ');
+        if (!normalized) return '';
+
+        const nameParts = normalized.split(' ');
+        const firstName = (nameParts[0] || '').toUpperCase();
+        const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+
+        if (!firstName) return '';
+
+        let maskedFirstName = firstName;
+        if (firstName.length > 2) {
+            maskedFirstName = `${firstName.slice(0, 2)}${'*'.repeat(Math.max(0, firstName.length - 3))}${firstName.slice(-1)}`;
+        }
+
+        const lastInitial = lastName ? ` ${lastName[0].toUpperCase()}.` : '';
+        return `${maskedFirstName}${lastInitial}`;
+    };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchGCashInfo = async () => {
+            try {
+                const response = await api.get('/pos/business-details/');
+                if (!isMounted) return;
+
+                setGcashOwnerName(response?.data?.gcash_owner_name || '');
+                setGcashOwnerNumber(response?.data?.gcash_owner_number || '');
+            } catch (error) {
+                console.error('Failed to fetch GCash owner information', error?.response?.data || error?.message || error);
+            }
+        };
+
+        fetchGCashInfo();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const amountValue = Array.isArray(amount) ? amount[0] : amount;
+    const parsedAmount = Number(amountValue);
+    const hasValidAmount = Number.isFinite(parsedAmount) && parsedAmount > 0;
+    const displayAmount = hasValidAmount ? `₱ ${parsedAmount.toFixed(2)}` : null;
+    const paymentTypeValue = Array.isArray(paymentType) ? paymentType[0] : paymentType;
+    const amountLabel = paymentTypeValue === 'custom'
+        ? 'Custom Order Downpayment'
+        : 'Cake Order Downpayment (15%)';
+
+    const displayMaskedName = maskGCashOwnerName(gcashOwnerName) || 'A********R S.';
+    const displayNumber = formatGCashNumber(gcashOwnerNumber) || '0994 286 7630';
+    const copyNumber = String(gcashOwnerNumber || '09942867630').replace(/\D/g, '').slice(0, 11);
+
+    const handleCopy = async () => {
+        await Clipboard.setStringAsync(copyNumber);
 
         setCopied(true);
         Animated.sequence([
@@ -48,19 +111,26 @@ const GCashPaymentScreen = () => {
                     <Text style={styles.badgeText}>PAY VIA GCASH</Text>
                 </View>
 
+                {displayAmount && (
+                    <View style={styles.amountSection}>
+                        <Text style={styles.amountLabel}>{amountLabel}</Text>
+                        <Text style={styles.amountValue}>{displayAmount}</Text>
+                    </View>
+                )}
+
                 <View style={styles.divider} />
                 <Text style={styles.sectionLabel}>Account Details</Text>
 
                 {/* Account Name Card */}
                 <View style={styles.infoCard}>
                     <Text style={styles.infoLabel}>Account Name</Text>
-                    <Text style={styles.infoValue}>A********R J. S.</Text>
+                    <Text style={styles.infoValue}>{displayMaskedName}</Text>
                 </View>
 
                 {/* Phone Number Card */}
                 <View style={styles.infoCard}>
                     <Text style={styles.infoLabel}>Phone Number</Text>
-                    <Text style={styles.numberValue}>0994 286 7630</Text>
+                    <Text style={styles.numberValue}>{displayNumber}</Text>
                 </View>
 
                 {/* Copy Button */}
@@ -141,6 +211,22 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#8b5e3c',
         letterSpacing: 1.2,
+    },
+    amountSection: {
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    amountLabel: {
+        fontSize: 12,
+        color: '#9c7a5e',
+        marginBottom: 4,
+        letterSpacing: 0.3,
+    },
+    amountValue: {
+        fontSize: 40,
+        fontWeight: '700',
+        color: '#7a4520',
+        lineHeight: 44,
     },
 
     // Divider & label

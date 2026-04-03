@@ -64,7 +64,7 @@ const Account = () => {
 
   return (
     <ImageBackground source={accountTexture} style={{ flex: 1 }} resizeMode='repeat'>
-      <SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+      <SafeAreaView edges={['left', 'right', 'bottom']} className='flex-1' style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
         <ScrollView className='flex-1' bounces={false}>
           {/* 1. THE HEADER */}
           <View className='h-[160px] bg-primary rounded-b-[20%] p-6 w-full flex-row gap-2 items-center z-0'>
@@ -195,7 +195,6 @@ const Account = () => {
                     <Text className='text-secondary-light text-xs'>Manage your saved addresses</Text>
                   </View>
                 </TouchableOpacity>
-
                 <ConfirmModal details={"Are you sure you want to logout?"} onConfirm={logout} >
                   <View className='mt-8 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg'>
                     <LogOut size={14} color="white" />
@@ -226,6 +225,8 @@ const Account = () => {
                 </TouchableOpacity>
               </>
             }
+
+
 
           </View>
           <View className='h-8' />

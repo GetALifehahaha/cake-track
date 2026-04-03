@@ -289,9 +289,13 @@ const CustomOrders = () => {
             const newOrderId = response?.id || response?.data?.id;
 
             if (newOrderId) {
-                // Determine if we pay now or later. 
-                // If you want ALL orders to pay immediately:
-                await handlePayViaGCash(newOrderId);
+                router.replace({
+                    pathname: '/gcashInformation',
+                    params: {
+                        amount: '500.00',
+                        paymentType: 'custom',
+                    },
+                });
             } else {
                 // Fallback if no ID returned (shouldn't happen if backend is 200 OK)
                 showToast("Order placed, but ID missing. Check Order History.");
@@ -612,7 +616,7 @@ const CustomOrders = () => {
                 >
                     {/* IMAGE CONTAINER */}
                     <View style={{ height: SCREEN_HEIGHT * 0.35 }} className="w-full items-center justify-center p-4">
-                        <View className='aspect-square h-[90%] bg-main-form rounded-lg justify-center items-center shadow-sm'>
+                        <View className='aspect-square h-[90%] bg-[#f7e8e1fe] rounded-lg justify-center items-center shadow-sm'>
                             {personallyDesign ? (
                                 <View className="items-center">
                                     <Text className='text-sm font-semibold text-gray-300'>CUSTOM DESIGN</Text>
@@ -622,7 +626,7 @@ const CustomOrders = () => {
                                 shape === "other" ? (
                                     <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
                                 ) : customLayers.length > 0 ? (
-                                    <View ref={cakePreviewRef} collapsable={false} style={{ width: 200, height: 200 }}>
+                                    <View ref={cakePreviewRef} collapsable={false} style={{ width: 300, height: 300 }}>
                                         {customLayers.map((layerSource, index) => (
                                             <Image
                                                 key={index}

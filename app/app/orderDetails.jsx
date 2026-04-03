@@ -20,10 +20,28 @@ const formatReferenceNumber = (value = '') => {
     return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12)}`;
 };
 
+const formatCurrency = (value = 0) => {
+    const amount = Number(value || 0);
+    return `₱ ${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+const parseOrderDataParam = (orderDataParam) => {
+    if (!orderDataParam) return {};
+
+    try {
+        return JSON.parse(orderDataParam);
+    } catch (e) {
+        console.error('Error parsing order data', e);
+        return {};
+    }
+};
+
 const OrderDetails = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { showToast } = useToast();
+    const orderDataParam = Array.isArray(params.orderData) ? params.orderData[0] : params.orderData;
+    const [orderData, setOrderData] = useState(() => parseOrderDataParam(orderDataParam));
     const [referenceNumber, setReferenceNumber] = useState('');
     const [submittingReference, setSubmittingReference] = useState(false);
     const [cancelling, setCancelling] = useState(false);
@@ -31,17 +49,8 @@ const OrderDetails = () => {
     const { width } = Dimensions.get('window');
     const imageSize = (width - 32 - 16) / 3;
 
-    // 1. We receive the data as a JSON string stringified in the Card
-    // We need to parse it back to an object
-    let order = {};
-    try {
-        order = JSON.parse(params.orderData);
-    } catch (e) {
-        console.error("Error parsing order data", e);
-    }
-
     // Use local state so UI updates immediately after cancel
-    const currentStatus = orderStatus ?? order.status;
+    const currentStatus = orderStatus ?? orderData.status;
 
     // 2. Destructure the API data to match the variable names in your JSX
     // We handle potential null values safely here
@@ -57,7 +66,12 @@ const OrderDetails = () => {
         image,
         order_images = [],
         reference_number: existingReferenceNumber,
-    } = order;
+    } = orderData;
+
+    useEffect(() => {
+        setOrderData(parseOrderDataParam(orderDataParam));
+        setOrderStatus(null);
+    }, [orderDataParam]);
 
     useEffect(() => {
         if (existingReferenceNumber) {
@@ -83,11 +97,26 @@ const OrderDetails = () => {
         message_type: messageType = "none",
         message = "",
     } = cake_orders || {};
+    const isPremadeOrder = String(occasion || '').toLowerCase() === 'pre-made';
 
     // Logic for cupcakes (based on your JSX)
-    const hasCupcakes = !!order.cupcake_orders; // Check your API structure for this
-    const cupcakesCount = order.cupcake_orders?.count || 0;
-    const cupcakesFrosting = order.cupcake_orders?.frosting || "";
+    const hasCupcakes = !!orderData.cupcake_orders; // Check your API structure for this
+    const cupcakesCount = orderData.cupcake_orders?.count || 0;
+    const cupcakesFrosting = orderData.cupcake_orders?.frosting || "";
+
+    const reloadOrderDetails = async () => {
+        if (!orderData?.id) return;
+
+        const response = await api.get(`/orders/orders/${orderData.id}/`);
+        const freshOrder = response.data;
+
+        setOrderData(freshOrder);
+        setOrderStatus(freshOrder?.status ?? null);
+
+        if (freshOrder?.reference_number) {
+            setReferenceNumber(formatReferenceNumber(freshOrder.reference_number));
+        }
+    };
 
     const handleImagePress = (imgUri) => {
         router.push({
@@ -102,6 +131,22 @@ const OrderDetails = () => {
 
     const referenceDigitsCount = getReferenceDigits(referenceNumber).length;
     const isReferenceNumberComplete = referenceDigitsCount >= 13 && referenceDigitsCount <= 15;
+    const displayedReferenceNumber = existingReferenceNumber
+        ? formatReferenceNumber(existingReferenceNumber)
+        : 'No reference number yet';
+    const totalAmount = Number(orderData?.total_price || 0);
+    const expectedDownpayment = isPremadeOrder ? totalAmount * 0.15 : 500;
+    const boundedDownpayment = totalAmount > 0
+        ? Math.min(expectedDownpayment, totalAmount)
+        : expectedDownpayment;
+    const remainingAmount = totalAmount > 0
+        ? Math.max(totalAmount - boundedDownpayment, 0)
+        : 0;
+    const paymentAmountDisplay = isPremadeOrder
+        ? (totalAmount > 0
+            ? `${formatCurrency(boundedDownpayment)} + ${formatCurrency(remainingAmount)} / ${formatCurrency(totalAmount)}`
+            : 'N/A')
+        : formatCurrency(500);
 
     const handlePostReferenceNumber = async () => {
         if (submittingReference) return;
@@ -114,10 +159,12 @@ const OrderDetails = () => {
 
         setSubmittingReference(true);
         try {
-            await api.patch(`/orders/orders/${order.id}/`, {
+            await api.patch(`/orders/orders/${orderData.id}/`, {
                 reference_number: normalizedReference,
+                status: 'pending',
             });
-            setReferenceNumber(formatReferenceNumber(normalizedReference));
+
+            await reloadOrderDetails();
             showToast('Reference number submitted successfully.', 'success');
         } catch (error) {
             console.error('Reference Number Error:', error.response?.data || error.message);
@@ -131,7 +178,7 @@ const OrderDetails = () => {
         if (cancelling) return;
         setCancelling(true);
         try {
-            await api.post(`/orders/orders/${order.id}/cancel/`);
+            await api.post(`/orders/orders/${orderData.id}/cancel/`);
             setOrderStatus('cancelled');
             showToast("Order cancelled successfully.", "success");
         } catch (error) {
@@ -161,8 +208,8 @@ const OrderDetails = () => {
                         <View>
                             <Text className={`${currentStatus === "rejected" ? 'text-red-400' : currentStatus === "cancelled" ? 'text-red-400' : currentStatus === "unpaid" ? 'text-orange-500' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(currentStatus).toUpperCase()}</Text>
                         </View>
-                        {order.reject_reason &&
-                            <Text className='text-secondary-strong text-md font-bold'>{order.reject_reason}</Text>
+                        {orderData.reject_reason &&
+                            <Text className='text-secondary-strong text-md font-bold'>{orderData.reject_reason}</Text>
                         }
                     </View>
 
@@ -210,6 +257,27 @@ const OrderDetails = () => {
                             </Text>
                         </TouchableOpacity>
                     )}
+
+                    <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                        <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
+                            <NotepadText style={{ color: '#A67C52' }} />
+                        </View>
+                        <View>
+                            <Text className='text-gray-300'>Reference Number</Text>
+                            <Text className='text-primary text-lg font-semibold'>{displayedReferenceNumber}</Text>
+                        </View>
+                    </View>
+
+                    <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                        <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
+                            <NotepadText style={{ color: '#A67C52' }} />
+                        </View>
+                        <View className='flex-1'>
+                            <Text className='text-gray-300'>Payment Amount</Text>
+                            <Text className='text-primary text-lg font-semibold'>{paymentAmountDisplay}</Text>
+                        </View>
+                    </View>
+
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
                             <Cake style={{ color: '#A67C52' }} />
@@ -237,7 +305,7 @@ const OrderDetails = () => {
                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                 <Text className='text-gray-400 text-xs mb-1'>Size</Text>
                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                    {tier ? `${tier} Tier` : '-'}
+                                    {isPremadeOrder ? 'N/A' : (tier ? `${tier} Tier` : '-')}
                                 </Text>
                             </View>
                             <View className='w-[48%] p-4 bg-white rounded-lg'>
@@ -255,19 +323,19 @@ const OrderDetails = () => {
                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                 <Text className='text-gray-400 text-xs mb-1'>Coating Color</Text>
                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                    {coatingColor || '-'}
+                                    {isPremadeOrder ? 'N/A' : (coatingColor || '-')}
                                 </Text>
                             </View>
                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                 <Text className='text-gray-400 text-xs mb-1'>Border Design</Text>
                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                    {border || 'None'}
+                                    {isPremadeOrder ? 'N/A' : (border || 'None')}
                                 </Text>
                             </View>
                             <View className='w-[48%] p-4 bg-white rounded-lg'>
                                 <Text className='text-gray-400 text-xs mb-1'>Border Color</Text>
                                 <Text className='text-primary text-lg font-semibold capitalize'>
-                                    {borderColor || 'None'}
+                                    {isPremadeOrder ? 'N/A' : (borderColor || 'None')}
                                 </Text>
                             </View>
                         </View>

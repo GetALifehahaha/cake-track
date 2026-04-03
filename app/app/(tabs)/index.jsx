@@ -291,15 +291,15 @@ export default function Index() {
                                 <View className='flex-row flex-wrap justify-between'>
                                     <View className='w-1/2 mb-4'>
                                         <Text className='font-bold text-[#8B5A3C] mb-3'>Support</Text>
-                                        <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Contact Us</Text></TouchableOpacity>
-                                        <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>FAQ</Text></TouchableOpacity>
-                                        <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Track Order</Text></TouchableOpacity>
+                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Contact Us</Text></TouchableOpacity> */}
+                                        <TouchableOpacity onPress={() => router.push('/faq')}><Text className='text-gray-500 text-xs mb-2'>FAQ</Text></TouchableOpacity>
+                                        <TouchableOpacity onPress={() => router.push('/orders')}><Text className='text-gray-500 text-xs mb-2'>Track Order</Text></TouchableOpacity>
                                     </View>
                                     <View className='w-1/2 mb-4'>
                                         <Text className='font-bold text-[#8B5A3C] mb-3'>Company</Text>
-                                        <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>About Us</Text></TouchableOpacity>
-                                        <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Terms of Service</Text></TouchableOpacity>
-                                        <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity>
+                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>About Us</Text></TouchableOpacity> */}
+                                        <TouchableOpacity onPress={() => router.push('/termsOfService')}><Text className='text-gray-500 text-xs mb-2'>Terms of Service</Text></TouchableOpacity>
+                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity> */}
                                     </View>
                                 </View>
 

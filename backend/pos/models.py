@@ -327,6 +327,8 @@ class BusinessSettings(models.Model):
     
     contact_number = models.CharField(max_length=20, blank=True)
     message = models.TextField(blank=True, help_text="Message to appear at the bottom of the receipt (e.g. Thank you!)")
+    gcash_owner_name = models.CharField(max_length=100, blank=True, default="")
+    gcash_owner_number = models.CharField(max_length=20, blank=True, default="")
 
     secret_pin = models.IntegerField(default=1234)
 

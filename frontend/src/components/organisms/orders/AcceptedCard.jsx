@@ -16,8 +16,8 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(false) }}>
 					<Button
-						variant={!canReadyForPickup ? 'error' : 'success' }
-						text={!canReadyForPickup ? 'ORDER NOT READY' : 'READY FOR PICKUP' }
+						variant={!canReadyForPickup ? 'error' : 'success'}
+						text={!canReadyForPickup ? 'ORDER NOT READY' : 'READY FOR PICKUP'}
 						onClick={(e) => {
 							e.stopPropagation();
 							if (!canReadyForPickup) return;
@@ -38,9 +38,6 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 
 			{/* Cake Details */}
 			<div className='flex mt-4'>
-				<h5 className='basis-1/5 text-center font-bold text-md'>
-					{order.cake_orders ? '1x' : ''}
-				</h5>
 				<div className='flex flex-col gap-0.5'>
 					<h5 className='font-bold text-md'>{capitalize(order.cake_orders.name)}</h5>
 					<h5 className='text-xs text-accent-text'>Flavor: {capitalize(order.cake_orders.base_flavor)}</h5>

@@ -7,6 +7,7 @@ import useRecipe from '@/hooks/useRecipe';
 import { useToast } from '@/context/ToastContext';
 import { formatQty } from '@/utils/recipeUnits';
 import { capitalizeSnakeCase } from '@/utils/capitalize';
+import { parseTimeString } from '@/utils/time';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/api/api';
 import API_ENDPOINTS from '@/api/endpoints';
@@ -70,6 +71,25 @@ const mapRecipeToIngredientItems = (recipe) => {
     });
 };
 
+const formatReferenceNumber = (value) => {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (!digits) return 'N/A';
+    return digits.match(/.{1,4}/g)?.join(' ') || digits;
+};
+
+const formatCurrency = (value) => `₱ ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const formatDeliveryDate = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('en-PH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+};
+
 const StepMarker = ({ number, label, active, done, onClick }) => {
     const variantClass = done
         ? 'bg-success text-main-white'
@@ -118,6 +138,36 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const payments = orderSnapshot?.payments || [];
     const latestPayment = payments.length ? payments[payments.length - 1] : null;
     const paymentStatus = latestPayment?.status || 'unpaid';
+    const orderOccasion = orderSnapshot?.cake_orders?.occasion;
+    const isPremadeOrder = String(orderOccasion || '').toLowerCase() === 'pre-made';
+    const totalAmount = Number(orderSnapshot?.total_price || 0);
+    const expectedDownpaymentAmount = isPremadeOrder
+        ? totalAmount * 0.15
+        : 500;
+    const boundedExpectedDownpayment = totalAmount > 0
+        ? Math.min(expectedDownpaymentAmount, totalAmount)
+        : expectedDownpaymentAmount;
+    const successfulPayments = payments.filter(payment => {
+        const status = String(payment?.status || '').toLowerCase();
+        return status === 'success' || status === 'completed' || status === 'paid';
+    });
+    const totalPaidAmount = successfulPayments.reduce((sum, payment) => sum + Number(payment?.amount || 0), 0);
+    const recordedDownpayment = successfulPayments.find(payment => String(payment?.payment_type || '').toLowerCase() === 'downpayment');
+    const paidDownpaymentAmount = recordedDownpayment
+        ? Number(recordedDownpayment.amount || 0)
+        : Math.min(totalPaidAmount, boundedExpectedDownpayment);
+    const paidRemainingAmount = Math.max(totalPaidAmount - paidDownpaymentAmount, 0);
+    const expectedRemainingAmount = totalAmount > 0
+        ? Math.max(totalAmount - boundedExpectedDownpayment, 0)
+        : 0;
+    const displayDownpaymentAmount = totalPaidAmount > 0 ? paidDownpaymentAmount : boundedExpectedDownpayment;
+    const displayRemainingAmount = totalPaidAmount > 0 ? paidRemainingAmount : expectedRemainingAmount;
+    const paymentAmountDisplay = totalAmount > 0
+        ? `${formatCurrency(displayDownpaymentAmount)} + ${formatCurrency(displayRemainingAmount)} / ${formatCurrency(totalAmount)}`
+        : (isPremadeOrder ? 'N/A' : formatCurrency(500));
+    const referenceNumber = formatReferenceNumber(orderSnapshot?.reference_number || latestPayment?.reference_number);
+    const formattedDeliveryDate = formatDeliveryDate(orderSnapshot?.due_date);
+    const formattedDeliveryTime = orderSnapshot?.pickup_time ? parseTimeString(orderSnapshot.pickup_time) : 'N/A';
 
     const displayImages = useMemo(() => {
         let imgs = [];
@@ -307,6 +357,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 <div className='border border-border rounded-2xl p-6 bg-main'>
                     <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Cake Details</h4>
                     <div className='space-y-3'>
+                        <DetailRow label='Occasion' value={orderOccasion} />
                         <DetailRow label='Flavor' value={orderSnapshot?.cake_orders?.base_flavor} />
                         <DetailRow label='Filling' value={orderSnapshot?.cake_orders?.filling} />
                         <DetailRow label='Shape' value={orderSnapshot?.cake_orders?.shape} />
@@ -360,12 +411,25 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             </div>
 
             <div className='border border-border rounded-2xl p-6 bg-main'>
-                <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Payment Status</h4>
+                <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Information</h4>
+                <div className='rounded-xl border border-border bg-main-white p-4 mb-4'>
+                    <p className='text-[10px] uppercase tracking-widest text-text/50 font-bold mb-2'>Comments</p>
+                    <p className='text-sm text-text whitespace-pre-wrap wrap-break-word'>
+                        {orderSnapshot?.comments?.trim() || 'No comments provided.'}
+                    </p>
+                </div>
                 <div className='space-y-3'>
-                    <DetailRow label='Current Status' value={paymentStatus} />
-                    <DetailRow label='Payment Type' value={capitalizeSnakeCase(latestPayment?.payment_type) || 'N/A'} />
-                    <DetailRow label='Amount Paid' value={latestPayment?.amount ? `₱ ${latestPayment.amount}` : 'N/A'} />
-                    <DetailRow label='Payment Records' value={payments.length} isLast />
+                    <DetailRow label='Delivery Date' value={formattedDeliveryDate} />
+                    <DetailRow label='Delivery Time' value={formattedDeliveryTime} isLast />
+                </div>
+            </div>
+
+            <div className='border border-border rounded-2xl p-6 bg-main'>
+                <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Payment</h4>
+                <div className='space-y-3'>
+                    <DetailRow label='Payment' value={capitalizeSnakeCase(paymentStatus)} />
+                    <DetailRow label='Reference Number' value={referenceNumber} />
+                    <DetailRow label='Payment Amount' value={paymentAmountDisplay} isLast />
                 </div>
             </div>
 
