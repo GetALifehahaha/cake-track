@@ -27,7 +27,7 @@ import ConfirmModal from '@/components/organisms/ConfirmModal';
 import useOrder from '@/hooks/useOrder';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
-import { isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
+import { formatPhoneNumber, isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
 
 // Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -235,7 +235,7 @@ const CustomOrders = () => {
             const cakeData = personallyDesign ? {
                 occasion: occasion === "other" ? specifyOccasion : occasion,
                 shape: "Custom Request",
-                cake_tier: 1, 
+                cake_tier: 1,
                 base_flavor: "See Comments",
                 filling: "See Comments",
                 coating_color: "See Reference",
@@ -412,7 +412,7 @@ const CustomOrders = () => {
                     showToast("Please enter your contact number", 'error');
                     return false;
                 } else if (!isValidPHPhoneNumber(contactNumber)) {
-                    showToast("Number must start with +63 or 09 (e.g. +639123456789 or 09123456789)", 'error');
+                    showToast("Number must be valid", 'error');
                     return false;
                 }
 
@@ -505,14 +505,14 @@ const CustomOrders = () => {
         const type = match ? `image/${match[1]}` : `image/jpeg`;
 
         const formData = new FormData();
-        
+
         // REACT NATIVE SPECIFIC: formatting the file object
         formData.append("file", {
             uri: imageUri,
             name: filename,
             type: type,
         });
-        
+
         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
         try {
@@ -533,7 +533,7 @@ const CustomOrders = () => {
             }
 
             const data = await response.json();
-            return data.secure_url; 
+            return data.secure_url;
         } catch (error) {
             console.error("Cloudinary upload error:", error);
             throw error;
@@ -549,39 +549,44 @@ const CustomOrders = () => {
         return str[0].toUpperCase() + str.slice(1)
     }
 
-    const handlePayViaGCash = async (orderId) => {
-        try {
-            showToast("Initiating GCash payment...", "info");
-            
-            const payload = { order_id: orderId };
-            
-            // Call Backend to get Checkout URL
-            const response = await api.post(`/payment/initiate/`, payload);
-            const { checkout_url } = response.data;
-
-            if (checkout_url) {
-                // Navigate to PaymentScreen using Expo Router
-                // Make sure your PaymentScreen file is named 'PaymentScreen.js' inside your app folder 
-                // or adjust the pathname accordingly (e.g., '/payment')
-                router.push({
-                    pathname: '/paymentScreen', 
-                    params: { 
-                        checkoutUrl: checkout_url, 
-                        orderId: orderId 
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Payment Error:", error.response?.data || error.message);
-            showToast("Error initiating payment. You can retry from your orders.", "error");
-            router.replace('/(tabs)/orders');
-        }
+    const handleContactNumber = (text) => {
+        const formatted = formatPhoneNumber(text);
+        setContactNumber(formatted);
     };
+
+    // const handlePayViaGCash = async (orderId) => {
+    //     try {
+    //         showToast("Initiating GCash payment...", "info");
+
+    //         const payload = { order_id: orderId };
+
+    //         // Call Backend to get Checkout URL
+    //         const response = await api.post(`/payment/initiate/`, payload);
+    //         const { checkout_url } = response.data;
+
+    //         if (checkout_url) {
+    //             // Navigate to PaymentScreen using Expo Router
+    //             // Make sure your PaymentScreen file is named 'PaymentScreen.js' inside your app folder 
+    //             // or adjust the pathname accordingly (e.g., '/payment')
+    //             router.push({
+    //                 pathname: '/paymentScreen',
+    //                 params: {
+    //                     checkoutUrl: checkout_url,
+    //                     orderId: orderId
+    //                 }
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error("Payment Error:", error.response?.data || error.message);
+    //         showToast("Error initiating payment. You can retry from your orders.", "error");
+    //         router.replace('/(tabs)/orders');
+    //     }
+    // };
 
     function formatText(str) {
         return str
             .split('_')                 // ["On", "both"]
-            .map(word => 
+            .map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             )
             .join(' ');                 // "On Both"
@@ -619,11 +624,11 @@ const CustomOrders = () => {
                                 ) : customLayers.length > 0 ? (
                                     <View ref={cakePreviewRef} collapsable={false} style={{ width: 200, height: 200 }}>
                                         {customLayers.map((layerSource, index) => (
-                                            <Image 
-                                                key={index} 
-                                                source={layerSource} 
-                                                style={{ width: '100%', height: '100%', position: 'absolute' }} 
-                                                resizeMode="contain" 
+                                            <Image
+                                                key={index}
+                                                source={layerSource}
+                                                style={{ width: '100%', height: '100%', position: 'absolute' }}
+                                                resizeMode="contain"
                                             />
                                         ))}
                                     </View>
@@ -711,7 +716,7 @@ const CustomOrders = () => {
                                     fullName={fullName} setFullName={setFullName}
                                     address={address} setAddress={setAddress}
                                     email={email} setEmail={setEmail}
-                                    contactNumber={contactNumber} setContactNumber={setContactNumber}
+                                    contactNumber={contactNumber} setContactNumber={handleContactNumber}
                                     agreeToTOC={agreeToTOC} setAgreeToTOC={setAgreeToTOC}
                                 />
                             )}

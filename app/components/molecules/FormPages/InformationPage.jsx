@@ -30,7 +30,7 @@ const InformationPage = ({ fullName, setFullName, address, setAddress, email, se
             </View>
             <View>
                 <FormLabel text={"Phone Number"} />
-                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={setContactNumber} placeholder='Enter your phone number' maxLength={18} />
+                <TextInput className='py-2 px-3 rounded-md border border-secondary-light mt-1 bg-white' value={contactNumber} onChangeText={setContactNumber} placeholder='Enter your phone number' maxLength={18} keyboardType='number-pad' />
             </View>
             <View className='flex-row mt-2 gap-4 px-4 py-4 rounded-lg border border-secondary-light items-center'>
                 <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />

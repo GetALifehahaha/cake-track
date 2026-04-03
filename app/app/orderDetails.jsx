@@ -1,18 +1,31 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, CreditCard, XCircle } from 'lucide-react-native';
+import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, XCircle } from 'lucide-react-native';
 import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
 import { useToast } from '@/context/ToastContext';
 import api from '@/api/api';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const getReferenceDigits = (value = '') => value.replace(/\D/g, '').slice(0, 15);
+
+const formatReferenceNumber = (value = '') => {
+    const digits = getReferenceDigits(value);
+
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+    if (digits.length <= 12) return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`;
+
+    return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12)}`;
+};
 
 const OrderDetails = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { showToast } = useToast();
-    const [repaying, setRepaying] = useState(false);
+    const [referenceNumber, setReferenceNumber] = useState('');
+    const [submittingReference, setSubmittingReference] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [orderStatus, setOrderStatus] = useState(null);
     const { width } = Dimensions.get('window');
@@ -43,13 +56,14 @@ const OrderDetails = () => {
         comments = "",
         image,
         order_images = [],
-        total_price: totalPrice,
+        reference_number: existingReferenceNumber,
     } = order;
 
-    const parsedTotal = Number(totalPrice);
-    const repayAmount = Number.isFinite(parsedTotal) && parsedTotal > 0
-        ? parsedTotal * 0.15
-        : 500;
+    useEffect(() => {
+        if (existingReferenceNumber) {
+            setReferenceNumber(formatReferenceNumber(existingReferenceNumber));
+        }
+    }, [existingReferenceNumber]);
 
     const displayImages = order_images.length > 0
         ? order_images.map(img => img.image_url)
@@ -68,7 +82,6 @@ const OrderDetails = () => {
         border_color: borderColor = "",
         message_type: messageType = "none",
         message = "",
-        cupcake_orders // Assuming this might be nested or separate, logic below handles it
     } = cake_orders || {};
 
     // Logic for cupcakes (based on your JSX)
@@ -83,25 +96,34 @@ const OrderDetails = () => {
         });
     };
 
-    const handleRepay = async () => {
-        if (repaying) return;
-        setRepaying(true);
-        try {
-            showToast("Initiating GCash payment...", "info");
-            const response = await api.post('/payment/repay/', { order_id: order.id });
-            const { checkout_url } = response.data;
+    const handleReferenceNumberChange = (text) => {
+        setReferenceNumber(formatReferenceNumber(text));
+    };
 
-            if (checkout_url) {
-                router.push({
-                    pathname: '/paymentScreen',
-                    params: { checkoutUrl: checkout_url, orderId: order.id }
-                });
-            }
+    const referenceDigitsCount = getReferenceDigits(referenceNumber).length;
+    const isReferenceNumberComplete = referenceDigitsCount >= 13 && referenceDigitsCount <= 15;
+
+    const handlePostReferenceNumber = async () => {
+        if (submittingReference) return;
+
+        const normalizedReference = getReferenceDigits(referenceNumber);
+        if (normalizedReference.length < 13 || normalizedReference.length > 15) {
+            showToast('Reference number must be 13 to 15 digits', 'error');
+            return;
+        }
+
+        setSubmittingReference(true);
+        try {
+            await api.patch(`/orders/orders/${order.id}/`, {
+                reference_number: normalizedReference,
+            });
+            setReferenceNumber(formatReferenceNumber(normalizedReference));
+            showToast('Reference number submitted successfully.', 'success');
         } catch (error) {
-            console.error("Repay Error:", error.response?.data || error.message);
-            showToast(error.response?.data?.error || "Failed to initiate repayment.", "error");
+            console.error('Reference Number Error:', error.response?.data || error.message);
+            showToast(error.response?.data?.error || 'Failed to update order', 'error');
         } finally {
-            setRepaying(false);
+            setSubmittingReference(false);
         }
     };
 
@@ -144,29 +166,38 @@ const OrderDetails = () => {
                         }
                     </View>
 
-                    {/* Repay Button for Unpaid Orders */}
+                    {/* Reference Number Submission for Unpaid Orders */}
                     {currentStatus === 'unpaid' && (
-                        <TouchableOpacity
-                            onPress={handleRepay}
-                            disabled={repaying}
-                            className='flex-row items-center justify-center gap-2 p-4 bg-orange-500 rounded-xl w-full active:opacity-80'
-                        >
-                            {repaying ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <CreditCard size={20} color="white" />
-                            )}
-                            <Text className='text-white text-lg font-bold'>
-                                {repaying ? 'Processing...' : `Pay Now — ₱${repayAmount.toFixed(2)}`}
-                            </Text>
-                        </TouchableOpacity>
+                        <View className='gap-3 p-4 bg-white rounded-xl border border-orange-200 w-full'>
+                            <Text className='text-primary font-semibold'>Payment Reference Number</Text>
+                            <TextInput
+                                value={referenceNumber}
+                                onChangeText={handleReferenceNumberChange}
+                                placeholder='1234 5678 9012 345'
+                                keyboardType='number-pad'
+                                maxLength={18}
+                                editable={!submittingReference}
+                                className='border border-gray-200 rounded-lg px-4 py-3 text-primary bg-white'
+                            />
+                            <TouchableOpacity
+                                onPress={handlePostReferenceNumber}
+                                disabled={submittingReference || !isReferenceNumberComplete}
+                                className={`flex-row items-center justify-center gap-2 p-4 bg-orange-500 rounded-xl w-full active:opacity-80 ${submittingReference || !isReferenceNumberComplete ? 'opacity-60' : ''}`}
+                            >
+                                {submittingReference && (
+                                    <ActivityIndicator size='small' color='white' />
+                                )}
+                                <Text className='text-white text-lg font-bold'>
+                                    {submittingReference ? 'Submitting...' : 'Submit Reference Number'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     )}
 
-                    {/* Cancel Button for Unpaid Orders */}
                     {currentStatus === 'unpaid' && (
                         <TouchableOpacity
                             onPress={handleCancel}
-                            disabled={cancelling}
+                            disabled={cancelling || submittingReference}
                             className='flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80'
                         >
                             {cancelling ? (

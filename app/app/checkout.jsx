@@ -15,17 +15,17 @@ import { useToast } from '@/context/ToastContext';
 import useOrder from '@/hooks/useOrder';
 import api from '@/api/api';
 import { locationStore } from '@/utils/locationStore';
-import { isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
+import { formatPhoneNumber, isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
 
 const Checkout = () => {
-    
+
     const { showToast } = useToast();
     const { user } = useContext(AuthContext);
     const { cart, setAmount, setCart } = useCart();
     const router = useRouter();
-    
+
     const { postOrder } = useOrder();
-    
+
     const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`.trim());
     const [address, setAddress] = useState("");
     const [email, setEmail] = useState(user?.email || "");
@@ -55,7 +55,7 @@ const Checkout = () => {
             showToast("Please enter your contact number", 'error');
             return false;
         } else if (!isValidPHPhoneNumber(phoneNumber)) {
-            showToast("Number must start with +63 or 09 (e.g. +639123456789 or 09123456789)", 'error');
+            showToast("Number must be a valid contact number", 'error');
             return false;
         }
 
@@ -71,12 +71,12 @@ const Checkout = () => {
             showToast("Please enter your address", 'error');
             return false;
         }
-        
+
         if (!dueDate) {
             showToast("Please select a pickup date", 'error');
             return false;
         }
-        
+
         if (!pickupTime) {
             showToast("Please select a pickup time", 'error');
             return false;
@@ -90,33 +90,38 @@ const Checkout = () => {
         return true
     }
 
-    const handlePayViaGCash = async (orderId) => {
-        try {
-            showToast("Initiating GCash payment...", "info");
-            const payload = { order_id: orderId };
-            
-            const response = await api.post(`/payment/initiate/`, payload);
-            const { checkout_url } = response.data;
+    const handleContactNumber = (text) => {
+        const formatted = formatPhoneNumber(text);
+        setPhoneNumber(formatted)
+    }
 
-            if (checkout_url) {
-                router.push({
-                    pathname: '/paymentScreen', 
-                    params: { checkoutUrl: checkout_url, orderId: orderId }
-                });
-            }
-        } catch (error) {
-            console.error("Payment Error:", error.response?.data || error.message);
-            showToast("Error initiating payment. You can retry from your orders.", "error");
-            router.replace('/(tabs)/orders');
-        }
-    };
+    // const handlePayViaGCash = async (orderId) => {
+    //     try {
+    //         showToast("Initiating GCash payment...", "info");
+    //         const payload = { order_id: orderId };
+
+    //         const response = await api.post(`/payment/initiate/`, payload);
+    //         const { checkout_url } = response.data;
+
+    //         if (checkout_url) {
+    //             router.push({
+    //                 pathname: '/paymentScreen',
+    //                 params: { checkoutUrl: checkout_url, orderId: orderId }
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.error("Payment Error:", error.response?.data || error.message);
+    //         showToast("Error initiating payment. You can retry from your orders.", "error");
+    //         router.replace('/(tabs)/orders');
+    //     }
+    // };
 
     const orderCake = async () => {
 
         if (!validateContactDetails()) return;
-        
+
         setIsSubmitting(true);
-        
+
         try {
             const cartItemsString = cart.map(item => `${item.amount}x ${item.name}`).join(', ');
             const premadeTotal = cart.reduce((sum, item) => sum + (item.price * item.amount), 0);
@@ -158,19 +163,21 @@ const Checkout = () => {
                 image: cartImages.length > 0 ? cartImages[0] : null,
                 uploaded_images: cartImages
             };
-            
-            const response = await postOrder(payload);
-            const newOrderId = response?.id || response?.data?.id;
 
-            setCart([]); 
+            await postOrder(payload);
+            // const newOrderId = response?.id || response?.data?.id;
 
-            if (newOrderId) {
-                await handlePayViaGCash(newOrderId);
-            } else {
-                showToast("Order placed, but ID missing. Check Order History.");
-                router.replace('/orderSuccess');
-            }
-            
+            setCart([]);
+
+            router.replace('/gcashInformation')
+
+            // if (newOrderId) {
+            //     await handlePayViaGCash(newOrderId);
+            // } else {
+            //     showToast("Order placed, but ID missing. Check Order History.");
+            //     router.replace('/orderSuccess');
+            // }
+
         } catch (error) {
             console.error("Order Submission Error:", error.response?.data || error);
             showToast("Failed to place order. Please try again.", "error");
@@ -250,15 +257,15 @@ const Checkout = () => {
                             <FormLabel text={"Email"} />
                             <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={email} onChangeText={setEmail} placeholder='juan@example.com' />
                             <FormLabel text={"Phone Number"} />
-                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={setPhoneNumber} placeholder='Enter your phone number' maxLength={18} />
-                            
+                            <TextInput className='py-2 px-3 rounded-md border border-secondary-light mb-2 mt-1 bg-white' value={phoneNumber} onChangeText={handleContactNumber} placeholder='Enter your phone number' maxLength={18} keyboardType='number-pad' />
+
                             <FormLabel text={"Pickup Date"} />
                             <DatePicker onSelectDate={setDueDate} />
-                            
+
                             <View className='mt-2' />
                             <FormLabel text={"Pickup Time"} />
                             <TimePicker onSelectTime={setPickupTime} />
-                            
+
                             <View className='mt-4 flex-row gap-2 p-4 rounded-md border border-secondary-light items-center'>
                                 <Checkbox value={agreeToTOC} onChange={setAgreeToTOC} />
                                 <Text className='font-medium text-secondary-strong flex-1'>I agree to the terms and conditions</Text>

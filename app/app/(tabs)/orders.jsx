@@ -1,4 +1,4 @@
-import { View, Text, Image, TextInput, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native'
+import { View, Text, Image, TextInput, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity, ImageBackground } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useContext, useState } from 'react'
 import { Filter, Option, Search, SlidersHorizontal } from 'lucide-react-native'
@@ -9,6 +9,7 @@ import OrderFilter from '@/components/molecules/OrderFilter'
 import { useRouter } from 'expo-router'
 
 const Orders = () => {
+	const ordersTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
 
 	const { user } = useContext(AuthContext)
 	const [search, setSearch] = useState("");
@@ -32,25 +33,35 @@ const Orders = () => {
 
 	if (!user) {
 		return (
-			<SafeAreaView className='flex-1 bg-white items-center justify-center p-6'>
-				<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='w-32 h-32 rounded-full mb-8' />
-				<Text className='text-center text-lg font-bold mb-4'>Please log in to view your orders.</Text>
-				<TouchableOpacity className='mt-4 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('/login')}>
-					<Text className='text-lg font-bold text-white'>
-						Login
-					</Text>
-				</TouchableOpacity>
-			</SafeAreaView>
+			<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
+				<SafeAreaView className='flex-1 items-center justify-center p-6' style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)' }}>
+					<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='w-32 h-32 rounded-full mb-8' />
+					<Text className='text-center text-lg font-bold mb-4'>Please log in to view your orders.</Text>
+					<TouchableOpacity className='mt-4 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('/login')}>
+						<Text className='text-lg font-bold text-white'>
+							Login
+						</Text>
+					</TouchableOpacity>
+				</SafeAreaView>
+			</ImageBackground>
 		)
 	}
 
 	if (loading && !refreshing) return (
-		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-			<ActivityIndicator size="large" color="#8B5A3C" />
-		</View>
+		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.85)' }}>
+				<ActivityIndicator size="large" color="#8B5A3C" />
+			</View>
+		</ImageBackground>
 	)
 
-	if (error) return <Text>Error</Text>
+	if (error) return (
+		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
+			<SafeAreaView className='flex-1 items-center justify-center' style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)' }}>
+				<Text>Error loading orders.</Text>
+			</SafeAreaView>
+		</ImageBackground>
+	)
 
 	const filteredList = data?.results?.filter(order => {
 		const query = search.toLowerCase().trim();
@@ -83,7 +94,8 @@ const Orders = () => {
 	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>)
 
 	return (
-		<SafeAreaView className='flex-1 bg-[#F5F5F5]'>
+		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
+		<SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(245, 245, 245, 0.82)' }}>
 			<View className='flex-row p-6 gap-2 items-center'>
 				<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 rounded-full' />
 
@@ -178,6 +190,7 @@ const Orders = () => {
 			</ScrollView>
 			<OrderFilter activeFilters={filters} show={showFilter} onChoose={handleFilterChoose} onClose={() => setShowFilter(false)} />
 		</SafeAreaView>
+		</ImageBackground>
 	)
 }
 

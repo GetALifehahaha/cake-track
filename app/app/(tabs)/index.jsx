@@ -10,6 +10,8 @@ import { Star, ArrowRight, TrendingUp } from 'lucide-react-native';
 import api from '@/api/api';
 
 const { width } = Dimensions.get('window');
+const greetingsTexture = require('@/assets/images/texture/Cake back Designs Greetings area.jpg');
+const cakesTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any.jpg');
 
 export default function Index() {
     const { user, loading } = useContext(AuthContext)
@@ -80,12 +82,20 @@ export default function Index() {
 
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
-            <View className='bg-[#8B5A3C] flex-1'>
+            <ImageBackground source={greetingsTexture} resizeMode='cover'>
+                <View className='bg-[#8B5A3C]/80 flex-1'>
                 <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
-                    Greetings, {!user && 'Guest'} {user?.first_name || ''} {user?.last_name || ''}
+                    Greetings, {!user && 'Guest'}{user?.first_name || ''} {user?.last_name || ''}
                 </Text>
-                <View className='bg-white w-full mt-auto rounded-t-[2rem] min-h-screen'>
-                    
+                <TouchableOpacity onPress={() => router.replace('/gcashInformation')}><Text>Check GCASH Information</Text></TouchableOpacity>
+                <ImageBackground
+                    source={cakesTexture}
+                    resizeMode='cover'
+                    imageStyle={{ borderTopLeftRadius: 32, borderTopRightRadius: 32 }}
+                    className='w-full mt-auto rounded-t-[2rem] min-h-screen overflow-hidden'
+                >
+                    <View className='w-full min-h-screen rounded-t-[2rem]' style={{ backgroundColor: 'rgba(255, 255, 255, 0.88)' }}>
+
                     {/* Header */}
                     <View className='p-6 w-full flex-row gap-2 items-center'>
                         <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-square w-16 h-16 ' />
@@ -177,7 +187,7 @@ export default function Index() {
                                     >
                                         <View className="w-full h-32 items-center justify-center mb-2">
                                             <Image
-                                                source={{uri: item.image}}
+                                                source={{ uri: item.image }}
                                                 style={{ width: '100%', height: '100%' }}
                                                 resizeMode="contain"
                                             />
@@ -248,7 +258,7 @@ export default function Index() {
                                     <Text className='text-white font-bold text-xs'>Order Now</Text>
                                 </View>
                             </TouchableOpacity>
-                            
+
                             {/* Card 4: Christening */}
                             <TouchableOpacity className='w-80 h-48 bg-[#FAD9DE] rounded-2xl p-6 justify-center shadow-sm border border-gray-100 items-end' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
                                 <Text className='text-white font-bold text-xs mb-2'>Christenings!</Text>
@@ -277,7 +287,7 @@ export default function Index() {
                     <View className='bg-[#F9F9F9] px-6 py-8 border-t border-gray-200'>
                         <Text className='font-bold text-lg text-[#474747] mb-2'>Michelle's Cake & Cafe</Text>
                         <Text className='text-gray-500 text-xs mb-6'>Making your sweet moments unforgettable with custom and pre-made cakes baked with love.</Text>
-                        
+
                         <View className='flex-row flex-wrap justify-between'>
                             <View className='w-1/2 mb-4'>
                                 <Text className='font-bold text-[#8B5A3C] mb-3'>Support</Text>
@@ -292,12 +302,14 @@ export default function Index() {
                                 <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity>
                             </View>
                         </View>
-                        
+
                         <Text className='text-center text-gray-400 text-[10px] mt-8'>© 2026 Michelle's Cake & Cafe. All rights reserved.</Text>
                     </View>
-                    
+
+                    </View>
+                </ImageBackground>
                 </View>
-            </View >
+            </ImageBackground>
         </ScrollView >
     )
 }

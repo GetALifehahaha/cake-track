@@ -12,3 +12,19 @@ export const normalizePhoneNumber = (value = '') => {
 export const isValidPHPhoneNumber = (value = '') => {
     return PHONE_REGEX.test(normalizePhoneNumber(value));
 };
+
+export const formatPhoneNumber = (text) => {
+    const digits = text.replace(/\D/g, "").slice(0, 14)
+
+    if (digits.length <= 4) return digits
+
+    if (digits.length <= 7) return digits.slice(0, 4) + " " + digits.slice(4);
+
+    return (
+        digits.slice(0, 4) +
+        " " +
+        digits.slice(4, 7) +
+        " " +
+        digits.slice(7)
+    );
+}

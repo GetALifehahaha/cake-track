@@ -48,9 +48,19 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
+            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'reference_number', 'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'customer']
+
+    def validate_reference_number(self, value):
+        if value in (None, ''):
+            return value
+
+        normalized_value = ''.join(ch for ch in str(value) if ch.isdigit())
+        if len(normalized_value) < 13 or len(normalized_value) > 15:
+            raise serializers.ValidationError('Reference number must be 13 to 15 digits.')
+
+        return normalized_value
 
     def _create_premade_recipe(self, order, premade_items):
         ingredient_totals = {}
