@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DatePicker, Pagination } from '@/components/molecules';
-import { AcceptedCard, OrderDetails, ConfirmationModal } from '../../components/organisms';
+import { AcceptedCard, OrderDetails, ConfirmationModal, InputRefundModal } from '../../components/organisms';
 import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import Loading from '@/components/molecules/Loading';
@@ -11,12 +11,13 @@ import { useToast } from '@/context/ToastContext';
 const QueueAccepted = () => {
 
 	const { addToast } = useToast();
-	const { data, loading, patchOrder } = useOrder();
+	const { data, loading, patchOrder, refundOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
 	const [completeId, setCompleteId] = useState(null);
+	const [refundTarget, setRefundTarget] = useState(null);
 
 	if (loading) return <Loading />
 
@@ -45,8 +46,28 @@ const QueueAccepted = () => {
 		}
 	}
 
+	const handleRefundOrder = async (refundReferenceNumber) => {
+		if (!refundTarget?.id) return;
+
+		try {
+			await refundOrder(refundTarget.id, { refund_reference_number: refundReferenceNumber });
+			addToast('Order refunded successfully');
+			setRefundTarget(null);
+		} catch {
+			addToast('Failed to refund order.', 'error');
+		}
+	}
+
 	const listOrder = data.results?.map((cake, index) =>
-		(<AcceptedCard key={index} order={cake} onComplete={() => setCompleteId(cake.id)} onShowDetails={setOrderDetails} />) || null
+		(
+			<AcceptedCard
+				key={index}
+				order={cake}
+				onComplete={() => setCompleteId(cake.id)}
+				onShowDetails={setOrderDetails}
+				onRefund={setRefundTarget}
+			/>
+		) || null
 	)
 
 
@@ -70,7 +91,7 @@ const QueueAccepted = () => {
 					<h5 className='text-accent-text/75 font-semibold'>No accepted orders</h5>
 				</div>
 			}
-				<Pagination prev={data.previous} next={data.next} />
+			<Pagination prev={data.previous} next={data.next} />
 
 
 			{orderDetails &&
@@ -79,6 +100,14 @@ const QueueAccepted = () => {
 
 			{completeId &&
 				<ConfirmationModal title={"Ready for Pickup?"} content={"Are you sure you want to mark this order as ready for pickup?"} onConfirm={completeOrder} onReject={() => setCompleteId(null)} />
+			}
+
+			{refundTarget &&
+				<InputRefundModal
+					order={refundTarget}
+					onConfirm={handleRefundOrder}
+					onReject={() => setRefundTarget(null)}
+				/>
 			}
 		</div>
 	)

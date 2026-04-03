@@ -4,7 +4,7 @@ import { Button } from '../../atoms';
 import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
 
-const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
+const AcceptedCard = ({ order, onComplete, onShowDetails, onRefund }) => {
 
 	const [showOptions, setShowOptions] = useState(false);
 	const canReadyForPickup = Boolean(order?.ingredients_deducted_at);
@@ -12,6 +12,11 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 	return (
 		<div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md min-h-60 cursor-pointer	'
 			onClick={() => { setShowOptions(true) }}>
+			{order?.cancellation_requested && !showOptions && (
+				<span className='absolute bottom-3 right-3 px-2 py-1 rounded-full bg-error text-white text-[10px] font-semibold leading-none'>
+					Refund Requested
+				</span>
+			)}
 			{showOptions &&
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(false) }}>
@@ -26,6 +31,17 @@ const AcceptedCard = ({ order, onComplete, onShowDetails }) => {
 						}}
 						className={!canReadyForPickup ? 'opacity-60 cursor-not-allowed' : ''}
 					/>
+					{order?.cancellation_requested && (
+						<Button
+							variant='error'
+							text='REFUND'
+							onClick={(e) => {
+								e.stopPropagation();
+								onRefund(order);
+								setShowOptions(false);
+							}}
+						/>
+					)}
 					{/* <Button variant='error' text='CANCEL' onClick={(e) => { e.stopPropagation(); setShowOptions(false) }} /> */}
 				</div>
 			}

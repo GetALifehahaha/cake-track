@@ -132,6 +132,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
 
     const isAccepted = orderSnapshot?.status === 'accepted';
     const isRejected = orderSnapshot?.status === 'rejected';
+    const isCancellationRequested = Boolean(orderSnapshot?.cancellation_requested);
     const hasSavedRecipe = Boolean(orderSnapshot?.recipe);
     const hasDeducted = Boolean(orderSnapshot?.ingredients_deducted_at);
     const isRecipeEditable = isAccepted && !hasDeducted;
@@ -156,16 +157,15 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const paidDownpaymentAmount = recordedDownpayment
         ? Number(recordedDownpayment.amount || 0)
         : Math.min(totalPaidAmount, boundedExpectedDownpayment);
-    const paidRemainingAmount = Math.max(totalPaidAmount - paidDownpaymentAmount, 0);
-    const expectedRemainingAmount = totalAmount > 0
-        ? Math.max(totalAmount - boundedExpectedDownpayment, 0)
-        : 0;
     const displayDownpaymentAmount = totalPaidAmount > 0 ? paidDownpaymentAmount : boundedExpectedDownpayment;
-    const displayRemainingAmount = totalPaidAmount > 0 ? paidRemainingAmount : expectedRemainingAmount;
-    const paymentAmountDisplay = totalAmount > 0
-        ? `${formatCurrency(displayDownpaymentAmount)} + ${formatCurrency(displayRemainingAmount)} / ${formatCurrency(totalAmount)}`
-        : (isPremadeOrder ? 'N/A' : formatCurrency(500));
+    const downpaymentAmountDisplay = formatCurrency(displayDownpaymentAmount);
+    const showTotalAmountRow = isPremadeOrder || totalAmount > 0;
+    const totalAmountDisplay = totalAmount > 0
+        ? formatCurrency(totalAmount)
+        : (isPremadeOrder ? 'N/A' : 'Available after order is completed');
     const referenceNumber = formatReferenceNumber(orderSnapshot?.reference_number || latestPayment?.reference_number);
+    const refundReferenceNumber = formatReferenceNumber(orderSnapshot?.refund_reference_number);
+    const showRefundReferenceRow = Boolean(orderSnapshot?.refund_reference_number);
     const formattedDeliveryDate = formatDeliveryDate(orderSnapshot?.due_date);
     const formattedDeliveryTime = orderSnapshot?.pickup_time ? parseTimeString(orderSnapshot.pickup_time) : 'N/A';
 
@@ -429,9 +429,22 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 <div className='space-y-3'>
                     <DetailRow label='Payment' value={capitalizeSnakeCase(paymentStatus)} />
                     <DetailRow label='Reference Number' value={referenceNumber} />
-                    <DetailRow label='Payment Amount' value={paymentAmountDisplay} isLast />
+                    {showRefundReferenceRow && (
+                        <DetailRow label='Refund Reference Number' value={refundReferenceNumber} />
+                    )}
+                    <DetailRow label='Downpayment Amount' value={downpaymentAmountDisplay} isLast={!showTotalAmountRow} />
+                    {showTotalAmountRow && (
+                        <DetailRow label='Total Amount' value={totalAmountDisplay} isLast />
+                    )}
                 </div>
             </div>
+
+            {isCancellationRequested && (
+                <div className='mt-2 rounded-xl border border-error-border bg-error-fill p-4'>
+                    <h4 className='text-xs font-bold uppercase tracking-widest text-error mb-1'>Cancellation Requested</h4>
+                    <p className='text-sm text-error'>Customer requested cancellation and refund processing for this order.</p>
+                </div>
+            )}
 
             {isAccepted && (
                 <div className='bg-accent/10 border border-accent/20 rounded-xl p-4'>

@@ -21,6 +21,7 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
+        ('refunded', 'Refunded'),
         ('ready', 'Ready'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
@@ -35,6 +36,11 @@ class Order(models.Model):
     reject_reason = models.TextField(null=True, blank=True)
     payment_source_id = models.CharField(max_length=255, blank=True, null=True)
     reference_number = models.CharField(max_length=15, blank=True, null=True)
+    cancellation_requested = models.BooleanField(default=False)
+    cancellation_requested_at = models.DateTimeField(null=True, blank=True)
+    refund_reference_number = models.CharField(max_length=15, blank=True, null=True)
+    hidden_by_customer = models.BooleanField(default=False)
+    hidden_by_customer_at = models.DateTimeField(null=True, blank=True)
     total_price = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
     ingredients_deducted_at = models.DateTimeField(null=True, blank=True)
 

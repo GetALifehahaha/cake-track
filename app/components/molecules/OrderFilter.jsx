@@ -8,6 +8,7 @@ const FILTER_OPTIONS = [
     { label: 'Accepted', value: 'accepted' },
     { label: 'Ready For Pickup', value: 'ready' },
     { label: 'Rejected', value: 'rejected' },
+    { label: 'Refunded', value: 'refunded' },
 ];
 
 const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
@@ -39,29 +40,29 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
         onClose();
     };
 
-    
+
 
     return (
         <>
             {show &&
                 <View className="absolute bottom-0 left-0 h-full w-full z-50">
                     {/* Backdrop */}
-                    <TouchableOpacity 
-                        activeOpacity={1} 
+                    <TouchableOpacity
+                        activeOpacity={1}
                         onPress={onClose}
                         className="absolute h-full w-full bg-black/50"
                     />
-                    
+
                     {/* Modal Content */}
                     <View className="flex-1 justify-end">
                         <View className='bg-white w-full p-8 rounded-t-[3rem] shadow-xl'>
-                            
+
                             {/* Header */}
                             <View className='flex-row justify-between items-center mb-6'>
-                                <View className="w-5" /> 
+                                <View className="w-5" />
                                 <Text className='font-bold text-xl text-primary'>Filter Orders</Text>
                                 <TouchableOpacity onPress={onClose}>
-                                    <X size={24} color="#8B5A3C"/>
+                                    <X size={24} color="#8B5A3C" />
                                 </TouchableOpacity>
                             </View>
 
@@ -80,6 +81,7 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                                             statusColor = 'text-secondary-light';
                                             break;
                                         case 'rejected':
+                                        case 'refunded':
                                             statusColor = 'text-red-500';
                                             break;
                                         case 'ready': // Adjust if your value is 'ready_for_pickup'
@@ -95,7 +97,7 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                                     }
 
                                     return (
-                                        <TouchableOpacity 
+                                        <TouchableOpacity
                                             key={option.value}
                                             onPress={() => toggleSelection(option.value)}
                                             className="flex-row items-center justify-between py-2"
@@ -104,7 +106,7 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                                             <Text className={`text-xl font-bold ${statusColor}`}>
                                                 {option.label}
                                             </Text>
-                                            
+
                                             {/* Checkbox remains the same (logic for checkbox fill usually needs isSelected) */}
                                             <View className={`w-6 h-6 rounded-md border items-center justify-center ${selected.includes(option.value) ? 'bg-secondary-strong border-secondary-strong' : 'border-gray-300 bg-white'}`}>
                                                 {selected.includes(option.value) && <Check size={16} color="white" />}
@@ -116,14 +118,14 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
 
                             {/* Actions */}
                             <View className='flex-row gap-4 items-center border-t border-t-gray-200 pt-6'>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={handleClear}
                                     className='flex-1 justify-center items-center rounded-xl p-4 border border-gray-300 active:bg-gray-100'
                                 >
                                     <Text className='font-semibold text-gray-600'>Clear All</Text>
                                 </TouchableOpacity>
-                                
-                                <TouchableOpacity 
+
+                                <TouchableOpacity
                                     onPress={handleApply}
                                     className='flex-1 justify-center items-center rounded-xl p-4 bg-secondary-strong active:opacity-90 shadow-sm'
                                 >

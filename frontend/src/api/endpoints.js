@@ -16,6 +16,7 @@ const API_ENDPOINTS = {
     ORDERS: "/orders/orders/",
     ORDERS_DEDUCT_INGREDIENTS: "/orders/orders/{id}/deduct-ingredients/",
     ORDERS_BATCH_UPDATE: "/orders/orders/batch-update/",
+    ORDERS_REFUND: "/orders/orders/{id}/refund/",
     BLOCKED_DATES: "/orders/blocked-dates/",
     OPENING_TIME: "/orders/opening-time/",
     PRODUCTS: "/pos/products/",

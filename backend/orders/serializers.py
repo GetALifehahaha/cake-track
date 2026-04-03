@@ -48,9 +48,22 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'reference_number', 'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
+            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'reference_number',
+            'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number',
+            'hidden_by_customer', 'hidden_by_customer_at',
+            'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'customer']
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+            'customer',
+            'cancellation_requested',
+            'cancellation_requested_at',
+            'refund_reference_number',
+            'hidden_by_customer',
+            'hidden_by_customer_at',
+        ]
 
     def validate_reference_number(self, value):
         if value in (None, ''):
@@ -147,6 +160,21 @@ class OrderSerializer(serializers.ModelSerializer):
                 order.save(update_fields=['recipe'])
             
         return order
+
+    def update(self, instance, validated_data):
+        uploaded_images = validated_data.pop('uploaded_images', None)
+
+        updated_order = super().update(instance, validated_data)
+
+        if uploaded_images is not None:
+            updated_order.order_images.all().delete()
+            for url in uploaded_images:
+                OrderImage.objects.create(order=updated_order, image_url=url)
+
+            updated_order.image = uploaded_images[0] if len(uploaded_images) > 0 else None
+            updated_order.save(update_fields=['image'])
+
+        return updated_order
     
     
 class OrderBatchUpdateSerializer(serializers.Serializer):

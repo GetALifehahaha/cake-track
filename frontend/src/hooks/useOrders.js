@@ -13,7 +13,7 @@ export default function useOrder() {
     [searchParams]);
 
     const lastPart = location.pathname.split('/').filter(Boolean).pop();
-    const validStatusFilters = ['pending', 'accepted', 'ready', 'completed', 'rejected', 'unpaid'];
+    const validStatusFilters = ['pending', 'accepted', 'ready', 'completed', 'rejected', 'refunded', 'unpaid'];
     const currentFilter = validStatusFilters.includes(lastPart) ? lastPart : null;
 
     const apiParams = useMemo(() => {
@@ -63,6 +63,7 @@ export default function useOrder() {
 
         postOrder:         (params)     => create(API_ENDPOINTS.ORDERS, params),
         patchOrder:        (id, params) => update(`${API_ENDPOINTS.ORDERS}${id}/`, params),
+        refundOrder:       (id, params) => create(API_ENDPOINTS.ORDERS_REFUND.replace('{id}', id), params),
         deductOrderIngredients: (id) =>
             create(API_ENDPOINTS.ORDERS_DEDUCT_INGREDIENTS.replace('{id}', id)),
         batchUpdateOrders: (params)     => create(API_ENDPOINTS.ORDERS_BATCH_UPDATE, params),

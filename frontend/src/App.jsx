@@ -22,6 +22,7 @@ import {
 	Reports,
 	QueueReady,
 	QueueRejected,
+	QueueRefunded,
 	ForgotPassword,
 	SetAccount,
 	Cakes,
@@ -57,6 +58,7 @@ const App = () => {
 						<Route path='ready' element={<QueueReady />} />
 						<Route path='completed' element={<QueueCompleted />} />
 						<Route path='rejected' element={<QueueRejected />} />
+						<Route path='refunded' element={<QueueRefunded />} />
 						<Route path='history' element={<QueueHistory />} />
 						<Route path='availability' element={<QueueOrderAvailability />} />
 					</Route>
@@ -69,8 +71,8 @@ const App = () => {
 
 				<Route path='/login' element={<Login />} />
 				<Route path='/404' element={<NotFound />} />
-				<Route path='/setAccount' element={<SetAccount />}/>
-				<Route path='/forgotPassword' element={<ForgotPassword />}/>
+				<Route path='/setAccount' element={<SetAccount />} />
+				<Route path='/forgotPassword' element={<ForgotPassword />} />
 				<Route path='*' element={<NotFound />} />
 			</Routes>
 		</QueryClientProvider>

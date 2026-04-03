@@ -54,6 +54,13 @@ def _get_remaining_payment_amount(order):
 
     return remaining_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
+
+def _normalize_reference_number(value):
+    digits = ''.join(ch for ch in str(value or '') if ch.isdigit())
+    if len(digits) < 13 or len(digits) > 15:
+        raise ValidationError({"reference_number": "Reference number must be 13 to 15 digits."})
+    return digits
+
 class CakeOrderViewSet(viewsets.ModelViewSet):
     queryset = CakeOrder.objects.all()
     serializer_class = CakeOrderSerializer
@@ -98,10 +105,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         queryset = Order.objects.all()
 
         if not user.is_staff:
-            queryset = queryset.filter(customer=user)
+            queryset = queryset.filter(customer=user, hidden_by_customer=False)
 
         status_filter = (self.request.query_params.get('status') or '').lower()
-        if status_filter in ['completed', 'rejected']:
+        if status_filter in ['completed', 'rejected', 'refunded']:
             return queryset.order_by('updated_at', 'created_at')
             
         return queryset.order_by('created_at')
@@ -154,8 +161,118 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Only unpaid orders can be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
 
         order.status = 'cancelled'
-        order.save()
+        order.cancellation_requested = False
+        order.cancellation_requested_at = None
+        order.refund_reference_number = None
+        order.save(update_fields=['status', 'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number'])
         return Response({"message": "Order cancelled successfully."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='request-cancellation')
+    def request_cancellation(self, request, pk=None):
+        order = self.get_object()
+
+        if not request.user.is_staff and order.customer != request.user:
+            return Response({"error": "You do not have permission to request cancellation for this order."}, status=status.HTTP_403_FORBIDDEN)
+
+        if order.status not in ['pending', 'accepted']:
+            return Response({"error": "Cancellation request is only available for pending or accepted orders."}, status=status.HTTP_400_BAD_REQUEST)
+
+        has_successful_payment = order.payment.filter(status='success').exists()  # type: ignore
+        if not order.reference_number and not has_successful_payment:
+            return Response({"error": "No confirmed payment found for this order."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if order.cancellation_requested:
+            return Response({"message": "Cancellation request is already submitted."}, status=status.HTTP_200_OK)
+
+        order.cancellation_requested = True
+        order.cancellation_requested_at = timezone.now()
+        order.save(update_fields=['cancellation_requested', 'cancellation_requested_at'])
+        return Response({"message": "Cancellation request submitted successfully."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='refund')
+    def refund(self, request, pk=None):
+        order = self.get_object()
+
+        if not request.user.is_staff:
+            return Response({"error": "Only admins can process refunds."}, status=status.HTTP_403_FORBIDDEN)
+
+        if order.status not in ['pending', 'accepted', 'ready']:
+            return Response({"error": "Only pending, accepted, or ready orders can be refunded."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not order.cancellation_requested:
+            return Response({"error": "This order has no cancellation request."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            refund_reference_number = _normalize_reference_number(request.data.get('refund_reference_number'))
+        except ValidationError:
+            return Response({"error": "Refund reference number must be 13 to 15 digits."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.status = 'refunded'
+        order.cancellation_requested = False
+        order.cancellation_requested_at = None
+        order.refund_reference_number = refund_reference_number
+        order.save(update_fields=['status', 'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number'])
+
+        return Response(
+            {
+                "message": "Order refunded successfully.",
+                "refund_reference_number": refund_reference_number,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'], url_path='hide')
+    def hide(self, request, pk=None):
+        order = self.get_object()
+
+        if order.customer != request.user:
+            return Response({"error": "You do not have permission to hide this order."}, status=status.HTTP_403_FORBIDDEN)
+
+        if order.status not in ['completed', 'refunded', 'rejected', 'cancelled']:
+            return Response({"error": "Only completed, refunded, rejected, or cancelled orders can be hidden."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if order.hidden_by_customer:
+            return Response({"message": "Order is already hidden."}, status=status.HTTP_200_OK)
+
+        order.hidden_by_customer = True
+        order.hidden_by_customer_at = timezone.now()
+        order.save(update_fields=['hidden_by_customer', 'hidden_by_customer_at'])
+
+        return Response({"message": "Order hidden successfully."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['patch'], url_path='customer-update-details')
+    def customer_update_details(self, request, pk=None):
+        order = self.get_object()
+
+        if request.user.is_staff or order.customer != request.user:
+            return Response({"error": "Only the customer can update this order."}, status=status.HTTP_403_FORBIDDEN)
+
+        if order.status not in ['unpaid', 'pending', 'accepted']:
+            return Response({"error": "Order details can only be updated while order is unpaid, pending, or accepted."}, status=status.HTTP_400_BAD_REQUEST)
+
+        occasion = ((order.cake_orders.occasion if order.cake_orders else '') or '').strip().lower()
+        if occasion == 'pre-made':
+            return Response({"error": "Pre-made orders cannot be edited."}, status=status.HTTP_400_BAD_REQUEST)
+
+        allowed_fields = {'comments', 'uploaded_images'}
+        incoming_keys = set(request.data.keys())
+        if not incoming_keys.issubset(allowed_fields):
+            return Response({"error": "Only comments and uploaded_images can be updated."}, status=status.HTTP_400_BAD_REQUEST)
+
+        payload = {}
+        if 'comments' in request.data:
+            payload['comments'] = request.data.get('comments', '')
+        if 'uploaded_images' in request.data:
+            payload['uploaded_images'] = request.data.get('uploaded_images', [])
+
+        if not payload:
+            return Response({"error": "No editable fields provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(order, data=payload, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='batch-update')
     def batch_update(self, request):

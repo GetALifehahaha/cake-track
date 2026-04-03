@@ -66,13 +66,13 @@ export default function Index() {
         }
     ];
 
-    // const customBanners = [
-    //     { id: 1, image: require('@/assets/images/banners/banner1.png') },
-    //     { id: 2, image: require('@/assets/images/banners/banner2.png') },
-    //     { id: 3, image: require('@/assets/images/banners/banner3.png') },
-    //     { id: 4, image: require('@/assets/images/banners/banner4.png') },
-    //     { id: 5, image: require('@/assets/images/banners/banner5.png') },
-    // ];
+    const bestCreationBanners = [
+        { id: 1, image: require('@/assets/images/best-creations/Best Creations 1st.jpg') },
+        { id: 2, image: require('@/assets/images/best-creations/Best Creations 2nd.jpg') },
+        { id: 3, image: require('@/assets/images/best-creations/Best Creations 3rd.jpg') },
+        { id: 4, image: require('@/assets/images/best-creations/Best Creations 4th.jpg') },
+        { id: 5, image: require('@/assets/images/best-creations/Best Creations 5th.jpg') },
+    ];
 
     if (loading || loadingOpening) return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -87,7 +87,6 @@ export default function Index() {
                     <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
                         Greetings, {!user && 'Guest'}{user?.first_name || ''} {user?.last_name || ''}
                     </Text>
-                    <TouchableOpacity onPress={() => router.replace('/gcashInformation')}><Text>Check GCASH Information</Text></TouchableOpacity>
                     <ImageBackground
                         source={greetingsTexture}
                         resizeMode='repeat'
@@ -227,59 +226,16 @@ export default function Index() {
                                 </View>
 
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 16 }}>
-                                    {/* Card 1: All Occasions */}
-                                    <TouchableOpacity className='w-80 h-48 bg-[#FAF6F0] rounded-2xl p-6 justify-center shadow-sm border border-gray-100' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
-                                        <Text className='text-[#8B5A3C] font-bold text-xs mb-2'>Customize Now!</Text>
-                                        <Text className='text-[#6B4423] font-extrabold text-xl leading-tight w-2/3'>Customize Cakes For All Occasions</Text>
-                                        <Text className='text-gray-500 text-xs mt-2 w-2/3'>Make every occasion special with custom cake designs</Text>
-                                        <View className='bg-[#6B4423] py-2 px-6 rounded-full self-start mt-4'>
-                                            <Text className='text-white font-bold text-xs'>Order Now</Text>
-                                        </View>
-                                    </TouchableOpacity>
-
-                                    {/* Card 2: Debut */}
-                                    <TouchableOpacity className='w-80 h-48 bg-[#F2D8D8] rounded-2xl p-6 justify-center shadow-sm border border-gray-100 items-end text-right' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
-                                        <Text className='text-white font-bold text-xs mb-1'>Celebrate every Debut!</Text>
-                                        <Text className='text-[#A31621] font-extrabold text-xl'>Elegant. Memorable.</Text>
-                                        <Text className='text-[#D93843] font-bold text-lg italic'>Made for her alone!</Text>
-                                        <Text className='text-gray-600 text-xs mt-1'>Make it unforgettable!</Text>
-                                        <View className='bg-[#E57A74] py-2 px-6 rounded-full mt-4'>
-                                            <Text className='text-white font-bold text-xs'>Customize Now</Text>
-                                        </View>
-                                    </TouchableOpacity>
-
-                                    {/* Card 3: Birthday */}
-                                    <TouchableOpacity className='w-80 h-48 bg-[#D3E3FD] rounded-2xl p-6 justify-center shadow-sm border border-gray-100' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
-                                        <Text className='text-white font-bold text-xs mb-2'>Birthday Surprises!</Text>
-                                        <Text className='text-[#0B3A9A] font-extrabold text-2xl leading-tight'>Celebrate loud</Text>
-                                        <Text className='text-[#4B7BF5] font-extrabold text-2xl leading-tight'>Slice proud</Text>
-                                        <Text className='text-gray-600 text-xs mt-2'>For every wish, at every age.</Text>
-                                        <View className='bg-[#7FA9F6] py-2 px-6 rounded-full self-start mt-4'>
-                                            <Text className='text-white font-bold text-xs'>Order Now</Text>
-                                        </View>
-                                    </TouchableOpacity>
-
-                                    {/* Card 4: Christening */}
-                                    <TouchableOpacity className='w-80 h-48 bg-[#FAD9DE] rounded-2xl p-6 justify-center shadow-sm border border-gray-100 items-end' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
-                                        <Text className='text-white font-bold text-xs mb-2'>Christenings!</Text>
-                                        <Text className='text-white font-extrabold text-xl'>A Blessed Welcome</Text>
-                                        <Text className='text-[#F4C974] font-bold text-lg italic'>For the little Blessing</Text>
-                                        <Text className='text-[#9C5A63] text-xs mt-2'>Order a Christening Cake!</Text>
-                                        <View className='bg-[#F19692] py-2 px-6 rounded-full mt-4'>
-                                            <Text className='text-white font-bold text-xs'>Customize Now</Text>
-                                        </View>
-                                    </TouchableOpacity>
-
-                                    {/* Card 5: Graduation */}
-                                    <TouchableOpacity className='w-80 h-48 bg-[#FDF0D5] rounded-2xl p-6 justify-center shadow-sm border border-gray-100' activeOpacity={0.9} onPress={() => router.push('/customOrders')}>
-                                        <Text className='text-[#A37B00] font-bold text-xs mb-2'>Graduation here we are!</Text>
-                                        <Text className='text-[#F2B007] font-extrabold text-2xl'>A Milestone</Text>
-                                        <Text className='text-black font-extrabold text-2xl'>To Remember...</Text>
-                                        <Text className='text-black font-bold text-xs mt-2'>Cheers to the journey!</Text>
-                                        <View className='bg-[#F2B007] py-2 px-6 rounded-full self-start mt-4'>
-                                            <Text className='text-white font-bold text-xs'>Order Now</Text>
-                                        </View>
-                                    </TouchableOpacity>
+                                    {bestCreationBanners.map((banner) => (
+                                        <TouchableOpacity
+                                            key={banner.id}
+                                            className='w-80 h-48 rounded-2xl overflow-hidden shadow-sm border border-gray-100'
+                                            activeOpacity={0.9}
+                                            onPress={() => router.push('/customOrders')}
+                                        >
+                                            <Image source={banner.image} className='w-full h-full' resizeMode='cover' />
+                                        </TouchableOpacity>
+                                    ))}
                                 </ScrollView>
                             </View>
 

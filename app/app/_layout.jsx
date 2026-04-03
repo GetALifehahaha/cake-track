@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import "./global.css";
 import { useEffect } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -8,6 +9,7 @@ import { ToastProvider } from "@/context/ToastContext";
 import { OpeningProvider } from "@/context/OpeningContext";
 import { View, ActivityIndicator } from "react-native";
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 // Add this near your 
@@ -152,16 +154,18 @@ const InitialLayout = () => {
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <OpeningProvider>
-            <CartProvider>
-              <InitialLayout />
-            </CartProvider>
-          </OpeningProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <OpeningProvider>
+              <CartProvider>
+                <InitialLayout />
+              </CartProvider>
+            </OpeningProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

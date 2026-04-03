@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Ellipsis, ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal } from '../../components/organisms';
+import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal, InputRefundModal } from '../../components/organisms';
 import { DatePicker, Pagination } from '@/components/molecules';
 import { Button } from '@/components/atoms';
 import Loading from '@/components/molecules/Loading';
@@ -9,12 +9,12 @@ import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { useToast } from '@/context/ToastContext';
 import { capitalize } from '@/utils/capitalize';
-import {formatCasing} from  '@/utils/formatCasing'
+import { formatCasing } from '@/utils/formatCasing'
 const QueuePending = () => {
 
 	const { addToast } = useToast();
 
-	const { data, loading, error, patchOrder, batchUpdateOrders } = useOrder();
+	const { data, loading, error, patchOrder, batchUpdateOrders, refundOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +24,7 @@ const QueuePending = () => {
 	const [prepAcceptId, setPrepAcceptId] = useState(null);
 	const [prepRejectId, setPrepRejectId] = useState(null);
 	const [prepRejectAll, setPrepRejectAll] = useState(false);
+	const [refundTarget, setRefundTarget] = useState(null);
 
 	if (loading) return <Loading />
 
@@ -52,7 +53,7 @@ const QueuePending = () => {
 		}
 	}
 
-	
+
 
 	const handleSetOrderDetails = (order) => {
 		setOrderDetails(order);
@@ -107,6 +108,18 @@ const QueuePending = () => {
 		}
 	}
 
+	const handleRefundOrder = async (refundReferenceNumber) => {
+		if (!refundTarget?.id) return;
+
+		try {
+			await refundOrder(refundTarget.id, { refund_reference_number: refundReferenceNumber });
+			addToast('Order refunded successfully', 'success');
+			setRefundTarget(null);
+		} catch {
+			addToast('Failed to refund order.', 'error');
+		}
+	}
+
 	const listOrder = data.results.map((cake, index) =>
 		<div
 			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60'
@@ -118,8 +131,19 @@ const QueuePending = () => {
 					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
 					onClick={(e) => { e.stopPropagation(); setShowOptions(null) }}
 				>
-					<Button variant='success' text='ACCEPT' onClick={(e) => {e.stopPropagation(); setPrepAcceptId(cake.id)}} />
-					<Button variant='error' text='DECLINE' onClick={(e) => {e.stopPropagation(); setPrepRejectId(cake.id)}} />
+					<Button variant='success' text='ACCEPT' onClick={(e) => { e.stopPropagation(); setPrepAcceptId(cake.id) }} />
+					<Button variant='error' text='DECLINE' onClick={(e) => { e.stopPropagation(); setPrepRejectId(cake.id) }} />
+					{cake.cancellation_requested && (
+						<Button
+							variant='error'
+							text='REFUND'
+							onClick={(e) => {
+								e.stopPropagation();
+								setRefundTarget(cake);
+								setShowOptions(null);
+							}}
+						/>
+					)}
 				</div>
 			}
 
@@ -159,6 +183,12 @@ const QueuePending = () => {
 					</div>
 				</div>
 			}
+
+			{cake.cancellation_requested && showOptions !== cake.id && (
+				<span className='absolute bottom-3 right-3 px-2 py-1 rounded-full bg-error text-white text-[10px] font-semibold leading-none'>
+					Refund Requested
+				</span>
+			)}
 		</div>
 	)
 
@@ -207,6 +237,14 @@ const QueuePending = () => {
 
 			{prepRejectAll &&
 				<InputRejectModal onConfirm={rejectAllOrder} onReject={() => setPrepRejectAll(false)} />
+			}
+
+			{refundTarget &&
+				<InputRefundModal
+					order={refundTarget}
+					onConfirm={handleRefundOrder}
+					onReject={() => setRefundTarget(null)}
+				/>
 			}
 		</div>
 	)

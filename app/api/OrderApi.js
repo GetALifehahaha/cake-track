@@ -36,6 +36,11 @@
                 const response = await api.delete(`/orders/orders/${id}/`);
                 return response;
             }
+
+            else if (method === "HIDE") {
+                const response = await api.post(`/orders/orders/${id}/hide/`);
+                return response.data;
+            }
         } catch (err) {
             throw err;
         }

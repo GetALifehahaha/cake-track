@@ -2,6 +2,7 @@ import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIn
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, XCircle } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
 import { useToast } from '@/context/ToastContext';
@@ -36,7 +37,19 @@ const parseOrderDataParam = (orderDataParam) => {
     }
 };
 
+const extractDisplayImages = (order = {}) => {
+    const orderImages = Array.isArray(order?.order_images) ? order.order_images : [];
+    if (orderImages.length > 0) {
+        return orderImages.map(img => img.image_url).filter(Boolean);
+    }
+
+    return order?.image ? [order.image] : [];
+};
+
 const OrderDetails = () => {
+    const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
     const router = useRouter();
     const params = useLocalSearchParams();
     const { showToast } = useToast();
@@ -45,6 +58,12 @@ const OrderDetails = () => {
     const [referenceNumber, setReferenceNumber] = useState('');
     const [submittingReference, setSubmittingReference] = useState(false);
     const [cancelling, setCancelling] = useState(false);
+    const [requestingCancellation, setRequestingCancellation] = useState(false);
+    const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
+    const [editableComments, setEditableComments] = useState('');
+    const [editableImages, setEditableImages] = useState([]);
+    const [savingOrderDetails, setSavingOrderDetails] = useState(false);
+    const [pickingImages, setPickingImages] = useState(false);
     const [orderStatus, setOrderStatus] = useState(null);
     const { width } = Dimensions.get('window');
     const imageSize = (width - 32 - 16) / 3;
@@ -66,11 +85,17 @@ const OrderDetails = () => {
         image,
         order_images = [],
         reference_number: existingReferenceNumber,
+        refund_reference_number: refundReferenceNumber,
+        cancellation_requested: cancellationRequested,
     } = orderData;
 
     useEffect(() => {
-        setOrderData(parseOrderDataParam(orderDataParam));
+        const parsedOrder = parseOrderDataParam(orderDataParam);
+        setOrderData(parsedOrder);
         setOrderStatus(null);
+        setEditableComments(parsedOrder?.comments || '');
+        setEditableImages(extractDisplayImages(parsedOrder));
+        setIsEditingOrderDetails(false);
     }, [orderDataParam]);
 
     useEffect(() => {
@@ -98,6 +123,14 @@ const OrderDetails = () => {
         message = "",
     } = cake_orders || {};
     const isPremadeOrder = String(occasion || '').toLowerCase() === 'pre-made';
+    const canCustomerEditOrderDetails = !isPremadeOrder && ['unpaid', 'pending', 'accepted'].includes(String(currentStatus || '').toLowerCase());
+    const payments = orderData?.payments || [];
+    const successfulPayments = payments.filter((payment) => {
+        const status = String(payment?.status || '').toLowerCase();
+        return status === 'success' || status === 'completed' || status === 'paid';
+    });
+    const totalPaidAmount = successfulPayments.reduce((sum, payment) => sum + Number(payment?.amount || 0), 0);
+    const recordedDownpayment = successfulPayments.find((payment) => String(payment?.payment_type || '').toLowerCase() === 'downpayment');
 
     // Logic for cupcakes (based on your JSX)
     const hasCupcakes = !!orderData.cupcake_orders; // Check your API structure for this
@@ -112,10 +145,113 @@ const OrderDetails = () => {
 
         setOrderData(freshOrder);
         setOrderStatus(freshOrder?.status ?? null);
+        setEditableComments(freshOrder?.comments || '');
+        setEditableImages(extractDisplayImages(freshOrder));
+        setIsEditingOrderDetails(false);
 
         if (freshOrder?.reference_number) {
             setReferenceNumber(formatReferenceNumber(freshOrder.reference_number));
         }
+    };
+
+    const uploadToCloudinary = async (imageUri) => {
+        if (!imageUri) return null;
+
+        const filename = imageUri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename || '');
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+        const formData = new FormData();
+        formData.append('file', {
+            uri: imageUri,
+            name: filename,
+            type,
+        });
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Cloudinary Error:', errorData);
+            throw new Error('Failed to upload image');
+        }
+
+        const data = await response.json();
+        return data.secure_url;
+    };
+
+    const pickEditableImages = async () => {
+        if (pickingImages || savingOrderDetails) return;
+        if (editableImages.length >= 5) {
+            showToast('Maximum 5 images allowed', 'error');
+            return;
+        }
+
+        setPickingImages(true);
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                showToast('Media library permission denied', 'error');
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsMultipleSelection: true,
+                selectionLimit: 5 - editableImages.length,
+                quality: 1,
+            });
+
+            if (!result.canceled) {
+                const newUris = result.assets.map((asset) => asset.uri);
+                setEditableImages((prev) => [...prev, ...newUris].slice(0, 5));
+            }
+        } finally {
+            setPickingImages(false);
+        }
+    };
+
+    const removeEditableImage = (indexToRemove) => {
+        setEditableImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+    };
+
+    const handleSaveCustomerOrderDetails = async () => {
+        if (savingOrderDetails) return;
+
+        setSavingOrderDetails(true);
+        try {
+            const uploadedImageUrls = await Promise.all(
+                editableImages.map(async (uri) => {
+                    if (String(uri).startsWith('http://') || String(uri).startsWith('https://')) {
+                        return uri;
+                    }
+                    return uploadToCloudinary(uri);
+                })
+            );
+
+            await api.patch(`/orders/orders/${orderData.id}/customer-update-details/`, {
+                comments: editableComments,
+                uploaded_images: uploadedImageUrls,
+            });
+
+            await reloadOrderDetails();
+            showToast('Order details updated successfully.', 'success');
+        } catch (error) {
+            console.error('Update Order Details Error:', error.response?.data || error.message);
+            showToast(error.response?.data?.error || 'Failed to update order details.', 'error');
+        } finally {
+            setSavingOrderDetails(false);
+        }
+    };
+
+    const handleCancelOrderDetailsEdit = () => {
+        setEditableComments(orderData?.comments || '');
+        setEditableImages(extractDisplayImages(orderData));
+        setIsEditingOrderDetails(false);
     };
 
     const handleImagePress = (imgUri) => {
@@ -134,19 +270,23 @@ const OrderDetails = () => {
     const displayedReferenceNumber = existingReferenceNumber
         ? formatReferenceNumber(existingReferenceNumber)
         : 'No reference number yet';
+    const displayedRefundReferenceNumber = refundReferenceNumber
+        ? formatReferenceNumber(refundReferenceNumber)
+        : 'No refund reference number yet';
     const totalAmount = Number(orderData?.total_price || 0);
     const expectedDownpayment = isPremadeOrder ? totalAmount * 0.15 : 500;
     const boundedDownpayment = totalAmount > 0
         ? Math.min(expectedDownpayment, totalAmount)
         : expectedDownpayment;
-    const remainingAmount = totalAmount > 0
-        ? Math.max(totalAmount - boundedDownpayment, 0)
-        : 0;
-    const paymentAmountDisplay = isPremadeOrder
-        ? (totalAmount > 0
-            ? `${formatCurrency(boundedDownpayment)} + ${formatCurrency(remainingAmount)} / ${formatCurrency(totalAmount)}`
-            : 'N/A')
-        : formatCurrency(500);
+    const paidDownpaymentAmount = recordedDownpayment
+        ? Number(recordedDownpayment.amount || 0)
+        : Math.min(totalPaidAmount, boundedDownpayment);
+    const displayDownpaymentAmount = totalPaidAmount > 0 ? paidDownpaymentAmount : boundedDownpayment;
+    const downpaymentAmountDisplay = formatCurrency(displayDownpaymentAmount);
+    const showTotalAmount = isPremadeOrder || totalAmount > 0;
+    const totalAmountDisplay = totalAmount > 0
+        ? formatCurrency(totalAmount)
+        : (isPremadeOrder ? 'N/A' : 'Available after order is completed');
 
     const handlePostReferenceNumber = async () => {
         if (submittingReference) return;
@@ -189,6 +329,22 @@ const OrderDetails = () => {
         }
     };
 
+    const handleRequestCancellation = async () => {
+        if (requestingCancellation) return;
+
+        setRequestingCancellation(true);
+        try {
+            await api.post(`/orders/orders/${orderData.id}/request-cancellation/`);
+            await reloadOrderDetails();
+            showToast('Cancellation request submitted. Please wait for admin refund processing.', 'success');
+        } catch (error) {
+            console.error('Cancellation Request Error:', error.response?.data || error.message);
+            showToast(error.response?.data?.error || 'Failed to submit cancellation request.', 'error');
+        } finally {
+            setRequestingCancellation(false);
+        }
+    };
+
     return (
         <SafeAreaView className='flex-1 bg-[#F5F5F5]'>
             {/* Header with Back Button */}
@@ -206,7 +362,7 @@ const OrderDetails = () => {
 
                     <View className='flex-col gap-2 p-4 bg-white rounded-xl border justify-center border-secondary-light w-full'>
                         <View>
-                            <Text className={`${currentStatus === "rejected" ? 'text-red-400' : currentStatus === "cancelled" ? 'text-red-400' : currentStatus === "unpaid" ? 'text-orange-500' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(currentStatus).toUpperCase()}</Text>
+                            <Text className={`${currentStatus === "rejected" ? 'text-red-400' : currentStatus === "cancelled" ? 'text-red-400' : currentStatus === "refunded" ? 'text-red-400' : currentStatus === "unpaid" ? 'text-orange-500' : 'text-secondary-strong'} mx-auto  text-xl font-bold`}>{(currentStatus).toUpperCase()}</Text>
                         </View>
                         {orderData.reject_reason &&
                             <Text className='text-secondary-strong text-md font-bold'>{orderData.reject_reason}</Text>
@@ -258,25 +414,73 @@ const OrderDetails = () => {
                         </TouchableOpacity>
                     )}
 
+                    {(currentStatus === 'pending' || currentStatus === 'accepted') && !cancellationRequested && (
+                        <TouchableOpacity
+                            onPress={handleRequestCancellation}
+                            disabled={requestingCancellation}
+                            className={`flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80 ${requestingCancellation ? 'opacity-60' : ''}`}
+                        >
+                            {requestingCancellation ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <XCircle size={20} color="white" />
+                            )}
+                            <Text className='text-white text-lg font-bold'>
+                                {requestingCancellation ? 'Submitting Request...' : 'Request Cancellation'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {(currentStatus === 'pending' || currentStatus === 'accepted') && cancellationRequested && (
+                        <View className='gap-1 p-4 bg-red-50 rounded-xl border border-red-200 w-full'>
+                            <Text className='text-red-600 font-semibold'>Cancellation Requested</Text>
+                            <Text className='text-red-500 text-sm'>Waiting for admin refund and cancellation confirmation.</Text>
+                        </View>
+                    )}
+
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
                             <NotepadText style={{ color: '#A67C52' }} />
                         </View>
                         <View>
-                            <Text className='text-gray-300'>Reference Number</Text>
+                            <Text className='text-gray-300'>Payment Reference Number</Text>
                             <Text className='text-primary text-lg font-semibold'>{displayedReferenceNumber}</Text>
                         </View>
                     </View>
+
+                    {((currentStatus === 'cancelled' || currentStatus === 'refunded') && (refundReferenceNumber || existingReferenceNumber)) && (
+                        <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                            <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
+                                <NotepadText style={{ color: '#A67C52' }} />
+                            </View>
+                            <View>
+                                <Text className='text-gray-300'>Refund Reference Number</Text>
+                                <Text className='text-primary text-lg font-semibold'>{displayedRefundReferenceNumber}</Text>
+                            </View>
+                        </View>
+                    )}
 
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
                             <NotepadText style={{ color: '#A67C52' }} />
                         </View>
                         <View className='flex-1'>
-                            <Text className='text-gray-300'>Payment Amount</Text>
-                            <Text className='text-primary text-lg font-semibold'>{paymentAmountDisplay}</Text>
+                            <Text className='text-gray-300'>Downpayment Amount</Text>
+                            <Text className='text-primary text-lg font-semibold'>{downpaymentAmountDisplay}</Text>
                         </View>
                     </View>
+
+                    {showTotalAmount && (
+                        <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                            <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
+                                <NotepadText style={{ color: '#A67C52' }} />
+                            </View>
+                            <View className='flex-1'>
+                                <Text className='text-gray-300'>Total Amount</Text>
+                                <Text className='text-primary text-lg font-semibold'>{totalAmountDisplay}</Text>
+                            </View>
+                        </View>
+                    )}
 
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
@@ -398,6 +602,92 @@ const OrderDetails = () => {
                             </View>
                             <Text className='text-primary text-lg font-semibold'>Additional Information</Text>
                         </View>
+
+                        {canCustomerEditOrderDetails && (
+                            <View className='gap-2 p-3 border border-[#E8D9C8] rounded-xl bg-[#FDF8F3]'>
+                                {!isEditingOrderDetails ? (
+                                    <TouchableOpacity
+                                        onPress={() => setIsEditingOrderDetails(true)}
+                                        className='items-center justify-center p-3 bg-[#8B5A3C] rounded-lg'
+                                    >
+                                        <Text className='text-white font-semibold'>Edit Comments & Images</Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View className='gap-3'>
+                                        <Text className='text-[#8B5A3C] font-semibold'>Update Order Details</Text>
+
+                                        <TextInput
+                                            value={editableComments}
+                                            onChangeText={setEditableComments}
+                                            multiline
+                                            numberOfLines={4}
+                                            placeholder='Update your order comments'
+                                            editable={!savingOrderDetails}
+                                            className='border border-gray-200 rounded-lg px-4 py-3 text-primary bg-white'
+                                            style={{ minHeight: 100, textAlignVertical: 'top' }}
+                                        />
+
+                                        <View className='gap-2'>
+                                            <Text className='text-[#8B5A3C] font-semibold'>Reference Images</Text>
+                                            <TouchableOpacity
+                                                onPress={pickEditableImages}
+                                                disabled={savingOrderDetails || pickingImages || editableImages.length >= 5}
+                                                className={`items-center justify-center p-3 bg-[#A67C52] rounded-lg ${(savingOrderDetails || pickingImages || editableImages.length >= 5) ? 'opacity-60' : ''}`}
+                                            >
+                                                <Text className='text-white font-semibold'>
+                                                    {pickingImages ? 'Picking Images...' : `Add Images (${editableImages.length}/5)`}
+                                                </Text>
+                                            </TouchableOpacity>
+
+                                            <View className='flex-row flex-wrap gap-2'>
+                                                {editableImages.length > 0 ? (
+                                                    editableImages.map((uri, index) => (
+                                                        <View key={`${uri}-${index}`} className='relative'>
+                                                            <Image
+                                                                source={{ uri }}
+                                                                style={{ width: imageSize, height: imageSize, borderRadius: 8 }}
+                                                                resizeMode='cover'
+                                                            />
+                                                            <TouchableOpacity
+                                                                onPress={() => removeEditableImage(index)}
+                                                                disabled={savingOrderDetails}
+                                                                className='absolute top-1 right-1 bg-black/60 rounded-full w-6 h-6 items-center justify-center'
+                                                            >
+                                                                <Text className='text-white text-xs font-bold'>X</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    ))
+                                                ) : (
+                                                    <View className='w-full p-4 bg-gray-50 rounded-lg justify-center items-center'>
+                                                        <Text className='text-gray-400 text-sm font-semibold'>No images selected</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        </View>
+
+                                        <View className='flex-row gap-2'>
+                                            <TouchableOpacity
+                                                onPress={handleCancelOrderDetailsEdit}
+                                                disabled={savingOrderDetails}
+                                                className='flex-1 items-center justify-center p-3 border border-gray-300 rounded-lg bg-white'
+                                            >
+                                                <Text className='text-gray-700 font-semibold'>Cancel</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={handleSaveCustomerOrderDetails}
+                                                disabled={savingOrderDetails}
+                                                className={`flex-1 items-center justify-center p-3 rounded-lg bg-[#8B5A3C] ${savingOrderDetails ? 'opacity-60' : ''}`}
+                                            >
+                                                <Text className='text-white font-semibold'>
+                                                    {savingOrderDetails ? 'Saving...' : 'Save Updates'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+                        )}
+
                         <View className='w-full p-4 bg-white rounded-lg'>
                             <Text className='text-gray-400 text-xs mb-1'>Comments</Text>
                             {comments.trim().length <= 0 ?

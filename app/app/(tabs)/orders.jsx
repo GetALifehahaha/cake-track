@@ -8,6 +8,8 @@ import { AuthContext } from '@/context/AuthContext'
 import OrderFilter from '@/components/molecules/OrderFilter'
 import { useRouter } from 'expo-router'
 
+const COMPLETED_STATUSES = ['completed'];
+
 const Orders = () => {
 	const ordersTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
 
@@ -17,7 +19,7 @@ const Orders = () => {
 	const [showFilter, setShowFilter] = useState(false);
 	const router = useRouter();
 
-	const { data, loading, error, refresh } = useOrder();
+	const { data, loading, error, refresh, hideOrder } = useOrder();
 
 	const [refreshing, setRefreshing] = useState(false);
 
@@ -29,6 +31,14 @@ const Orders = () => {
 
 	const handleFilterChoose = (selectedStatuses) => {
 		setFilters(selectedStatuses);
+	};
+
+	const handleHideOrder = async (orderId) => {
+		try {
+			await hideOrder(orderId);
+		} catch (hideError) {
+			console.error('Hide order failed:', hideError?.response?.data || hideError?.message);
+		}
 	};
 
 	if (!user) {
@@ -72,19 +82,19 @@ const Orders = () => {
 
 		const matchesStatus = filters.length === 0 || filters.includes(order.status);
 
-		const isNotCompleted = order.status !== "completed";
+		const isActiveOrder = !COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase());
 
-		return matchesSearch && matchesStatus && isNotCompleted;
+		return matchesSearch && matchesStatus && isActiveOrder;
 	}) || [];
 
 	const listOrders = filteredList.map((order, index) => (
-		<OrderCard key={index} order={order} />
+		<OrderCard key={index} order={order} onHide={handleHideOrder} />
 	))
 
-	const finishedOrders = data?.results?.filter(order => order.status == "completed") || []
+	const finishedOrders = data?.results?.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase())) || []
 
 	const listCompleteOrders = finishedOrders.map((order, index) => (
-		<OrderCard key={index} order={order} />
+		<OrderCard key={index} order={order} onHide={handleHideOrder} />
 	))
 
 	// Calculate stats based on actual data
@@ -182,7 +192,7 @@ const Orders = () => {
 								</View>
 								: (
 									<View className='items-center justify-center py-10 opacity-50'>
-										<Text>No finished orders yet.</Text>
+										<Text>No completed orders yet.</Text>
 									</View>
 								)}
 						</View>

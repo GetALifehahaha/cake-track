@@ -69,6 +69,11 @@ export default function useOrder() {
         onSuccess: onSuccessInvalidate,
     });
 
+    const hideMutation = useMutation({
+        mutationFn: (id) => OrderApi(null, id, "HIDE"),
+        onSuccess: onSuccessInvalidate,
+    });
+
     // --- 4. Return Interface ---
     return {
         data: ordersQuery.data || [],
@@ -77,7 +82,8 @@ export default function useOrder() {
                  createMutation.isPending || 
                  updateMutation.isPending || 
                  deleteMutation.isPending ||
-                 batchUpdateMutation.isPending,
+                 batchUpdateMutation.isPending ||
+                 hideMutation.isPending,
 
         error: ordersQuery.error || createMutation.error || updateMutation.error,
 
@@ -95,6 +101,10 @@ export default function useOrder() {
         
         deleteOrder: async (id) => {
             return deleteMutation.mutateAsync(id);
+        },
+
+        hideOrder: async (id) => {
+            return hideMutation.mutateAsync(id);
         },
 
         refresh: () => ordersQuery.refetch(),
