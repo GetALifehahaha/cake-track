@@ -89,7 +89,7 @@ const Login = () => {
                                     <input type='password' value={password} onChange={(e) => handleSetPassword(e)} className='flex-1 py-2 px-1 border-b border-b-text/75 focus:outline-none focus:bg-border/50 focus:border-main focus:rounded-sm' placeholder='Input your password' />
                                 }
 
-                                <button type='submit' className='p-1.5 bg-main cursor-pointer text-text/50' onClick={() => setShowPassword(!showPassword)}>
+                                <button type='button' className='p-1.5 bg-main cursor-pointer text-text/50' onClick={() => setShowPassword(!showPassword)}>
                                     {showPassword ?
                                         <Eye />
                                         :
@@ -113,7 +113,7 @@ const Login = () => {
                                     <Loader2 size={14} className='text-accent animate-spin' />
                                 </>
                                 :
-                                <Button className='bg-accent' text='Login' variant='form' onClick={handleLogin} />
+                                <Button type='submit' className='bg-accent' text='Login' variant='form' onClick={handleLogin} />
                             }
                         </span>
                     </form>

@@ -80,6 +80,12 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
             const applicableAfter = Math.max(applicableBefore - discountAmount, 0);
             const orderAfter = Math.max(grossTotal - discountAmount, 0);
 
+            if (discount.active === false) {
+                isApplicable = false;
+                reason = "Discount is inactive";
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+            }
+
             if (discount.start_date && new Date(discount.start_date) > new Date()) {
                 isApplicable = false;
                 reason = "Discount not active yet";
