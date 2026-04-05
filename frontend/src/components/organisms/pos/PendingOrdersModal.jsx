@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Label, Title } from '../../atoms';
 import { X } from 'lucide-react';
 
@@ -14,11 +14,31 @@ const PendingOrdersModal = ({
     onComplete,
     completingOrderId = null,
 }) => {
+    const [searchValue, setSearchValue] = useState('');
+
     const sortedTransactions = useMemo(() => {
         return [...pendingTransactions].sort(
             (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
         );
     }, [pendingTransactions]);
+
+    const normalizedSearch = searchValue.trim().toLowerCase();
+
+    const visibleTransactions = useMemo(() => {
+        if (!normalizedSearch) {
+            return sortedTransactions;
+        }
+
+        return sortedTransactions.filter((transaction) => {
+            const orderNumber = String(transaction.order_number ?? '').toLowerCase();
+            const transactionId = String(transaction.id ?? '').toLowerCase();
+            const customerName = String(transaction.customer_name ?? '').trim().toLowerCase();
+
+            return orderNumber.includes(normalizedSearch)
+                || transactionId.includes(normalizedSearch)
+                || customerName.includes(normalizedSearch);
+        });
+    }, [normalizedSearch, sortedTransactions]);
 
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-20'>
@@ -28,14 +48,26 @@ const PendingOrdersModal = ({
                     <X size={16} className='text-text cursor-pointer' onClick={onClose} />
                 </div>
 
+                <input
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
+                    type='text'
+                    placeholder='Search by order number or customer name'
+                    className='w-full rounded-lg border border-border bg-main-white px-3 py-2 text-sm text-text outline-none focus:border-accent'
+                />
+
                 <div className='overflow-y-auto flex flex-col gap-3 pr-1'>
-                    {sortedTransactions.length === 0 && (
+                    {visibleTransactions.length === 0 && (
                         <div className='py-16 flex justify-center'>
-                            <h5 className='text-text/60 font-medium'>No pending orders found.</h5>
+                            <h5 className='text-text/60 font-medium'>
+                                {sortedTransactions.length === 0
+                                    ? 'No pending orders found.'
+                                    : 'No matching pending orders found.'}
+                            </h5>
                         </div>
                     )}
 
-                    {sortedTransactions.map((transaction) => {
+                    {visibleTransactions.map((transaction) => {
                         const customerName = transaction.customer_name?.trim() || 'Walk-in Customer';
                         const items = transaction.transaction_items || [];
                         const isCompleting = completingOrderId === transaction.id;

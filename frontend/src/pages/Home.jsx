@@ -452,6 +452,11 @@ const Home = () => {
     }
 
     const proceedToCheckout = () => {
+        if (!checkoutProducts.length) {
+            addToast('Add at least one product to checkout.', 'error');
+            return;
+        }
+
         setShowPaymentModal(true);
     }
 
@@ -768,8 +773,9 @@ const Home = () => {
                     {(pendingLoading || pendingOrdersCount > 0) && (
                         <div className='ml-auto'>
                             <Button
-                                variant='modalOutline'
+                                variant='modalBlock'
                                 size='small'
+                                className='bg-accent'
                                 text={pendingLoading ? 'Pending Orders (...)' : `Pending Orders (${pendingOrdersCount})`}
                                 onClick={() => setShowPendingOrdersModal(true)}
                             />

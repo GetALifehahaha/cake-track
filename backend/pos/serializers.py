@@ -463,6 +463,12 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 **validated_data
             )
 
+            if not transaction_obj.is_void and (
+                not transaction_obj.sequence_date or not transaction_obj.sequence_number
+            ):
+                transaction_obj._assign_sequence()
+                transaction_obj.save(update_fields=['sequence_date', 'sequence_number'])
+
             for item in items_data:
                 item_price = Decimal(str(item['product_variant'].price))
                 item_total = item_price * item['quantity']
@@ -558,7 +564,15 @@ class TransactionCompleteSerializer(serializers.Serializer):
 
             locked_instance.is_completed = True
             locked_instance.completed_at = timezone.now()
-            locked_instance.save(update_fields=['is_completed', 'completed_at'])
+            update_fields = ['is_completed', 'completed_at']
+
+            if not locked_instance.is_void and (
+                not locked_instance.sequence_date or not locked_instance.sequence_number
+            ):
+                locked_instance._assign_sequence()
+                update_fields.extend(['sequence_date', 'sequence_number'])
+
+            locked_instance.save(update_fields=update_fields)
 
             _apply_completed_transaction_to_register(locked_instance)
 

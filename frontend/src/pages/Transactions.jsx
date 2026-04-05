@@ -262,7 +262,7 @@ const Transactions = () => {
                 </div>
             </div>
 
-            <Pagination prev={data.previous} next={data.next} />
+            <Pagination prev={data.previous} next={data.next} pageParam='transaction_page' />
 
             {showTransactionDetails && (
                 <TransactionDetails transactionDetail={transactionDetails} onClose={handleCloseTransactionDetails} />

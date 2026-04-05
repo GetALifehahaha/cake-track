@@ -9,10 +9,22 @@ export default function useTransaction() {
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
     const registerPage = searchParams.get('register_page') || '1';
+    const transactionPage = searchParams.get('transaction_page') || '1';
 
     const apiParams = useMemo(() => {
-        return Object.fromEntries(searchParams.entries());
-    }, [searchParams]);
+        const params = {};
+
+        for (const [key, value] of searchParams.entries()) {
+            if (key === 'page' || key === 'register_page' || key === 'transaction_page') {
+                continue;
+            }
+            params[key] = value;
+        }
+
+        params.page = transactionPage;
+
+        return params;
+    }, [searchParams, transactionPage]);
 
     const transactionQuery = useQueryFetch(
         ["transactions", user?.id ?? "guest"],
