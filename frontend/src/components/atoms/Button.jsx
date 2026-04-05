@@ -14,7 +14,7 @@ const Button = ({ variant = "block", size = "base", text = "Button", icon: Icon,
         small: "w-fit text-sm ",
         full: "w-full text-base",
         modalSize: 'w-fit text-sm',
-        modalOutline: "font-medium border-border border rounded-lg px-4 py-2 text-text",
+        modalOutline: "font-medium border-border border rounded-lg px-4 py-2 text-text/50",
         modalBlock: "font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-text",
         form: 'w-full border border-accent-mute bg-accent-mute text-white rounded-2xl font-bold px-8 py-2 ',
         icon: 'h-full border-main-dark rounded-md border aspect-square',
@@ -28,7 +28,7 @@ const Button = ({ variant = "block", size = "base", text = "Button", icon: Icon,
             disabled={disabled}
             type={type}
             onClick={onClick}
-            className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className)}>
+            className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className, disabled && 'cursor-not-allowed opacity-50')}>
             {Icon && <Icon width={18} />}
             {text && text}
             {

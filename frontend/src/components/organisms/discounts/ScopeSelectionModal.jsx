@@ -44,7 +44,7 @@ const ScopeSelectionModal = ({
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={`Search ${itemLabel}...`}
-                        className='w-full pl-10 pr-4 py-2 rounded-md border border-border bg-main-white focus:outline-none'
+                        className='w-full pl-10 pr-4 py-2 rounded-md border border-border bg-main-dark/25 focus:outline-none'
                     />
                 </div>
 
@@ -55,9 +55,9 @@ const ScopeSelectionModal = ({
                                 key={option.value}
                                 type='button'
                                 onClick={() => toggleValue(option.value)}
-                                className='w-full flex items-center gap-3 px-3 py-2 border-b last:border-b-0 border-main-dark/10 hover:bg-main-dark/5 text-left'
+                                className='w-full flex items-center gap-3 px-3 py-4 border-b cursor-pointer last:border-b-0 border-accent/10 hover:bg-main-dark/5 text-left'
                             >
-                                <div className={`w-5 h-5 rounded-sm border flex items-center justify-center ${isChecked(option.value) ? 'bg-accent border-accent text-white' : 'border-border text-transparent'}`}>
+                                <div className={`w-5 h-5 rounded-full border border-accent flex items-center justify-center ${isChecked(option.value) ? 'bg-accent border-accent text-white' : 'border-border text-transparent'}`}>
                                     <Check size={12} />
                                 </div>
                                 <h5 className='text-sm font-medium text-text'>{option.key}</h5>

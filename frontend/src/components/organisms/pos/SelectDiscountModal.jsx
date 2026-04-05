@@ -5,7 +5,7 @@ import { Tag, Clock, AlertCircle, CheckCircle2, Info, Search } from 'lucide-reac
 import { cn } from '@/utils/cn';
 import Modal from '@/components/molecules/Modal';
 
-const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClose, currentDiscountId=null }) => {
+const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClose, currentDiscountId = null }) => {
     const [selectedDiscountDetail, setSelectedDiscountDetail] = useState(null);
     const [searchText, setSearchText] = useState('');
 
@@ -165,8 +165,8 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                         />
                     </div>
                 </div>
-                
-                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-main-white cursor-pointer hover:bg-main-dark/10 transition-colors" onClick={() => onSelect({id: -1, name: ""})}>
+
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-main-white cursor-pointer hover:bg-main-dark/10 transition-colors" onClick={() => onSelect({ id: -1, name: "" })}>
                     <div className="flex items-center gap-3">
                         <div className="bg-main-dark/20 p-2 rounded-full">
                             <Tag size={20} className="text-text/70" />
@@ -177,8 +177,8 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                 </div>
 
                 {filteredDiscounts.map((discount) => (
-                    <div 
-                        key={discount.id} 
+                    <div
+                        key={discount.id}
                         onClick={() => discount.isApplicable && onSelect(discount)}
                         className={cn(
                             "flex flex-col gap-2 p-4 border rounded-lg transition-colors relative",
@@ -232,7 +232,7 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                                 <Clock size={14} />
                                 <span>{formatDate(discount.start_date)} to {formatDate(discount.end_date)}</span>
                             </div>
-                            
+
                             {!discount.isApplicable && (
                                 <div className="flex items-center gap-1 text-xs font-bold text-red-500">
                                     <AlertCircle size={14} />

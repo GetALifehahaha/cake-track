@@ -6,7 +6,7 @@ import ConfirmationModal from '../ConfirmationModal';
 
 const PaymentModal = ({ totalPrice, customerName = '', onCustomerNameChange, onConfirm, onClose }) => {
 
-    const [receivedPayment, setReceivedPayment] = useState(totalPrice || 0);
+    const [receivedPayment, setReceivedPayment] = useState(0);
     const [isExact, setIsExact] = useState(false);
     const [showModalFeedback, setShowModalFeedback] = useState(false);
     const [modalFeedbackContent, setModalFeedbackContent] = useState({ type: "", label: "", details: "" })

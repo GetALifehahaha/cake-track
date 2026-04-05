@@ -18,8 +18,6 @@ export const inputText = (e, maxLength=50) => {
  * @returns Returns an number if the input is a valid number or if e is less than the max length
  */
 export const inputNumber = (e, maxLength=11, maxAmount=null) => {
-    console.log(maxLength, maxAmount)
-
     const raw = e.target.value
 
     if (!/^\d*\.?\d{0,2}$/.test(raw)) return
