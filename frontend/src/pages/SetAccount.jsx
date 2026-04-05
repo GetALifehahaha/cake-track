@@ -13,6 +13,8 @@ const SetAccount = () => {
     const [feedback, setFeedback] = useState(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
     const { activateAccount } = useCashier();
 
     const token = searchParams.get("token");
@@ -34,25 +36,33 @@ const SetAccount = () => {
     const closeConfirmModal = () => setIsConfirmModalOpen(false);
 
     const changePassword = async () => {
+        setLoading(true)
         try {
             const response = await activateAccount({
                 token: token,
                 password: newpassword
             });
 
-            if (response.status === 200) {
+            console.log(response)
+
+            if (response) {
                 setFeedback({
-                    label: response.data.label,
-                    details: response.data.details,
-                    type: response.data.type
+                    label: response.label,
+                    details: response.details,
+                    type: response.type
                 })
             }
+
+            setSuccess(true);
+
         } catch (e) {
             setFeedback({
                 label: e?.response?.data?.label || 'Activation failed',
                 details: e?.response?.data?.details || 'Please try again with a valid activation link.',
                 type: e?.response?.data?.type || 'error'
             });
+        } finally {
+            setLoading(false);
         }
         setIsConfirmModalOpen(false);
     }
@@ -114,7 +124,9 @@ const SetAccount = () => {
                             />
                         }
 
-                        <Button className='mx-auto mt-2' text='Set Password' onClick={confirmPassword} />
+                        {loading ? <h5 className='text-accent'>Activating your account. Please wait...</h5> :
+                            !success && <Button className='mx-auto mt-2' text='Set Password' onClick={confirmPassword} />
+                        }
                     </div>
                 ) : (
                     <div className='rounded-md p-8 bg-main-white shadow-md flex flex-col items-center justify-center gap-2'>
