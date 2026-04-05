@@ -109,7 +109,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         status_filter = (self.request.query_params.get('status') or '').lower()
         if status_filter in ['completed', 'rejected', 'refunded']:
-            return queryset.order_by('updated_at', 'created_at')
+            return queryset.order_by('-updated_at', '-created_at')
             
         return queryset.order_by('created_at')
     

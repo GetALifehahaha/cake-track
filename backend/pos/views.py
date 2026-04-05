@@ -416,7 +416,7 @@ class BusinessSettingsView(viewsets.ModelViewSet):
         return Response(payload)
 
     def update(self, request, *args, **kwargs):
-        if not request.user.is_staff:
+        if not request.user.is_staff and request.user.groups[0]:
             return Response({
                 'label': "Permission Not Granted",
                 'details': "You do not have the permission to edit business details",

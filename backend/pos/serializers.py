@@ -628,7 +628,6 @@ class BusinessSettingsSerializer(serializers.ModelSerializer):
             'gcash_owner_number',
             'secret_pin',
         ]
-        extra_kwargs = {'secret_pin': {'write_only': True}}
         
         
 class DashboardMetricsSerializer(serializers.Serializer):
