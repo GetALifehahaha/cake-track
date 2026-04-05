@@ -19,66 +19,66 @@ const Bone = ({ className = '' }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 export const BusinessDetailsSkeleton = () => (
   <div className="grid grid-cols-2 w-full h-full gap-4 mb-4">
-      {/* LEFT COLUMN */}
-      <div className="flex flex-col gap-4">
-          {/* Business Details + TIN combined */}
-          <div className="p-6 rounded-sm bg-main-white shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                  <Bone className="h-5 w-40" />
-              </div>
-              <Bone className="h-3 w-24 mb-2" />
-              <Bone className="h-8 w-full rounded-md mb-4" />
-              <Bone className="h-3 w-20 mb-2" />
-              <Bone className="h-8 w-full rounded-md mb-4" />
-              <Bone className="h-3 w-10 mb-2" />
-              <Bone className="h-8 w-full rounded-md" />
-          </div>
-
-          {/* Secret PIN */}
-          <div className="p-6 rounded-sm bg-main-white shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                  <Bone className="h-5 w-24" />
-              </div>
-              <Bone className="h-3 w-16 mb-2" />
-              <div className="flex gap-2 items-center">
-                  <Bone className="h-8 flex-1 rounded-md" />
-                  <Bone className="h-6 w-6 rounded-full" />
-              </div>
-          </div>
+    {/* LEFT COLUMN */}
+    <div className="flex flex-col gap-4">
+      {/* Business Details + TIN combined */}
+      <div className="p-6 rounded-sm bg-main-white shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <Bone className="h-5 w-40" />
+        </div>
+        <Bone className="h-3 w-24 mb-2" />
+        <Bone className="h-8 w-full rounded-md mb-4" />
+        <Bone className="h-3 w-20 mb-2" />
+        <Bone className="h-8 w-full rounded-md mb-4" />
+        <Bone className="h-3 w-10 mb-2" />
+        <Bone className="h-8 w-full rounded-md" />
       </div>
 
-      {/* RIGHT COLUMN */}
-      <div className="flex flex-col gap-4">
-          {/* Contact and Message */}
-          <div className="p-6 rounded-sm bg-main-white shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                  <Bone className="h-5 w-48" />
-              </div>
-              <Bone className="h-3 w-32 mb-2" />
-              <Bone className="h-8 w-full rounded-md mb-4" />
-              <Bone className="h-3 w-20 mb-2" />
-              <Bone className="h-20 w-full rounded-md" />
-          </div>
-
-          {/* Personal Information */}
-          <div className="p-6 rounded-sm bg-main-white shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                  <Bone className="h-5 w-44" />
-              </div>
-              <div className="flex gap-4 mb-4">
-                  <div className="flex-1">
-                      <Bone className="h-3 w-20 mb-2" />
-                      <Bone className="h-8 w-full rounded-md" />
-                  </div>
-                  <div className="flex-1">
-                      <Bone className="h-3 w-20 mb-2" />
-                      <Bone className="h-8 w-full rounded-md" />
-                  </div>
-              </div>
-              <Bone className="h-3 w-28 mb-2" />
-              <Bone className="h-8 w-full rounded-md" />
-          </div>
+      {/* Secret PIN */}
+      <div className="p-6 rounded-sm bg-main-white shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <Bone className="h-5 w-24" />
+        </div>
+        <Bone className="h-3 w-16 mb-2" />
+        <div className="flex gap-2 items-center">
+          <Bone className="h-8 flex-1 rounded-md" />
+          <Bone className="h-6 w-6 rounded-full" />
+        </div>
       </div>
+    </div>
+
+    {/* RIGHT COLUMN */}
+    <div className="flex flex-col gap-4">
+      {/* Contact and Message */}
+      <div className="p-6 rounded-sm bg-main-white shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <Bone className="h-5 w-48" />
+        </div>
+        <Bone className="h-3 w-32 mb-2" />
+        <Bone className="h-8 w-full rounded-md mb-4" />
+        <Bone className="h-3 w-20 mb-2" />
+        <Bone className="h-20 w-full rounded-md" />
+      </div>
+
+      {/* Personal Information */}
+      <div className="p-6 rounded-sm bg-main-white shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <Bone className="h-5 w-44" />
+        </div>
+        <div className="flex gap-4 mb-4">
+          <div className="flex-1">
+            <Bone className="h-3 w-20 mb-2" />
+            <Bone className="h-8 w-full rounded-md" />
+          </div>
+          <div className="flex-1">
+            <Bone className="h-3 w-20 mb-2" />
+            <Bone className="h-8 w-full rounded-md" />
+          </div>
+        </div>
+        <Bone className="h-3 w-28 mb-2" />
+        <Bone className="h-8 w-full rounded-md" />
+      </div>
+    </div>
   </div>
 );
 
@@ -96,7 +96,7 @@ export const CashierSkeleton = () => (
 
       {/* Table header */}
       <div className="p-2 bg-accent-mute/30 rounded-lg flex flex-row items-center gap-4 mb-2">
-        {['flex-1','flex-1','flex-1','flex-1'].map((cls, i) => (
+        {['flex-1', 'flex-1', 'flex-1', 'flex-1'].map((cls, i) => (
           <Bone key={i} className={`h-4 ${cls}`} />
         ))}
       </div>
@@ -609,213 +609,258 @@ export const ReportsSkeleton = () => (
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Discounts Skeleton
+// ─────────────────────────────────────────────────────────────────────────────
+export const DiscountsSkeleton = () => (
+  <div className="flex flex-col gap-8">
+    <div className="flex flex-row justify-between items-center">
+      <Bone className="h-8 w-32" />
+      <Bone className="h-10 w-36 rounded-full" />
+    </div>
+
+    <div className="flex flex-col h-[75vh] justify-between">
+      <div className="overflow-x-auto w-full">
+        <div className="p-2 py-3 bg-accent-mute/40 rounded-t-lg flex flex-row items-center gap-4">
+          <Bone className="h-4 flex-1" />
+          <Bone className="h-4 flex-1" />
+          <Bone className="h-4 flex-1" />
+          <Bone className="h-4 flex-1" />
+          <Bone className="h-4 flex-1" />
+          <Bone className="h-4 flex-1" />
+          <Bone className="h-4 flex-1" />
+        </div>
+
+        <div className="flex flex-col gap-2 mt-2">
+          {Array.from({ length: 10 }).map((_, index) => (
+            <div key={index} className="p-2.5 flex flex-row items-center gap-4 bg-main-white border-b-main-dark border-b-2 border-x border-x-main-dark">
+              <Bone className="h-4 flex-1" />
+              <Bone className="h-4 flex-1" />
+              <Bone className="h-4 flex-1" />
+              <Bone className="h-4 flex-1" />
+              <Bone className="h-4 flex-1" />
+              <div className="flex-1">
+                <Bone className="h-6 w-20 rounded-full" />
+              </div>
+              <div className="flex-1">
+                <Bone className="h-6 w-12 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Category, Discount, and Unit Skeleton  (generic — adapt once Reports.jsx is implemented)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const CRUDModalSkeleton = ({title, subtitle, onClose}) => 
-<ModalBody className='w-[40vw]' title={title} subtitle={subtitle} onClose={onClose}>
+export const CRUDModalSkeleton = ({ title, subtitle, onClose }) =>
+  <ModalBody className='w-[40vw]' title={title} subtitle={subtitle} onClose={onClose}>
     <div className='flex flex-col gap-2 w-full'>
 
-        {/* Add New Section */}
-        <div className="flex flex-col gap-2">
-            <Bone className="h-4 w-32" />
-            <div className="flex gap-2">
-                <Bone className="flex-2 h-9 rounded-md" />
-                <Bone className="flex-1 h-9 rounded-md" />
-                <Bone className="h-9 w-16 rounded-md" />
-            </div>
+      {/* Add New Section */}
+      <div className="flex flex-col gap-2">
+        <Bone className="h-4 w-32" />
+        <div className="flex gap-2">
+          <Bone className="flex-2 h-9 rounded-md" />
+          <Bone className="flex-1 h-9 rounded-md" />
+          <Bone className="h-9 w-16 rounded-md" />
         </div>
+      </div>
 
-        {/* List Section */}
-        <Bone className="h-4 w-36 mt-2" />
-        <div className='flex flex-col gap-2'>
-            {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white">
-                    <div className="flex-1 flex gap-2">
-                        <Bone className="h-4 w-28" />
-                        <Bone className="h-4 w-12" />
-                    </div>
-                    <Bone className="h-8 w-16 rounded-md" />
-                    <Bone className="h-8 w-16 rounded-md" />
-                </div>
-            ))}
-        </div>
+      {/* List Section */}
+      <Bone className="h-4 w-36 mt-2" />
+      <div className='flex flex-col gap-2'>
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white">
+            <div className="flex-1 flex gap-2">
+              <Bone className="h-4 w-28" />
+              <Bone className="h-4 w-12" />
+            </div>
+            <Bone className="h-8 w-16 rounded-md" />
+            <Bone className="h-8 w-16 rounded-md" />
+          </div>
+        ))}
+      </div>
 
     </div>
-</ModalBody>
+  </ModalBody>
 
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Archives (Product + Cake) Skeleton  (generic — adapt once Reports.jsx is implemented)
 // ─────────────
 
-export const ArchivesSkeleton = ({title, subtitle, onClose}) => 
-<ModalBody title={title} subtitle={subtitle} onClose={() => onClose(false)}>
+export const ArchivesSkeleton = ({ title, subtitle, onClose }) =>
+  <ModalBody title={title} subtitle={subtitle} onClose={() => onClose(false)}>
     <div className='grid grid-cols-6 gap-4 max-h-120 overflow-y-auto p-2'>
-        {[...Array(12)].map((_, i) => (
-            <div key={i} className='flex flex-col gap-4 px-2 py-2 rounded-4xl shadow-md shadow-black/15 min-h-60 bg-main-white'>
-                <Bone className='aspect-square h-40 rounded-3xl' />
-                <div className='text-center mt-auto'>
-                    <Bone className='h-3 w-20 mx-auto' />
-                </div>
-            </div>
-        ))}
+      {[...Array(12)].map((_, i) => (
+        <div key={i} className='flex flex-col gap-4 px-2 py-2 rounded-4xl shadow-md shadow-black/15 min-h-60 bg-main-white'>
+          <Bone className='aspect-square h-40 rounded-3xl' />
+          <div className='text-center mt-auto'>
+            <Bone className='h-3 w-20 mx-auto' />
+          </div>
+        </div>
+      ))}
     </div>
 
     <span className='ml-auto flex gap-2'>
-        <Bone className='h-9 w-16 rounded-md' />
-        <Bone className='h-9 w-20 rounded-md' />
+      <Bone className='h-9 w-16 rounded-md' />
+      <Bone className='h-9 w-20 rounded-md' />
     </span>
-</ModalBody>
+  </ModalBody>
 
 
-export const EditInventorySkeleton = ({onClose}) => 
+export const EditInventorySkeleton = ({ onClose }) =>
   <ModalBody title='Edit Inventory Item' subtitle='Modify the product by editing in the detail below or delete the current product.' onClose={onClose}>
     <div className='flex flex-row gap-8'>
-        <div className='flex-1 flex flex-col gap-2'>
-            <div className='flex flex-col gap-2'>
-                <Bone className='h-3 w-20' />
-                <Bone className='h-9 w-full rounded-sm' />
-            </div>
-            <div className='flex flex-col gap-2'>
-                <Bone className='h-3 w-10' />
-                <Bone className='h-9 w-full rounded-sm' />
-            </div>
+      <div className='flex-1 flex flex-col gap-2'>
+        <div className='flex flex-col gap-2'>
+          <Bone className='h-3 w-20' />
+          <Bone className='h-9 w-full rounded-sm' />
         </div>
+        <div className='flex flex-col gap-2'>
+          <Bone className='h-3 w-10' />
+          <Bone className='h-9 w-full rounded-sm' />
+        </div>
+      </div>
     </div>
 
     <div className='flex gap-4 mt-4 ml-auto'>
-        <Bone className='h-9 w-20 rounded-md' />
-        <Bone className='h-9 w-16 rounded-md' />
+      <Bone className='h-9 w-20 rounded-md' />
+      <Bone className='h-9 w-16 rounded-md' />
     </div>
   </ModalBody>
 
 
-export const AddInventoryItemSkeleton = ({onClose}) => 
+export const AddInventoryItemSkeleton = ({ onClose }) =>
   <ModalBody title='Add New Item' onClose={onClose}>
     <div className='flex flex-col gap-4'>
-        <div className='flex flex-col gap-2'>
-            <Bone className='h-3 w-12' />
-            <Bone className='h-9 w-full rounded-sm' />
-        </div>
+      <div className='flex flex-col gap-2'>
+        <Bone className='h-3 w-12' />
+        <Bone className='h-9 w-full rounded-sm' />
+      </div>
 
-        <div className='flex items-center gap-4'>
-            <div className='flex-1 flex flex-col gap-2'>
-                <Bone className='h-3 w-16' />
-                <Bone className='h-9 w-full rounded-sm' />
-            </div>
-            <div className='flex-1 flex flex-col gap-2'>
-                <Bone className='h-3 w-10' />
-                <Bone className='h-9 w-full rounded-sm' />
-            </div>
+      <div className='flex items-center gap-4'>
+        <div className='flex-1 flex flex-col gap-2'>
+          <Bone className='h-3 w-16' />
+          <Bone className='h-9 w-full rounded-sm' />
         </div>
+        <div className='flex-1 flex flex-col gap-2'>
+          <Bone className='h-3 w-10' />
+          <Bone className='h-9 w-full rounded-sm' />
+        </div>
+      </div>
 
-        <div className='flex flex-col gap-2'>
-            <Bone className='h-3 w-24' />
-            <Bone className='h-9 w-full rounded-sm' />
-        </div>
+      <div className='flex flex-col gap-2'>
+        <Bone className='h-3 w-24' />
+        <Bone className='h-9 w-full rounded-sm' />
+      </div>
 
-        <div className='flex flex-col gap-2'>
-            <Bone className='h-3 w-24' />
-            <Bone className='h-9 w-full rounded-sm' />
-        </div>
+      <div className='flex flex-col gap-2'>
+        <Bone className='h-3 w-24' />
+        <Bone className='h-9 w-full rounded-sm' />
+      </div>
 
-        <div className='flex gap-4 mt-4 ml-auto'>
-            <Bone className='h-9 w-20 rounded-md' />
-            <Bone className='h-9 w-24 rounded-md' />
-        </div>
+      <div className='flex gap-4 mt-4 ml-auto'>
+        <Bone className='h-9 w-20 rounded-md' />
+        <Bone className='h-9 w-24 rounded-md' />
+      </div>
     </div>
   </ModalBody>
 
 
-export const InventoryInOutSkeleton = ({onClose}) => 
+export const InventoryInOutSkeleton = ({ onClose }) =>
   <ModalBody title='Inventory Management' onClose={onClose} className='w-[90vw] h-[90vh]'>
     <div className='flex flex-1 overflow-hidden max-h-[90vh] bg-accent-mute/25'>
-        {/* Left Panel */}
-        <div className='basis-1/4 flex flex-col'>
-            <div className='px-6 py-4 h-16 flex items-center gap-2'>
-                <div className='h-full w-1 rounded-full bg-accent-text' />
-                <Bone className='h-4 w-36' />
-            </div>
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
-                <Bone className='h-9 w-full rounded-md mb-6' />
-                <div className='flex flex-col gap-2'>
-                    {[...Array(8)].map((_, i) => (
-                        <Bone key={i} className='h-10 w-full rounded-md' />
-                    ))}
-                </div>
-            </div>
+      {/* Left Panel */}
+      <div className='basis-1/4 flex flex-col'>
+        <div className='px-6 py-4 h-16 flex items-center gap-2'>
+          <div className='h-full w-1 rounded-full bg-accent-text' />
+          <Bone className='h-4 w-36' />
         </div>
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <Bone className='h-9 w-full rounded-md mb-6' />
+          <div className='flex flex-col gap-2'>
+            {[...Array(8)].map((_, i) => (
+              <Bone key={i} className='h-10 w-full rounded-md' />
+            ))}
+          </div>
+        </div>
+      </div>
 
-        {/* Right Panel */}
-        <div className='flex-1 flex flex-col bg-white'>
-            <div className='px-6 py-4'>
-                <Bone className='h-4 w-40' />
-            </div>
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
-                <div className='grid gap-4'>
-                    {[...Array(4)].map((_, i) => (
-                        <Bone key={i} className='h-16 w-full rounded-md' />
-                    ))}
-                </div>
-            </div>
+      {/* Right Panel */}
+      <div className='flex-1 flex flex-col bg-white'>
+        <div className='px-6 py-4'>
+          <Bone className='h-4 w-40' />
         </div>
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <div className='grid gap-4'>
+            {[...Array(4)].map((_, i) => (
+              <Bone key={i} className='h-16 w-full rounded-md' />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
 
     {/* Footer */}
     <div className='flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50'>
-        <Bone className='h-9 w-20 rounded-md' />
-        <Bone className='h-9 w-28 rounded-md' />
+      <Bone className='h-9 w-20 rounded-md' />
+      <Bone className='h-9 w-28 rounded-md' />
     </div>
   </ModalBody>
 
 
-export const RecipeModalSkeleton = ({onClose}) => 
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-8">
-      <div className="flex w-full max-w-7xl h-[85vh] bg-main-white rounded-2xl shadow-2xl overflow-hidden relative">
+export const RecipeModalSkeleton = ({ onClose }) =>
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-8">
+    <div className="flex w-full max-w-7xl h-[85vh] bg-main-white rounded-2xl shadow-2xl overflow-hidden relative">
 
-          {/* Sidebar */}
-          <div className="w-64 bg-accent-mute flex flex-col p-6 shrink-0">
-              <div className="flex items-center gap-3 mb-12 mt-2 ml-2">
-                  <Bone className="h-6 w-6 rounded-md" />
-                  <Bone className="h-5 w-24" />
-              </div>
-              <div className="flex flex-col gap-2">
-                  <Bone className="h-10 w-full rounded-xl" />
-                  <Bone className="h-10 w-full rounded-xl" />
-              </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <button onClick={onClose} className="absolute top-6 right-6 text-text-light hover:text-text transition-colors z-10">
-                <X size={24} />
-            </button>
-              <div className="flex-1 overflow-y-auto p-12 flex flex-col">
-                  <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
-                      <Bone className="h-7 w-48 mb-2" />
-                      <Bone className="h-3 w-72 mb-10" />
-
-                      <div className="mb-8">
-                          <Bone className="h-3 w-24 mb-2" />
-                          <Bone className="h-12 w-full rounded-xl" />
-                      </div>
-
-                      <div className="flex-1 flex flex-col min-h-[300px]">
-                          <Bone className="h-3 w-24 mb-2" />
-                          <Bone className="flex-1 w-full rounded-xl min-h-[300px]" />
-                      </div>
-                  </div>
-              </div>
-
-              {/* Footer */}
-              <div className="shrink-0 border-t border-border p-6 flex items-center justify-between bg-main-white">
-                  <Bone className="h-3 w-28" />
-                  <div className="flex items-center gap-3">
-                      <Bone className="h-9 w-24 rounded-md" />
-                      <Bone className="h-9 w-28 rounded-md" />
-                  </div>
-              </div>
-          </div>
+      {/* Sidebar */}
+      <div className="w-64 bg-accent-mute flex flex-col p-6 shrink-0">
+        <div className="flex items-center gap-3 mb-12 mt-2 ml-2">
+          <Bone className="h-6 w-6 rounded-md" />
+          <Bone className="h-5 w-24" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Bone className="h-10 w-full rounded-xl" />
+          <Bone className="h-10 w-full rounded-xl" />
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <button onClick={onClose} className="absolute top-6 right-6 text-text-light hover:text-text transition-colors z-10">
+          <X size={24} />
+        </button>
+        <div className="flex-1 overflow-y-auto p-12 flex flex-col">
+          <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
+            <Bone className="h-7 w-48 mb-2" />
+            <Bone className="h-3 w-72 mb-10" />
+
+            <div className="mb-8">
+              <Bone className="h-3 w-24 mb-2" />
+              <Bone className="h-12 w-full rounded-xl" />
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-[300px]">
+              <Bone className="h-3 w-24 mb-2" />
+              <Bone className="flex-1 w-full rounded-xl min-h-[300px]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 border-t border-border p-6 flex items-center justify-between bg-main-white">
+          <Bone className="h-3 w-28" />
+          <div className="flex items-center gap-3">
+            <Bone className="h-9 w-24 rounded-md" />
+            <Bone className="h-9 w-28 rounded-md" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>

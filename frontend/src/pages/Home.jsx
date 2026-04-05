@@ -34,7 +34,7 @@ const Home = () => {
     } = useTransaction();
     const { data: businessData, loading: businessLoading, error: businessError } = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
-    const { discountData, discountLoading, discountError } = useDiscount();
+    const { discountData, discountLoading, discountError } = useDiscount({ all: true });
     const [checkoutProducts, setCheckoutProducts] = useState(() => {
         const saved = localStorage.getItem('cart');
         return saved ? JSON.parse(saved) : [];

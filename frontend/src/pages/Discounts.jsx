@@ -7,12 +7,12 @@ import useProduct from '@/hooks/useProduct';
 import useCategory from '@/hooks/useCategory';
 import { useToast } from '@/context/ToastContext';
 import { AddDiscountModal, EditDiscountModal } from '../components/organisms';
-import Loading from '@/components/molecules/Loading';
+import { DiscountsSkeleton } from '@/components/molecules/Skeletons';
 import { cn } from '@/utils/cn';
 
 const Discounts = () => {
     const { addToast } = useToast();
-    const { discountData, discountLoading, discountError, postDiscount, patchDiscount, deleteDiscount } = useDiscount();
+    const { discountData, discountPagination, discountLoading, discountError, postDiscount, patchDiscount, deleteDiscount } = useDiscount();
     const { allProducts: productData, loading: productLoading } = useProduct();
     const { categoryData, categoryLoading } = useCategory();
 
@@ -20,7 +20,7 @@ const Discounts = () => {
     const [prepEditDiscount, setPrepEditDiscount] = useState(null);
 
 
-    if (discountLoading || productLoading || categoryLoading) return <Loading />;
+    if (discountLoading || productLoading || categoryLoading) return <DiscountsSkeleton />;
     if (discountError) return <h5>Error loading discount data</h5>;
 
     const clear = () => {
@@ -141,7 +141,7 @@ const Discounts = () => {
                     </div>
                 )}
 
-                {/* <Pagination prev={discountData?.previous} next={discountData?.next} /> */}
+                <Pagination prev={discountPagination?.previous} next={discountPagination?.next} />
             </div>
 
             {showAddModal && (

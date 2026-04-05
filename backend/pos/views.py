@@ -64,11 +64,20 @@ class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    pagination_class = None
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
     search_fields = ['name']
+
+    def list(self, request, *args, **kwargs):
+        fetch_all = str(request.query_params.get('all', 'false')).lower() == 'true'
+
+        if fetch_all:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        return super().list(request, *args, **kwargs)
 
 
 class DiscountUsageViewSet(viewsets.ReadOnlyModelViewSet):
