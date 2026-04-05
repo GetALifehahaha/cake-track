@@ -93,17 +93,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         
 
 class TransactionCreateSerializer(serializers.Serializer):
-    transactions = serializers.ListField(child=serializers.DictField())
-
-    amount = serializers.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
-    )
+    transactions = serializers.ListField(child=serializers.DictField(), allow_empty=False)
 
     class Meta:
         model = Transaction
-        fields = ['ingredient', 'amount', 'transaction_type', 'purchase_date']
+        fields = ['transactions']
 
     @staticmethod
     def _parse_date_value(value, field_name):
@@ -123,6 +117,35 @@ class TransactionCreateSerializer(serializers.Serializer):
 
         for index, item in enumerate(transactions_data):
             transaction_type = item.get('transaction_type')
+
+            if item.get('ingredient_id') in [None, '']:
+                raise ValidationError({
+                    'transactions': f"Transaction item #{index + 1}: Ingredient is required."
+                })
+
+            raw_amount = item.get('amount')
+            if raw_amount in [None, '']:
+                raise ValidationError({
+                    'transactions': f"Transaction item #{index + 1}: Amount is required."
+                })
+
+            try:
+                parsed_amount = Decimal(str(raw_amount))
+            except Exception as error:
+                raise ValidationError({
+                    'transactions': f"Transaction item #{index + 1}: Amount must be a valid number."
+                }) from error
+
+            if parsed_amount <= 0:
+                raise ValidationError({
+                    'transactions': f"Transaction item #{index + 1}: Amount must be greater than zero."
+                })
+
+            if transaction_type not in ['in', 'out']:
+                raise ValidationError({
+                    'transactions': f"Transaction item #{index + 1}: Transaction type must be 'in' or 'out'."
+                })
+
             if transaction_type != 'in':
                 continue
 
