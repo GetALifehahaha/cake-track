@@ -255,7 +255,8 @@ export default function Index() {
                                         <Text className='font-bold text-[#8B5A3C] mb-3'>Company</Text>
                                         {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>About Us</Text></TouchableOpacity> */}
                                         <TouchableOpacity onPress={() => router.push('/termsOfService')}><Text className='text-gray-500 text-xs mb-2'>Terms of Service</Text></TouchableOpacity>
-                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity> */}
+                                        <TouchableOpacity onPress={() => router.push('/termsAndConditions')}><Text className='text-gray-500 text-xs mb-2'>Terms and Conditions</Text></TouchableOpacity>
+                                        <TouchableOpacity onPress={() => router.push('/privacyPolicy')}><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity>
                                     </View>
                                 </View>
 
