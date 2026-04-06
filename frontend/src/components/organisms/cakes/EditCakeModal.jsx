@@ -9,6 +9,7 @@ import {
 } from "@/api/constants";
 import useRecipe from '@/hooks/useRecipe';
 import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
+import RecipeSelectionModal from '@/components/organisms/RecipeSelectionModal';
 import { Dropdown } from '@/components/atoms';
 import { limitedInput } from '@/utils/safeInput';
 
@@ -26,6 +27,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [showArchiveConfirmationModal, setShowArchiveConfirmationModal] = useState(false);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [showRecipeSelectionModal, setShowRecipeSelectionModal] = useState(false);
     const [recipeId, setRecipeId] = useState(cake.recipe ? String(cake.recipe) : '');
 
     const handleCakeName = (e) => {
@@ -155,7 +157,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
 
     const toggleShowArchiveConfirmationModal = () => setShowArchiveConfirmationModal(!showArchiveConfirmationModal)
 
-    const handleArchive = () => onConfirm({is_archived: true})
+    const handleArchive = () => onConfirm({ is_archived: true })
 
     const handleCreateRecipe = async (payload) => {
         const created = await postRecipe(payload);
@@ -169,147 +171,158 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
     return (
         <ModalBody title='Edit Cake' onClose={onClose}>
 
-                <div className='flex gap-8'>
+            <div className='flex gap-8'>
 
-                    {/* Image */}
-                    <div className='flex flex-col gap-2'>
-                        <div className='flex justify-between items-center w-full mb-2'>
-                            <Label variant='modal' text='Cake Image' />
-                            {imagePreview &&
-                                <Button variant='icon' text='' icon={X} onClick={handleRemoveImage} />
-                            }
-                        </div>
-
-                        <label className='h-60 flex flex-col items-center justify-center gap-2 rounded-xl border-border border aspect-square cursor-pointer'>
-                            {imagePreview ? (
-                                <img
-                                    src={imagePreview}
-                                    className='object-cover h-full w-full rounded-xl'
-                                    alt="preview"
-                                />
-                            ) : (
-                                <>
-                                    <Upload size={48} className='text-text/50' />
-                                    <h5 className='text-text/50 font-semibold text-sm'>
-                                        Click to upload
-                                    </h5>
-                                    <h5 className='text-text/50 font-semibold text-sm'>
-                                        PNG, JPG
-                                    </h5>
-                                </>
-                            )}
-
-                            <input
-                                type="file"
-                                accept="image/png, image/jpeg"
-                                className="hidden"
-                                onChange={handleImageChange}
-                            />
-                        </label>
+                {/* Image */}
+                <div className='flex flex-col gap-2'>
+                    <div className='flex justify-between items-center w-full mb-2'>
+                        <Label variant='modal' text='Cake Image' />
+                        {imagePreview &&
+                            <Button variant='icon' text='' icon={X} onClick={handleRemoveImage} />
+                        }
                     </div>
 
-                    {/* Details */}
-                    <div className='flex flex-col gap-6 w-120'>
-
-                        <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Cake Name' />
-                            <input
-                                type='text'
-                                className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
-                                value={cakeName}
-                                onChange={(e) => handleCakeName(e)}
+                    <label className='h-60 flex flex-col items-center justify-center gap-2 rounded-xl border-border border aspect-square cursor-pointer'>
+                        {imagePreview ? (
+                            <img
+                                src={imagePreview}
+                                className='object-cover h-full w-full rounded-xl'
+                                alt="preview"
                             />
-                        </div>
+                        ) : (
+                            <>
+                                <Upload size={48} className='text-text/50' />
+                                <h5 className='text-text/50 font-semibold text-sm'>
+                                    Click to upload
+                                </h5>
+                                <h5 className='text-text/50 font-semibold text-sm'>
+                                    PNG, JPG
+                                </h5>
+                            </>
+                        )}
 
-                        <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Price' />
-                            <input
-                                type='text'
-                                className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
-                                value={price}
-                                onChange={(e) => handlePrice(e)}
-                            />
-                        </div>
+                        <input
+                            type="file"
+                            accept="image/png, image/jpeg"
+                            className="hidden"
+                            onChange={handleImageChange}
+                        />
+                    </label>
+                </div>
 
-                        <div className='flex flex-col gap-2'>
-                            <Label variant='modal' text='Recipe' />
-                            <div className='flex items-center gap-2'>
-                                <div className='flex-1'>
-                                    <Dropdown
-                                        variant='modal'
-                                        value={recipeId}
-                                        selection='Select recipe'
-                                        size='full'
-                                        options={recipeOptions}
-                                        onSelect={(value) => setRecipeId(String(value))}
-                                    />
-                                </div>
-                                <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
+                {/* Details */}
+                <div className='flex flex-col gap-6 w-120'>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Cake Name' />
+                        <input
+                            type='text'
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                            value={cakeName}
+                            onChange={(e) => handleCakeName(e)}
+                        />
+                    </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Price' />
+                        <input
+                            type='text'
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                            value={price}
+                            onChange={(e) => handlePrice(e)}
+                        />
+                    </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Recipe' />
+                        <div className='flex items-center gap-2'>
+                            <div className='flex-1'>
+                                <Button
+                                    variant='modalOutline'
+                                    size='small'
+                                    text={recipeId ? recipeData?.results?.find(r => r.id === Number(recipeId))?.name || 'Select recipe' : 'Select recipe'}
+                                    onClick={() => setShowRecipeSelectionModal(true)}
+                                    className='justify-center'
+                                />
                             </div>
                         </div>
-
                     </div>
+
                 </div>
+            </div>
 
-                {feedback &&
-                    <ModalFeedbackCard
-                        label={feedback.label}
-                        details={feedback.details}
-                        type={feedback.type}
-                    />
-                }
+            {feedback &&
+                <ModalFeedbackCard
+                    label={feedback.label}
+                    details={feedback.details}
+                    type={feedback.type}
+                />
+            }
 
-                <div className='flex gap-4 ml-auto'>
-                    {loading ? (
-                        <div className='flex items-center gap-2'>
-                            <Loader2 size={18} className='animate-spin text-accent' />
-                            <h5 className='text-accent-mute font-medium text-md'>
-                                Loading
-                            </h5>
-                        </div>
-                    ) : (
-                        <>
-                            <Button
-                                variant='modalBlock'
-                                size='base'
-                                text='Archive Item'
-                                onClick={toggleShowArchiveConfirmationModal}
-                            />
-                            <Button
-                                variant='modalOutline'
-                                size='base'
-                                text='Cancel'
-                                onClick={onClose}
-                            />
-                            <Button
-                                variant='modalBlock'
-                                size='base'
-                                text='Save'
-                                onClick={handleConfirmationModal}
-                            />
-                        </>
-                    )}
-                </div>
+            <div className='flex gap-4 ml-auto'>
+                {loading ? (
+                    <div className='flex items-center gap-2'>
+                        <Loader2 size={18} className='animate-spin text-accent' />
+                        <h5 className='text-accent-mute font-medium text-md'>
+                            Loading
+                        </h5>
+                    </div>
+                ) : (
+                    <>
+                        <Button
+                            variant='modalBlock'
+                            size='base'
+                            text='Archive Item'
+                            onClick={toggleShowArchiveConfirmationModal}
+                        />
+                        <Button
+                            variant='modalOutline'
+                            size='base'
+                            text='Cancel'
+                            onClick={onClose}
+                        />
+                        <Button
+                            variant='modalBlock'
+                            size='base'
+                            text='Save'
+                            onClick={handleConfirmationModal}
+                        />
+                    </>
+                )}
+            </div>
 
-                {showConfirmationModal &&
-                    <ConfirmationModal
-                        title="Save Changes?"
-                        content="Are you sure you want to update this cake?"
-                        onReject={() => setShowConfirmationModal(false)}
-                        onConfirm={editCake}
-                    />
-                }
-                {showArchiveConfirmationModal &&
-                    <ConfirmationModal 
-                        title="Archive Cake?" 
-                        content="Are you sure you want to archive this cake? You can get it back from the archives" 
-                        onReject={toggleShowArchiveConfirmationModal} 
-                        onConfirm={handleArchive} />
-                }
+            {showConfirmationModal &&
+                <ConfirmationModal
+                    title="Save Changes?"
+                    content="Are you sure you want to update this cake?"
+                    onReject={() => setShowConfirmationModal(false)}
+                    onConfirm={editCake}
+                />
+            }
+            {showArchiveConfirmationModal &&
+                <ConfirmationModal
+                    title="Archive Cake?"
+                    content="Are you sure you want to archive this cake? You can get it back from the archives"
+                    onReject={toggleShowArchiveConfirmationModal}
+                    onConfirm={handleArchive} />
+            }
 
-                {showAddRecipeModal &&
-                    <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
-                }
+            {showRecipeSelectionModal && (
+                <RecipeSelectionModal
+                    options={recipeOptions}
+                    selectedValue={recipeId}
+                    onConfirm={(val) => {
+                        setRecipeId(String(val));
+                        setShowRecipeSelectionModal(false);
+                    }}
+                    onClose={() => setShowRecipeSelectionModal(false)}
+                    onAddNewRecipe={() => setShowAddRecipeModal(true)}
+                />
+            )}
+
+            {showAddRecipeModal &&
+                <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
+            }
 
         </ModalBody>
     );

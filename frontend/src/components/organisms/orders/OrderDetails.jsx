@@ -4,6 +4,8 @@ import { Search, ShoppingBag, X } from 'lucide-react';
 import useIngredient from '@/hooks/useIngredient';
 import useOrder from '@/hooks/useOrders';
 import useRecipe from '@/hooks/useRecipe';
+import RecipeSelectionModal from '@/components/organisms/RecipeSelectionModal';
+import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
 import { useToast } from '@/context/ToastContext';
 import { formatQty } from '@/utils/recipeUnits';
 import { capitalizeSnakeCase } from '@/utils/capitalize';
@@ -120,6 +122,8 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const [selectedIngredients, setSelectedIngredients] = useState([]);
     const [selectedRecipeId, setSelectedRecipeId] = useState('');
     const [savingRecipe, setSavingRecipe] = useState(false);
+    const [showRecipeSelectionModal, setShowRecipeSelectionModal] = useState(false);
+    const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [deducting, setDeducting] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
 
@@ -472,22 +476,15 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 <div className='ml-auto flex items-center gap-2'>
                     <h5 className='text-sm font-semibold '>Load exiting recipe</h5>
                     <div className='w-48'>
-                        <Dropdown
+                        <Button
+                            variant='modalOutline'
                             size='full'
-                            variant='modal'
-                            value={selectedRecipeId}
-                            selection='Select recipe'
-                            options={recipeOptions}
-                            onSelect={(value) => {
+                            text={selectedRecipeId ? recipeData?.results?.find(r => String(r.id) === String(selectedRecipeId))?.name || 'Select recipe' : 'Select recipe'}
+                            onClick={() => {
                                 if (hasDeducted) return;
-                                if (value === null) {
-                                    setSelectedRecipeId('');
-                                    setSelectedIngredients([]);
-                                    return;
-                                }
-                                setSelectedRecipeId(String(value));
-                                loadRecipeById(value);
+                                setShowRecipeSelectionModal(true);
                             }}
+                            className='justify-center truncate'
                         />
                     </div>
                 </div>
@@ -769,6 +766,39 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </div>
                 </div>
             )}
+
+            {showRecipeSelectionModal && (
+                <RecipeSelectionModal
+                    options={recipeData?.results ? recipeData.results.map(r => ({ key: r.name, value: r.id })) : []}
+                    selectedValue={selectedRecipeId}
+                    onConfirm={(val) => {
+                        if (val === null) {
+                            setSelectedRecipeId('');
+                            setSelectedIngredients([]);
+                        } else {
+                            setSelectedRecipeId(String(val));
+                            loadRecipeById(val);
+                        }
+                        setShowRecipeSelectionModal(false);
+                    }}
+                    onClose={() => setShowRecipeSelectionModal(false)}
+                    onAddNewRecipe={() => setShowAddRecipeModal(true)}
+                />
+            )}
+
+            {showAddRecipeModal && (
+                <AddRecipeModal
+                    onClose={() => setShowAddRecipeModal(false)}
+                    onConfirm={async (payload) => {
+                        const created = await postRecipe(payload);
+                        setSelectedRecipeId(String(created.id));
+                        loadRecipeById(created.id);
+                        setShowAddRecipeModal(false);
+                        setShowRecipeSelectionModal(false);
+                    }}
+                />
+            )}
+
         </div>
     );
 };

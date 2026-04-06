@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { Button, Dropdown, Label } from '../../atoms';
 import { X, Plus, Upload, Loader2, Minus, Check } from 'lucide-react'
 import { ModalBody, ModalFeedbackCard } from '../../molecules';
@@ -11,20 +11,21 @@ import { cn } from '@/utils/cn';
 import useCategory from '@/hooks/useCategory';
 import useRecipe from '@/hooks/useRecipe';
 import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
+import RecipeSelectionModal from '@/components/organisms/RecipeSelectionModal';
 
-const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onConfirm, onClose}) => {
+const EditProductModal = ({ product, categoryOptions: initialCategoryOptions, onConfirm, onClose }) => {
 
     const { postCategory, refresh: refreshCategories } = useCategory();
     const { data: recipeData, postRecipe } = useRecipe();
 
     const [productName, setProductName] = useState(product.name);
-    const [categories, setCategories] = useState(product.categories?.length? [...product.categories]: [""])
+    const [categories, setCategories] = useState(product.categories?.length ? [...product.categories] : [""])
     const [variants, setVariants] = useState([
         ...product.variants.map(variant => ({
             ...variant,
             recipe: variant.recipe ? String(variant.recipe) : '',
         })),
-        {label: "", price: 0, recipe: ''}
+        { label: "", price: 0, recipe: '' }
     ])
     const [image, setImage] = useState(product.image)
     const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
     const [showConfirmationModal, setShowConfirmationModal] = useState(false)
     const [archiveConfirmation, setArchiveConfirmation] = useState(false);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [showRecipeSelectionModal, setShowRecipeSelectionModal] = useState(false);
     const [recipeTargetIndex, setRecipeTargetIndex] = useState(null);
 
     const [imagePreview, setImagePreview] = useState(product.image);
@@ -120,17 +122,17 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
             image: imageChanged ? image ? await uploadToCloudinary(image) : null : image,
             category_ids: [...categories.filter(Boolean).map(category => category.id)],
             variants: variants
-                .filter(({label, price}, index) =>
+                .filter(({ label, price }, index) =>
                     index !== variants.length - 1 || (label && Number(price) > 0)
                 )
-                .filter(({label, price}) => label?.trim() && Number(price) > 0)
-                .map(({label, price, recipe}) => ({
+                .filter(({ label, price }) => label?.trim() && Number(price) > 0)
+                .map(({ label, price, recipe }) => ({
                     label,
                     price,
                     recipe: recipe ? Number(recipe) : null,
                 })),
         }
-        
+
         onConfirm(payload);
         setLoading(false);
     }
@@ -164,7 +166,7 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
         setShowConfirmationModal(!showConfirmationModal);
     }
 
-    const handleArchive = () => onConfirm({is_archived: true})
+    const handleArchive = () => onConfirm({ is_archived: true })
 
     const handleSetArchiveConfirmation = () => setArchiveConfirmation(!archiveConfirmation)
 
@@ -172,7 +174,7 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
         if (categories.some(cat => cat.id === value)) return;
 
         setCategories(prev => prev.map(
-            ({id}, idx) => idx === index ? {id: value} : {id}
+            ({ id }, idx) => idx === index ? { id: value } : { id }
         ))
     }
 
@@ -216,14 +218,14 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
 
         if (!/^\d*\.?\d{0,2}$/.test(raw)) return
 
-        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, price: e.target.value} : item));
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, price: e.target.value } : item));
     }
 
     const updateLabel = (index, e) => {
 
         if (e.target.value.length > 7) return
 
-        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? {...item, label: e.target.value} : item));
+        setVariants(prev => prev.map((item, itemIndex) => itemIndex === index ? { ...item, label: e.target.value } : item));
     }
 
     const removeVariant = (index) => {
@@ -262,21 +264,21 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
     }
 
     return (
-        <ModalBody title='Edit product details' onClose={onClose} className='min-w-[34vw] max-w-[94vw]'>
+        <ModalBody title='Edit product details' onClose={onClose} className='min-w-[40vw] max-w-[94vw]'>
             <div className='grid grid-cols-[15rem_1fr] gap-8'>
                 <div className='flex flex-col gap-2'>
                     <div className='flex justify-between items-center w-full mb-2'>
                         <Label variant='modal' text='Product Image' />
-                        {imagePreview && 
-                        <Button variant='icon' text='' icon={X} onClick={handleRemoveImage}/>
+                        {imagePreview &&
+                            <Button variant='icon' text='' icon={X} onClick={handleRemoveImage} />
                         }
                     </div>
                     <label className='h-60 flex flex-col items-center justify-center gap-2 rounded-xl border-border border aspect-square'>
-                        {(imagePreview) ? 
-                            <img src={imagePreview} className='object-cover h-full w-full rounded-xl'/>
-                        :
+                        {(imagePreview) ?
+                            <img src={imagePreview} className='object-cover h-full w-full rounded-xl' />
+                            :
                             <>
-                                <Upload size={48} className='text-text/50'/>
+                                <Upload size={48} className='text-text/50' />
                                 <h5 className='text-text/50 font-semibold text-sm'>Click to upload</h5>
                                 <h5 className='text-text/50 font-semibold text-sm'>PNG, JPG</h5>
                             </>
@@ -294,12 +296,12 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                 <div className='grid gap-8 w-136'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Product Name' />
-                        <input type='text' className='h-10 px-3 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)}/>
+                        <input type='text' className='h-10 px-3 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={productName} placeholder='e.g., Matcha in the Morning' onChange={(e) => handleSetProductName(e)} />
                     </div>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Categories' />
                         <div className='flex flex-col gap-2 max-h-40 overflow-auto'>
-                            {categories.map(({id}, index) => (
+                            {categories.map(({ id }, index) => (
                                 <div key={index} className='flex gap-2 items-center'>
                                     {creatingCategoryIndex === index ? (
                                         <>
@@ -351,13 +353,13 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
 
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Variants' />
-                        <div className="grid gap-2 w-full max-h-40 overflow-auto">
+                        <div className="grid gap-2 w-full max-h-40 overflow-auto overflow-x-hidden">
                             <div className='grid grid-cols-[1fr_7rem_minmax(0,1fr)_2.5rem] items-center gap-2'>
                                 <h5 className='text-xs font-medium'>Label</h5>
                                 <h5 className='text-xs font-medium'>Price</h5>
                                 <h5 className='text-xs font-medium'>Recipe (optional)</h5>
                             </div>
-                            {variants.map(({label, price, recipe}, index) => (
+                            {variants.map(({ label, price, recipe }, index) => (
                                 <div className='grid grid-cols-[1fr_7rem_minmax(0,1fr)_2.5rem] items-center gap-2'>
                                     <input
                                         type="text"
@@ -372,16 +374,18 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                                         onChange={(e) => updatePrice(index, e)}
                                         className='h-10 px-3 rounded w-full bg-main-dark/50'
                                     />
-                                    <Dropdown
-                                        variant='modal'
-                                        value={recipe}
-                                        selection='Select recipe'
+                                    <Button
+                                        variant='modalOutline'
                                         size='full'
-                                        options={recipeOptions}
-                                        onSelect={(value) => handleRecipeSelect(value, index)}
+                                        text={recipe ? recipeData?.results?.find(r => String(r.id) === String(recipe))?.name || 'Select' : 'Select'}
+                                        onClick={() => {
+                                            setRecipeTargetIndex(index);
+                                            setShowRecipeSelectionModal(true);
+                                        }}
+                                        className='justify-center truncate'
                                     />
-                                    {index === variants.length-1 ?
-                                        <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, {label: "", price: 0, recipe: ''}])} />
+                                    {index === variants.length - 1 ?
+                                        <Button text='' icon={Plus} variant='icon' className='ml-auto' onClick={() => setVariants(prev => [...prev, { label: "", price: 0, recipe: '' }])} />
                                         :
                                         <Button text='' icon={Minus} variant='icon' onClick={() => removeVariant(index)} />
                                     }
@@ -392,8 +396,8 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                 </div>
             </div>
 
-            {feedback && 
-                <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
+            {feedback &&
+                <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
             }
             <div className='flex gap-4 ml-auto'>
                 {creatingCategoryIndex !== null ? (
@@ -405,9 +409,9 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
                     </div>
                 ) : (
                     <>
-                        <Button variant='modalBlock' size='base' text='Archive Item' onClick={handleSetArchiveConfirmation}/>
-                        <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose}/>
-                        <Button variant='modalBlock' size='base' text='Save' onClick={handleSetShowConfirmationModal}/>
+                        <Button variant='modalBlock' size='base' text='Archive Item' onClick={handleSetArchiveConfirmation} />
+                        <Button variant='modalOutline' size='base' text='Cancel' onClick={onClose} />
+                        <Button variant='modalBlock' size='base' text='Save' onClick={handleSetShowConfirmationModal} />
                     </>
                 )}
             </div>
@@ -418,6 +422,26 @@ const EditProductModal = ({product, categoryOptions: initialCategoryOptions, onC
             {archiveConfirmation &&
                 <ConfirmationModal title="Archive Product?" content="Are you sure you want to archive this product? You can get it back from the archives" onReject={handleSetArchiveConfirmation} onConfirm={handleArchive} />
             }
+
+            {showRecipeSelectionModal && (
+                <RecipeSelectionModal
+                    options={(recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id }))}
+                    selectedValue={variants[recipeTargetIndex]?.recipe || ''}
+                    onConfirm={(val) => {
+                        handleRecipeSelect(String(val), recipeTargetIndex);
+                        setShowRecipeSelectionModal(false);
+                        setRecipeTargetIndex(null);
+                    }}
+                    onClose={() => {
+                        setShowRecipeSelectionModal(false);
+                        setRecipeTargetIndex(null);
+                    }}
+                    onAddNewRecipe={() => {
+                        setShowRecipeSelectionModal(false);
+                        setShowAddRecipeModal(true);
+                    }}
+                />
+            )}
 
             {showAddRecipeModal &&
                 <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />

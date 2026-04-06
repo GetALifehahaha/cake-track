@@ -9,6 +9,7 @@ import {
 } from "@/api/constants";
 import useRecipe from '@/hooks/useRecipe';
 import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
+import RecipeSelectionModal from '@/components/organisms/RecipeSelectionModal';
 import { Dropdown } from '@/components/atoms';
 import { limitedInput } from '@/utils/safeInput';
 
@@ -24,6 +25,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
     const [feedback, setFeedback] = useState(null);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
+    const [showRecipeSelectionModal, setShowRecipeSelectionModal] = useState(false);
     const [recipeId, setRecipeId] = useState('');
 
     const handleCakeName = (e) => {
@@ -64,7 +66,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
 
         setShowConfirmationModal(true)
     }
-    
+
 
     const addCake = async () => {
         try {
@@ -226,16 +228,14 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                         <Label variant='modal' text='Recipe' />
                         <div className='flex items-center gap-2'>
                             <div className='flex-1'>
-                                <Dropdown
-                                    variant='modal'
-                                    value={recipeId}
-                                    selection='Select recipe'
-                                    size='full'
-                                    options={recipeOptions}
-                                    onSelect={(value) => setRecipeId(String(value))}
+                                <Button
+                                    variant='modalOutline'
+                                    size='small'
+                                    text={recipeId ? recipeData?.results?.find(r => r.id === Number(recipeId))?.name || 'Select recipe' : 'Select recipe'}
+                                    onClick={() => setShowRecipeSelectionModal(true)}
+                                    className='justify-center'
                                 />
                             </div>
-                            <Button variant='modalOutline' size='base' text='Create Recipe' onClick={() => setShowAddRecipeModal(true)} />
                         </div>
                     </div>
 
@@ -285,8 +285,24 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
                 />
             }
 
+            {showRecipeSelectionModal && (
+                <RecipeSelectionModal
+                    options={recipeOptions}
+                    selectedValue={recipeId}
+                    onConfirm={(val) => {
+                        setRecipeId(String(val));
+                        setShowRecipeSelectionModal(false);
+                    }}
+                    onClose={() => setShowRecipeSelectionModal(false)}
+                    onAddNewRecipe={() => setShowAddRecipeModal(true)}
+                />
+            )}
+
             {showAddRecipeModal &&
-                <AddRecipeModal onClose={() => setShowAddRecipeModal(false)} onConfirm={handleCreateRecipe} />
+                <AddRecipeModal
+                    onClose={() => setShowAddRecipeModal(false)}
+                    onConfirm={handleCreateRecipe}
+                />
             }
         </ModalBody>
     );
