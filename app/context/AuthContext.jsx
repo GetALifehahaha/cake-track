@@ -16,6 +16,25 @@ export const AuthProvider = ({ children }) => {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    const getErrorMessage = (errorData, fallback = 'Request failed') => {
+        if (!errorData) return fallback;
+        if (typeof errorData === 'string') return errorData;
+        if (errorData.detail) return errorData.detail;
+
+        const firstKey = Object.keys(errorData)[0];
+        if (firstKey) {
+            const firstValue = errorData[firstKey];
+            if (Array.isArray(firstValue) && firstValue.length > 0) {
+                return String(firstValue[0]);
+            }
+            if (typeof firstValue === 'string') {
+                return firstValue;
+            }
+        }
+
+        return fallback;
+    };
+
     useEffect(() => {
         auth().finally(() => setLoading(false));
     }, []);
@@ -99,7 +118,10 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (err) {
             console.error('Login failed:', err);
-            return { success: false, error: "Login unsuccessful" };
+            return {
+                success: false,
+                error: getErrorMessage(err.response?.data, 'Login unsuccessful')
+            };
         }
     };
 
@@ -136,7 +158,10 @@ export const AuthProvider = ({ children }) => {
             });
             return { success: true };
         } catch (err) {
-            return { success: false, error: err.response?.data || err.message };
+            return {
+                success: false,
+                error: getErrorMessage(err.response?.data, err.message)
+            };
         }
     };
 

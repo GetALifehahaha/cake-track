@@ -9,15 +9,20 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import action
 
-from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer, AddressSerializer
+from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer, AddressSerializer, CustomTokenObtainPairSerializer
 from .models import OTP, PasswordResetToken, Address, UserProfile
 
 from .permissions import IsAdmin, IsCashier
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):

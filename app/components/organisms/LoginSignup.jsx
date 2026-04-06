@@ -5,7 +5,7 @@ import React, { useState, useContext, useEffect } from 'react'
 import { Lock, Mail, Eye, EyeClosed, User2Icon, Loader2 } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
-import { isValidEmail } from '@/utils/validators';
+import { isValidEmail, hasMinCredentialLength, isPasswordSimilarToUsername } from '@/utils/validators';
 // 1. Import Google Sign-In
 // import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
@@ -26,12 +26,35 @@ const LoginSignup = ({ method }) => {
 
 	const [loading, setLoading] = useState(false);
 
+	const validateCredentialRules = () => {
+		if (!hasMinCredentialLength(username)) {
+			showToast("Username must be at least 8 characters", "error");
+			return false;
+		}
+
+		if (!hasMinCredentialLength(password)) {
+			showToast("Password must be at least 8 characters", "error");
+			return false;
+		}
+
+		if (isPasswordSimilarToUsername(username, password)) {
+			showToast("Password should not be similar to the username", "error");
+			return false;
+		}
+
+		return true;
+	};
+
 	const submitForm = async () => {
 		try {
 			setLoading(true);
 			if (method === "login") {
 				if (!username || !password) {
 					showToast("Please fill in all fields", "error");
+					return;
+				}
+
+				if (!validateCredentialRules()) {
 					return;
 				}
 
@@ -59,6 +82,10 @@ const LoginSignup = ({ method }) => {
 
 				if (password !== confirmPassword) {
 					showToast("Passwords do not match", "error");
+					return;
+				}
+
+				if (!validateCredentialRules()) {
 					return;
 				}
 
