@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { Pagination, ProductCard } from '../components/molecules';
 import { Archive, Plus, Settings, Minus } from 'lucide-react';
-import { AddProductModal, ArchivedModal, CategoryModal, EditProductModal, ProductsSkeletonLoading} from '../components/organisms';
+import { AddProductModal, ArchivedModal, CategoryModal, EditProductModal, ProductsSkeletonLoading } from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
@@ -11,9 +11,9 @@ import Loading from '@/components/molecules/Loading';
 
 const Products = () => {
     const { addToast } = useToast();
-    const [searchParams, setSearchParams] = useSearchParams();  
-    const {categoryData, categoryLoading, categoryError} = useCategory();
-    const {postProduct, data: productData, patchProduct, loading: productLoading, error: productError, batchUnarchiveProduct} = useProduct();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { categoryData, categoryLoading, categoryError } = useCategory();
+    const { postProduct, data: productData, patchProduct, loading: productLoading, error: productError, batchUnarchiveProduct } = useProduct();
     const [filter, setFilter] = useState(null);
     const [prepEditProduct, setPrepEditProduct] = useState(null);
 
@@ -49,7 +49,7 @@ const Products = () => {
     const handleShowAddProductModal = () => {
         setShowAddProductModal(!showAddProductModal);
     }
-    
+
     const handleCloseAddProductModal = () => {
         setShowAddProductModal(false);
     }
@@ -62,7 +62,7 @@ const Products = () => {
     const handleShowArchivedModal = () => {
         setShowArchivedModal(true);
     }
-    
+
     const handleShowCategoryModal = () => setShowCategoryModal(true);
     const handleCloseCategoryModal = () => setShowCategoryModal(false);
 
@@ -73,7 +73,7 @@ const Products = () => {
             clear();
         }
     }
-    
+
     const editProduct = async (value) => {
         if (value) {
             await patchProduct(prepEditProduct.id, value)
@@ -81,10 +81,10 @@ const Products = () => {
             clear();
         }
     }
-    
+
     const restoreProduct = async (value = []) => {
         if (value.length) {
-            await batchUnarchiveProduct({product_ids: value})
+            await batchUnarchiveProduct({ product_ids: value })
             addToast('Product restored successfully', 'success');
             clear();
         }
@@ -103,16 +103,16 @@ const Products = () => {
         setShowEditProductModal(false);
     }
 
-    const categoryOptions = categoryData.map((cat) => { return {key: cat.name, value: cat.id}})
+    const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } })
 
-    const listProducts = productData.results.map(product => 
-    <>
-        <ProductCard 
-            product={product} 
-            key={product.id} 
-            onToggle={handlePrepEditProduct}
+    const listProducts = productData.results.map(product =>
+        <>
+            <ProductCard
+                product={product}
+                key={product.id}
+                onToggle={handlePrepEditProduct}
             />
-    </>
+        </>
     )
 
     return (
@@ -120,7 +120,7 @@ const Products = () => {
             <div className='flex flex-row justify-between'>
                 <div className='flex items-center'>
                     <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={handleSetFilter} options={categoryOptions} size='regular' />
-                        <div className='mx-1    ' />
+                    <div className='mx-1    ' />
                     <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                 </div>
                 <div className='flex items-center gap-4'>
@@ -148,19 +148,19 @@ const Products = () => {
             </div>
 
             {showAddProductModal &&
-            <AddProductModal categoryOptions={categoryOptions} onConfirm={addProduct} onClose={handleCloseAddProductModal} />
+                <AddProductModal categoryOptions={categoryOptions} onConfirm={addProduct} onClose={handleCloseAddProductModal} />
             }
 
             {showArchivedModal &&
-            <ArchivedModal onRestore={restoreProduct} onClose={handleCloseArchivedModal} />
+                <ArchivedModal onRestore={restoreProduct} onClose={handleCloseArchivedModal} />
             }
 
             {showEditProductModal &&
-            <EditProductModal product={prepEditProduct} categoryOptions={categoryOptions} onConfirm={editProduct} onClose={handleCloseEditProductModal} />
+                <EditProductModal product={prepEditProduct} categoryOptions={categoryOptions} onConfirm={editProduct} onClose={handleCloseEditProductModal} />
             }
 
             {showCategoryModal &&
-            <CategoryModal onClose={handleCloseCategoryModal}/>
+                <CategoryModal onClose={handleCloseCategoryModal} />
             }
         </div>
     )

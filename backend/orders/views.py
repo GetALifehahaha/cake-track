@@ -104,11 +104,21 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = Order.objects.all()
 
+        status_filter = (self.request.query_params.get('status') or '').lower()
+
         if not user.is_staff:
             queryset = queryset.filter(customer=user, hidden_by_customer=False)
+            if status_filter in ['completed', 'rejected', 'refunded', 'cancelled']:
+                return queryset.order_by('-updated_at', '-created_at')
+            return queryset.order_by('-created_at')
 
-        status_filter = (self.request.query_params.get('status') or '').lower()
-        if status_filter in ['completed', 'rejected', 'refunded']:
+        # Admin logic
+        if not status_filter:
+            # Overview page: only show active statuses, omitting finished and unpaid
+            queryset = queryset.exclude(status__in=['unpaid', 'completed', 'rejected', 'refunded', 'cancelled'])
+            return queryset.order_by('created_at')
+
+        if status_filter in ['completed', 'rejected', 'refunded', 'cancelled']:
             return queryset.order_by('-updated_at', '-created_at')
             
         return queryset.order_by('created_at')
