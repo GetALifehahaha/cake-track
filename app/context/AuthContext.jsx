@@ -128,9 +128,9 @@ export const AuthProvider = ({ children }) => {
     const googleLogin = async (token, source = 'app') => {
         try {
             // Send 'source' to backend
-            const response = await api.post('/users/google-auth/', { 
+            const response = await api.post('/users/google-auth/', {
                 token: token,
-                source: source 
+                source: source
             });
             await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
             await AsyncStorage.setItem(REFRESH_TOKEN, response.data.refresh);
@@ -180,15 +180,15 @@ export const AuthProvider = ({ children }) => {
                 "You need to log in to perform this action.",
                 [
                     { text: "Cancel", style: "cancel" },
-                    { 
-                        text: "Login", 
+                    {
+                        text: "Login",
                         onPress: () => {
                             // Navigate to login, passing the params so Login screen knows where to go back to
                             router.push({
                                 pathname: '/login',
-                                params: redirectParams 
+                                params: redirectParams
                             });
-                        } 
+                        }
                     }
                 ]
             );

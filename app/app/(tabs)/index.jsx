@@ -83,7 +83,7 @@ export default function Index() {
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
             <ImageBackground source={greetingsTexture} resizeMode='cover'>
-                <View className='bg-[#8B5A3C]/80 flex-1'>
+                <View className='bg-primary flex-1'>
                     <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
                         Greetings, {!user && 'Guest'}{user?.first_name || ''} {user?.last_name || ''}
                     </Text>

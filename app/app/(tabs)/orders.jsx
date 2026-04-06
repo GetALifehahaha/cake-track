@@ -78,7 +78,7 @@ const Orders = () => {
 		const orderId = order.id.toString();
 
 		const matchesSearch = search === "" ||
-			orderId.includes(query)
+			orderId.toLowerCase().includes(query)
 
 		const matchesStatus = filters.length === 0 || filters.includes(order.status);
 
@@ -107,8 +107,6 @@ const Orders = () => {
 		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="repeat">
 			<SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(245, 245, 245, 0.02)' }}>
 				<View className='flex-row p-6 gap-2 items-center'>
-					<Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='aspect-sqaure w-16 h-16 rounded-full' />
-
 					<View className='flex-1'>
 						<View className='flex-row'>
 							<Text className='text-primary font-semibold text-xl'>Cake</Text>
