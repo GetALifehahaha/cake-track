@@ -49,9 +49,12 @@ const OrderCard = ({ order, onHide }) => {
             <TouchableOpacity
                 onPress={handleHide}
                 activeOpacity={0.8}
-                className='bg-red-500 rounded-xl px-5 py-6 min-w-20 items-center'
+                className='bg-red-500 rounded-xl px-5 py-6 min-w-10 h-full items-center justify-center ml-2'
             >
-                <Text className='text-white font-semibold text-sm'>Hide</Text>
+                <Text className='text-white font-semibold text-sm'>H</Text>
+                <Text className='text-white font-semibold text-sm'>I</Text>
+                <Text className='text-white font-semibold text-sm'>D</Text>
+                <Text className='text-white font-semibold text-sm'>E</Text>
             </TouchableOpacity>
         </View>
     );

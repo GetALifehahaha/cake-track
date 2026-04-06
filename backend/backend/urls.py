@@ -16,12 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
 
-from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView, OTPViewSet, VerifyOTPViewSet, ChangePasswordViaToken, ActivateAccountView, AddressViewSet
+from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView, OTPViewSet, VerifyOTPViewSet, ChangePasswordViaToken, ActivateAccountView, AddressViewSet, CustomTokenObtainPairView
 
 router = DefaultRouter()
 router.register('users', UserViewSet, basename="cashiers")
@@ -36,7 +36,7 @@ urlpatterns = [
     path('users/google-auth/', GoogleAuthView.as_view(), name="google-auth"),
     path('users/user/register/', CreateUserView.as_view(), name="register"),
     path('users/user/activate/', ActivateAccountView.as_view(), name="activate"),
-    path('users/token/', TokenObtainPairView.as_view(), name="get_token"),
+    path('users/token/', CustomTokenObtainPairView.as_view(), name="get_token"),
     path('users/token/refresh/', TokenRefreshView.as_view(), name="refresh_token"),
     path('api-auth/', include('rest_framework.urls', namespace="rest_framework")),
     path('request-otp/', OTPViewSet.as_view({'post': 'create'}), name="request-otp"),

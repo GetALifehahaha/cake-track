@@ -16,6 +16,25 @@ export const AuthProvider = ({ children }) => {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    const getErrorMessage = (errorData, fallback = 'Request failed') => {
+        if (!errorData) return fallback;
+        if (typeof errorData === 'string') return errorData;
+        if (errorData.detail) return errorData.detail;
+
+        const firstKey = Object.keys(errorData)[0];
+        if (firstKey) {
+            const firstValue = errorData[firstKey];
+            if (Array.isArray(firstValue) && firstValue.length > 0) {
+                return String(firstValue[0]);
+            }
+            if (typeof firstValue === 'string') {
+                return firstValue;
+            }
+        }
+
+        return fallback;
+    };
+
     useEffect(() => {
         auth().finally(() => setLoading(false));
     }, []);
@@ -99,16 +118,19 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (err) {
             console.error('Login failed:', err);
-            return { success: false, error: "Login unsuccessful" };
+            return {
+                success: false,
+                error: getErrorMessage(err.response?.data, 'Login unsuccessful')
+            };
         }
     };
 
     const googleLogin = async (token, source = 'app') => {
         try {
             // Send 'source' to backend
-            const response = await api.post('/users/google-auth/', { 
+            const response = await api.post('/users/google-auth/', {
                 token: token,
-                source: source 
+                source: source
             });
             await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
             await AsyncStorage.setItem(REFRESH_TOKEN, response.data.refresh);
@@ -136,7 +158,10 @@ export const AuthProvider = ({ children }) => {
             });
             return { success: true };
         } catch (err) {
-            return { success: false, error: err.response?.data || err.message };
+            return {
+                success: false,
+                error: getErrorMessage(err.response?.data, err.message)
+            };
         }
     };
 
@@ -155,15 +180,15 @@ export const AuthProvider = ({ children }) => {
                 "You need to log in to perform this action.",
                 [
                     { text: "Cancel", style: "cancel" },
-                    { 
-                        text: "Login", 
+                    {
+                        text: "Login",
                         onPress: () => {
                             // Navigate to login, passing the params so Login screen knows where to go back to
                             router.push({
                                 pathname: '/login',
-                                params: redirectParams 
+                                params: redirectParams
                             });
-                        } 
+                        }
                     }
                 ]
             );

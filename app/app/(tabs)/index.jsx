@@ -83,7 +83,7 @@ export default function Index() {
     return (
         <ScrollView showsVerticalScrollIndicator={false}>
             <ImageBackground source={greetingsTexture} resizeMode='cover'>
-                <View className='bg-[#8B5A3C]/80 flex-1'>
+                <View className='bg-primary flex-1'>
                     <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
                         Greetings, {!user && 'Guest'}{user?.first_name || ''} {user?.last_name || ''}
                     </Text>
@@ -255,7 +255,8 @@ export default function Index() {
                                         <Text className='font-bold text-[#8B5A3C] mb-3'>Company</Text>
                                         {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>About Us</Text></TouchableOpacity> */}
                                         <TouchableOpacity onPress={() => router.push('/termsOfService')}><Text className='text-gray-500 text-xs mb-2'>Terms of Service</Text></TouchableOpacity>
-                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity> */}
+                                        <TouchableOpacity onPress={() => router.push('/termsAndConditions')}><Text className='text-gray-500 text-xs mb-2'>Terms and Conditions</Text></TouchableOpacity>
+                                        <TouchableOpacity onPress={() => router.push('/privacyPolicy')}><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity>
                                     </View>
                                 </View>
 

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import uuid
 
 from .models import (
@@ -12,6 +13,32 @@ from .models import (
     UserProfile,
     Address,
     )
+
+MIN_CREDENTIAL_LENGTH = 8
+
+
+def validate_username_password_rules(username, password):
+    cleaned_username = str(username or '').strip()
+    cleaned_password = str(password or '').strip()
+    errors = {}
+
+    if len(cleaned_username) < MIN_CREDENTIAL_LENGTH:
+        errors['username'] = [f'Username must be at least {MIN_CREDENTIAL_LENGTH} characters.']
+
+    if len(cleaned_password) < MIN_CREDENTIAL_LENGTH:
+        errors['password'] = [f'Password must be at least {MIN_CREDENTIAL_LENGTH} characters.']
+
+    if cleaned_username and cleaned_password and cleaned_username.lower() == cleaned_password.lower():
+        errors.setdefault('password', []).append('Password should not be similar to the username.')
+
+    if errors:
+        raise serializers.ValidationError(errors)
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+        return super().validate(attrs)
 
 class UserSerializer(serializers.ModelSerializer):
     middle_name = serializers.SerializerMethodField()
@@ -22,6 +49,10 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def validate(self, attrs):
+        validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+        return attrs
         
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -87,6 +118,10 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def validate(self, attrs):
+        validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+        return attrs
 
     def create(self, validated_data):
         validated_data['is_active'] = False
