@@ -240,6 +240,8 @@ export const CAKE_ASSETS = {
     },
   },
   accessories: {
-    candle: require('../assets/cakes/accessories/CANDLE.png'),
+    tier1: require('../assets/cakes/accessories/TIER_1_CANDLE.png'),
+    tier2: require('../assets/cakes/accessories/TIER_2_CANDLE.png'),
+    tier3: require('../assets/cakes/accessories/TIER_3_CANDLE.png'),
   },
 };

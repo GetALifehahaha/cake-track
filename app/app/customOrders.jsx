@@ -173,8 +173,7 @@ const CustomOrders = () => {
 
             // --- CANDLE ADD-ON FIX ---
             if (page >= 6 && addOn === 'candle') {
-                // Always use the global accessories path for candle
-                const candle = cakeImages.accessories?.candle;
+                const candle = cakeImages.accessories?.[tierKey];
                 if (candle) newLayers.push(candle);
             }
         }
