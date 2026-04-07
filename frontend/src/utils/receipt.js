@@ -65,6 +65,11 @@ export const buildReceiptViewModel = ({ transaction, business, fallbackTotal = 0
     const discountName = typeof transaction?.discount === 'string'
         ? transaction.discount
         : transaction?.discount?.name;
+    const normalizedCustomerName = String(
+        transaction?.customer_name
+        || transaction?.customerName
+        || ''
+    ).trim();
 
     const dateInfo = formatDate(transaction?.created_at);
 
@@ -82,7 +87,7 @@ export const buildReceiptViewModel = ({ transaction, business, fallbackTotal = 0
         cashierName: `${transaction?.cashier?.first_name || ''} ${transaction?.cashier?.last_name || ''}`.trim() || 'N/A',
         paymentMethod: transaction?.payment_method || 'cash',
         orderType: transaction?.order_type || 'walk-in',
-        customerName: transaction?.customer_name || null,
+        customerName: normalizedCustomerName || null,
         discountName: discountName || null,
         discountAmount,
         vatAmount: toAmount(transaction?.vat_amount, grossTotal * 0.12),

@@ -651,6 +651,7 @@ const Home = () => {
                 is_void: false,
                 payment_method: "cash",
                 order_type: orderType,
+                customer_name: submittedCustomerName,
                 gross_total: grossTotal,
                 net_total: netTotal,
                 paid_amount: parsedValue,
@@ -667,6 +668,7 @@ const Home = () => {
             const completedReceiptTransaction = serverTransaction
                 ? {
                     ...serverTransaction,
+                    customer_name: serverTransaction.customer_name || submittedCustomerName || null,
                     gross_total: grossTotal,
                     net_total: netTotal,
                     paid_amount: parsedValue,

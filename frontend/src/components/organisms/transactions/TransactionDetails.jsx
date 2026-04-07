@@ -79,6 +79,12 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                     <p className="text-text/50 text-xs uppercase tracking-wider mb-1">Serving Mode</p>
                     <p className="font-semibold text-text uppercase">{receiptData.orderType.replace('-', ' ')}</p>
                 </div>
+                {receiptData.customerName && (
+                    <div>
+                        <p className="text-text/50 text-xs uppercase tracking-wider mb-1">Customer</p>
+                        <p className="font-semibold text-text">{receiptData.customerName}</p>
+                    </div>
+                )}
             </div>
 
             <table className="w-full text-left border-collapse mb-8">
