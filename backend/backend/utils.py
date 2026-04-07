@@ -1,8 +1,15 @@
-import nanoid
+import secrets
 
-# Custom alphabet to avoid ambiguous characters (like 0, O, I, l)
-ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+from django.utils import timezone
 
-def generate_id(prefix):
-    nid = nanoid.generate(alphabet=ALPHABET, size=10)
-    return f"{prefix}-{nid}"
+
+NUMBER_ALPHABET = "0123456789"
+SALT_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def generate_id(_prefix=None):
+    date_part = timezone.localdate().strftime("%Y-%m%d")
+    random_digits = "".join(secrets.choice(NUMBER_ALPHABET) for _ in range(4))
+    random_salt = "".join(secrets.choice(SALT_ALPHABET) for _ in range(2))
+
+    return f"{date_part}-{random_digits}{random_salt}"
