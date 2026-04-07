@@ -12,9 +12,12 @@ const PendingOrdersModal = ({
     pendingTransactions = [],
     onClose,
     onComplete,
+    onCompleteAll,
     completingOrderId = null,
+    completingAll = false,
 }) => {
     const [searchValue, setSearchValue] = useState('');
+    const [showCompleteAllConfirmation, setShowCompleteAllConfirmation] = useState(false);
 
     const sortedTransactions = useMemo(() => {
         return [...pendingTransactions].sort(
@@ -39,6 +42,8 @@ const PendingOrdersModal = ({
                 || customerName.includes(normalizedSearch);
         });
     }, [normalizedSearch, sortedTransactions]);
+
+    const isBulkActionDisabled = completingAll || completingOrderId !== null || sortedTransactions.length === 0;
 
     return (
         <div className='absolute top-0 left-0 w-full bg-black/10 backdrop-blur-sm h-screen flex justify-center items-center z-20'>
@@ -71,6 +76,7 @@ const PendingOrdersModal = ({
                         const customerName = transaction.customer_name?.trim() || 'Walk-in Customer';
                         const items = transaction.transaction_items || [];
                         const isCompleting = completingOrderId === transaction.id;
+                        const isDisabled = isCompleting || completingAll;
 
                         return (
                             <div key={transaction.id} className='border border-border rounded-xl p-4 flex flex-col gap-3'>
@@ -82,12 +88,12 @@ const PendingOrdersModal = ({
                                     <Button
                                         variant='modalBlock'
                                         size='small'
-                                        text={isCompleting ? 'Completing...' : 'Complete Order'}
+                                        text={isCompleting ? 'Completing...' : completingAll ? 'Completing All...' : 'Complete Order'}
                                         onClick={() => {
-                                            if (isCompleting) return;
+                                            if (isDisabled) return;
                                             onComplete(transaction.id);
                                         }}
-                                        className={isCompleting ? 'opacity-60 pointer-events-none' : ''}
+                                        disabled={isDisabled}
                                     />
                                 </div>
 
@@ -114,7 +120,49 @@ const PendingOrdersModal = ({
                         );
                     })}
                 </div>
+
+                <div className='pt-2 border-t border-border flex justify-end'>
+                    <Button
+                        variant='modalBlock'
+                        size='small'
+                        text={completingAll ? 'Completing All...' : 'Complete All Orders'}
+                        onClick={() => setShowCompleteAllConfirmation(true)}
+                        disabled={isBulkActionDisabled}
+                        className='whitespace-nowrap'
+                    />
+                </div>
             </div>
+
+            {showCompleteAllConfirmation && (
+                <div className='absolute top-0 left-0 w-full bg-black/20 backdrop-blur-sm h-screen flex justify-center items-center z-30'>
+                    <div className='p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] max-w-[90vw] flex flex-col gap-6'>
+                        <div className='flex flex-col gap-2'>
+                            <Title variant='modal' text='Complete All Pending Orders' />
+                            <h5 className='text-text/75'>Are you sure you want to complete all pending orders?</h5>
+                        </div>
+
+                        <div className='flex items-center gap-2 ml-auto'>
+                            <Button
+                                text='Cancel'
+                                variant='modalOutline'
+                                size='small'
+                                onClick={() => setShowCompleteAllConfirmation(false)}
+                                disabled={completingAll}
+                            />
+                            <Button
+                                text={completingAll ? 'Completing...' : 'Yes, Complete All'}
+                                variant='modalBlock'
+                                size='small'
+                                onClick={() => {
+                                    setShowCompleteAllConfirmation(false);
+                                    onCompleteAll?.();
+                                }}
+                                disabled={isBulkActionDisabled}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

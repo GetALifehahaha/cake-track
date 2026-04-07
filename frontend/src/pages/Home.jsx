@@ -58,6 +58,7 @@ const Home = () => {
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
     const [completingOrderId, setCompletingOrderId] = useState(null);
+    const [completingAllOrders, setCompletingAllOrders] = useState(false);
     const [accessCode, setAccessCode] = useState('');
     const [loadingAccessCode, setLoadingAccessCode] = useState(false);
 
@@ -486,6 +487,8 @@ const Home = () => {
     const pendingOrdersCount = pendingTransactions.length;
 
     const handleCompletePendingOrder = async (transactionId) => {
+        if (completingAllOrders) return;
+
         try {
             setCompletingOrderId(transactionId);
             await completeTransaction(transactionId);
@@ -497,6 +500,55 @@ const Home = () => {
             addToast(detail, 'error');
         } finally {
             setCompletingOrderId(null);
+        }
+    }
+
+    const handleCompleteAllPendingOrders = async () => {
+        if (completingAllOrders || completingOrderId !== null) return;
+
+        const orderIds = pendingTransactions
+            .map((transaction) => transaction?.id)
+            .filter((id) => id !== null && id !== undefined && String(id).trim() !== '');
+
+        if (orderIds.length === 0) return;
+
+        try {
+            setCompletingAllOrders(true);
+
+            let succeeded = 0;
+            let failed = 0;
+            let firstError = null;
+
+            for (const orderId of orderIds) {
+                try {
+                    await completeTransaction(orderId);
+                    succeeded += 1;
+                } catch (error) {
+                    failed += 1;
+                    if (!firstError) {
+                        firstError = error;
+                    }
+                }
+            }
+
+            if (succeeded > 0) {
+                await refreshProducts();
+                addToast(
+                    succeeded === 1 ? '1 order marked as completed' : `${succeeded} orders marked as completed`,
+                    'success',
+                );
+            }
+
+            if (failed > 0) {
+                const detail = firstError?.response?.data?.detail || `${failed} order(s) could not be completed`;
+                addToast(detail, 'error');
+            }
+
+            await refreshPending();
+        } catch {
+            addToast('Failed to complete pending orders', 'error');
+        } finally {
+            setCompletingAllOrders(false);
         }
     }
 
@@ -797,7 +849,6 @@ const Home = () => {
                         </div>
                     </div>
                 }
-
                 <Pagination prev={productData.previous} next={productData.next} />
             </div>
 
@@ -929,8 +980,10 @@ const Home = () => {
                 <PendingOrdersModal
                     pendingTransactions={pendingTransactions}
                     completingOrderId={completingOrderId}
+                    completingAll={completingAllOrders}
                     onClose={() => setShowPendingOrdersModal(false)}
                     onComplete={handleCompletePendingOrder}
+                    onCompleteAll={handleCompleteAllPendingOrders}
                 />
             }
         </div>
