@@ -8,6 +8,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     middle_name = models.CharField(max_length=150, blank=True, null=True)
     activation_token = models.UUIDField(null=True, blank=True, unique=True)
+    deactivated_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

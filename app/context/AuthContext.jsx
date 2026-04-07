@@ -118,9 +118,44 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (err) {
             console.error('Login failed:', err);
+
+            const errorData = err.response?.data;
+            if (err.response?.status === 400 && errorData?.code === 'account_deactivated') {
+                return {
+                    success: false,
+                    deactivated: true,
+                    username: errorData.username,
+                    message: errorData.detail,
+                    daysUntilDeletion: errorData.days_until_deletion,
+                };
+            }
+
             return {
                 success: false,
-                error: getErrorMessage(err.response?.data, 'Login unsuccessful')
+                error: getErrorMessage(errorData, 'Login unsuccessful')
+            };
+        }
+    };
+
+    const reactivateAccount = async (username, password, confirmation) => {
+        try {
+            const response = await api.post('/users/user/reactivate/', {
+                username,
+                password,
+                confirmation,
+            });
+
+            await AsyncStorage.setItem(ACCESS_TOKEN, response.data.access);
+            await AsyncStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+
+            await getUserData();
+            setIsAuthorized(true);
+            return { success: true };
+        } catch (err) {
+            return {
+                success: false,
+                code: err.response?.data?.code,
+                error: getErrorMessage(err.response?.data, 'Failed to reactivate account'),
             };
         }
     };
@@ -203,6 +238,7 @@ export const AuthProvider = ({ children }) => {
             login,
             googleLogin,
             register,
+            reactivateAccount,
             logout,
             getUserData,
             ensureAuthenticated // <--- Exporting the new helper

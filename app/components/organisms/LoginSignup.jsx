@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Modal } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import React, { useState, useContext, useEffect } from 'react'
@@ -12,7 +12,7 @@ import { isValidEmail, hasMinCredentialLength, isPasswordSimilarToUsername } fro
 const LoginSignup = ({ method }) => {
 	const { showToast } = useToast();
 	// 2. Destructure googleLogin from context
-	const { login, loading: authLoading, register } = useContext(AuthContext)
+	const { login, loading: authLoading, register, reactivateAccount } = useContext(AuthContext)
 
 	const [emailAddress, setEmailAddress] = useState("");
 	const [password, setPassword] = useState("");
@@ -25,6 +25,10 @@ const LoginSignup = ({ method }) => {
 	const [confirmPassword, setConfirmPassword] = useState("");
 
 	const [loading, setLoading] = useState(false);
+	const [reactivating, setReactivating] = useState(false);
+	const [showReactivateModal, setShowReactivateModal] = useState(false);
+	const [reactivatePromptText, setReactivatePromptText] = useState('');
+	const [deactivatedUsername, setDeactivatedUsername] = useState('');
 
 	const validateCredentialRules = () => {
 		if (!hasMinCredentialLength(username)) {
@@ -63,9 +67,11 @@ const LoginSignup = ({ method }) => {
 				if (res.success) {
 					showToast("Logged in successfully!", "success");
 					router.replace('/(tabs)/');
-				}
-
-				if (res.error) {
+				} else if (res.deactivated) {
+					setDeactivatedUsername(res.username || username);
+					setReactivatePromptText('');
+					setShowReactivateModal(true);
+				} else if (res.error) {
 					showToast(res.error, "error");
 				}
 
@@ -109,6 +115,35 @@ const LoginSignup = ({ method }) => {
 			setLoading(false);
 		}
 	}
+
+	const handleReactivate = async () => {
+		const targetUsername = deactivatedUsername || username;
+		if (!targetUsername) {
+			showToast('Username is required to reactivate account', 'error');
+			return;
+		}
+
+		if (!password) {
+			showToast('Please enter your password first', 'error');
+			return;
+		}
+
+		setReactivating(true);
+		try {
+			const result = await reactivateAccount(targetUsername, password, reactivatePromptText.trim());
+			if (result.success) {
+				setShowReactivateModal(false);
+				setReactivatePromptText('');
+				showToast('Account reactivated successfully!', 'success');
+				router.replace('/(tabs)/');
+				return;
+			}
+
+			showToast(result.error || 'Failed to reactivate account', 'error');
+		} finally {
+			setReactivating(false);
+		}
+	};
 
 	if (authLoading) return (
 		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -294,6 +329,56 @@ const LoginSignup = ({ method }) => {
 					</View>
 				</ScrollView>
 			</KeyboardAvoidingView>
+
+			<Modal
+				visible={showReactivateModal}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setShowReactivateModal(false)}
+			>
+				<View className='flex-1 bg-black/50 items-center justify-center px-6'>
+					<View className='w-full max-w-[420px] rounded-2xl bg-white p-5 border border-gray-200'>
+						<Text className='text-lg font-bold text-primary'>Account Inactive</Text>
+						<Text className='mt-2 text-gray-700'>
+							This account is no longer active. Do you want to activate it again?
+						</Text>
+						<Text className='mt-3 text-xs text-gray-600'>
+							Type activate {deactivatedUsername || username} to continue.
+						</Text>
+
+						<TextInput
+							className='mt-2 px-3 py-3 rounded-lg border border-gray-300 text-black'
+							placeholder={`activate ${deactivatedUsername || username}`}
+							placeholderTextColor="#9ca3af"
+							autoCapitalize='none'
+							value={reactivatePromptText}
+							onChangeText={setReactivatePromptText}
+						/>
+
+						<View className='mt-4 flex-row gap-3'>
+							<TouchableOpacity
+								className='flex-1 items-center justify-center rounded-lg border border-gray-300 py-3'
+								onPress={() => setShowReactivateModal(false)}
+								disabled={reactivating}
+							>
+								<Text className='font-semibold text-gray-700'>Back</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								className='flex-1 items-center justify-center rounded-lg bg-primary py-3'
+								onPress={handleReactivate}
+								disabled={reactivating}
+							>
+								{reactivating ? (
+									<ActivityIndicator size="small" color="white" />
+								) : (
+									<Text className='font-semibold text-white'>Activate</Text>
+								)}
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
+			</Modal>
 		</SafeAreaView>
 	)
 }

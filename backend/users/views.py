@@ -16,9 +16,28 @@ from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSer
 from .models import OTP, PasswordResetToken, Address, UserProfile
 
 from .permissions import IsAdmin, IsCashier
+from .services import (
+    DEACTIVATED_ACCOUNT_RETENTION_DAYS,
+    get_days_until_deletion,
+    get_deletion_due_date,
+    purge_expired_deactivated_accounts,
+)
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
+
+
+def build_deactivated_account_response(user, profile):
+    deletion_due = get_deletion_due_date(profile)
+    return {
+        'code': 'account_deactivated',
+        'detail': 'This account is no longer active. Do you want to activate it again?',
+        'username': user.username,
+        'deactivated_at': timezone.localtime(profile.deactivated_at).isoformat() if profile.deactivated_at else None,
+        'deletion_due_at': timezone.localtime(deletion_due).isoformat() if deletion_due else None,
+        'retention_days': DEACTIVATED_ACCOUNT_RETENTION_DAYS,
+        'days_until_deletion': get_days_until_deletion(profile),
+    }
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -94,6 +113,8 @@ class GoogleAuthView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
+        purge_expired_deactivated_accounts()
+
         token = request.data.get('token')
         source = request.data.get('source', 'web')
         
@@ -144,6 +165,20 @@ class GoogleAuthView(APIView):
                         {'detail': 'Account does not exist. Please contact the owner to create your account.'}, 
                         status=status.HTTP_403_FORBIDDEN
                     )
+
+            if not user.is_active:
+                profile, _ = UserProfile.objects.get_or_create(user=user)
+
+                if profile.deactivated_at:
+                    return Response(
+                        build_deactivated_account_response(user, profile),
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+                return Response(
+                    {'detail': 'This account is not active. Please contact support.'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             
             refresh = RefreshToken.for_user(user)
             
@@ -327,6 +362,109 @@ class ActivateAccountView(APIView):
             "details": "Activation link is invalid or has expired.",
             "type": "error"
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeactivateAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        confirmation = str(request.data.get('confirmation', '')).strip()
+        expected_confirmation = f"disable {request.user.username}"
+
+        if confirmation != expected_confirmation:
+            return Response(
+                {
+                    'detail': f'Confirmation must match exactly: {expected_confirmation}'
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
+        profile.deactivated_at = timezone.now()
+        profile.save(update_fields=['deactivated_at'])
+
+        request.user.is_active = False
+        request.user.save(update_fields=['is_active'])
+
+        deletion_due = get_deletion_due_date(profile)
+        return Response(
+            {
+                'detail': 'Your account has been deactivated.',
+                'deactivated_at': timezone.localtime(profile.deactivated_at).isoformat() if profile.deactivated_at else None,
+                'deletion_due_at': timezone.localtime(deletion_due).isoformat() if deletion_due else None,
+                'retention_days': DEACTIVATED_ACCOUNT_RETENTION_DAYS,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ReactivateAccountView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        purge_expired_deactivated_accounts()
+
+        username = str(request.data.get('username', '')).strip()
+        password = str(request.data.get('password', ''))
+        confirmation = str(request.data.get('confirmation', '')).strip()
+
+        if not username or not password or not confirmation:
+            return Response(
+                {
+                    'detail': 'Username, password, and confirmation are required.'
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(username=username).first()
+        if not user or not user.check_password(password):
+            return Response(
+                {'detail': 'Invalid credentials.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        if not profile.deactivated_at:
+            return Response(
+                {'detail': 'This account is not marked as deactivated.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        expected_confirmation = f"activate {user.username}"
+        if confirmation != expected_confirmation:
+            return Response(
+                {
+                    'detail': f'Confirmation must match exactly: {expected_confirmation}'
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        deletion_due = get_deletion_due_date(profile)
+        if deletion_due and timezone.now() >= deletion_due:
+            user.delete()
+            return Response(
+                {
+                    'code': 'account_deleted',
+                    'detail': 'This account passed the deactivation retention window and was deleted.',
+                },
+                status=status.HTTP_410_GONE,
+            )
+
+        user.is_active = True
+        user.save(update_fields=['is_active'])
+
+        profile.deactivated_at = None
+        profile.save(update_fields=['deactivated_at'])
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'detail': 'Account reactivated successfully.',
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AddressViewSet(viewsets.ModelViewSet):

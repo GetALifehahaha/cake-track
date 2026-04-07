@@ -2,6 +2,7 @@ from rest_framework import serializers, validators
 from django.contrib.auth.models import User, Group
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
@@ -13,6 +14,12 @@ from .models import (
     UserProfile,
     Address,
     )
+from .services import (
+    DEACTIVATED_ACCOUNT_RETENTION_DAYS,
+    get_days_until_deletion,
+    get_deletion_due_date,
+    purge_expired_deactivated_accounts,
+)
 
 MIN_CREDENTIAL_LENGTH = 8
 
@@ -38,6 +45,32 @@ def validate_username_password_rules(username, password):
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+
+        purge_expired_deactivated_accounts()
+
+        username = attrs.get('username')
+        password = attrs.get('password')
+        user = User.objects.filter(username=username).first()
+
+        if user and password and user.check_password(password) and not user.is_active:
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+
+            if profile.deactivated_at:
+                deletion_due = get_deletion_due_date(profile)
+                raise serializers.ValidationError({
+                    'code': 'account_deactivated',
+                    'detail': 'This account is no longer active. Reactivate it to continue.',
+                    'username': user.username,
+                    'deactivated_at': timezone.localtime(profile.deactivated_at).isoformat(),
+                    'deletion_due_at': timezone.localtime(deletion_due).isoformat() if deletion_due else None,
+                    'retention_days': DEACTIVATED_ACCOUNT_RETENTION_DAYS,
+                    'days_until_deletion': get_days_until_deletion(profile),
+                })
+
+            raise serializers.ValidationError({
+                'detail': 'This account is not active. Please contact support.'
+            })
+
         return super().validate(attrs)
 
 class UserSerializer(serializers.ModelSerializer):

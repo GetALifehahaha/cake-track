@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, TextInput, ActivityIndicator, ScrollView, ImageBackground } from 'react-native'
+import { View, Text, TouchableOpacity, Image, TextInput, ActivityIndicator, ScrollView, ImageBackground, Modal } from 'react-native'
 import React, { useContext, useState } from 'react'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
@@ -15,6 +15,9 @@ const Account = () => {
   const { showToast } = useToast();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivationConfirmation, setDeactivationConfirmation] = useState('');
+  const [deactivating, setDeactivating] = useState(false);
   const [firstName, setFirstName] = useState(user?.first_name || '');
   const [lastName, setLastName] = useState(user?.last_name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -28,6 +31,41 @@ const Account = () => {
 
   const cancelEditing = () => {
     setEditing(false);
+  };
+
+  const openDeactivateModal = () => {
+    setDeactivationConfirmation('');
+    setShowDeactivateModal(true);
+  };
+
+  const handleDeactivate = async () => {
+    const username = user?.username;
+    if (!username) {
+      showToast('Unable to deactivate account right now', 'error');
+      return;
+    }
+
+    const expectedText = `disable ${username}`;
+    if (deactivationConfirmation.trim() !== expectedText) {
+      showToast(`Please type exactly: ${expectedText}`, 'error');
+      return;
+    }
+
+    setDeactivating(true);
+    try {
+      await api.post('/users/user/deactivate/', {
+        confirmation: deactivationConfirmation.trim(),
+      });
+
+      setShowDeactivateModal(false);
+      showToast('Your account has been deactivated', 'success');
+      await logout();
+    } catch (error) {
+      const message = error.response?.data?.detail || 'Failed to deactivate account';
+      showToast(message, 'error');
+    } finally {
+      setDeactivating(false);
+    }
   };
 
   const handleSave = async () => {
@@ -153,6 +191,14 @@ const Account = () => {
                         )}
                       </TouchableOpacity>
                     </View>
+
+                    <TouchableOpacity
+                      className='mt-3 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 py-3'
+                      onPress={openDeactivateModal}
+                      disabled={saving}
+                    >
+                      <Text className='font-bold text-red-600'>Deactivate Account</Text>
+                    </TouchableOpacity>
                   </>
                 ) : (
                   <>
@@ -232,6 +278,56 @@ const Account = () => {
           <View className='h-8' />
         </ScrollView>
       </SafeAreaView>
+
+      <Modal
+        visible={showDeactivateModal}
+        transparent
+        animationType='fade'
+        onRequestClose={() => setShowDeactivateModal(false)}
+      >
+        <View className='flex-1 items-center justify-center bg-black/50 px-6'>
+          <View className='w-full max-w-[420px] rounded-2xl border border-gray-200 bg-white p-5'>
+            <Text className='text-lg font-bold text-primary'>Deactivate Account</Text>
+            <Text className='mt-2 text-gray-700'>
+              Your account will be deactivated immediately. You can reactivate it within 60 days by logging in and confirming reactivation.
+            </Text>
+            <Text className='mt-3 text-xs text-gray-600'>
+              Type disable {user?.username} to confirm.
+            </Text>
+
+            <TextInput
+              className='mt-2 rounded-lg border border-gray-300 px-3 py-3 text-black'
+              placeholder={`disable ${user?.username || ''}`}
+              placeholderTextColor='#9ca3af'
+              autoCapitalize='none'
+              value={deactivationConfirmation}
+              onChangeText={setDeactivationConfirmation}
+            />
+
+            <View className='mt-4 flex-row gap-3'>
+              <TouchableOpacity
+                className='flex-1 items-center justify-center rounded-lg border border-gray-300 py-3'
+                onPress={() => setShowDeactivateModal(false)}
+                disabled={deactivating}
+              >
+                <Text className='font-semibold text-gray-700'>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className='flex-1 items-center justify-center rounded-lg bg-red-600 py-3'
+                onPress={handleDeactivate}
+                disabled={deactivating}
+              >
+                {deactivating ? (
+                  <ActivityIndicator size='small' color='white' />
+                ) : (
+                  <Text className='font-semibold text-white'>Deactivate</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ImageBackground>
   )
 }
