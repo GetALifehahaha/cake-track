@@ -43,7 +43,8 @@ api.interceptors.response.use(
             console.error("Network Error:", error.message);
         }
         // Check if error is 401 (Unauthorized) AND we haven't retried this request yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 ||
+    error.response?.status === 500 || !originalRequest._retry) {
             originalRequest._retry = true; // Mark as retried to prevent infinite loops
 
             try {
