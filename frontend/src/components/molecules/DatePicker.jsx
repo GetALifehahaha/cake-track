@@ -31,6 +31,7 @@ const DatePicker = ({ selected, onSelect, className, disabled, ...calendarProps 
           mode="single"
           selected={selected}
           onSelect={(value) => onSelect(value)}
+          disabled={disabled}
           {...calendarProps}
         />
       </PopoverContent>

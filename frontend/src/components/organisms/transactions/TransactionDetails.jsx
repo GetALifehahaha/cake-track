@@ -26,6 +26,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
 
     const grossTotal = toAmount(transactionDetail?.gross_total, receiptData.grossTotal);
     const netTotal = toAmount(transactionDetail?.net_total, receiptData.netTotal);
+    const usedDiscountAmount = Math.max(toAmount(transactionDetail?.discount_amount, receiptData.discountAmount), 0);
+    const usedDiscountName = transactionDetail?.discount_snapshot?.name || receiptData.discountName || 'Applied';
 
     const handlePrint = useReactToPrint({
         contentRef: receiptRef,
@@ -105,15 +107,15 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
 
             <div className="flex justify-end mt-auto">
                 <div className="w-1/2 md:w-1/3 space-y-2 text-sm text-text">
-                    {transactionDetail?.discount && (
+                    {usedDiscountAmount > 0 && (
                         <div className="flex justify-between">
-                            <span className="text-text/50">Discount ({transactionDetail.discount_usage?.name})</span>
-                            <span className="text-error">- {(transactionDetail.discount_usage?.rate ?? 0) * 100}%</span>
+                            <span className="text-text/50">Discount ({usedDiscountName})</span>
+                            <span className="text-error">-₱ {formatToDecimal(usedDiscountAmount)}</span>
                         </div>
                     )}
                     <div className="flex justify-between font-bold text-xl pt-4 border-t border-border mt-2">
                         <span>Net Total</span>
-                        <span className="text-accent-dark">₱ {formatToDecimal(transactionDetail?.net_total)}</span>
+                        <span className="text-accent-dark">₱ {formatToDecimal(netTotal)}</span>
                     </div>
                 </div>
             </div>

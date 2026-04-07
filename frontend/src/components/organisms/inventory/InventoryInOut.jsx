@@ -117,13 +117,13 @@ const InventoryInOut = ({ onClose }) => {
 		const purchaseDate = currentItem.purchase_date ? normalizeDate(currentItem.purchase_date) : null;
 		const expirationDate = currentItem.expiration_date ? normalizeDate(currentItem.expiration_date) : null;
 
-		if (field === 'expiration_date' && purchaseDate && nextValueDate < purchaseDate) {
-			addToast('Expiration date cannot be earlier than purchase date.', 'error');
+		if (field === 'expiration_date' && purchaseDate && nextValueDate <= purchaseDate) {
+			addToast('Expiration date must be later than purchase date.', 'error');
 			return;
 		}
 
-		if (field === 'purchase_date' && expirationDate && expirationDate < nextValueDate) {
-			addToast('Expiration date was cleared because it cannot be earlier than purchase date.', 'error');
+		if (field === 'purchase_date' && expirationDate && expirationDate <= nextValueDate) {
+			addToast('Expiration date was cleared because it must be later than purchase date.', 'error');
 		}
 
 		const updatedField = ingredientItems.map((item, i) => {
@@ -135,7 +135,7 @@ const InventoryInOut = ({ onClose }) => {
 				const nextPurchase = normalizeDate(value);
 				const nextExpiration = normalizeDate(item.expiration_date);
 
-				if (nextExpiration < nextPurchase) {
+				if (nextExpiration <= nextPurchase) {
 					nextItem.expiration_date = '';
 				}
 			}
@@ -161,7 +161,7 @@ const InventoryInOut = ({ onClose }) => {
 			purchase.setHours(0, 0, 0, 0);
 			expiration.setHours(0, 0, 0, 0);
 
-			return expiration < purchase;
+			return expiration <= purchase;
 		});
 
 		const hasMissingDates = ingredientItems.some((item) => {
@@ -178,7 +178,7 @@ const InventoryInOut = ({ onClose }) => {
 		}
 
 		if (hasInvalidDates) {
-			addToast('Expiration date cannot be earlier than purchase date.', 'error');
+			addToast('Expiration date must be later than purchase date.', 'error');
 			return;
 		}
 

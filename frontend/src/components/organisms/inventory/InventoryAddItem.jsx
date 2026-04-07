@@ -9,9 +9,9 @@ import { formatQty } from '@/utils/formatQty';
 import { limitedInput } from '@/utils/safeInput';
 import UnitModal from './UnitModal';
 
-const InventoryAddItem = ({onConfirm, onClose}) => {
+const InventoryAddItem = ({ onConfirm, onClose }) => {
 
-    const {data: units, loading, error, postUnit, refresh} = useUnits()
+    const { data: units, loading, error, postUnit, refresh } = useUnits()
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);
     const [lowAmount, setLowAmount] = useState('0');
@@ -48,6 +48,8 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
         .map(u => ({ key: `${u.name}${u.abbreviation ? ` (${u.abbreviation})` : ''}`, value: u.id }));
 
     const handleConfirm = () => {
+        const parsedAmount = Number(amount || 0);
+
         const normalizedConversions = conversions
             .filter(item => item.from_unit_id && Number(item.multiplier_to_base) > 0)
             .map(item => ({
@@ -57,7 +59,8 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
         onConfirm({
             name,
-            amount,
+            amount: parsedAmount,
+            total_stock: parsedAmount,
             low_amount: Number(lowAmount || 0),
             unit_id: unit,
             purchaseDate: purchaseDate.toLocaleDateString("en-CA"),
@@ -101,7 +104,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
     const handleCreateUnit = async () => {
         if (!newUnitName.trim()) {
-            setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Unit name is required.`});
+            setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Unit name is required.` });
             return;
         }
 
@@ -122,7 +125,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
             setNewUnitAbbreviation('');
         } catch (err) {
             const details = err?.response?.data?.name?.[0] || err?.response?.data?.detail || 'Failed to create unit.';
-            setModalFeedbackContent({type: "error", label: "Create Unit Failed", details});
+            setModalFeedbackContent({ type: "error", label: "Create Unit Failed", details });
         }
     }
 
@@ -156,37 +159,37 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
 
     const handleSetShowConfirm = () => {
         if (!name || !amount || lowAmount === '' || !unit || !purchaseDate || !expirationDate) {
-            setModalFeedbackContent({type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.`})
+            setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
             return;
         }
-        
-        if (expirationDate < purchaseDate) {
-            setModalFeedbackContent({type: "error", label: "Invalid Expiration Date", details: 'Expiry date cannot be earlier than the purchase date.'})
+
+        if (expirationDate <= purchaseDate) {
+            setModalFeedbackContent({ type: "error", label: "Invalid Expiration Date", details: 'Expiry date must be later than the purchase date.' })
             return;
         }
         setShowConfirm(true)
     };
-    
+
     const handleSetCloseConfirm = () => setShowConfirm(false);
 
     return (
         <ModalBody title='Add New Item' onClose={onClose}>
             <div className='flex flex-col gap-4'>
                 <div className='flex flex-col gap-2'>
-                    <Label variant='modal' text='Name'/>
-                    <input type='text' placeholder='Enter item name' value={name} onChange={(e) => handleName(e)} 
-                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
+                    <Label variant='modal' text='Name' />
+                    <input type='text' placeholder='Enter item name' value={name} onChange={(e) => handleName(e)}
+                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
                 </div>
 
                 <div className='flex items-center gap-4'>
                     <div className='flex-1 flex flex-col gap-2'>
-                        <Label variant='modal' text='Amount'/>
+                        <Label variant='modal' text='Amount' />
                         <input type='text' placeholder='Enter amount' value={amount} onChange={(e) => handleAmount(e)} onBlur={handleAmountBlur}
-                                className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'/>
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
                     </div>
 
                     <div className='flex-1 flex flex-col gap-2'>
-                        <Label variant='modal' text='Low Stock Threshold'/>
+                        <Label variant='modal' text='Low Stock Threshold' />
                         <input
                             type='text'
                             placeholder='Enter low stock threshold'
@@ -197,7 +200,7 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                     </div>
 
                     <div className='flex-1 flex flex-col gap-2'>
-                        <Label variant='modal' text='Unit'/>
+                        <Label variant='modal' text='Unit' />
                         {creatingUnit ? (
                             <div className='flex gap-2'>
                                 <input
@@ -276,22 +279,26 @@ const InventoryAddItem = ({onConfirm, onClose}) => {
                 </div>
 
                 <div className='flex-1 flex flex-col gap-2'>
-                    <Label variant='modal' text='Purchase Date'/>
+                    <Label variant='modal' text='Purchase Date' />
                     <DatePicker selected={purchaseDate} onSelect={setPurchaseDate} />
                 </div>
 
                 <div className='flex-1 flex flex-col gap-2'>
-                    <Label variant='modal' text='Expiration Date'/>
-                    <DatePicker selected={expirationDate} onSelect={setExpirationDate} />
+                    <Label variant='modal' text='Expiration Date' />
+                    <DatePicker
+                        selected={expirationDate}
+                        onSelect={setExpirationDate}
+                        disabled={(date) => purchaseDate ? date <= purchaseDate : false}
+                    />
                 </div>
 
-                { showModalFeedback &&
+                {showModalFeedback &&
                     <ModalFeedbackCard type={modalFeedbackContent.type} label={modalFeedbackContent.label} details={modalFeedbackContent.details} />
                 }
 
                 <div className='flex gap-4 mt-4 ml-auto'>
-                    <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose}/>
-                    <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleSetShowConfirm}/>
+                    <Button variant='modalOutline' size='modalSize' text='Cancel' onClick={onClose} />
+                    <Button variant='modalBlock' size='modalSize' text='Add Item' onClick={handleSetShowConfirm} />
                 </div>
             </div>
 
