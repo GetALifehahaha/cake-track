@@ -30,7 +30,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
     const usedDiscountName = transactionDetail?.discount_snapshot?.name || receiptData.discountName || 'Applied';
 
     const handlePrint = useReactToPrint({
-        contentRef: receiptRef,
+        // react-to-print expects a function that returns the DOM node
+        content: () => receiptRef.current,
         documentTitle: `Transaction-${transactionDetail?.display_id || transactionDetail?.id}`,
     });
 
@@ -138,7 +139,8 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
                     {showReceiptView ? renderReceiptView() : renderCleanView()}
                 </div>
 
-                <div className='hidden'>
+                {/* keep the printable node in the DOM but hidden via inline style so react-to-print can access it */}
+                <div style={{ display: 'none' }}>
                     <div ref={receiptRef} id='receipt'>
                         <ReceiptPaper receipt={receiptData} />
                     </div>

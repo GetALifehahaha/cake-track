@@ -16,7 +16,8 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
     });
 
     const handlePrint = useReactToPrint({
-        contentRef: contentRef,
+        // react-to-print expects a function that returns the node to print
+        content: () => contentRef.current,
         documentTitle: `Receipt-${transactionData?.id || 'new'}`,
     });
 
