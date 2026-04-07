@@ -4,6 +4,7 @@ from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.response import Response
 from django.db import models, transaction
 from django.db.models import F
+from django.db.models.functions import Lower
 from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
@@ -42,10 +43,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
     
 
 class IngredientViewSet(viewsets.ModelViewSet):
-    queryset = Ingredient.objects.all().order_by('name')
+    queryset = Ingredient.objects.all().order_by(Lower('name'), 'name')
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
 
     search_fields = ['name']
 
@@ -56,10 +57,10 @@ class IngredientViewSet(viewsets.ModelViewSet):
         today = timezone.now().date()
 
         if filter == 'available':
-            return Ingredient.objects.filter(total_stock__gt=0).distinct()
+            return Ingredient.objects.filter(total_stock__gt=0).distinct().order_by(Lower('name'), 'name')
 
         elif filter == 'out_of_stock':
-            return Ingredient.objects.exclude(total_stock__gt=0)
+            return Ingredient.objects.exclude(total_stock__gt=0).order_by(Lower('name'), 'name')
 
         elif filter == 'near_expiration':
             seven_days = today + timedelta(days=7)
@@ -69,16 +70,16 @@ class IngredientViewSet(viewsets.ModelViewSet):
                 transactions__remaining_amount__gt=0,
                 transactions__expiration_date__gt=today,
                 transactions__expiration_date__lte=seven_days
-            ).distinct()
+            ).distinct().order_by(Lower('name'), 'name')
 
         elif filter == 'expired':
             return Ingredient.objects.filter(
                 transactions__transaction_type='in',
                 transactions__remaining_amount__gt=0,
                 transactions__expiration_date__lte=today
-            ).distinct()
+            ).distinct().order_by(Lower('name'), 'name')
 
-        return Ingredient.objects.all()
+        return Ingredient.objects.all().order_by(Lower('name'), 'name')
 
     @action(detail=False, methods=["post"], url_path="stock-out-expired")
     def stock_out_expired(self, request):
@@ -150,7 +151,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     
     
 class IngredientAllViewSet(viewsets.ModelViewSet):
-    queryset = Ingredient.objects.all().order_by('name')
+    queryset = Ingredient.objects.all().order_by(Lower('name'), 'name')
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     pagination_class = None

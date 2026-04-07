@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ModalBody, ModalFeedbackCard } from '../../molecules';
 import { Loader2, InfoIcon, Calendar, Activity, CheckCircle2 } from 'lucide-react';
 import { DiscountModalPage1, DiscountModalPage2, DiscountModalPage3, DiscountModalPage4 } from './DiscountModalPages';
@@ -25,9 +25,68 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
 
     const [page, setPage] = useState(1);
 
-    const navigatePage = (page) => {
-        setPage(page)
+    const navigatePage = (nextPage) => {
+        setPage(nextPage)
     }
+
+    const handleDraftChange = useCallback((draft) => {
+        setDiscountData((prev) => ({ ...prev, ...draft }))
+    }, [])
+
+    const validateForFinalReview = () => {
+        const missingFields = []
+        const trimmedName = String(discountData.name || '').trim()
+        const parsedValue = Number.parseFloat(discountData.value)
+
+        if (!trimmedName) missingFields.push('name')
+        if (!discountData.discount_type) missingFields.push('discount_type')
+
+        const hasInvalidValue = !Number.isFinite(parsedValue)
+            || parsedValue <= 0
+            || (discountData.discount_type === 'percentage' && parsedValue > 100)
+        if (hasInvalidValue) missingFields.push('value')
+
+        if (!discountData.scope) missingFields.push('scope')
+        if (discountData.scope === 'selected_products' && (!discountData.products || discountData.products.length === 0)) {
+            missingFields.push('products')
+        }
+        if (discountData.scope === 'selected_category' && (!discountData.categories || discountData.categories.length === 0)) {
+            missingFields.push('categories')
+        }
+
+        if (!discountData.is_indefinite) {
+            if (!discountData.start_date) missingFields.push('start_date')
+            if (!discountData.end_date) missingFields.push('end_date')
+
+            if (discountData.start_date && discountData.end_date) {
+                const start = new Date(discountData.start_date)
+                const end = new Date(discountData.end_date)
+
+                if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+                    missingFields.push('start_date', 'end_date')
+                }
+            }
+        }
+
+        const uniqueMissingFields = [...new Set(missingFields)]
+        if (uniqueMissingFields.length > 0) {
+            return {
+                ok: false,
+                missingFields: uniqueMissingFields,
+                label: 'Missing Required Details',
+                details: 'Please complete all required fields highlighted in red before saving.',
+            }
+        }
+
+        return { ok: true, missingFields: [] }
+    }
+
+    const stepTabs = [
+        { id: 1, icon: InfoIcon, label: 'Details' },
+        { id: 2, icon: Activity, label: 'Rules & Limits' },
+        { id: 3, icon: Calendar, label: 'Schedule' },
+        { id: 4, icon: CheckCircle2, label: 'Review' },
+    ]
 
     const handlePage1Submit = (data) => {
         setDiscountData(prev => ({
@@ -88,22 +147,20 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
     return (
         <ModalBody title='Add Discount' onClose={onClose} subtitle='Create a new discount rule' className={'w-[40vw]'}>
             <div className='flex gap-2 item-center text-xs font-semibold w-full border-b border-b-border -mb-4'>
-                <span className={cn('cursor-pointer flex items-center gap-2 px-4 pb-2 text-text/50', page === 1 && 'border-b-2 border-b-accent text-accent')}>
-                    <InfoIcon size={16} />
-                    <h5>Details</h5>
-                </span>
-                <span className={cn('cursor-pointer flex items-center gap-2 px-4 pb-2 text-text/50', page === 2 && 'border-b-2 border-b-accent text-accent')}>
-                    <Activity size={16} />
-                    <h5>Rules & Limits</h5>
-                </span>
-                <span className={cn('cursor-pointer flex items-center gap-2 px-4 pb-2 text-text/50', page === 3 && 'border-b-2 border-b-accent text-accent')}>
-                    <Calendar size={16} />
-                    <h5>Schedule</h5>
-                </span>
-                <span className={cn('cursor-pointer flex items-center gap-2 px-4 pb-2 text-text/50', page === 4 && 'border-b-2 border-b-accent text-accent')}>
-                    <CheckCircle2 size={16} />
-                    <h5>Review</h5>
-                </span>
+                {stepTabs.map((tab) => {
+                    const Icon = tab.icon
+                    return (
+                        <button
+                            key={tab.id}
+                            type='button'
+                            onClick={() => navigatePage(tab.id)}
+                            className={cn('cursor-pointer flex items-center gap-2 px-4 pb-2 text-text/50', page === tab.id && 'border-b-2 border-b-accent text-accent')}
+                        >
+                            <Icon size={16} />
+                            <h5>{tab.label}</h5>
+                        </button>
+                    )
+                })}
             </div>
             {page === 1 &&
                 <DiscountModalPage1
@@ -113,6 +170,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
                         value: discountData.value,
                     }}
                     onSubmit={handlePage1Submit}
+                    onDraftChange={handleDraftChange}
                     onClose={onClose}
                 />}
             {page === 2 &&
@@ -128,6 +186,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
                     productOptions={productOptions}
                     categoryOptions={categoryOptions}
                     onSubmit={handlePage2Submit}
+                    onDraftChange={handleDraftChange}
                     onBack={() => navigatePage(1)}
                 />}
             {page === 3 &&
@@ -138,6 +197,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
                         end_date: discountData.end_date,
                     }}
                     onSubmit={handlePage3Submit}
+                    onDraftChange={handleDraftChange}
                     onBack={() => navigatePage(2)}
                     loading={loading}
                     submitText='Review'
@@ -150,6 +210,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
                     categoryOptions={categoryOptions}
                     onBack={() => navigatePage(3)}
                     onConfirm={submitDiscount}
+                    validateBeforeConfirm={validateForFinalReview}
                     loading={loading}
                 />
             )}

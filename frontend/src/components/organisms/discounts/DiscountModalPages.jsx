@@ -2,7 +2,7 @@ import { Label, Dropdown, Button } from '@/components/atoms'
 import { DatePicker, ModalFeedbackCard } from '@/components/molecules'
 import { cn } from '@/lib/utils'
 import { inputNumber, inputText, limitedInput } from '@/utils/safeInput'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ScopeSelectionModal from './ScopeSelectionModal'
 import ConfirmationModal from '../ConfirmationModal'
 
@@ -10,6 +10,7 @@ export const DiscountModalPage1 = ({
     data,
     onSubmit,
     onClose,
+    onDraftChange = null,
     onDanger = null,
     dangerText = 'Delete Discount',
     dangerVariant = 'error',
@@ -22,6 +23,14 @@ export const DiscountModalPage1 = ({
     })
 
     const [feedback, setFeedback] = useState({ label: "", message: "" })
+
+    useEffect(() => {
+        onDraftChange?.({
+            name: discountData.name,
+            discount_type: discountData.type,
+            value: discountData.value,
+        })
+    }, [discountData, onDraftChange])
 
     const validate = () => {
         const parsedValue = Number.parseFloat(discountData.value)
@@ -122,7 +131,7 @@ export const DiscountModalPage1 = ({
     )
 }
 
-export const DiscountModalPage2 = ({ data, onSubmit, onBack, productOptions = [], categoryOptions = [] }) => {
+export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = null, productOptions = [], categoryOptions = [] }) => {
 
     const [discountData, setDiscountData] = useState({
         scope: data?.scope || 'all_products',
@@ -134,6 +143,17 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, productOptions = []
     })
 
     const [feedback, setFeedback] = useState({ label: "", message: "" })
+
+    useEffect(() => {
+        onDraftChange?.({
+            scope: discountData.scope,
+            min_order_total: discountData.min_order_total,
+            usage_limit: discountData.usage_limit,
+            active: discountData.active,
+            products: discountData.products,
+            categories: discountData.categories,
+        })
+    }, [discountData, onDraftChange])
 
     const scopeOptions = [
         { key: 'Entire Order', value: 'all_products' },
@@ -384,7 +404,7 @@ const parseTimePart = (value, fallback = '00:00') => {
     return (value.split('T')[1] || fallback).slice(0, 5)
 }
 
-export const DiscountModalPage3 = ({ data, onSubmit, onBack, loading = false, submitText = 'Save Discount' }) => {
+export const DiscountModalPage3 = ({ data, onSubmit, onBack, onDraftChange = null, loading = false, submitText = 'Save Discount' }) => {
     const [discountData, setDiscountData] = useState({
         is_indefinite: data?.is_indefinite || false,
         start_date: parseDateTime(data?.start_date),
@@ -400,6 +420,17 @@ export const DiscountModalPage3 = ({ data, onSubmit, onBack, loading = false, su
         if (!datePart) return null
         return `${datePart}T${time}`
     }
+
+    useEffect(() => {
+        const startDateTime = discountData.is_indefinite ? null : buildDateTime(discountData.start_date, discountData.start_time)
+        const endDateTime = discountData.is_indefinite ? null : buildDateTime(discountData.end_date, discountData.end_time)
+
+        onDraftChange?.({
+            is_indefinite: discountData.is_indefinite,
+            start_date: startDateTime,
+            end_date: endDateTime,
+        })
+    }, [discountData, onDraftChange])
 
     const validate = () => {
         if (!discountData.is_indefinite) {
@@ -512,6 +543,7 @@ export const DiscountModalPage4 = ({
     data,
     onBack,
     onConfirm,
+    validateBeforeConfirm = null,
     loading = false,
     productOptions = [],
     categoryOptions = [],
@@ -527,6 +559,8 @@ export const DiscountModalPage4 = ({
     dangerVariant = 'error',
 }) => {
     const [showConfirmModal, setShowConfirmModal] = useState(false)
+    const [feedback, setFeedback] = useState(null)
+    const [missingFieldKeys, setMissingFieldKeys] = useState([])
 
     const scopeLabelMap = {
         all_products: 'Entire Order',
@@ -599,6 +633,39 @@ export const DiscountModalPage4 = ({
             .filter((row) => row.before !== row.after)
         : []
 
+    const summaryRows = [
+        { label: 'Name', key: 'name', value: currentDisplay.name, required: true },
+        { label: 'Type', key: 'discount_type', value: currentDisplay.discount_type, required: true },
+        { label: 'Value', key: 'value', value: currentDisplay.value, required: true },
+        { label: 'Scope', key: 'scope', value: currentDisplay.scope, required: true },
+        { label: 'Min Order Total', key: 'min_order_total', value: currentDisplay.min_order_total, required: false },
+        { label: 'Usage Limit', key: 'usage_limit', value: currentDisplay.usage_limit, required: false },
+        { label: 'Active', key: 'active', value: currentDisplay.active, required: false },
+        { label: 'Permanent', key: 'is_indefinite', value: currentDisplay.is_indefinite, required: false },
+        { label: 'Start Date & Time', key: 'start_date', value: currentDisplay.start_date, required: !data.is_indefinite },
+        { label: 'End Date & Time', key: 'end_date', value: currentDisplay.end_date, required: !data.is_indefinite },
+    ]
+
+    const handleAttemptConfirm = () => {
+        setFeedback(null)
+
+        const validationResult = validateBeforeConfirm ? validateBeforeConfirm() : { ok: true, missingFields: [] }
+
+        if (!validationResult.ok) {
+            const fields = Array.isArray(validationResult.missingFields) ? validationResult.missingFields : []
+            setMissingFieldKeys(fields)
+            setFeedback({
+                type: 'error',
+                label: validationResult.label || 'Missing Required Details',
+                details: validationResult.details || 'Please complete required fields before saving.',
+            })
+            return
+        }
+
+        setMissingFieldKeys([])
+        setShowConfirmModal(true)
+    }
+
     return (
         <div className='flex flex-col gap-4'>
             <div className='rounded-md border border-border bg-main-white p-4 flex flex-col gap-4 overflow-auto h-[40vh]'>
@@ -627,31 +694,25 @@ export const DiscountModalPage4 = ({
                 )}
 
                 <div className='grid grid-cols-2 gap-3 text-sm'>
-                    <h5 className='text-text/60'>Name</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.name}</h5>
-                    <h5 className='text-text/60'>Type</h5>
-                    <h5 className='font-medium text-text text-right capitalize'>{currentDisplay.discount_type}</h5>
-                    <h5 className='text-text/60'>Value</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.value}</h5>
-                    <h5 className='text-text/60'>Scope</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.scope}</h5>
-                    <h5 className='text-text/60'>Min Order Total</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.min_order_total}</h5>
-                    <h5 className='text-text/60'>Usage Limit</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.usage_limit}</h5>
-                    <h5 className='text-text/60'>Active</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.active}</h5>
-                    <h5 className='text-text/60'>Permanent</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.is_indefinite}</h5>
-                    <h5 className='text-text/60'>Start Date & Time</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.start_date}</h5>
-                    <h5 className='text-text/60'>End Date & Time</h5>
-                    <h5 className='font-medium text-text text-right'>{currentDisplay.end_date}</h5>
+                    {summaryRows.map((row) => {
+                        const isMissing = row.required && missingFieldKeys.includes(row.key)
+
+                        return (
+                            <React.Fragment key={row.key}>
+                                <h5 className={cn('text-text/60', isMissing && 'text-error font-semibold')}>
+                                    {row.label}
+                                </h5>
+                                <h5 className='font-medium text-text text-right capitalize'>{row.value}</h5>
+                            </React.Fragment>
+                        )
+                    })}
                 </div>
 
                 {data.scope === 'selected_products' && (
                     <div className='pt-2 border-t border-border'>
-                        <h5 className='text-xs font-semibold text-text/60 uppercase tracking-wider mb-2'>Selected Products ({selectedProducts.length})</h5>
+                        <h5 className={cn('text-xs font-semibold text-text/60 uppercase tracking-wider mb-2', missingFieldKeys.includes('products') && 'text-error')}>
+                            Selected Products ({selectedProducts.length})
+                        </h5>
                         <div className='flex flex-wrap gap-2'>
                             {selectedProducts.length > 0 ? selectedProducts.map((item) => (
                                 <span key={item.value} className='px-3 py-1 rounded-full border border-border text-xs text-text bg-main'>
@@ -664,7 +725,9 @@ export const DiscountModalPage4 = ({
 
                 {data.scope === 'selected_category' && (
                     <div className='pt-2 border-t border-border'>
-                        <h5 className='text-xs font-semibold text-text/60 uppercase tracking-wider mb-2'>Selected Categories ({selectedCategories.length})</h5>
+                        <h5 className={cn('text-xs font-semibold text-text/60 uppercase tracking-wider mb-2', missingFieldKeys.includes('categories') && 'text-error')}>
+                            Selected Categories ({selectedCategories.length})
+                        </h5>
                         <div className='flex flex-wrap gap-2'>
                             {selectedCategories.length > 0 ? selectedCategories.map((item) => (
                                 <span key={item.value} className='px-3 py-1 rounded-full border border-border text-xs text-text bg-main'>
@@ -676,12 +739,16 @@ export const DiscountModalPage4 = ({
                 )}
             </div>
 
+            {feedback && (
+                <ModalFeedbackCard type={feedback.type} label={feedback.label} details={feedback.details} />
+            )}
+
             <div className='flex justify-end gap-2 pt-2 border-t border-border'>
                 {onDanger && (
                     <Button onClick={onDanger} text={dangerText} variant={dangerVariant} />
                 )}
                 <Button onClick={onBack} text='Back' variant='modalOutline' />
-                <Button onClick={() => setShowConfirmModal(true)} text={actionText} variant='modalBlock' disabled={loading} />
+                <Button onClick={handleAttemptConfirm} text={actionText} variant='modalBlock' disabled={loading} />
             </div>
 
             {showConfirmModal && (
