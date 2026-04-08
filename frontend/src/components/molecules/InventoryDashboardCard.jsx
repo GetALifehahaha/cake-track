@@ -2,18 +2,11 @@ import React from 'react';
 import { cn } from '@/utils/cn';
 import { useSearchParams } from 'react-router-dom';
 
-const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon, amount=0, variant="success", onClick, type}) => {
+const InventoryDashboardCard = ({ title = "Title", subtitle = "Subtitle", icon: Icon, amount = 0, variant = "success", onClick, type }) => {
     const [searchParams] = useSearchParams();
 
     const currentFilter = searchParams.get('filter')
 
-    const bgVariants = {
-        success: 'bg-success',
-        error: 'bg-error',
-        warning: 'bg-warning',
-        none: 'bg-none',
-        missing: 'bg-missing',
-    }
 
     const beforeBgVariants = {
         success: 'before:bg-success',
@@ -30,15 +23,15 @@ const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon,
         none: 'bg-none-fill',
         missing: 'bg-missing-fill',
     }
-    
+
     const textVariants = {
         success: 'text-success',
-        error: 'text-error',    
+        error: 'text-error',
         warning: 'text-warning',
         none: 'text-none',
         missing: 'text-missing',
     }
-    
+
     const borderVariants = {
         success: 'border-success-border',
         error: 'border-error-border',
@@ -51,7 +44,7 @@ const InventoryDashboardCard = ({title="Title", subtitle="Subtitle", icon: Icon,
         <div className={cn(`bg-main-white p-6 border ${borderVariants[variant]} rounded-lg flex flex-1 flex-row gap-8 items-center relative
         before:content-[""] before:w-1 before:h-full before:left-0 before:top-0 before:-translate-x-full before:rounded-l-full transition ${beforeBgVariants[variant]} before:absolute
         `, currentFilter == type && '-translate-y-2')}
-        onClick={() => onClick(currentFilter == type ? null : type)}>
+            onClick={() => onClick(currentFilter == type ? null : type)}>
             <div className={`p-3 rounded-md h-fit ${softBgVariants[variant]}`}>
                 <Icon size={28} className={`${textVariants[variant]}`} />
             </div>

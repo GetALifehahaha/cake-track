@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ModalBody, Pagination } from '../../molecules';
 import Loading from '@/components/molecules/Loading';
 import { Button } from '../../atoms';

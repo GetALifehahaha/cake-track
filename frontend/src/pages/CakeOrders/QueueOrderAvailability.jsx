@@ -35,8 +35,8 @@ const QueueOrderAvailability = () => {
 	const displayDates = filter === 'upcoming'
 		? upcomingDates
 		: filter === 'past'
-		? pastDates
-		: [...upcomingDates, ...pastDates]
+			? pastDates
+			: [...upcomingDates, ...pastDates]
 
 	const handleBlockDates = async (dates) => {
 		try {
@@ -56,7 +56,7 @@ const QueueOrderAvailability = () => {
 			await updateOperatingHours(hours)
 			setShowHoursModal(false)
 			addToast('Operating hours updated successfully', 'success')
-		} catch (err) {
+		} catch {
 			addToast('Failed to update operating hours', 'error')
 		}
 	}
@@ -122,7 +122,7 @@ const QueueOrderAvailability = () => {
 						<div>
 							<span className='text-xs text-text/50 font-medium block mb-2'>Open Days</span>
 							<div className='flex gap-1 flex-wrap'>
-								{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => (
+								{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
 									<span
 										key={day}
 										className={`
@@ -174,7 +174,7 @@ const QueueOrderAvailability = () => {
 					<div className='flex items-center gap-2'>
 						{/* Filter tabs */}
 						<div className='flex border border-border rounded-lg overflow-hidden text-xs'>
-							{[['upcoming','Upcoming'],['past','Past'],['all','All']].map(([val, label]) => (
+							{[['upcoming', 'Upcoming'], ['past', 'Past'], ['all', 'All']].map(([val, label]) => (
 								<button
 									key={val}
 									onClick={() => { setFilter(val); setSelectedDates([]) }}
@@ -234,14 +234,14 @@ const QueueOrderAvailability = () => {
 							</div>
 						</div>
 					) : (
-						displayDates.map(({id, date}, i) => {
+						displayDates.map(({ id, date }, i) => {
 							const past = isDatePast(date)
 							const isChecked = selectedDates.includes(id)
 
 							return (
 								<div
 									key={id}
-									onClick={() => toggleSelectDate({id, date})}
+									onClick={() => toggleSelectDate({ id, date })}
 									className={`
 										flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors
 										${i !== displayDates.length - 1 ? 'border-b border-b-main-dark' : ''}
@@ -252,7 +252,7 @@ const QueueOrderAvailability = () => {
 										<input
 											type='checkbox'
 											checked={isChecked}
-											onChange={() => toggleSelectDate({id, date})}
+											onChange={() => toggleSelectDate({ id, date })}
 											className='accent-accent-mute cursor-pointer'
 										/>
 									</span>

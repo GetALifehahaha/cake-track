@@ -7,8 +7,8 @@ import { useToast } from "@/context/ToastContext";
 const GoogleLoginApi = () => {
     const navigate = useNavigate();
 
-    const {googleLogin} = useContext(AuthContext);
-    const {addToast} = useToast();
+    const { googleLogin } = useContext(AuthContext);
+    const { addToast } = useToast();
 
     const handleSuccess = async (credentialResponse) => {
         try {
@@ -16,7 +16,7 @@ const GoogleLoginApi = () => {
             await googleLogin(token);
 
             navigate('/');
-        } catch (err) {
+        } catch {
             addToast('Google login failed. Please try again.', 'error');
         }
     }

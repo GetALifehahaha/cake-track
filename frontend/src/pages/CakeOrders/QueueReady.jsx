@@ -11,7 +11,7 @@ import { useToast } from '@/context/ToastContext';
 const QueueAccepted = () => {
 
 	const { addToast } = useToast();
-	const { data, loading, error, patchOrder } = useOrder();
+	const { data, loading, patchOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
@@ -90,10 +90,10 @@ const QueueAccepted = () => {
 			}
 
 			{orderToComplete &&
-				<CompletePaymentModal 
-					order={orderToComplete} 
-					onConfirm={completeOrder} 
-					onClose={() => setOrderToComplete(null)} 
+				<CompletePaymentModal
+					order={orderToComplete}
+					onConfirm={completeOrder}
+					onClose={() => setOrderToComplete(null)}
 				/>
 			}
 		</div>

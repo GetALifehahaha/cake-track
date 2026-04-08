@@ -348,8 +348,6 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         }
     };
 
-    const recipeOptions = availableRecipes.map(recipe => ({ key: recipe.name, value: String(recipe.id) }));
-
     const renderOrderInfo = () => (
         <div className='p-8 space-y-6 overflow-y-auto'>
             <div>

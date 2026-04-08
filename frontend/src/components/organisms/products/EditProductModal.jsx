@@ -7,7 +7,6 @@ import {
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_UPLOAD_PRESET,
 } from "@/api/constants";
-import { cn } from '@/utils/cn';
 import useCategory from '@/hooks/useCategory';
 import useRecipe from '@/hooks/useRecipe';
 import AddRecipeModal from '@/components/organisms/recipe/AddRecipeModal';
@@ -242,11 +241,6 @@ const EditProductModal = ({ product, categoryOptions: initialCategoryOptions, on
         setShowAddRecipeModal(false);
         setRecipeTargetIndex(null);
     }
-
-    const recipeOptions = [
-        { key: 'Create New Recipe', value: '__create_recipe__' },
-        ...(recipeData?.results || []).map(recipe => ({ key: recipe.name, value: recipe.id })),
-    ];
 
     const handleRecipeSelect = (value, index) => {
         if (!value) {

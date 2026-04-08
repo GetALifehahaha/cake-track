@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Ellipsis, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal, InputRefundModal } from '../../components/organisms';
 import { DatePicker, Pagination } from '@/components/molecules';
@@ -14,7 +14,7 @@ const QueuePending = () => {
 
 	const { addToast } = useToast();
 
-	const { data, loading, error, patchOrder, batchUpdateOrders, refundOrder } = useOrder();
+	const { data, loading, patchOrder, batchUpdateOrders, refundOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [showOrderDetails, setShowOrderDetails] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -48,7 +48,7 @@ const QueuePending = () => {
 
 			addToast("Order accepted successfully");
 			setPrepAcceptId(null);
-		} catch (err) {
+		} catch {
 			addToast("Failed to accept order.", "error")
 		}
 	}
@@ -88,7 +88,7 @@ const QueuePending = () => {
 
 			addToast("Order declined successfully");
 			setPrepRejectId(null);
-		} catch (err) {
+		} catch {
 			addToast("Failed to decline order.", "error")
 		}
 	}

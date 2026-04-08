@@ -116,7 +116,7 @@ const BusinessDetails = () => {
 
             addToast("Business details changed successfully")
             toggleConfirmationModal();
-        } catch (err) {
+        } catch {
             addToast("Failed to edit business details")
         }
     }
@@ -133,7 +133,7 @@ const BusinessDetails = () => {
             getUserData();
 
             addToast("Admin Account has been updated!");
-        } catch (err) {
+        } catch {
             addToast("Failed to update Admin Account", "error");
         }
     }

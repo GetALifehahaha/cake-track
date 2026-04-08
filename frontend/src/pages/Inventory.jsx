@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard, Pagination } from '../components/molecules';
 import { ConfirmationModal, EditInventoryItem, InventoryAddItem, InventoryInOut, TransactionHistoryModal, UnitModal } from '../components/organisms';
@@ -55,7 +55,7 @@ const Inventory = () => {
             await postIngredient(value);
             handleCloseAddItemModal();
             addToast("New ingredient added successfully")
-        } catch (err) {
+        } catch {
             addToast("Failed to add new ingredient", "error")
         }
 
@@ -72,7 +72,7 @@ const Inventory = () => {
             await patchIngredient(value.id, { ...value })
             handlePrepEditItem(null);
             addToast("Ingredient has been edited successfully")
-        } catch (err) {
+        } catch {
             addToast("Failed to edit ingredient", "error")
         }
     }
@@ -84,7 +84,7 @@ const Inventory = () => {
             await deleteIngredient(id);
             handlePrepEditItem(null)
             addToast("Ingredient has been deleted successfully!")
-        } catch (err) {
+        } catch {
             addToast("Failed to delete ingredient", "error")
         }
     }
@@ -94,7 +94,7 @@ const Inventory = () => {
             await stockOutAllExpiredIngredient();
             addToast("All expired ingredients has been stocked out!")
             toggleStockOutAllConfirmationModal();
-        } catch (err) {
+        } catch {
             addToast("Failed to stock out expired ingredients", "error")
         }
     }

@@ -144,7 +144,7 @@ const EditCakeModal = ({ cake, onConfirm, onClose }) => {
             };
 
             await onConfirm(payload);
-        } catch (err) {
+        } catch {
             setFeedback({
                 label: 'Error',
                 details: 'Something went wrong while updating the cake.',

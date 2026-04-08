@@ -1,8 +1,8 @@
-import React, {memo} from 'react';
+import React, { memo } from 'react';
 import { Title } from '../atoms';
 import { Ellipsis } from 'lucide-react';
 
-const ReceiptsTable = memo(({headers=['id', 'name', 'number'], content=[{}]}) => {
+const ReceiptsTable = memo(({ headers = ['id', 'name', 'number'], content = [{}] }) => {
 
     const capitalize = (string) => {
         if (string) return string[0].toUpperCase() + string.slice(1)
@@ -14,14 +14,14 @@ const ReceiptsTable = memo(({headers=['id', 'name', 'number'], content=[{}]}) =>
     const fullDate = `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
 
     const listHeaders = [...headers, ''].map((item, index) => <h5 key={index} className={`text-main-white font-semibold text-center py-1 ${basis}`}>{capitalize(item)}</h5>)
-    const listContent = content.map((item, index) => 
-        <div className='flex w-full'>
+    const listContent = content.map((item, index) =>
+        <div className='flex w-full' key={index}>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.time}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.id}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.cashier}</h5>
             <h5 className={`${item.status == "Success" ? 'text-success' : 'text-error'} font-medium text-center py-0.5 ${basis}`}>{item.status}</h5>
             <h5 className={`text-text font-medium text-center py-0.5 ${basis}`}>{item.total}</h5>
-            <Ellipsis className={`text-text ${basis} cursor-pointer`}/>
+            <Ellipsis className={`text-text ${basis} cursor-pointer`} />
         </div>
     )
 

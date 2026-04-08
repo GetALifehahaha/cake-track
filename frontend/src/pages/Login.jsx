@@ -52,7 +52,7 @@ const Login = () => {
             if (!res.success) {
                 addToast('Invalid username or password', 'error');
             }
-        } catch (err) {
+        } catch {
             addToast('Something went wrong. Please try again later.', 'error');
         } finally {
             setLoading(false);

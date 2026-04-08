@@ -10,7 +10,7 @@ import { limitedInput } from '@/utils/safeInput';
 import UnitModal from './UnitModal';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
-    const {data: units, loading, error, postUnit, refresh} = useUnits()
+    const { data: units, loading, error, postUnit, refresh } = useUnits()
 
     const [name, setName] = useState(item.name);
     const [unit, setUnit] = useState(item.unit.id);
@@ -146,15 +146,8 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         onDelete(item.id)
     }
 
-    const capitalize = (str) => {
-        return str
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-    }
-
     // CONFIRMATION MODAL
-    
+
     const toggleDeleteConfirmationModal = () => setShowDeleteConfirmationModal(!showDeleteConfirmationModal);
     const toggleEditConfirmationModal = () => setShowEditConfirmationModal(!showEditConfirmationModal);
 
