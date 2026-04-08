@@ -101,21 +101,25 @@ const Recipe = () => {
             <div className='flex-1'>
                 <h5 className='text-xs font-semibold text-text/50 uppercase mb-2'>Ingredients</h5>
                 <ul className='flex flex-col gap-1'>
-                    {recipe.ingredients.map(ing => (
-                        <li key={ing.ingredient_id} className='text-sm text-text'>
-                            {(() => {
-                                const display = getBestDisplay(ing);
-                                return (
-                                    <>
-                                        • {formatQty(display.amount)} {display.unitLabel} {ing.ingredient_name}
-                                        {display.usedNonBase && (
-                                            <span className='text-text/50'> ({formatQty(display.baseAmount)} {display.baseUnitLabel})</span>
-                                        )}
-                                    </>
-                                )
-                            })()}
-                        </li>
-                    ))}
+                    {recipe.ingredients.map((ing, index) =>
+                        index > 3 ?
+                            <h5 className='text-sm font-semibold py-2'>And {6 - recipe.ingredients.length} more...</h5>
+                            :
+                            <li key={ing.ingredient_id} className='text-sm text-text'>
+                                {(() => {
+                                    const display = getBestDisplay(ing);
+                                    return (
+                                        <>
+                                            • {formatQty(display.amount)} {display.unitLabel} {ing.ingredient_name}
+                                            {display.usedNonBase && (
+                                                <span className='text-text/50'> ({formatQty(display.baseAmount)} {display.baseUnitLabel})</span>
+                                            )}
+                                        </>
+                                    )
+                                })()}
+                            </li>
+
+                    )}
                 </ul>
             </div>
         </div>
