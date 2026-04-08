@@ -421,8 +421,8 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </p>
                 </div>
                 <div className='space-y-3'>
-                    <DetailRow label='Delivery Date' value={formattedDeliveryDate} />
-                    <DetailRow label='Delivery Time' value={formattedDeliveryTime} isLast />
+                    <DetailRow label='Pickup Date' value={formattedDeliveryDate} />
+                    <DetailRow label='Pickup Time' value={formattedDeliveryTime} isLast />
                 </div>
             </div>
 
