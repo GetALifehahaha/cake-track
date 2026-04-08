@@ -61,6 +61,7 @@ const Home = () => {
     const [completingAllOrders, setCompletingAllOrders] = useState(false);
     const [accessCode, setAccessCode] = useState('');
     const [loadingAccessCode, setLoadingAccessCode] = useState(false);
+    const [paymentLoading, setPaymentLoading] = useState(false);
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -553,6 +554,8 @@ const Home = () => {
     }
 
     const completePayment = async (payload) => {
+        setPaymentLoading(true);
+
         if (payload) {
             const { sanitized: sanitizedCheckoutProducts, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
 
@@ -689,6 +692,7 @@ const Home = () => {
         }
         setShowPaymentModal(false);
         setModalFeedbackContent(null);
+        setPaymentLoading(false)
     }
 
     const removeAllProducts = () => {
@@ -924,12 +928,14 @@ const Home = () => {
             </div>
 
             {/* Modals */}
+            {/* TODO: */}
             {showPaymentModal &&
                 <PaymentModal
                     totalPrice={netTotal}
                     customerName={customerName}
                     onCustomerNameChange={setCustomerName}
                     onConfirm={completePayment}
+                    loading={paymentLoading}
                     onClose={() => setShowPaymentModal(false)}
                 />
             }

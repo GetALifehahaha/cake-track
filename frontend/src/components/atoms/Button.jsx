@@ -1,7 +1,8 @@
 import { cn } from '@/utils/cn'
 import React from 'react'
+import { LoaderCircle } from 'lucide-react'
 
-const Button = ({ variant = "block", size = "base", text = "Button", icon: Icon, onClick, className = '', suffix = null, disabled = false, type = 'button' }) => {
+const Button = ({ variant = "block", size = "base", text = "Button", icon: Icon, onClick, className = '', suffix = null, disabled = false, loading = false, type = 'button' }) => {
 
     const buttonVariants = {
         main: 'w-full p-2 rounded-full bg-accent justify-center items-center text-sm font-bold text-main-white',
@@ -25,15 +26,18 @@ const Button = ({ variant = "block", size = "base", text = "Button", icon: Icon,
 
     return (
         <button
-            disabled={disabled}
+            disabled={disabled || loading}
             type={type}
             onClick={onClick}
-            className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className, disabled && 'cursor-not-allowed opacity-50')}>
+            className={cn(`flex gap-4 items-center justify-center cursor-pointer ${buttonVariants[size]} ${buttonVariants[variant]}`, className, (disabled || loading) && 'cursor-not-allowed opacity-50')}>
             {Icon && <Icon width={18} />}
             {text && text}
             {
                 suffix != null &&
                 <h5 className='text-sm font-medium opacity-50 w-5'>{suffix}</h5>
+            }
+            {loading &&
+                <LoaderCircle className='animate-spin' size={16} />
             }
         </button>
     )
