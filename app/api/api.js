@@ -33,6 +33,8 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const requestUrl = originalRequest?.url || '';
+        const isAuthEndpoint = requestUrl.includes('/users/token/') || requestUrl.includes('/users/token/refresh/');
 
         if (error.response) {
             console.error(`Error ${error.response.status}: ${error.config?.url}`);
@@ -43,8 +45,7 @@ api.interceptors.response.use(
             console.error("Network Error:", error.message);
         }
         // Check if error is 401 (Unauthorized) AND we haven't retried this request yet
-        if (error.response?.status === 401 ||
-    error.response?.status === 500 || !originalRequest._retry) {
+        if (!isAuthEndpoint && (error.response?.status === 401 || error.response?.status === 500) && !originalRequest?._retry) {
             originalRequest._retry = true; // Mark as retried to prevent infinite loops
 
             try {
