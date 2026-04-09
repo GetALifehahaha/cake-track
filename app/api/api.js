@@ -5,8 +5,14 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 // 1. Setup Base URL
 // In Expo, use variables prefixed with EXPO_PUBLIC_ in your .env file
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').trim() || 'https://backend.cake-track.store';
+
+if (!process.env.EXPO_PUBLIC_API_URL) {
+    console.warn('EXPO_PUBLIC_API_URL is missing. Falling back to default API URL.');
+}
+
 const api = axios.create({
-    baseURL: process.env.EXPO_PUBLIC_API_URL
+    baseURL: API_BASE_URL
 });
 
 api.interceptors.request.use(
@@ -66,7 +72,7 @@ api.interceptors.response.use(
 
                 // 2. Call backend to get a new access token
                 // NOTE: Use axios.post (not api.post) to avoid using the interceptors again
-                const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/users/token/refresh/`, {
+                const response = await axios.post(`${API_BASE_URL}/users/token/refresh/`, {
                     refresh: refreshToken
                 });
 
