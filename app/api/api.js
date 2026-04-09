@@ -51,9 +51,9 @@ api.interceptors.response.use(
                 // 1. Get the refresh token from storage
                 const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN);
 
-                if (!refreshToken) {
-                    throw new Error("No refresh token available");
-                }
+                // if (!refreshToken) {
+                //     throw new Error("No refresh token available");
+                // }
 
                 // 2. Call backend to get a new access token
                 // NOTE: Use axios.post (not api.post) to avoid using the interceptors again

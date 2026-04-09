@@ -47,4 +47,10 @@
   --color-missing-border: #F0DBCE;
   --color-missing-fill: #F0DBCE;
   --color-missing-text: #F0A044;
+
+
+  --color-lp-bg: #fbfbfb;
+  --color-lp-bg-2: #f1eeec;
+  --color-lp-text-dark: #53311f;
+  --color-lp-text: #b18053;
 }

@@ -23,8 +23,8 @@ from .models import (Transaction, Ingredient, Recipe, Unit)
 
 from users.permissions import IsCashier, IsCustomerOrAdmin, IsAdmin
 
-class UnitViewSet(viewsets.ModelViewSet):
-    queryset = Unit.objects.all()
+class UnitViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Unit.objects.all().order_by(Lower('name'), 'name')
     serializer_class = UnitSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     pagination_class = None

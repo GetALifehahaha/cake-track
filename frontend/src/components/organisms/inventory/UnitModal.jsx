@@ -1,239 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { ModalBody } from '../../molecules';
+import React, { useMemo } from 'react';
+import { ModalBody, ModalErrorState } from '../../molecules';
 import { Button } from '../../atoms';
-import { ModalFeedbackCard } from '../../molecules';
-import { ModalErrorState } from '../../molecules';
-import { ConfirmationModal } from '..';
-import { Plus, Pen, Trash } from 'lucide-react';
 import useUnits from '@/hooks/useUnits';
 import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 
 const UnitModal = ({ onClose }) => {
-    const { data: unitData, loading: unitLoading, error: unitError, postUnit, patchUnit, refresh, deleteUnit } = useUnits();
-    const [unitName, setUnitName] = useState('');
-    const [unitAbbreviation, setUnitAbbreviation] = useState('');
-    const [editingUnitId, setEditingUnitId] = useState(null);
-    const [editUnitName, setEditUnitName] = useState('');
-    const [editUnitAbbreviation, setEditUnitAbbreviation] = useState('');
-    const [feedback, setFeedback] = useState('');
-    const [showConfirmPostModal, setShowConfirmPostModal] = useState(false);
-    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
-    const [prepDeleteId, setPrepDeleteId] = useState(null);
+    const { data: unitData, loading: unitLoading, error: unitError, refresh } = useUnits();
 
-    useEffect(() => {
-        refresh();
-    }, []);
-
-    if (unitLoading) return <CRUDModalSkeleton title='Manage Units' subtitle='Add, edit, or delete units for your inventory' onClose={onClose} />
+    if (unitLoading) return <CRUDModalSkeleton title='Unit Reference' subtitle='Static units used by inventory calculations' onClose={onClose} />
     if (unitError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to load units right now. Please try reloading this modal.' />;
 
-    const resetFeedback = () => setFeedback('');
+    const groupedUnits = useMemo(() => {
+        const groups = {
+            weight: [],
+            volume: [],
+            count: [],
+            other: [],
+        };
 
-    const closeUnitForm = () => {
-        setUnitName('');
-        setUnitAbbreviation('');
-    };
+        (unitData || []).forEach((unit) => {
+            const raw = String(unit.dimension || '').toLowerCase();
+            const normalized = raw === 'mass' ? 'weight' : raw;
 
-    const handleShowConfirmPostModal = () => {
-        if (!unitName || !unitAbbreviation) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: "Please don't leave any blank fields",
-                type: 'error'
-            });
-            return;
-        }
-        setShowConfirmPostModal(true);
-    };
+            if (groups[normalized]) {
+                groups[normalized].push(unit);
+                return;
+            }
 
-    const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
-    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
-    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
-
-    const handlePostUnit = async () => {
-        await postUnit({
-            name: unitName,
-            abbreviation: unitAbbreviation,
-        });
-        resetFeedback();
-        closeUnitForm();
-        handleCloseConfirmPostModal();
-    };
-
-    const prepDeleteUnit = (id) => {
-        setPrepDeleteId(id);
-        handleShowConfirmDeleteModal();
-    };
-
-    const removePrepDeleteUnit = () => {
-        setPrepDeleteId(null);
-        handleCloseConfirmDeleteModal();
-    };
-
-    const handleDeleteUnit = async () => {
-        await deleteUnit(prepDeleteId);
-        resetFeedback();
-        removePrepDeleteUnit();
-    };
-
-    const startEditUnit = (unit) => {
-        setEditingUnitId(unit.id);
-        setEditUnitName(unit.name || '');
-        setEditUnitAbbreviation(unit.abbreviation || '');
-    };
-
-    const cancelEditUnit = () => {
-        setEditingUnitId(null);
-        setEditUnitName('');
-        setEditUnitAbbreviation('');
-    };
-
-    const handleSaveUnit = async (unitId) => {
-        if (!editUnitName.trim()) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: 'Unit name is required.',
-                type: 'error'
-            });
-            return;
-        }
-
-        await patchUnit(unitId, {
-            name: editUnitName.trim(),
-            abbreviation: editUnitAbbreviation.trim(),
+            groups.other.push(unit);
         });
 
-        await refresh();
-        cancelEditUnit();
-        resetFeedback();
-    };
+        return groups;
+    }, [unitData]);
 
-    const handleUnitNameChange = (e) => {
-        e.preventDefault();
-        if (e.target.value.length > 20) return;
-        setUnitName(e.target.value);
-    };
+    const renderUnitGroup = (title, items) => {
+        if (!items || items.length === 0) return null;
 
-    const handleUnitAbbreviationChange = (e) => {
-        e.preventDefault();
-        if (e.target.value.length > 5) return;
-        setUnitAbbreviation(e.target.value);
-    };
-
-    const capitalize = (str) => str[0].toUpperCase() + str.slice(1);
-
-    const listUnits = unitData.map((unit, index) => (
-        <div
-            key={index}
-            className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white"
-        >
-            {editingUnitId === unit.id ? (
-                <>
-                    <input
-                        type='text'
-                        value={editUnitName}
-                        placeholder='Unit Name'
-                        className='flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text'
-                        onChange={(e) => e.target.value.length <= 20 && setEditUnitName(e.target.value)}
-                    />
-                    <input
-                        type='text'
-                        value={editUnitAbbreviation}
-                        placeholder='Abbr'
-                        className='w-24 rounded-md px-3 py-2 bg-main-dark/50 text-text'
-                        onChange={(e) => e.target.value.length <= 5 && setEditUnitAbbreviation(e.target.value)}
-                    />
-                    <Button text="Save" variant="modalOutline" size="fit" onClick={() => handleSaveUnit(unit.id)} />
-                    <Button text="Cancel" variant="modalOutline" size="fit" onClick={cancelEditUnit} />
-                </>
-            ) : (
-                <>
-                    <span className="flex-1 font-medium text-text">
-                        {capitalize(unit.name)} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
-                    </span>
-
-                    <Button
-                        text="Edit"
-                        variant="modalOutline"
-                        size="fit"
-                        icon={Pen}
-                        onClick={() => startEditUnit(unit)}
-                    />
-
-                    <Button
-                        text="Delete"
-                        variant="modalBlock"
-                        className='bg-error'
-                        size="fit"
-                        icon={Trash}
-                        onClick={() => prepDeleteUnit(unit.id)}
-                    />
-                </>
-            )}
-        </div>
-    ));
-
-    return (
-        <ModalBody className='w-[60vw]' title='Manage Units' subtitle='Add, edit, or delete units for measurements' onClose={onClose}>
-            <div className='flex flex-col gap-2 w-full'>
-
-                {/* Add New Section */}
-                <div className="flex flex-col gap-2">
-                    <h5 className="text-text">Add New Unit</h5>
-                    <div className="flex gap-2">
-                        <input
-                            type='text'
-                            value={unitName}
-                            placeholder='Unit Name (e.g. Kilogram)'
-                            className="flex-2 rounded-md px-3 py-2 bg-main-dark/50 text-text"
-                            onChange={handleUnitNameChange}
-                        />
-                        <input
-                            type='text'
-                            value={unitAbbreviation}
-                            placeholder='Abbr (e.g. kg)'
-                            className="flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text"
-                            onChange={handleUnitAbbreviationChange}
-                        />
-                        <Button
-                            text="Add"
-                            variant="modalBlock"
-                            className='bg-text/50'
-                            size="fit"
-                            icon={Plus}
-                            onClick={handleShowConfirmPostModal}
-                        />
-                    </div>
-                </div>
-
-                {/* List Section */}
-                <h5 className="text-text mt-2">Existing Units</h5>
-                <div className='flex flex-col gap-2 max-h-[30vh] overflow-auto'>
-                    {listUnits}
+        return (
+            <div className='flex flex-col gap-2'>
+                <h5 className='text-text mt-2'>{title}</h5>
+                <div className='flex flex-col gap-2'>
+                    {items.map((unit) => (
+                        <div key={unit.id} className='flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white'>
+                            <span className='flex-1 font-medium text-text'>
+                                {unit.name} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </div>
+        );
+    };
 
-            {feedback &&
-                <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
-            }
+    return (
+        <ModalBody className='w-[60vw]' title='Unit Reference' subtitle='Units are now static and maintained by the system.' onClose={onClose}>
+            <div className='flex flex-col gap-2 w-full'>
 
-            {showConfirmPostModal &&
-                <ConfirmationModal
-                    title="Add Unit?"
-                    content="Are you sure you want to add this unit?"
-                    onReject={handleCloseConfirmPostModal}
-                    onConfirm={handlePostUnit}
-                />
-            }
+                {renderUnitGroup('Weight', groupedUnits.weight)}
+                {renderUnitGroup('Volume', groupedUnits.volume)}
+                {renderUnitGroup('Count', groupedUnits.count)}
+                {renderUnitGroup('Other', groupedUnits.other)}
+            </div>
 
-            {showConfirmDeleteModal &&
-                <ConfirmationModal
-                    title="Delete Unit?"
-                    content="Are you sure you want to delete this unit?"
-                    onReject={removePrepDeleteUnit}
-                    onConfirm={handleDeleteUnit}
-                />
-            }
+            <div className='flex justify-end mt-4'>
+                <Button text='Close' variant='modalOutline' onClick={onClose} />
+            </div>
         </ModalBody>
     );
 };

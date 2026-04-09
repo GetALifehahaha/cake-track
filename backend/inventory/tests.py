@@ -12,9 +12,15 @@ from .services import deduct_ingredient_stock
 
 class ConversionUtilityTests(TestCase):
 	def setUp(self):
-		self.kg = Unit.objects.create(name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000'))
-		self.g = Unit.objects.create(name='Gram', abbreviation='g', dimension='mass', multiplier_to_reference=Decimal('1'))
-		self.cup = Unit.objects.create(name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('1'))
+		self.kg = Unit.objects.filter(name='Kilogram').first() or Unit.objects.create(
+			name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000')
+		)
+		self.g = Unit.objects.filter(name='Gram').first() or Unit.objects.create(
+			name='Gram', abbreviation='g', dimension='mass', multiplier_to_reference=Decimal('1')
+		)
+		self.cup = Unit.objects.filter(name='Cup').first() or Unit.objects.create(
+			name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('1')
+		)
 
 		self.flour = Ingredient.objects.create(name='Flour', total_stock=Decimal('10'), unit=self.kg)
 		IngredientUnitConversion.objects.create(
@@ -39,8 +45,12 @@ class ConversionUtilityTests(TestCase):
 
 class RecipeSerializerConversionTests(TestCase):
 	def setUp(self):
-		self.kg = Unit.objects.create(name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000'))
-		self.cup = Unit.objects.create(name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('1'))
+		self.kg = Unit.objects.filter(name='Kilogram').first() or Unit.objects.create(
+			name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000')
+		)
+		self.cup = Unit.objects.filter(name='Cup').first() or Unit.objects.create(
+			name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('1')
+		)
 
 		self.flour = Ingredient.objects.create(name='Flour', total_stock=Decimal('10'), unit=self.kg)
 		IngredientUnitConversion.objects.create(
@@ -89,9 +99,15 @@ class RecipeSerializerConversionTests(TestCase):
 
 class IngredientUnitAutoConversionTests(TestCase):
 	def setUp(self):
-		self.kg = Unit.objects.create(name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000'))
-		self.g = Unit.objects.create(name='Gram', abbreviation='g', dimension='mass', multiplier_to_reference=Decimal('1'))
-		self.cup = Unit.objects.create(name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('1'))
+		self.kg = Unit.objects.filter(name='Kilogram').first() or Unit.objects.create(
+			name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000')
+		)
+		self.g = Unit.objects.filter(name='Gram').first() or Unit.objects.create(
+			name='Gram', abbreviation='g', dimension='mass', multiplier_to_reference=Decimal('1')
+		)
+		self.cup = Unit.objects.filter(name='Cup').first() or Unit.objects.create(
+			name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('1')
+		)
 
 		self.ingredient = Ingredient.objects.create(name='Flour', total_stock=Decimal('2'), unit=self.kg)
 		IngredientUnitConversion.objects.create(

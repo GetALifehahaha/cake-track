@@ -15,6 +15,10 @@ MAX_DECIMAL_VALUE = Decimal('999999.99')
 MAX_INTEGER_VALUE = 999999
 
 class UnitSerializer(serializers.ModelSerializer):
+    abbreviation = serializers.CharField(source='symbol', required=False, allow_blank=True)
+    dimension = serializers.CharField(source='legacy_dimension', read_only=True)
+    multiplier_to_reference = serializers.DecimalField(source='to_base_factor', max_digits=18, decimal_places=8)
+
     def validate_name(self, value):
         normalized_name = value.strip()
 
@@ -238,6 +242,7 @@ class IngredientUnitConversionSerializer(serializers.ModelSerializer):
         queryset=Unit.objects.all(),
         source='from_unit'
     )
+    multiplier_to_base = serializers.DecimalField(source='factor', max_digits=18, decimal_places=8)
 
     class Meta:
         model = IngredientUnitConversion
@@ -247,11 +252,22 @@ class IngredientUnitConversionSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("Multiplier to base must be greater than zero.")
         return value
+
+
+class IngredientContainerSerializer(serializers.ModelSerializer):
+    container_unit = UnitSerializer(source='from_unit', read_only=True)
+    container_unit_id = serializers.IntegerField(source='from_unit.id', read_only=True)
+    container_amount = serializers.DecimalField(source='factor', max_digits=18, decimal_places=8, read_only=True)
+
+    class Meta:
+        model = IngredientUnitConversion
+        fields = ['id', 'container_unit', 'container_unit_id', 'container_amount']
         
         
 class IngredientSerializer(serializers.ModelSerializer):
     batches = serializers.SerializerMethodField()
     unit = UnitSerializer(read_only=True)
+    containers = IngredientContainerSerializer(source='conversions', many=True, read_only=True)
     conversions = IngredientUnitConversionSerializer(many=True, required=False)
     unit_id = serializers.PrimaryKeyRelatedField(
         write_only=True,
@@ -273,7 +289,34 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'low_amount', 'batches', 'conversions']
+        fields = ['id', 'name', 'unit', 'unit_id', 'total_stock', 'low_amount', 'batches', 'containers', 'conversions']
+
+    def to_internal_value(self, data):
+        mutable_data = data.copy() if hasattr(data, 'copy') else dict(data)
+
+        containers = mutable_data.get('containers')
+        has_legacy_conversions = mutable_data.get('conversions') is not None
+
+        if containers is not None and not has_legacy_conversions:
+            normalized_conversions = []
+
+            for container in containers:
+                if not isinstance(container, dict):
+                    continue
+
+                normalized_row = dict(container)
+
+                if 'from_unit_id' not in normalized_row and 'container_unit_id' in normalized_row:
+                    normalized_row['from_unit_id'] = normalized_row['container_unit_id']
+
+                if 'multiplier_to_base' not in normalized_row and 'container_amount' in normalized_row:
+                    normalized_row['multiplier_to_base'] = normalized_row['container_amount']
+
+                normalized_conversions.append(normalized_row)
+
+            mutable_data['conversions'] = normalized_conversions
+
+        return super().to_internal_value(mutable_data)
 
     def validate_name(self, value):
         normalized_name = value.strip()
@@ -299,10 +342,10 @@ class IngredientSerializer(serializers.ModelSerializer):
             from_unit = conversion['from_unit']
 
             if from_unit.id == base_unit.id:
-                raise serializers.ValidationError("Conversion source unit cannot be the same as the ingredient base unit.")
+                raise serializers.ValidationError("Container unit cannot be the same as the ingredient base unit.")
 
             if from_unit.id in seen_from_units:
-                raise serializers.ValidationError("Duplicate conversion units are not allowed for the same ingredient.")
+                raise serializers.ValidationError("Duplicate container units are not allowed for the same ingredient.")
 
             seen_from_units.add(from_unit.id)
 
@@ -362,7 +405,8 @@ class IngredientSerializer(serializers.ModelSerializer):
             IngredientUnitConversion.objects.create(
                 ingredient=ingredient,
                 from_unit=conversion['from_unit'],
-                multiplier_to_base=conversion['multiplier_to_base']
+                to_unit=ingredient.unit,
+                factor=conversion['factor']
             )
 
         Transaction.objects.create(
@@ -412,8 +456,9 @@ class IngredientSerializer(serializers.ModelSerializer):
                     recipe_ingredient.save(update_fields=['amount_needed'])
 
                 for conversion in instance.conversions.all():
-                    conversion.multiplier_to_base = Decimal(str(conversion.multiplier_to_base)) * conversion_factor
-                    conversion.save(update_fields=['multiplier_to_base'])
+                    conversion.factor = Decimal(str(conversion.factor)) * conversion_factor
+                    conversion.to_unit = new_unit
+                    conversion.save(update_fields=['factor', 'to_unit'])
 
             if conversions_data is not None:
                 instance.conversions.all().delete()
@@ -422,7 +467,8 @@ class IngredientSerializer(serializers.ModelSerializer):
                     IngredientUnitConversion.objects.create(
                         ingredient=instance,
                         from_unit=conversion['from_unit'],
-                        multiplier_to_base=conversion['multiplier_to_base']
+                        to_unit=instance.unit,
+                        factor=conversion['factor']
                     )
 
         return instance
@@ -463,7 +509,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
                 'id': base_unit.id,
                 'name': base_unit.name,
                 'abbreviation': base_unit.abbreviation,
-                'dimension': base_unit.dimension,
+                'dimension': base_unit.dimension.name,
                 'multiplier_to_base': 1,
             }
         ]
@@ -475,7 +521,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
                     'id': unit.id,
                     'name': unit.name,
                     'abbreviation': unit.abbreviation,
-                    'dimension': unit.dimension,
+                    'dimension': unit.dimension.name,
                     'multiplier_to_base': conversion.multiplier_to_base,
                 }
             )
@@ -506,7 +552,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
             get_unit_conversion_factor(selected_unit, ingredient.unit, ingredient=ingredient)
         except ValidationError as error:
             raise serializers.ValidationError(
-                {"input_unit_id": f"No conversion rule found for {ingredient.name}: {selected_unit.name} -> {ingredient.unit.name}."}
+                {"input_unit_id": f"No container mapping found for {ingredient.name}: {selected_unit.name} -> {ingredient.unit.name}."}
             ) from error
 
         return attrs

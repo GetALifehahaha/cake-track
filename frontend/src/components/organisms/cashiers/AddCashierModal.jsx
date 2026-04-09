@@ -4,6 +4,7 @@ import { ModalBody, ModalFeedbackCard } from '../../molecules';
 import ConfirmationModal from '../ConfirmationModal';
 import { limitedInput } from '@/utils/safeInput';
 import { isValidEmail } from '@/utils/validators';
+import { set } from 'date-fns';
 
 const AddCashierModal = ({ onConfirm, onClose }) => {
 
@@ -77,6 +78,24 @@ const AddCashierModal = ({ onConfirm, onClose }) => {
             })
 
             return false;
+        }
+
+        if (username.trim().length < 8) {
+            setFeedback({
+                label: 'Username too short',
+                details: "Please ensure the username is at least 8 characters long",
+                type: 'error'
+            })
+            return false
+        }
+
+        if (emailAddress.trim().length < 8) {
+            setFeedback({
+                label: 'Email address too short',
+                details: "Please ensure the email address is at least 8 characters long",
+                type: 'error'
+            })
+            return false
         }
 
         return true;

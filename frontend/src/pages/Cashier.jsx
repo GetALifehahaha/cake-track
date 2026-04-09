@@ -19,7 +19,6 @@ const Cashier = () => {
     const [prepCashier, setPrepCashier] = useState(null)
 
     if (loading) return <CashierSkeleton />
-    // if (error) return <h5>Error</h5>
 
     const handleShowAddCashierModal = () => {
         setShowAddCashierModal(!showAddCashierModal)

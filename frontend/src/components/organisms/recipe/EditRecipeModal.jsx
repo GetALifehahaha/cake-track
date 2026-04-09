@@ -10,10 +10,10 @@ import { formatQty } from '@/utils/recipeUnits';
 
 const buildIngredientUnitOptions = (ingredient) => {
     const baseUnit = ingredient?.unit;
-    const conversionUnits = (ingredient?.conversions || [])
-        .map(conversion => ({
-            unit: conversion.from_unit,
-            multiplierToBase: Number(conversion.multiplier_to_base || 1),
+    const containerUnits = (ingredient?.containers || ingredient?.conversions || [])
+        .map(container => ({
+            unit: container.container_unit || container.from_unit,
+            multiplierToBase: Number(container.container_amount || container.multiplier_to_base || 1),
         }))
         .filter(entry => entry.unit);
 
@@ -27,7 +27,7 @@ const buildIngredientUnitOptions = (ingredient) => {
         });
     }
 
-    conversionUnits.forEach(entry => {
+    containerUnits.forEach(entry => {
         if (!unique.has(entry.unit.id)) {
             unique.set(entry.unit.id, {
                 value: String(entry.unit.id),
@@ -124,7 +124,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
             });
             return false;
         }
-        
+
         const hasEmptyAmounts = selectedIngredients.some(item => !item.amount_needed || Number(item.amount_needed) <= 0);
         if (hasEmptyAmounts) {
             setFeedback({
@@ -156,7 +156,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         if (e.target.value.length > 50) return;
         setName(e.target.value);
     };
-    
+
     const handleInstructions = (e) => {
         e.preventDefault();
         setInstructions(e.target.value);
@@ -167,13 +167,13 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         const unitOptions = buildIngredientUnitOptions(ingredient);
         const defaultUnitId = ingredient?.unit?.id ? String(ingredient.unit.id) : unitOptions[0]?.value || null;
         const defaultUnitLabel = unitOptions.find(option => String(option.value) === String(defaultUnitId))?.label || '';
-        
+
         setSelectedIngredients(prev => [
-            ...prev, 
-            { 
-                ingredient_id: ingredient.id, 
-                ingredient_name: ingredient.name, 
-                amount_needed: '', 
+            ...prev,
+            {
+                ingredient_id: ingredient.id,
+                ingredient_name: ingredient.name,
+                amount_needed: '',
                 base_unit_id: ingredient?.unit?.id,
                 display_unit_id: defaultUnitId,
                 display_unit_label: defaultUnitLabel,
@@ -190,7 +190,7 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         if (!/^\d*\.?\d{0,4}$/.test(e.target.value)) return;
         if (e.target.value.length > 11) return;
 
-        const updated = selectedIngredients.map((item, i) => 
+        const updated = selectedIngredients.map((item, i) =>
             i === index ? { ...item, amount_needed: e.target.value } : item
         );
         setSelectedIngredients(updated);
@@ -242,14 +242,14 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
         await onConfirm(recipe.id, payload);
     };
 
-    const filteredIngredients = ingredientAll?.filter(ing => 
+    const filteredIngredients = ingredientAll?.filter(ing =>
         ing.name.toLowerCase().includes(search.toLowerCase())
     ) || [];
 
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-8 ${!closing ? 'animate-in fade-in duration-150' : 'animate-out fade-out duration-150 fill-mode-forwards'}`}>
             <div className={`flex w-full max-w-7xl h-[85vh] bg-main-white rounded-2xl shadow-2xl overflow-hidden relative ${!closing ? 'animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-150' : 'animate-out fade-out zoom-out-95 slide-out-to-bottom-3 duration-150 fill-mode-forwards'}`}>
-                
+
                 <div className="w-64 bg-accent-mute flex flex-col text-main-white p-6 shrink-0">
                     <div className="flex items-center gap-3 mb-12 mt-2 ml-2">
                         <UtensilsCrossed size={24} />
@@ -257,15 +257,15 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <button 
+                        <button
                             onClick={() => setStep(1)}
                             className={`flex items-center gap-3 w-full p-3 rounded-xl transition-colors text-sm ${step === 1 ? 'bg-black/10 font-medium' : 'hover:bg-black/5 text-main-white/80'}`}
                         >
                             <Info size={20} />
                             <span>Basic Info</span>
                         </button>
-                        
-                        <button 
+
+                        <button
                             onClick={() => validateStep1() && setStep(2)}
                             className={`flex items-center justify-between w-full p-3 rounded-xl transition-colors text-sm ${step === 2 ? 'bg-black/10 font-medium' : 'hover:bg-black/5 text-main-white/80'}`}
                         >
@@ -295,21 +295,21 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
 
                                 <div className="mb-8">
                                     <label className="block text-xs font-medium text-text mb-2">Recipe Name</label>
-                                    <input 
-                                        type="text" 
-                                        value={name} 
-                                        onChange={handleName} 
-                                        placeholder="What are we cooking?" 
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={handleName}
+                                        placeholder="What are we cooking?"
                                         className="w-full bg-main p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-text text-sm placeholder:text-text-light/50"
                                     />
                                 </div>
 
                                 <div className="flex-1 flex flex-col min-h-[300px]">
                                     <label className="block text-xs font-medium text-text mb-2">Instructions</label>
-                                    <textarea 
-                                        value={instructions} 
-                                        onChange={handleInstructions} 
-                                        placeholder="Break down the process step by step..." 
+                                    <textarea
+                                        value={instructions}
+                                        onChange={handleInstructions}
+                                        placeholder="Break down the process step by step..."
                                         className="w-full flex-1 bg-main p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-text text-sm placeholder:text-text-light/50 resize-none"
                                     />
                                 </div>
@@ -326,19 +326,19 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                 <div className="w-2/5 flex flex-col overflow-hidden">
                                     <div className="relative mb-4 shrink-0">
                                         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-light" />
-                                        <input 
-                                            type="text" 
-                                            placeholder="Find an ingredient..." 
-                                            value={search} 
-                                            onChange={handleSearch} 
-                                            className="w-full bg-main py-3 pl-12 pr-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-text text-sm" 
+                                        <input
+                                            type="text"
+                                            placeholder="Find an ingredient..."
+                                            value={search}
+                                            onChange={handleSearch}
+                                            className="w-full bg-main py-3 pl-12 pr-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-text text-sm"
                                         />
                                     </div>
                                     <div className="flex-1 overflow-y-auto pr-2 space-y-3 pb-4">
                                         {filteredIngredients.map(ing => (
-                                            <div 
-                                                key={ing.id} 
-                                                onClick={() => handleAddIngredient(ing)} 
+                                            <div
+                                                key={ing.id}
+                                                onClick={() => handleAddIngredient(ing)}
                                                 className="p-4 rounded-xl border border-border bg-main-white cursor-pointer hover:border-accent hover:shadow-sm transition-all flex flex-col gap-1"
                                             >
                                                 <h5 className="font-medium text-sm text-text">{ing.name}</h5>
@@ -359,25 +359,25 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                                 <h5 className="flex-1 font-medium text-xs text-text truncate pl-2">{item.ingredient_name}</h5>
                                                 <div className="flex flex-col items-end gap-0.5">
                                                     <div className="flex items-center gap-1.5">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="0.00" 
-                                                        value={item.amount_needed} 
-                                                        onChange={(e) => handleUpdateAmount(index, e)}
-                                                        onBlur={() => handleAmountBlur(index)}
-                                                        className="min-w-14 px-2 py-1.5 bg-main rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-accent text-center" 
-                                                    />
-                                                    <div className="w-20">
-                                                        <Dropdown
-                                                            size="full"
-                                                            variant="modal"
-                                                            value={item.display_unit_id}
-                                                            selection={item.display_unit_label || 'Unit'}
-                                                            options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
-                                                            onSelect={(value) => handleSelectUnit(index, value)}
-                                                            allowNone={false}
+                                                        <input
+                                                            type="text"
+                                                            placeholder="0.00"
+                                                            value={item.amount_needed}
+                                                            onChange={(e) => handleUpdateAmount(index, e)}
+                                                            onBlur={() => handleAmountBlur(index)}
+                                                            className="min-w-14 px-2 py-1.5 bg-main rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-accent text-center"
                                                         />
-                                                    </div>
+                                                        <div className="w-20">
+                                                            <Dropdown
+                                                                size="full"
+                                                                variant="modal"
+                                                                value={item.display_unit_id}
+                                                                selection={item.display_unit_label || 'Unit'}
+                                                                options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
+                                                                onSelect={(value) => handleSelectUnit(index, value)}
+                                                                allowNone={false}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <button onClick={() => handleRemoveIngredient(index)} className="p-1.5 text-text-light hover:text-error transition-colors">
@@ -402,14 +402,14 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
                                 Discard Changes
                             </button>
                         </div>
-                        
+
                         <div className="flex items-center gap-3 w-2/3 justify-end">
                             {feedback && <ModalFeedbackCard label={feedback.label} type={feedback.type} details={feedback.details} />}
-                            
+
                             {step === 2 && (
                                 <Button variant="modalOutline" text="Back" onClick={() => setStep(1)} />
                             )}
-                            
+
                             {step === 1 ? (
                                 <Button variant="modalBlock" text="Next Step" onClick={handleNext} />
                             ) : (
@@ -421,10 +421,10 @@ const EditRecipeModal = ({ recipe, onClose, onConfirm }) => {
             </div>
 
             {confirmationModal &&
-                <ConfirmationModal 
-                    title="Updating recipe" 
-                    content="Are you sure you want to save these changes?" 
-                    onConfirm={handleSubmit} 
+                <ConfirmationModal
+                    title="Updating recipe"
+                    content="Are you sure you want to save these changes?"
+                    onConfirm={handleSubmit}
                     onReject={toggleConfirmationModal}
                 />
             }

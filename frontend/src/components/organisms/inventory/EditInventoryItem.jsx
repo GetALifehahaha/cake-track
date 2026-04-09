@@ -10,20 +10,19 @@ import { limitedInput } from '@/utils/safeInput';
 import UnitModal from './UnitModal';
 
 const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
-    const { data: units, loading, error, postUnit, refresh } = useUnits()
+    const { data: units, loading, error, refresh } = useUnits()
 
     const [name, setName] = useState(item.name);
     const [unit, setUnit] = useState(item.unit.id);
     const [lowAmount, setLowAmount] = useState(String(item.low_amount ?? 0));
-    const [creatingUnit, setCreatingUnit] = useState(false);
-    const [newUnitName, setNewUnitName] = useState('');
-    const [newUnitAbbreviation, setNewUnitAbbreviation] = useState('');
-    const [conversions, setConversions] = useState(
-        (item.conversions || []).map((conversion) => ({
-            from_unit_id: conversion.from_unit?.id || conversion.from_unit_id,
-            multiplier_to_base: conversion.multiplier_to_base === null || conversion.multiplier_to_base === undefined
-                ? ''
-                : formatQty(conversion.multiplier_to_base),
+    const [containers, setContainers] = useState(
+        (item.containers || item.conversions || []).map((container) => ({
+            container_unit_id: container.container_unit?.id || container.from_unit?.id || container.container_unit_id || container.from_unit_id,
+            container_amount: container.container_amount === null || container.container_amount === undefined
+                ? (container.multiplier_to_base === null || container.multiplier_to_base === undefined
+                    ? ''
+                    : formatQty(container.multiplier_to_base))
+                : formatQty(container.container_amount),
         }))
     );
 
@@ -67,35 +66,6 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         setLowAmount(value);
     }
 
-    const handleCreateUnit = async () => {
-        if (!newUnitName.trim()) {
-            setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Unit name is required.` })
-            setShowModalFeedback(true);
-            return;
-        }
-
-        try {
-            const created = await postUnit({
-                name: newUnitName.trim(),
-                abbreviation: newUnitAbbreviation.trim(),
-            });
-
-            await refresh();
-            const newId = created?.data?.id || created?.id;
-            if (newId) {
-                setUnit(newId);
-            }
-
-            setCreatingUnit(false);
-            setNewUnitName('');
-            setNewUnitAbbreviation('');
-        } catch (err) {
-            const details = err?.response?.data?.name?.[0] || err?.response?.data?.detail || 'Failed to create unit.';
-            setModalFeedbackContent({ type: "error", label: "Create Unit Failed", details })
-            setShowModalFeedback(true);
-        }
-    }
-
     const openUnitModal = () => {
         setShowUnitModal(true);
     }
@@ -105,22 +75,22 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         await refresh();
     }
 
-    const addConversionRow = () => {
-        setConversions(prev => [...prev, { from_unit_id: null, multiplier_to_base: '' }]);
+    const addContainerRow = () => {
+        setContainers(prev => [...prev, { container_unit_id: null, container_amount: '' }]);
     };
 
-    const removeConversionRow = (index) => {
-        setConversions(prev => prev.filter((_, idx) => idx !== index));
+    const removeContainerRow = (index) => {
+        setContainers(prev => prev.filter((_, idx) => idx !== index));
     };
 
-    const updateConversionRow = (index, key, value) => {
-        setConversions(prev => prev.map((row, idx) => idx === index ? { ...row, [key]: value } : row));
+    const updateContainerRow = (index, key, value) => {
+        setContainers(prev => prev.map((row, idx) => idx === index ? { ...row, [key]: value } : row));
     };
 
-    const normalizeConversionRow = (index) => {
-        setConversions(prev => prev.map((row, idx) => {
-            if (idx !== index || row.multiplier_to_base === '') return row;
-            return { ...row, multiplier_to_base: formatQty(row.multiplier_to_base) };
+    const normalizeContainerRow = (index) => {
+        setContainers(prev => prev.map((row, idx) => {
+            if (idx !== index || row.container_amount === '') return row;
+            return { ...row, container_amount: formatQty(row.container_amount) };
         }));
     };
 
@@ -131,14 +101,14 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             return;
         }
 
-        const normalizedConversions = conversions
-            .filter(entry => entry.from_unit_id && Number(entry.multiplier_to_base) > 0)
+        const normalizedContainers = containers
+            .filter(entry => entry.container_unit_id && Number(entry.container_amount) > 0)
             .map(entry => ({
-                from_unit_id: entry.from_unit_id,
-                multiplier_to_base: entry.multiplier_to_base,
+                container_unit_id: entry.container_unit_id,
+                container_amount: entry.container_amount,
             }));
 
-        onConfirm({ id: item.id, name, low_amount: Number(lowAmount || 0), unit_id: unit, conversions: normalizedConversions })
+        onConfirm({ id: item.id, name, low_amount: Number(lowAmount || 0), unit_id: unit, containers: normalizedContainers })
     }
 
     const handleDelete = () => {
@@ -162,31 +132,10 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                     </div>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Unit' />
-                        {creatingUnit ? (
-                            <div className='flex gap-2'>
-                                <input
-                                    type='text'
-                                    value={newUnitName}
-                                    placeholder='Unit name (e.g., Kilogram)'
-                                    className='flex-1 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
-                                    onChange={(e) => e.target.value.length <= 20 && setNewUnitName(e.target.value)}
-                                />
-                                <input
-                                    type='text'
-                                    value={newUnitAbbreviation}
-                                    placeholder='Abbr (e.g., kg)'
-                                    className='w-28 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
-                                    onChange={(e) => e.target.value.length <= 5 && setNewUnitAbbreviation(e.target.value)}
-                                />
-                                <Button variant='icon' text='' icon={Check} onClick={handleCreateUnit} />
-                                <Button variant='icon' text='' icon={X} onClick={() => { setCreatingUnit(false); setNewUnitName(''); setNewUnitAbbreviation(''); }} />
-                            </div>
-                        ) : (
-                            <div className='flex gap-2 items-center'>
-                                <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleUnit} />
-                                <Button variant='icon' text='' icon={Plus} onClick={openUnitModal} />
-                            </div>
-                        )}
+                        <div className='flex gap-2 items-center'>
+                            <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleUnit} />
+                            <Button variant='icon' text='' icon={Plus} onClick={openUnitModal} />
+                        </div>
                     </div>
 
                     <div className='flex flex-col gap-2'>
@@ -202,40 +151,40 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
 
                     <div className='flex flex-col gap-2'>
                         <div className='flex items-center justify-between'>
-                            <Label variant='modal' text='Unit Conversions (Optional)' />
-                            <Button variant='modalOutline' size='small' text='Add Conversion' onClick={addConversionRow} />
+                            <Label variant='modal' text='Container Mappings (Optional)' />
+                            <Button variant='modalOutline' size='small' text='Add Container' onClick={addContainerRow} />
                         </div>
 
-                        {conversions.length === 0 && (
-                            <h5 className='text-xs text-text/60'>Example: Flour base unit = kg, then set cup → 0.2 (1 cup = 0.2 kg).</h5>
+                        {containers.length === 0 && (
+                            <h5 className='text-xs text-text/60'>Example: Flour base unit = kg, then set container cup → 0.2 (1 cup = 0.2 kg).</h5>
                         )}
 
                         <div className='flex flex-col gap-2'>
-                            {conversions.map((row, index) => (
+                            {containers.map((row, index) => (
                                 <div key={index} className='flex gap-2 items-center'>
                                     <div className='flex-1'>
                                         <Dropdown
                                             size='full'
                                             variant='modal'
-                                            value={row.from_unit_id}
-                                            selection='From unit'
+                                            value={row.container_unit_id}
+                                            selection='Container unit'
                                             options={compatibleUnits}
-                                            onSelect={(value) => updateConversionRow(index, 'from_unit_id', value)}
+                                            onSelect={(value) => updateContainerRow(index, 'container_unit_id', value)}
                                         />
                                     </div>
                                     <input
                                         type='text'
-                                        value={row.multiplier_to_base}
+                                        value={row.container_amount}
                                         placeholder={`1 unit = ? ${selectedUnitMeta?.abbreviation || selectedUnitMeta?.name || 'base'}`}
                                         className='w-56 px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none'
                                         onChange={(e) => {
                                             const raw = e.target.value;
                                             if (!/^\d*\.?\d{0,6}$/.test(raw)) return;
-                                            updateConversionRow(index, 'multiplier_to_base', raw);
+                                            updateContainerRow(index, 'container_amount', raw);
                                         }}
-                                        onBlur={() => normalizeConversionRow(index)}
+                                        onBlur={() => normalizeContainerRow(index)}
                                     />
-                                    <Button variant='icon' text='' icon={X} onClick={() => removeConversionRow(index)} />
+                                    <Button variant='icon' text='' icon={X} onClick={() => removeContainerRow(index)} />
                                 </div>
                             ))}
                         </div>
