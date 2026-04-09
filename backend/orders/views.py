@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (
     CakeOrderSerializer,
@@ -34,6 +35,9 @@ from .models import (
 from users.permissions import IsCashier, IsCustomerOrAdmin
 from .filters import OrderFilter
 
+class OrderPageSize(PageNumberPagination):
+    page_size = 8
+    max_page_size = 100
 
 def _get_remaining_payment_amount(order):
     from payment.models import Payment
@@ -93,6 +97,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated, IsCustomerOrAdmin]
+    pagination_class = OrderPageSize
     
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = OrderFilter
