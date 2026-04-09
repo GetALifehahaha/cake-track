@@ -89,6 +89,21 @@ class Unit(models.Model):
 
         return self.dimension.name if self.dimension else 'count'
 
+
+class Container(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    symbol = models.CharField(max_length=20, blank=True, default='')
+    unit = models.OneToOneField(Unit, on_delete=models.PROTECT, related_name='container_definition')
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        if self.symbol:
+            return f"{self.name} ({self.symbol})"
+
+        return self.name
+
 class Ingredient(models.Model):
     name = models.CharField(max_length=20)
     total_stock = models.DecimalField(max_digits=18, decimal_places=4, default=0) #type: ignore
@@ -245,6 +260,10 @@ class IngredientUnitConversion(models.Model):
     @container_amount.setter
     def container_amount(self, value):
         self.factor = value
+
+    @property
+    def container(self):
+        return getattr(self.from_unit, 'container_definition', None)
 
     def __str__(self):
         return f"{self.ingredient.name}: 1 {self.from_unit.symbol or self.from_unit.name} = {self.factor} {self.to_unit.symbol or self.to_unit.name}"

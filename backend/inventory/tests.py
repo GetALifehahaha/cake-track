@@ -5,8 +5,8 @@ from django.utils import timezone
 from rest_framework.serializers import ValidationError
 
 from .conversions import get_unit_conversion_factor
-from .models import Ingredient, IngredientUnitConversion, Recipe, RecipeIngredient, Transaction, Unit
-from .serializers import IngredientSerializer, RecipeSerializer, TransactionCreateSerializer
+from .models import Container, Ingredient, IngredientUnitConversion, Recipe, RecipeIngredient, Transaction, Unit
+from .serializers import ContainerSerializer, IngredientSerializer, RecipeSerializer, TransactionCreateSerializer
 from .services import deduct_ingredient_stock
 
 
@@ -152,6 +152,112 @@ class IngredientUnitAutoConversionTests(TestCase):
 		self.assertEqual(in_batch.remaining_amount, Decimal('2000'))
 		self.assertEqual(recipe_ingredient.amount_needed, Decimal('500'))
 		self.assertEqual(conversion.multiplier_to_base, Decimal('200'))
+
+
+class IngredientContainerPayloadTests(TestCase):
+	def setUp(self):
+		self.kg = Unit.objects.filter(name='Kilogram').first() or Unit.objects.create(
+			name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000')
+		)
+
+		container_serializer = ContainerSerializer(data={
+			'name': 'Teaspoon Test',
+			'symbol': 'tsp',
+		})
+		self.assertTrue(container_serializer.is_valid(), container_serializer.errors)
+		self.container = container_serializer.save()
+
+		self.ingredient = Ingredient.objects.create(name='Vanilla', total_stock=Decimal('2'), low_amount=Decimal('0'), unit=self.kg)
+
+	def test_partial_update_accepts_container_id_payload(self):
+		serializer = IngredientSerializer(
+			instance=self.ingredient,
+			data={
+				'containers': [
+					{
+						'container_id': self.container.id,
+						'container_amount': '0.01',
+					}
+				],
+			},
+			partial=True,
+		)
+
+		self.assertTrue(serializer.is_valid(), serializer.errors)
+		updated = serializer.save()
+
+		conversion = updated.conversions.get()
+		self.assertEqual(conversion.from_unit_id, self.container.unit_id)
+		self.assertEqual(conversion.multiplier_to_base, Decimal('0.01'))
+
+
+class IngredientDimensionResetTests(TestCase):
+	def setUp(self):
+		self.kg = Unit.objects.filter(name='Kilogram').first() or Unit.objects.create(
+			name='Kilogram', abbreviation='kg', dimension='mass', multiplier_to_reference=Decimal('1000')
+		)
+		self.ml = Unit.objects.filter(name='Milliliter').first() or Unit.objects.create(
+			name='Milliliter', abbreviation='ml', dimension='volume', multiplier_to_reference=Decimal('1')
+		)
+		self.cup = Unit.objects.filter(name='Cup').first() or Unit.objects.create(
+			name='Cup', abbreviation='cup', dimension='volume', multiplier_to_reference=Decimal('240')
+		)
+
+		self.ingredient = Ingredient.objects.create(name='Milk Powder', total_stock=Decimal('3'), low_amount=Decimal('1'), unit=self.kg)
+		IngredientUnitConversion.objects.create(
+			ingredient=self.ingredient,
+			from_unit=self.cup,
+			multiplier_to_base=Decimal('0.2')
+		)
+
+		Transaction.objects.create(
+			ingredient=self.ingredient,
+			amount=Decimal('3'),
+			remaining_amount=Decimal('3'),
+			transaction_type='in',
+			purchase_date=timezone.now().date(),
+			expiration_date=timezone.now().date(),
+		)
+
+		recipe = Recipe.objects.create(name='Milk Recipe', instructions='Mix')
+		RecipeIngredient.objects.create(recipe=recipe, ingredient=self.ingredient, amount_needed=Decimal('0.5'))
+
+	def test_dimension_change_requires_flag_and_zero_threshold(self):
+		serializer = IngredientSerializer(
+			instance=self.ingredient,
+			data={
+				'unit_id': self.ml.id,
+				'low_amount': '1',
+			},
+			partial=True,
+		)
+
+		self.assertFalse(serializer.is_valid())
+		self.assertIn('low_amount', serializer.errors)
+
+	def test_dimension_change_resets_stock_and_related_values(self):
+		serializer = IngredientSerializer(
+			instance=self.ingredient,
+			data={
+				'unit_id': self.ml.id,
+				'low_amount': '0',
+				'reset_stock_on_dimension_change': True,
+			},
+			partial=True,
+		)
+
+		self.assertTrue(serializer.is_valid(), serializer.errors)
+		updated = serializer.save()
+
+		updated.refresh_from_db()
+		batch = updated.transactions.get(transaction_type='in')
+		recipe_ingredient = RecipeIngredient.objects.get(ingredient=updated)
+
+		self.assertEqual(updated.total_stock, Decimal('0'))
+		self.assertEqual(updated.low_amount, Decimal('0'))
+		self.assertEqual(batch.remaining_amount, Decimal('0'))
+		self.assertEqual(recipe_ingredient.amount_needed, Decimal('0'))
+		self.assertEqual(updated.conversions.count(), 0)
 
 
 class InventoryReasonAndCostTests(TestCase):

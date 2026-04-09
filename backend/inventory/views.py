@@ -3,11 +3,13 @@ from django.shortcuts import render
 from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.response import Response
 from django.db import models, transaction
+from django.db.models.deletion import ProtectedError
 from django.db.models import F
 from django.db.models.functions import Lower
 from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from .serializers import (TransactionSerializer, 
                           TransactionCreateSerializer, 
@@ -15,13 +17,42 @@ from .serializers import (TransactionSerializer,
                           RecipeSerializer, 
                           BulkRecipeCookSerializer, 
                           DashboardSummarySerializer, 
+                          ContainerSerializer,
                           UnitSerializer,
                           TransactionHistorySerializer,
                           )
 
-from .models import (Transaction, Ingredient, Recipe, Unit)
+from .models import (Transaction, Ingredient, Recipe, Unit, Container, IngredientUnitConversion)
 
 from users.permissions import IsCashier, IsCustomerOrAdmin, IsAdmin
+
+
+class ContainerViewSet(viewsets.ModelViewSet):
+    queryset = Container.objects.select_related('unit').all().order_by(Lower('name'), 'name')
+    serializer_class = ContainerSerializer
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+    pagination_class = None
+
+    def perform_destroy(self, instance):
+        linked_unit = instance.unit
+        is_used_in_mappings = IngredientUnitConversion.objects.filter(
+            models.Q(from_unit=linked_unit) | models.Q(to_unit=linked_unit)
+        ).exists()
+        is_used_as_base = Ingredient.objects.filter(unit=linked_unit).exists()
+
+        if is_used_in_mappings or is_used_as_base:
+            raise DRFValidationError({
+                'detail': 'Container is currently used by ingredient mappings and cannot be deleted.'
+            })
+
+        try:
+            with transaction.atomic():
+                instance.delete()
+                linked_unit.delete()
+        except ProtectedError as error:
+            raise DRFValidationError({
+                'detail': 'Container is protected by related records and cannot be deleted.'
+            }) from error
 
 class UnitViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Unit.objects.all().order_by(Lower('name'), 'name')
