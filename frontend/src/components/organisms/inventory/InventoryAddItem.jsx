@@ -1,21 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { Title, Label, Button, Dropdown } from '../../atoms';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Label, Button, Dropdown } from '../../atoms';
 import { DatePicker, ModalBody, ModalFeedbackCard, ModalErrorState } from '../../molecules';
-import { X, Plus, Check } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 import useUnits from '@/hooks/useUnits';
+import useContainers from '@/hooks/useContainers';
 import { AddInventoryItemSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty } from '@/utils/formatQty';
 import { limitedInput } from '@/utils/safeInput';
 import UnitModal from './UnitModal';
 
+const DIMENSION_ORDER = ['weight', 'volume', 'count'];
+
+const normalizeDimension = (value) => {
+    const raw = String(value || '').toLowerCase();
+    if (raw === 'mass') return 'weight';
+    return raw;
+};
+
+const capitalize = (value) => value ? value[0].toUpperCase() + value.slice(1) : value;
+
 const InventoryAddItem = ({ onConfirm, onClose }) => {
 
-    const { data: units, loading, error, refresh } = useUnits()
+    const { data: units, loading, error, refresh } = useUnits();
+    const {
+        containerData,
+        containerLoading,
+        containerError,
+        refresh: refreshContainers,
+    } = useContainers();
+
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);
     const [lowAmount, setLowAmount] = useState('0');
     const [unit, setUnit] = useState(null);
+    const [selectedDimension, setSelectedDimension] = useState('');
     const [containers, setContainers] = useState([]);
     const [purchaseDate, setPurchaseDate] = useState();
     const [expirationDate, setExpirationDate] = useState();
@@ -32,25 +51,79 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
         }
     }, [modalFeedbackContent])
 
-    if (loading) return <AddInventoryItemSkeleton onClose={onClose} />
-    if (error) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to fetch units for inventory item creation.' />
+    const groupedUnits = useMemo(() => {
+        const groups = {
+            weight: [],
+            volume: [],
+            count: [],
+        };
 
-    const unitSelection = units.map(unit => ({
-        key: `${unit.name}${unit.abbreviation ? ` (${unit.abbreviation})` : ''}`, value: unit.id
-    }))
+        (units || []).forEach((unitItem) => {
+            const dimensionKey = normalizeDimension(unitItem.dimension);
+            if (groups[dimensionKey]) {
+                groups[dimensionKey].push(unitItem);
+            }
+        });
 
-    const selectedUnitMeta = units.find(u => u.id === unit);
-    const compatibleUnits = units
-        .filter(u => u.id !== unit)
-        .map(u => ({ key: `${u.name}${u.abbreviation ? ` (${u.abbreviation})` : ''}`, value: u.id }));
+        return groups;
+    }, [units]);
+
+    const dimensionSelection = useMemo(() => {
+        const available = DIMENSION_ORDER.filter((dimensionKey) => groupedUnits[dimensionKey]?.length > 0);
+
+        return available.map((dimensionKey) => ({
+            key: capitalize(dimensionKey),
+            value: dimensionKey,
+        }));
+    }, [groupedUnits]);
+
+    const activeUnits = useMemo(() => {
+        return groupedUnits[selectedDimension] || [];
+    }, [groupedUnits, selectedDimension]);
+
+    useEffect(() => {
+        if (!units?.length) return;
+
+        const dimensionExists = selectedDimension && (groupedUnits[selectedDimension] || []).length > 0;
+        if (dimensionExists) return;
+
+        const nextDimension = DIMENSION_ORDER.find((dimensionKey) => (groupedUnits[dimensionKey] || []).length > 0);
+        if (!nextDimension) return;
+
+        const defaultUnit = groupedUnits[nextDimension].find((item) => item.is_base) || groupedUnits[nextDimension][0];
+
+        setSelectedDimension(nextDimension);
+        setUnit(defaultUnit ? String(defaultUnit.id) : null);
+    }, [units, groupedUnits, selectedDimension]);
+
+    if (loading || containerLoading) return <AddInventoryItemSkeleton onClose={onClose} />
+    if (error || containerError) {
+        const handleRetry = async () => {
+            await Promise.all([refresh(), refreshContainers()]);
+        };
+
+        return <ModalErrorState onClose={onClose} onRetry={handleRetry} title='Failed to load inventory data' details='Unable to fetch units and containers for item creation.' />;
+    }
+
+    const unitSelection = activeUnits.map((unitItem) => ({
+        key: `${unitItem.name}${unitItem.abbreviation ? ` (${unitItem.abbreviation})` : ''}`,
+        value: String(unitItem.id),
+    }));
+
+    const selectedUnitMeta = units.find((item) => String(item.id) === String(unit));
+
+    const containerSelection = (containerData || []).map((container) => ({
+        key: `${container.name}${container.symbol ? ` (${container.symbol})` : ''}`,
+        value: String(container.id),
+    }));
 
     const handleConfirm = () => {
         const parsedAmount = Number(amount || 0);
 
         const normalizedContainers = containers
-            .filter(item => item.container_unit_id && Number(item.container_amount) > 0)
+            .filter(item => item.container_id && Number(item.container_amount) > 0)
             .map(item => ({
-                container_unit_id: item.container_unit_id,
+                container_id: Number(item.container_id),
                 container_amount: item.container_amount,
             }));
 
@@ -59,7 +132,7 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
             amount: parsedAmount,
             total_stock: parsedAmount,
             low_amount: Number(lowAmount || 0),
-            unit_id: unit,
+            unit_id: Number(unit),
             purchaseDate: purchaseDate.toLocaleDateString("en-CA"),
             expirationDate: expirationDate.toLocaleDateString("en-CA"),
             containers: normalizedContainers,
@@ -89,6 +162,16 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
         setAmount(formatQty(amount));
     }
 
+    const handleSetDimension = (value) => {
+        setSelectedDimension(value);
+
+        const nextUnits = groupedUnits[value] || [];
+        const defaultUnit = nextUnits.find((item) => item.is_base) || nextUnits[0];
+
+        setUnit(defaultUnit ? String(defaultUnit.id) : null);
+        setContainers([]);
+    }
+
     const handleSetUnit = (value) => {
         setUnit(value)
     }
@@ -105,11 +188,11 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
 
     const closeUnitModal = async () => {
         setShowUnitModal(false);
-        await refresh();
+        await Promise.all([refresh(), refreshContainers()]);
     };
 
     const addContainerRow = () => {
-        setContainers(prev => [...prev, { container_unit_id: null, container_amount: '' }]);
+        setContainers(prev => [...prev, { container_id: null, container_amount: '' }]);
     };
 
     const removeContainerRow = (index) => {
@@ -128,7 +211,7 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
     };
 
     const handleSetShowConfirm = () => {
-        if (!name || !amount || lowAmount === '' || !unit || !purchaseDate || !expirationDate) {
+        if (!name || !amount || lowAmount === '' || !selectedDimension || !unit || !purchaseDate || !expirationDate) {
             setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
             return;
         }
@@ -170,9 +253,22 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
                     </div>
 
                     <div className='flex-1 flex flex-col gap-2'>
-                        <Label variant='modal' text='Unit' />
+                        <Label variant='modal' text='Unit Type' />
+                        <Dropdown
+                            size='full'
+                            variant='modal'
+                            value={selectedDimension}
+                            selection='Weight, Volume, or Count'
+                            options={dimensionSelection}
+                            onSelect={handleSetDimension}
+                            allowNone={false}
+                        />
+                    </div>
+
+                    <div className='flex-1 flex flex-col gap-2'>
+                        <Label variant='modal' text='Base Measurement' />
                         <div className='flex gap-2 items-center'>
-                            <Dropdown size='full' variant='modal' value={unit} selection="e.g., Kilograms" options={unitSelection} onSelect={handleSetUnit} />
+                            <Dropdown size='full' variant='modal' value={unit} selection="Select base unit" options={unitSelection} onSelect={handleSetUnit} allowNone={false} />
                             <Button variant='icon' text='' icon={Plus} onClick={openUnitModal} />
                         </div>
                     </div>
@@ -181,11 +277,15 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
                 <div className='flex flex-col gap-2'>
                     <div className='flex items-center justify-between'>
                         <Label variant='modal' text='Container Mappings (Optional)' />
-                        <Button variant='modalOutline' size='small' text='Add Container' onClick={addContainerRow} />
+                        <Button variant='modalOutline' size='small' text='Add Container' onClick={addContainerRow} disabled={containerSelection.length === 0} />
                     </div>
 
                     {containers.length === 0 && (
-                        <h5 className='text-xs text-text/60'>Example: Flour base unit = kg, then set container cup → 0.2 (1 cup = 0.2 kg).</h5>
+                        <h5 className='text-xs text-text/60'>Example: Flour base unit = kg, then set container Cup to 0.2 (1 cup = 0.2 kg).</h5>
+                    )}
+
+                    {containerSelection.length === 0 && (
+                        <h5 className='text-xs text-error/80'>No containers yet. Use the + button beside Base Measurement to add containers first.</h5>
                     )}
 
                     <div className='flex flex-col gap-2'>
@@ -195,10 +295,11 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
                                     <Dropdown
                                         size='full'
                                         variant='modal'
-                                        value={row.container_unit_id}
-                                        selection='Container unit'
-                                        options={compatibleUnits}
-                                        onSelect={(value) => updateContainerRow(index, 'container_unit_id', value)}
+                                        value={row.container_id}
+                                        selection='Container'
+                                        options={containerSelection}
+                                        onSelect={(value) => updateContainerRow(index, 'container_id', value)}
+                                        allowNone={false}
                                     />
                                 </div>
                                 <input

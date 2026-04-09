@@ -19,6 +19,8 @@ const buildIngredientUnitOptions = (ingredient) => {
     const containerUnits = (ingredient?.containers || ingredient?.conversions || [])
         .map(container => ({
             unit: container.container_unit || container.from_unit,
+            containerName: container.container_name || container.container?.name || null,
+            containerSymbol: container.container_symbol || container.container?.symbol || null,
             multiplierToBase: Number(container.container_amount || container.multiplier_to_base || 1),
         }))
         .filter(entry => entry.unit);
@@ -37,7 +39,7 @@ const buildIngredientUnitOptions = (ingredient) => {
         if (!unique.has(entry.unit.id)) {
             unique.set(entry.unit.id, {
                 value: String(entry.unit.id),
-                label: entry.unit.abbreviation || entry.unit.name,
+                label: entry.containerSymbol || entry.containerName || entry.unit.abbreviation || entry.unit.name,
                 multiplierToBase: entry.multiplierToBase,
             });
         }
