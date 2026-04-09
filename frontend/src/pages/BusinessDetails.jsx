@@ -127,7 +127,8 @@ const BusinessDetails = () => {
         const payload = {
             first_name: firstName,
             last_name: lastName,
-            email
+            email,
+            username
         }
 
         try {
