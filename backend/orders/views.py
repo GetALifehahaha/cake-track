@@ -125,6 +125,21 @@ class OrderViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='hidden')
+    def hidden(self, request):
+        if request.user.is_staff:
+            return Response({"error": "Hidden orders are only available for customers."}, status=status.HTTP_403_FORBIDDEN)
+
+        queryset = Order.objects.filter(customer=request.user, hidden_by_customer=True).order_by('-hidden_by_customer_at', '-updated_at')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
         
     def perform_update(self, serializer):
         instance = serializer.instance
