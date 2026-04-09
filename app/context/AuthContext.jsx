@@ -120,13 +120,15 @@ export const AuthProvider = ({ children }) => {
             console.error('Login failed:', err);
 
             const errorData = err.response?.data;
-            if (err.response?.status === 400 && errorData?.code === 'account_deactivated') {
+            const code = Array.isArray(errorData?.code) ? errorData.code[0] : errorData?.code;
+            
+            if (code === 'account_deactivated') {
                 return {
                     success: false,
                     deactivated: true,
-                    username: errorData.username,
-                    message: errorData.detail,
-                    daysUntilDeletion: errorData.days_until_deletion,
+                    username: Array.isArray(errorData?.username) ? errorData.username[0] : errorData?.username,
+                    message: Array.isArray(errorData?.detail) ? errorData.detail[0] : errorData?.detail,
+                    daysUntilDeletion: Array.isArray(errorData?.days_until_deletion) ? errorData.days_until_deletion[0] : errorData?.days_until_deletion,
                 };
             }
 

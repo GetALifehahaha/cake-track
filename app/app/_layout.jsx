@@ -7,6 +7,7 @@ import { CartProvider } from "@/context/CartContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { OpeningProvider } from "@/context/OpeningContext";
+import { GlobalRefreshProvider } from "@/context/GlobalRefreshContext";
 import { View, ActivityIndicator } from "react-native";
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -159,9 +160,11 @@ export default function RootLayout() {
         <AuthProvider>
           <ToastProvider>
             <OpeningProvider>
-              <CartProvider>
-                <InitialLayout />
-              </CartProvider>
+              <GlobalRefreshProvider>
+                <CartProvider>
+                  <InitialLayout />
+                </CartProvider>
+              </GlobalRefreshProvider>
             </OpeningProvider>
           </ToastProvider>
         </AuthProvider>

@@ -33,6 +33,16 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const requestUrl = originalRequest?.url || '';
+        const authEndpoints = [
+            '/users/token/',
+            '/users/token/refresh/',
+            '/users/user/register/',
+            '/users/google-auth/',
+            '/users/user/reactivate/',
+            '/users/user/activate/',
+        ];
+        const isAuthEndpoint = authEndpoints.some((endpoint) => requestUrl.includes(endpoint));
 
         if (error.response) {
             console.error(`Error ${error.response.status}: ${error.config?.url}`);
@@ -42,15 +52,17 @@ api.interceptors.response.use(
             // Network errors (server down, no internet)
             console.error("Network Error:", error.message);
         }
-        // Check if error is 401 (Unauthorized) AND we haven't retried this request yet
-        if (error.response?.status === 401 ||
-    error.response?.status === 500 || !originalRequest._retry) {
+        // Refresh only for authenticated-session 401 errors on non-auth endpoints
+        if (!isAuthEndpoint && error.response?.status === 401 && !originalRequest?._retry) {
             originalRequest._retry = true; // Mark as retried to prevent infinite loops
 
             try {
                 // 1. Get the refresh token from storage
                 const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN);
 
+                if (!refreshToken) {
+                    return Promise.reject(error);
+                }
                 // if (!refreshToken) {
                 //     throw new Error("No refresh token available");
                 // }
@@ -88,7 +100,7 @@ api.interceptors.response.use(
                     router.dismissAll();
                 }
                 
-                return Promise.reject(refreshError);
+                return Promise.reject(error);
             }
         }
 

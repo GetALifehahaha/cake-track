@@ -4,7 +4,8 @@ import OrderApi from "@/api/OrderApi";
 import { useLocalSearchParams, usePathname } from "expo-router"; 
 import { useMemo } from "react";
 
-export default function useOrder() {
+export default function useOrder(options = {}) {
+    const { includeHiddenOrders = false } = options;
     const queryClient = useQueryClient();
     // CHANGED: Expo equivalent of useSearchParams
     const params = useLocalSearchParams(); 
@@ -39,14 +40,22 @@ export default function useOrder() {
     const ordersQuery = useQuery({
         // queryKey: ['orders', apiParams], 
         // queryFn: () => OrderApi(apiParams),
-        queryKey: ['orders'], 
-        queryFn: () => OrderApi(),
-        placeholderData: (previousData) => previousData, 
+        queryKey: ['orders'],
+        queryFn: () => OrderApi(null, null, 'GET_ALL_PAGES'),
+        placeholderData: (previousData) => previousData,
+    });
+
+    const hiddenOrdersQuery = useQuery({
+        queryKey: ['orders', 'hidden'],
+        queryFn: () => OrderApi(null, null, 'GET_HIDDEN_ALL_PAGES'),
+        enabled: includeHiddenOrders,
+        placeholderData: (previousData) => previousData,
     });
 
     // --- 3. Mutations ---
     const onSuccessInvalidate = () => {
         queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.invalidateQueries({ queryKey: ['orders', 'hidden'] });
     };
 
     const createMutation = useMutation({
@@ -77,15 +86,17 @@ export default function useOrder() {
     // --- 4. Return Interface ---
     return {
         data: ordersQuery.data || [],
+        hiddenData: hiddenOrdersQuery.data || [],
         
         loading: ordersQuery.isLoading || 
+                 hiddenOrdersQuery.isLoading ||
                  createMutation.isPending || 
                  updateMutation.isPending || 
                  deleteMutation.isPending ||
                  batchUpdateMutation.isPending ||
                  hideMutation.isPending,
 
-        error: ordersQuery.error || createMutation.error || updateMutation.error,
+        error: ordersQuery.error || hiddenOrdersQuery.error || createMutation.error || updateMutation.error,
 
         postOrder: async (params) => {
             return createMutation.mutateAsync(params);
@@ -107,6 +118,12 @@ export default function useOrder() {
             return hideMutation.mutateAsync(id);
         },
 
-        refresh: () => ordersQuery.refetch(),
+        refresh: async () => {
+            const tasks = [ordersQuery.refetch()];
+            if (includeHiddenOrders) {
+                tasks.push(hiddenOrdersQuery.refetch());
+            }
+            await Promise.allSettled(tasks);
+        },
     };
 }
