@@ -30,8 +30,7 @@ const TransactionDetails = ({ transactionDetail, onClose }) => {
     const usedDiscountName = transactionDetail?.discount_snapshot?.name || receiptData.discountName || 'Applied';
 
     const handlePrint = useReactToPrint({
-        // react-to-print expects a function that returns the DOM node
-        content: () => receiptRef.current,
+        contentRef: receiptRef,
         documentTitle: `Transaction-${transactionDetail?.display_id || transactionDetail?.id}`,
     });
 

@@ -75,7 +75,6 @@ export const AuthProvider = ({ children }) => {
     const handleGuestState = () => {
         setUser(null);
         setIsAuthorized(false);
-        // Note: We do NOT redirect to login here. We let the user browse as a guest.
     };
 
     const refreshToken = async () => {
