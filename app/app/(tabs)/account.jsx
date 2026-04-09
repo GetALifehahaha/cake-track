@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { LogOut, Mail, User, MapPin, Pencil, X, Check } from 'lucide-react-native'
 import ConfirmModal from '@/components/organisms/ConfirmModal'
 import api from '@/api/api'
+import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView'
 
 const Account = () => {
   const accountTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
@@ -103,7 +104,7 @@ const Account = () => {
   return (
     <ImageBackground source={accountTexture} style={{ flex: 1 }} resizeMode='repeat'>
       <SafeAreaView edges={['left', 'right', 'bottom']} className='flex-1' style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
-        <ScrollView className='flex-1' bounces={false}>
+  <GlobalRefreshScrollView className='flex-1' bounces={false} onRefresh={getUserData}>
           {/* 1. THE HEADER */}
           <View className='h-[160px] bg-primary rounded-b-[20%] p-6 w-full flex-row gap-2 items-center z-0'>
             <Image
@@ -276,7 +277,7 @@ const Account = () => {
 
           </View>
           <View className='h-8' />
-        </ScrollView>
+        </GlobalRefreshScrollView>
       </SafeAreaView>
 
       <Modal

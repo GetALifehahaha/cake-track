@@ -3,6 +3,7 @@ import React, { useState, useContext, useEffect } from 'react'
 import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'
 import { OpeningContext } from '@/context/OpeningContext'
+import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView';
 import Carousel from 'react-native-reanimated-carousel';
 import { Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -14,25 +15,33 @@ const greetingsTexture = require('@/assets/images/texture/Cake back Designs Gree
 const cakesTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any.jpg');
 
 export default function Index() {
-    const { user, loading } = useContext(AuthContext)
-    const { openingTime, blockedDates, loading: loadingOpening } = useContext(OpeningContext)
+    const { user, loading, getUserData } = useContext(AuthContext)
+    const { openingTime, blockedDates, loading: loadingOpening, refresh: refreshOpening } = useContext(OpeningContext)
 
     const [cakes, setCakes] = useState([]);
     const [loadingCakes, setLoadingCakes] = useState(true);
 
-    useEffect(() => {
-        const fetchCakes = async () => {
-            try {
-                const response = await api.get('/orders/cakes/');
-                const data = response.data.results || response.data;
-                setCakes(data);
-            } catch (error) {
-                console.error("Failed to fetch cakes for carousel:", error);
-            } finally {
-                setLoadingCakes(false);
-            }
-        };
+    const fetchCakes = async () => {
+        try {
+            const response = await api.get('/orders/cakes/');
+            const data = response.data.results || response.data;
+            setCakes(data);
+        } catch (error) {
+            console.error("Failed to fetch cakes for carousel:", error);
+        } finally {
+            setLoadingCakes(false);
+        }
+    };
 
+    const onRefresh = async () => {
+        await Promise.allSettled([
+            fetchCakes(),
+            refreshOpening?.(),
+            user ? getUserData?.() : Promise.resolve(),
+        ]);
+    };
+
+    useEffect(() => {
         fetchCakes();
     }, []);
 
@@ -81,7 +90,7 @@ export default function Index() {
     )
 
     return (
-        <ScrollView showsVerticalScrollIndicator={false}>
+    <GlobalRefreshScrollView showsVerticalScrollIndicator={false} onRefresh={onRefresh}>
             <ImageBackground source={greetingsTexture} resizeMode='cover'>
                 <View className='bg-primary flex-1'>
                     <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
@@ -267,6 +276,6 @@ export default function Index() {
                     </ImageBackground>
                 </View>
             </ImageBackground>
-        </ScrollView >
+        </GlobalRefreshScrollView >
     )
 }

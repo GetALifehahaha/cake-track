@@ -34,7 +34,15 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         const requestUrl = originalRequest?.url || '';
-        const isAuthEndpoint = requestUrl.includes('/users/token/') || requestUrl.includes('/users/token/refresh/');
+        const authEndpoints = [
+            '/users/token/',
+            '/users/token/refresh/',
+            '/users/user/register/',
+            '/users/google-auth/',
+            '/users/user/reactivate/',
+            '/users/user/activate/',
+        ];
+        const isAuthEndpoint = authEndpoints.some((endpoint) => requestUrl.includes(endpoint));
 
         if (error.response) {
             console.error(`Error ${error.response.status}: ${error.config?.url}`);
@@ -44,8 +52,8 @@ api.interceptors.response.use(
             // Network errors (server down, no internet)
             console.error("Network Error:", error.message);
         }
-        // Check if error is 401 (Unauthorized) AND we haven't retried this request yet
-        if (!isAuthEndpoint && (error.response?.status === 401 || error.response?.status === 500) && !originalRequest?._retry) {
+        // Refresh only for authenticated-session 401 errors on non-auth endpoints
+        if (!isAuthEndpoint && error.response?.status === 401 && !originalRequest?._retry) {
             originalRequest._retry = true; // Mark as retried to prevent infinite loops
 
             try {
@@ -53,7 +61,7 @@ api.interceptors.response.use(
                 const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN);
 
                 if (!refreshToken) {
-                    throw new Error("No refresh token available");
+                    return Promise.reject(error);
                 }
 
                 // 2. Call backend to get a new access token
@@ -89,7 +97,7 @@ api.interceptors.response.use(
                     router.dismissAll();
                 }
                 
-                return Promise.reject(refreshError);
+                return Promise.reject(error);
             }
         }
 

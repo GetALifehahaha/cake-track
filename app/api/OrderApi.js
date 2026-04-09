@@ -1,5 +1,32 @@
     import api from "./api";
 
+    const fetchAllPages = async (url, params = {}) => {
+        let nextUrl = url;
+        let mergedResults = [];
+        let requestParams = { ...params };
+
+        while (nextUrl) {
+            const response = await api.get(nextUrl, { params: requestParams });
+            const payload = response.data;
+
+            if (Array.isArray(payload)) {
+                mergedResults = mergedResults.concat(payload);
+                break;
+            }
+
+            if (Array.isArray(payload?.results)) {
+                mergedResults = mergedResults.concat(payload.results);
+                nextUrl = payload.next || null;
+                requestParams = {};
+                continue;
+            }
+
+            break;
+        }
+
+        return mergedResults;
+    };
+
     const OrdersApi = async (params, id = null, method = "GET") => {
         try {
             if (method === "GET") {
@@ -20,6 +47,14 @@
                 const response = await api.get(`/orders/orders/`);
                 return response.data;
             } 
+
+            else if (method === "GET_ALL_PAGES") {
+                return fetchAllPages('/orders/orders/', params || {});
+            }
+
+            else if (method === "GET_HIDDEN_ALL_PAGES") {
+                return fetchAllPages('/orders/orders/hidden/', params || {});
+            }
             
             else if (method === "POST") {
                 // This handles the "One Request" creation (Order + Cake + Cupcake)

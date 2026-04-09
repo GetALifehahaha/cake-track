@@ -1,14 +1,16 @@
-import { View, Text, Image, TextInput, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity, ImageBackground } from 'react-native'
+import { View, Text, Image, TextInput, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useContext, useState } from 'react'
-import { Filter, Option, Search, SlidersHorizontal } from 'lucide-react-native'
+import { Search, SlidersHorizontal } from 'lucide-react-native'
 import OrderCard from '@/components/molecules/OrderCard'
 import useOrder from '@/hooks/useOrder'
 import { AuthContext } from '@/context/AuthContext'
 import OrderFilter from '@/components/molecules/OrderFilter'
 import { useRouter } from 'expo-router'
+import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView'
 
 const COMPLETED_STATUSES = ['completed'];
+const HIDEABLE_STATUSES = ['completed', 'rejected', 'refunded', 'cancelled'];
 
 const Orders = () => {
 	const ordersTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
@@ -17,16 +19,13 @@ const Orders = () => {
 	const [search, setSearch] = useState("");
 	const [filters, setFilters] = useState([]);
 	const [showFilter, setShowFilter] = useState(false);
+	const [activeTab, setActiveTab] = useState('orders');
 	const router = useRouter();
 
-	const { data, loading, error, refresh, hideOrder } = useOrder();
-
-	const [refreshing, setRefreshing] = useState(false);
+	const { data, hiddenData, loading, error, refresh, hideOrder } = useOrder({ includeHiddenOrders: true });
 
 	const onRefresh = async () => {
-		setRefreshing(true);
 		await refresh();
-		setRefreshing(false);
 	};
 
 	const handleFilterChoose = (selectedStatuses) => {
@@ -57,7 +56,7 @@ const Orders = () => {
 		)
 	}
 
-	if (loading && !refreshing) return (
+	if (loading) return (
 		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.85)' }}>
 				<ActivityIndicator size="large" color="#8B5A3C" />
@@ -73,7 +72,10 @@ const Orders = () => {
 		</ImageBackground>
 	)
 
-	const filteredList = data?.results?.filter(order => {
+	const allOrders = Array.isArray(data) ? data : [];
+	const allHiddenOrders = Array.isArray(hiddenData) ? hiddenData : [];
+
+	const filteredList = allOrders.filter(order => {
 		const query = search.toLowerCase().trim();
 		const orderId = order.id.toString();
 
@@ -85,22 +87,49 @@ const Orders = () => {
 		const isActiveOrder = !COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase());
 
 		return matchesSearch && matchesStatus && isActiveOrder;
-	}) || [];
+	});
 
 	const listOrders = filteredList.map((order, index) => (
 		<OrderCard key={index} order={order} onHide={handleHideOrder} />
 	))
 
-	const finishedOrders = data?.results?.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase())) || []
+	const finishedOrders = allOrders.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase()));
+
+	const hiddenOrders = allHiddenOrders.filter(order => {
+		const query = search.toLowerCase().trim();
+		const orderId = String(order.id || '').toLowerCase();
+		const status = String(order.status || '').toLowerCase();
+
+		const matchesSearch = search === "" || orderId.includes(query);
+		const isHideableStatus = HIDEABLE_STATUSES.includes(status);
+
+		return matchesSearch && isHideableStatus;
+	});
 
 	const listCompleteOrders = finishedOrders.map((order, index) => (
 		<OrderCard key={index} order={order} onHide={handleHideOrder} />
 	))
 
+	const listHiddenOrders = hiddenOrders.map((order, index) => (
+		<TouchableOpacity
+			key={index}
+			className='rounded-xl border border-gray-200 bg-white px-4 py-3'
+			onPress={() => router.push({ pathname: '/orderDetails', params: { orderData: JSON.stringify(order) } })}
+		>
+			<View className='flex-row items-center justify-between'>
+				<Text className='font-bold text-primary'>#{order.id}</Text>
+				<Text className='text-xs uppercase text-gray-500'>{order.status}</Text>
+			</View>
+			<Text className='mt-1 text-xs text-gray-500'>
+				Due: {order.due_date || 'N/A'}
+			</Text>
+		</TouchableOpacity>
+	));
+
 	// Calculate stats based on actual data
-	const totalOrders = data?.count || 0;
-	const readyOrders = data?.results?.filter(o => o.status === 'ready').length || 0;
-	const pendingOrders = data?.results?.filter(o => o.status === 'pending').length || 0;
+	const totalOrders = allOrders.length;
+	const readyOrders = allOrders.filter(o => o.status === 'ready').length;
+	const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
 	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>)
 
 	return (
@@ -132,17 +161,32 @@ const Orders = () => {
 					</View>
 				</View>
 
-				<ScrollView
+				<GlobalRefreshScrollView
 					contentContainerStyle={{ paddingBottom: 20 }}
-					refreshControl={
-						<RefreshControl
-							refreshing={refreshing}
-							onRefresh={onRefresh}
-							colors={['#8B5A3C']} // Android loading color (Brown)
-							tintColor="#8B5A3C"  // iOS loading spinner color (Brown)
-						/>}
+					onRefresh={onRefresh}
 				>
 					<View className='flex px-6'>
+						<View className='mb-4 flex-row rounded-lg border border-gray-200 bg-white p-1'>
+							<TouchableOpacity
+								className={`flex-1 rounded-md px-3 py-2 ${activeTab === 'orders' ? 'bg-primary' : 'bg-white'}`}
+								onPress={() => setActiveTab('orders')}
+							>
+								<Text className={`text-center font-semibold ${activeTab === 'orders' ? 'text-white' : 'text-gray-600'}`}>Orders</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								className={`flex-1 rounded-md px-3 py-2 ${activeTab === 'acquired' ? 'bg-primary' : 'bg-white'}`}
+								onPress={() => setActiveTab('acquired')}
+							>
+								<Text className={`text-center font-semibold ${activeTab === 'acquired' ? 'text-white' : 'text-gray-600'}`}>Acquired</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								className={`flex-1 rounded-md px-3 py-2 ${activeTab === 'hidden' ? 'bg-primary' : 'bg-white'}`}
+								onPress={() => setActiveTab('hidden')}
+							>
+								<Text className={`text-center font-semibold ${activeTab === 'hidden' ? 'text-white' : 'text-gray-600'}`}>Hidden Orders</Text>
+							</TouchableOpacity>
+						</View>
+
 						<View className='flex-row items-center gap-2 bg-white shadow-md p-3 rounded-md border border-gray-200'>
 							<Search opacity={.50} color="gray" />
 							<TextInput
@@ -153,49 +197,69 @@ const Orders = () => {
 							/>
 						</View>
 
-						<View className='mt-6 gap-4'>
-							<View className='flex-row items-center justify-between'>
-								<Text className='font-semibold text-lg'>Orders</Text>
+						{activeTab === 'orders' && (
+							<View className='mt-6 gap-4'>
+								<View className='flex-row items-center justify-between'>
+									<Text className='font-semibold text-lg'>Orders</Text>
 
-								<TouchableOpacity className='flex-row items-center gap-2' onPress={() => setShowFilter(true)}>
-									<View className='font-semibold text-lg text-gray-500 flex-row gap-2'>
-										{activeFilters}
-										{filters.length === 0 && <Text className='font-semibold text-lg text-gray-500'>Filters</Text>}
-									</View>
-									<SlidersHorizontal />
-								</TouchableOpacity>
-							</View>
-
-							{/* 3. EMPTY STATE: Show this if there are no orders */}
-							{listOrders.length > 0 ?
-								<View>
-									{listOrders}
+									<TouchableOpacity className='flex-row items-center gap-2' onPress={() => setShowFilter(true)}>
+										<View className='font-semibold text-lg text-gray-500 flex-row gap-2'>
+											{activeFilters}
+											{filters.length === 0 && <Text className='font-semibold text-lg text-gray-500'>Filters</Text>}
+										</View>
+										<SlidersHorizontal />
+									</TouchableOpacity>
 								</View>
-								: (
-									<View className='items-center justify-center py-10 opacity-50'>
-										<Text>No orders found.</Text>
-									</View>
-								)}
-						</View>
 
-						<View className='mt-6 gap-4'>
-							<View className='flex-row items-center justify-between'>
-								<Text className='font-semibold text-lg'>Acquired</Text>
+								{listOrders.length > 0 ?
+									<View>
+										{listOrders}
+									</View>
+									: (
+										<View className='items-center justify-center py-10 opacity-50'>
+											<Text>No orders found.</Text>
+										</View>
+									)}
 							</View>
+						)}
 
-							{/* 3. EMPTY STATE: Show this if there are no orders */}
-							{listCompleteOrders.length > 0 ?
-								<View>
-									{listCompleteOrders}
+						{activeTab === 'acquired' && (
+							<View className='mt-6 gap-4'>
+								<View className='flex-row items-center justify-between'>
+									<Text className='font-semibold text-lg'>Acquired</Text>
 								</View>
-								: (
-									<View className='items-center justify-center py-10 opacity-50'>
-										<Text>No completed orders yet.</Text>
+
+								{listCompleteOrders.length > 0 ?
+									<View>
+										{listCompleteOrders}
 									</View>
-								)}
-						</View>
+									: (
+										<View className='items-center justify-center py-10 opacity-50'>
+											<Text>No completed orders yet.</Text>
+										</View>
+									)}
+							</View>
+						)}
+
+						{activeTab === 'hidden' && (
+							<View className='mt-6 gap-4'>
+								<View className='flex-row items-center justify-between'>
+									<Text className='font-semibold text-lg'>Hidden Orders</Text>
+								</View>
+
+								{listHiddenOrders.length > 0 ?
+									<View className='gap-2'>
+										{listHiddenOrders}
+									</View>
+									: (
+										<View className='items-center justify-center py-10 opacity-50'>
+											<Text>No hidden orders yet.</Text>
+										</View>
+									)}
+							</View>
+						)}
 					</View>
-				</ScrollView>
+				</GlobalRefreshScrollView>
 				<OrderFilter activeFilters={filters} show={showFilter} onChoose={handleFilterChoose} onClose={() => setShowFilter(false)} />
 			</SafeAreaView>
 		</ImageBackground>
