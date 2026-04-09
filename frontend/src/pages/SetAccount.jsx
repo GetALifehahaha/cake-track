@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Search, Eye, EyeClosed } from 'lucide-react';
 import { Button } from '@/components/atoms';
 import { ConfirmationModal } from '@/components/organisms';
@@ -30,6 +30,14 @@ const SetAccount = () => {
             setIsConfirmModalOpen(false);
             return;
         }
+        if (newpassword.length < 8) {
+            setFeedback({
+                label: "Password is too short",
+                details: "Please enter at least 8 alphanumeric characters",
+                type: "error"
+            })
+            return;
+        }
         setIsConfirmModalOpen(true);
     }
 
@@ -42,8 +50,6 @@ const SetAccount = () => {
                 token: token,
                 password: newpassword
             });
-
-            console.log(response)
 
             if (response) {
                 setFeedback({
@@ -71,8 +77,8 @@ const SetAccount = () => {
         <div className='w-full h-screen flex items-center justify-center bg-main'>
             {
                 hasValidParams ? (
-                    <div className='rounded-md p-8 bg-main-white flex flex-col gap-2 shadow-md'>
-                        <h5 className='text-2xl font-bold text-accent-dark mb-8'>Welcome to CakeTrack!</h5>
+                    <div className='rounded-md p-8 bg-main-white flex flex-col gap-2 shadow-md min-w-160'>
+                        <h5 className='text-2xl font-bold text-accent-dark mb-8 text-center'>Welcome to CakeTrack!</h5>
                         <h5 className='text-md font-semibold text-accent-mute'>Set your password</h5>
 
                         <div className='flex items-center justify-center gap-2 mb-6'>
@@ -124,8 +130,8 @@ const SetAccount = () => {
                             />
                         }
 
-                        {loading ? <h5 className='text-accent'>Activating your account. Please wait...</h5> :
-                            !success && <Button className='mx-auto mt-2' text='Set Password' onClick={confirmPassword} />
+                        {loading ? <h5 className='text-accent text-center mt-2'>Activating your account. Please wait...</h5> :
+                            !success ? <Link to={'/login'} className='mx-auto mt-2 p-2.5 px-4 bg-accent font-semibold text-white text-md rounded-lg'>Enter CakeTrack</Link> : <Button variant='active' className='mx-auto mt-2' text='Set Password' onClick={confirmPassword} />
                         }
                     </div>
                 ) : (
@@ -136,7 +142,7 @@ const SetAccount = () => {
                     </div>
                 )
             }
-        </div>
+        </div >
     )
 }
 
