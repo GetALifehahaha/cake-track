@@ -212,7 +212,7 @@ const Transactions = () => {
     ));
 
     return (
-        <div className='w-[90%] mx-auto flex flex-col gap-8'>
+        <div className='w-full mx-auto flex flex-col gap-8'>
             <Title variant='page' text='Transaction History' />
 
             <div className='px-4 py-2.5 rounded-md border border-border'>

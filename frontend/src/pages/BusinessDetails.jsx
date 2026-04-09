@@ -307,6 +307,8 @@ const BusinessDetails = () => {
                 </div>
             </div>
 
+            <div className='h-14' />
+
             {showConfirmationModal &&
                 <ConfirmationModal title="Edit Business Details" content="Are you sure you want to change the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />
             }

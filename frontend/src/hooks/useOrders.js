@@ -20,13 +20,14 @@ export default function useOrder() {
         const raw = {
             status: currentFilter,
             created_at: currentParams.due_date,
-            q: currentParams.q
+            q: currentParams.q,
+            page: currentParams.page
         };
 
         return Object.fromEntries(
             Object.entries(raw).filter(([, v]) => v && v !== 'null' && v !== 'undefined')
         );
-    }, [currentFilter, currentParams.due_date, currentParams.q]);
+    }, [currentFilter, currentParams.due_date, currentParams.q, currentParams.page]);
 
     const ordersQuery = useQueryFetch('orders', API_ENDPOINTS.ORDERS, apiParams);
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate(
