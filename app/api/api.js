@@ -3,20 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
-// 1. Setup Base URL
-// In Expo, use variables prefixed with EXPO_PUBLIC_ in your .env file
-const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').trim() || 'https://backend.cake-track.store';
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').trim()
 
-if (!process.env.EXPO_PUBLIC_API_URL) {
-    console.warn('EXPO_PUBLIC_API_URL is missing. Falling back to default API URL.');
-}
 
 const api = axios.create({
     baseURL: API_BASE_URL
 });
 
 api.interceptors.request.use(
-    // 2. Make this function ASYNC because AsyncStorage is async
     async (config) => {
         try {
             const token = await AsyncStorage.getItem(ACCESS_TOKEN);
