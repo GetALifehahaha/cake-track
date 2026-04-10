@@ -1,30 +1,18 @@
     import api from "./api";
 
-    const fetchAllPages = async (url, params = {}) => {
-        let nextUrl = url;
-        let mergedResults = [];
-        let requestParams = { ...params };
+    const fetchSinglePage = async (url, params = {}) => {
+        const response = await api.get(url, { params });
+        const payload = response.data;
 
-        while (nextUrl) {
-            const response = await api.get(nextUrl, { params: requestParams });
-            const payload = response.data;
-
-            if (Array.isArray(payload)) {
-                mergedResults = mergedResults.concat(payload);
-                break;
-            }
-
-            if (Array.isArray(payload?.results)) {
-                mergedResults = mergedResults.concat(payload.results);
-                nextUrl = payload.next || null;
-                requestParams = {};
-                continue;
-            }
-
-            break;
+        if (Array.isArray(payload)) {
+            return payload;
         }
 
-        return mergedResults;
+        if (Array.isArray(payload?.results)) {
+            return payload.results;
+        }
+
+        return [];
     };
 
     const OrdersApi = async (params, id = null, method = "GET") => {
@@ -49,11 +37,11 @@
             } 
 
             else if (method === "GET_ALL_PAGES") {
-                return fetchAllPages('/orders/orders/', params || {});
+                return fetchSinglePage('/orders/orders/', params || {});
             }
 
             else if (method === "GET_HIDDEN_ALL_PAGES") {
-                return fetchAllPages('/orders/orders/hidden/', params || {});
+                return fetchSinglePage('/orders/orders/hidden/', params || {});
             }
             
             else if (method === "POST") {
