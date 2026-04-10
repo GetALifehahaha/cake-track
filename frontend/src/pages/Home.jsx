@@ -31,6 +31,8 @@ const Home = () => {
         refreshPending,
         loading: transactionLoading,
         error: transactionError,
+        registerMoney,
+        refreshRegisterMoney,
     } = useTransaction();
     const { data: businessData, loading: businessLoading, error: businessError } = useBusinessDetails();
     const { categoryData, categoryLoading, categoryError } = useCategory();
@@ -494,6 +496,7 @@ const Home = () => {
             setCompletingOrderId(transactionId);
             await completeTransaction(transactionId);
             await refreshProducts();
+            await refreshRegisterMoney();
             addToast('Order marked as completed', 'success');
             refreshPending();
         } catch (error) {
@@ -546,6 +549,7 @@ const Home = () => {
             }
 
             await refreshPending();
+            await refreshRegisterMoney();
         } catch {
             addToast('Failed to complete pending orders', 'error');
         } finally {
@@ -903,6 +907,10 @@ const Home = () => {
                             { 'opacity-50 pointer-events-none': showVoid }
                         )}>
                             <div className='flex flex-col gap-2 '>
+                                <div className='font-semibold text-md flex items-center justify-between border-b-2 border-b-border pb-2'>
+                                    <h5 className='text-sm'>Register Money: </h5>
+                                    <h5>₱ {registerMoney.current_amount}</h5>
+                                </div>
                                 <div className='flex items-center justify-between'>
                                     <Label variant='small' text={`Items (${checkoutProducts.length})`} />
                                     <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
