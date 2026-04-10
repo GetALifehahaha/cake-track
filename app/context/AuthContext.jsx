@@ -184,7 +184,7 @@ export const AuthProvider = ({ children }) => {
         await AsyncStorage.removeItem(ACCESS_TOKEN);
         await AsyncStorage.removeItem(REFRESH_TOKEN);
         handleGuestState();
-        router.replace('/login');
+        router.replace('/(auth)/login');
     };
 
     const register = async (username, password, first_name, last_name, email) => {
@@ -221,7 +221,7 @@ export const AuthProvider = ({ children }) => {
                         onPress: () => {
                             // Navigate to login, passing the params so Login screen knows where to go back to
                             router.push({
-                                pathname: '/login',
+                                pathname: '/(auth)/login',
                                 params: redirectParams
                             });
                         }

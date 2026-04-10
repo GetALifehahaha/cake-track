@@ -16,7 +16,7 @@ const Cakes = () => {
         <SafeAreaView className='flex-1 items-center justify-center p-6' style={{ backgroundColor: 'rgba(255, 255, 255, 0.84)' }}>
           <Image source={require('@/assets/images/logo.jpg')} resizeMode="contain" className='w-32 h-32 rounded-full mb-8' />
           <Text className='text-center text-lg font-bold mb-4'>Please log in to start ordering.</Text>
-          <TouchableOpacity className='mt-4 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('/login')}>
+          <TouchableOpacity className='mt-4 bg-secondary-strong flex-row gap-2 items-center p-2.5 rounded-lg' onPress={() => router.replace('/(auth)/login')}>
             <Text className='text-lg font-bold text-white'>
               Login
             </Text>

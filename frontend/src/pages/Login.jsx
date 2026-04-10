@@ -60,7 +60,7 @@ const Login = () => {
     }
 
     return (
-        <div className='flex flex-row bg-main w-full h-screen'>
+        <div className='flex flex-row bg-[url(../assets/image/login-texture.png)] bg-repeat bg-contain w-full h-screen'>
             {/* Left Side */}
             <div className='flex-1 flex flex-col justify-center items-center'>
                 <div className='flex flex-col justify-between items-center h-2/3 w-full my-auto'>

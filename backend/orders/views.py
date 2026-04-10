@@ -131,6 +131,31 @@ class OrderViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
 
+    @action(detail=False, methods=['get'], url_path='my-orders', pagination_class=None)
+    def my_orders(self, request):
+        if request.user.is_staff:
+            return Response({"error": "This endpoint is only available for customers."}, status=status.HTTP_403_FORBIDDEN)
+
+        status_filter = (request.query_params.get('status') or '').lower()
+
+        queryset = Order.objects.filter(customer=request.user, hidden_by_customer=False)
+        if status_filter in ['completed', 'rejected', 'refunded', 'cancelled']:
+            queryset = queryset.order_by('-updated_at', '-created_at')
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='my-hidden-orders', pagination_class=None)
+    def my_hidden_orders(self, request):
+        if request.user.is_staff:
+            return Response({"error": "This endpoint is only available for customers."}, status=status.HTTP_403_FORBIDDEN)
+
+        queryset = Order.objects.filter(customer=request.user, hidden_by_customer=True).order_by('-hidden_by_customer_at', '-updated_at')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], url_path='hidden')
     def hidden(self, request):
         if request.user.is_staff:

@@ -37,11 +37,11 @@
             } 
 
             else if (method === "GET_ALL_PAGES") {
-                return fetchSinglePage('/orders/orders/', params || {});
+                return fetchSinglePage('/orders/orders/my-orders/', params || {});
             }
 
             else if (method === "GET_HIDDEN_ALL_PAGES") {
-                return fetchSinglePage('/orders/orders/hidden/', params || {});
+                return fetchSinglePage('/orders/orders/my-hidden-orders/', params || {});
             }
             
             else if (method === "POST") {

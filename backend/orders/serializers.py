@@ -83,16 +83,13 @@ class OrderSerializer(serializers.ModelSerializer):
             except Cake.DoesNotExist as error:
                 raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} does not exist.'}) from error
 
-            # Ensure the premade cake has an associated recipe before proceeding
             if cake.recipe is None:
-                raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} has no associated recipe.'})
+                continue
 
-            # Also ensure the recipe has recipe_ingredients
             if not hasattr(cake.recipe, 'recipe_ingredients'):
                 raise serializers.ValidationError({'premade_items': f'Recipe for Cake ID {cake_id} is invalid or incomplete.'})
 
             try:
-                # proceed to iterate through recipe ingredients
                 recipe_ingredients_qs = cake.recipe.recipe_ingredients.select_related('ingredient').all()
             except Exception as error:
                 raise serializers.ValidationError({'premade_items': f'Failed to read recipe ingredients for Cake ID {cake_id}.'}) from error

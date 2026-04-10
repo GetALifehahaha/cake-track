@@ -99,7 +99,7 @@ const LoginSignup = ({ method }) => {
 
 				if (res.success) {
 					showToast("Signed up successfully! Login with your credentials", "success");
-					router.replace('/login');
+					router.replace('/(auth)/login');
 				}
 
 				if (res.error) {
@@ -166,7 +166,7 @@ const LoginSignup = ({ method }) => {
 				>
 					<View className='w-full items-center my-8 gap-4'>
 						<Image className='w-20 h-20 rounded-full' source={require('@/assets/images/logo.jpg')} />
-						<TouchableOpacity className='absolute top-4 right-4 p-4 rounded-m w-fit mx-auto mb-4' onPress={() => router.replace('(tabs)/')}>
+						<TouchableOpacity className='absolute top-4 right-4 p-4 rounded-m w-fit mx-auto mb-4' onPress={() => router.replace('/(tabs)/')}>
 							<Text className='text-center font-semibold text-secondary-light'>BACK</Text>
 						</TouchableOpacity>
 						<Text className='text-xl font-bold text-primary'>
@@ -180,12 +180,12 @@ const LoginSignup = ({ method }) => {
 					<View className='bg-white border border-gray-300 w-[90vw] self-center rounded-2xl mb-10'>
 						{/* Tabs */}
 						<View className='flex-row border-b border-gray-500'>
-							<TouchableOpacity className={`flex-1 p-6 ${method === "login" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('(auth)/login')}>
+							<TouchableOpacity className={`flex-1 p-6 ${method === "login" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('/(auth)/login')}>
 								<Text className={`text-lg font-medium text-center ${method === "login" ? 'text-secondary-strong' : 'text-gray-300'}`}>
 									Login
 								</Text>
 							</TouchableOpacity>
-							<TouchableOpacity className={`flex-1 p-6 ${method === "signup" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('(auth)/signup')}>
+							<TouchableOpacity className={`flex-1 p-6 ${method === "signup" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('/(auth)/signup')}>
 								<Text className={`text-lg font-medium text-center ${method === "signup" ? 'text-secondary-strong' : 'text-gray-300'}`}>
 									Sign Up
 								</Text>
