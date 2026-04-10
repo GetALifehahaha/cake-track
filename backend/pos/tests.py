@@ -211,6 +211,50 @@ class TransactionCreationTests(TestCase):
         self.assertTrue(transaction.is_completed)
         self.assertIsNotNone(transaction.completed_at)
 
+    def test_gcash_transaction_requires_reference_number(self):
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+
+        data = {
+            "payment_method": "gcash",
+            "paid_amount": Decimal("500.00"),
+            "order_type": "dine-in",
+            "is_completed": False,
+            "transaction_items": [
+                {"product": self.product_a.id, "product_variant": self.variant_a.id, "quantity": 1}
+            ]
+        }
+
+        serializer = TransactionCreateSerializer(data=data, context={'request': request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        with self.assertRaises(Exception) as context:
+            serializer.save()
+
+        self.assertIn("Reference number is required for GCash payments", str(context.exception))
+
+    def test_gcash_transaction_with_reference_number_succeeds(self):
+        request = self.factory.post('/transactions/')
+        request.user = self.cashier
+
+        data = {
+            "payment_method": "gcash",
+            "paid_amount": Decimal("500.00"),
+            "order_type": "dine-in",
+            "is_completed": False,
+            "payment_reference_number": "pay_1234567890",
+            "transaction_items": [
+                {"product": self.product_a.id, "product_variant": self.variant_a.id, "quantity": 1}
+            ]
+        }
+
+        serializer = TransactionCreateSerializer(data=data, context={'request': request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        transaction = serializer.save()
+
+        self.assertEqual(transaction.payment_method, "gcash")
+        self.assertEqual(transaction.payment_reference_number, "pay_1234567890")
+
     def test_daily_order_sequence_increments_globally(self):
         request = self.factory.post('/transactions/')
         request.user = self.cashier

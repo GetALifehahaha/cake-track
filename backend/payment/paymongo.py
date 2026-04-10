@@ -16,19 +16,37 @@ class PayMongoWrapper:
             "authorization": f"Basic {encoded_key}"
         }
 
-    def create_source(self, amount, currency="PHP", redirect_success="", redirect_failed=""):
+    def create_source(
+        self,
+        amount,
+        currency="PHP",
+        redirect_success="",
+        redirect_failed="",
+        billing_name="",
+        billing_phone="",
+    ):
         url = f"{self.BASE_URL}/sources"
+        attributes = {
+            "amount": int(amount * 100), # Convert to centavos
+            "type": "gcash",
+            "currency": currency,
+            "redirect": {
+                "success": redirect_success,
+                "failed": redirect_failed
+            }
+        }
+
+        billing = {}
+        if billing_name:
+            billing["name"] = billing_name
+        if billing_phone:
+            billing["phone"] = billing_phone
+        if billing:
+            attributes["billing"] = billing
+
         payload = {
             "data": {
-                "attributes": {
-                    "amount": int(amount * 100), # Convert to centavos
-                    "type": "gcash",
-                    "currency": currency,
-                    "redirect": {
-                        "success": redirect_success,
-                        "failed": redirect_failed
-                    }
-                }
+                "attributes": attributes
             }
         }
         response = requests.post(url, json=payload, headers=self._get_headers())

@@ -1,6 +1,11 @@
 from django.shortcuts import render
 from django.utils import timezone
 import pytz
+import base64
+from io import BytesIO
+from decimal import Decimal
+from django.conf import settings
+import qrcode
 
 # Create your views here.
 from django.db.models import Sum, Count, F, DateTimeField
@@ -29,6 +34,8 @@ from .serializers import (DiscountSerializer,
                           ProductSerializer, 
                           TransactionCreateSerializer, 
                           TransactionCompleteSerializer,
+                          GCashInitiateSerializer,
+                          GCashVerifySerializer,
                           RegisterMoneySerializer,
                           RegisterMoneySetStartingSerializer,
                           RegisterDeductionSerializer,
@@ -54,6 +61,7 @@ from .models import (Discount,
                      ) 
 
 from users.permissions import IsAdmin, IsCashier
+from payment.paymongo import PayMongoWrapper
 
 class MediumPageSize(PageNumberPagination):
     page_size = 20
@@ -194,6 +202,41 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id', 'created_at', 'payment_method']
     ordering = ['-created_at']
 
+    @staticmethod
+    def _normalize_gcash_number(raw_number):
+        digits = ''.join(ch for ch in str(raw_number or '') if ch.isdigit())
+
+        if len(digits) == 11 and digits.startswith('0'):
+            return f"+63{digits[1:]}"
+        if len(digits) == 10 and digits.startswith('9'):
+            return f"+63{digits}"
+        if len(digits) == 12 and digits.startswith('63'):
+            return f"+{digits}"
+
+        return ''
+
+    @staticmethod
+    def _build_qr_data_url(content):
+        qr = qrcode.QRCode(version=1, box_size=10, border=2)
+        qr.add_data(content)
+        qr.make(fit=True)
+        image = qr.make_image(fill_color='black', back_color='white')
+
+        buffer = BytesIO()
+        image.save(buffer, format='PNG')
+        encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return f"data:image/png;base64,{encoded}"
+
+    def _build_gcash_redirect_urls(self, request):
+        base = (getattr(settings, 'FRONTEND_URL', '') or '').rstrip('/')
+        if not base:
+            base = request.build_absolute_uri('/').rstrip('/')
+
+        # POS flow primarily verifies via polling, but PayMongo requires redirect URLs.
+        success = f"{base}/"
+        failed = f"{base}/"
+        return success, failed
+
     def _get_register_money(self, user):
         if not user.is_authenticated:
             return None
@@ -283,6 +326,127 @@ class TransactionViewSet(viewsets.ModelViewSet):
         payload = output_serializer.data
         payload['register_money_summary'] = self._build_register_summary(request.user)
         return Response(payload, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='gcash-initiate')
+    def gcash_initiate(self, request):
+        serializer = GCashInitiateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        amount = serializer.validated_data['amount']
+        business_settings, _ = BusinessSettings.objects.get_or_create(pk=1)
+
+        normalized_gcash_number = self._normalize_gcash_number(business_settings.gcash_owner_number)
+        if not normalized_gcash_number:
+            return Response(
+                {"detail": "Business GCash number is missing or invalid. Update GCash Information in Business Details first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        success_url, failed_url = self._build_gcash_redirect_urls(request)
+        paymongo = PayMongoWrapper()
+
+        try:
+            source_data = paymongo.create_source(
+                amount=amount,
+                redirect_success=success_url,
+                redirect_failed=failed_url,
+                billing_name=(business_settings.gcash_owner_name or '').strip(),
+                billing_phone=normalized_gcash_number,
+            )
+        except Exception:
+            return Response(
+                {"detail": "Failed to initialize GCash payment with PayMongo."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        source_id = source_data.get('id')
+        attributes = source_data.get('attributes', {})
+        checkout_url = attributes.get('redirect', {}).get('checkout_url')
+
+        if not source_id or not checkout_url:
+            return Response(
+                {"detail": "PayMongo did not return a valid GCash checkout session."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {
+                "source_id": source_id,
+                "checkout_url": checkout_url,
+                "qr_code_data_url": self._build_qr_data_url(checkout_url),
+                "status": attributes.get('status', 'pending'),
+                "amount": str(amount),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['post'], url_path='gcash-verify')
+    def gcash_verify(self, request):
+        serializer = GCashVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        source_id = serializer.validated_data['source_id']
+        paymongo = PayMongoWrapper()
+
+        try:
+            source_data = paymongo.get_source(source_id)
+        except Exception:
+            return Response(
+                {"detail": "Failed to verify GCash payment with PayMongo."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        attributes = source_data.get('attributes', {})
+        source_status = str(attributes.get('status', '')).lower() or 'pending'
+
+        if source_status == 'chargeable':
+            amount_in_centavos = attributes.get('amount')
+            try:
+                payment_data = paymongo.create_payment(
+                    source_id,
+                    amount_in_centavos,
+                    f"POS transaction by {request.user.username}",
+                )
+                reference_number = payment_data.get('id') or source_id
+            except Exception:
+                reference_number = source_id
+
+            return Response(
+                {
+                    "paid": True,
+                    "status": 'paid',
+                    "reference_number": reference_number,
+                    "source_id": source_id,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        if source_status == 'paid':
+            reference_number = source_id
+            payments = attributes.get('payments')
+            if isinstance(payments, list) and payments:
+                first_payment = payments[0]
+                if isinstance(first_payment, dict):
+                    reference_number = first_payment.get('id') or source_id
+
+            return Response(
+                {
+                    "paid": True,
+                    "status": 'paid',
+                    "reference_number": reference_number,
+                    "source_id": source_id,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {
+                "paid": False,
+                "status": source_status,
+                "source_id": source_id,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['get'], url_path='register-money')
     def register_money(self, request):

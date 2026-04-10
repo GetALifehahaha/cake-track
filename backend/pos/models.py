@@ -162,6 +162,7 @@ class Transaction(models.Model):
     is_completed = models.BooleanField(default=False)
     is_register_counted = models.BooleanField(default=False)
     customer_name = models.CharField(max_length=255, blank=True, null=True)
+    payment_reference_number = models.CharField(max_length=100, blank=True, null=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     sequence_date = models.DateField(null=True, blank=True, editable=False, db_index=True)
     sequence_number = models.PositiveIntegerField(null=True, blank=True, editable=False)

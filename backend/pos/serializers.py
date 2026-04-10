@@ -294,7 +294,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id', 'order_number', 'cashier', 'discount', 'discount_snapshot', 'is_void', 
             'payment_method', 'created_at', 'transaction_items',
             'gross_total', 'discount_amount', 'net_total', 'paid_amount', 'change', 'order_type',
-            'is_completed', 'customer_name', 'completed_at', 'is_register_counted',
+            'is_completed', 'customer_name', 'payment_reference_number', 'completed_at', 'is_register_counted',
         ]
 
     def get_discount_snapshot(self, obj):
@@ -334,11 +334,13 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             'order_type',
             'is_completed',
             'customer_name',
+            'payment_reference_number',
         ]
         extra_kwargs = {
             "discount": {"required": False, "allow_null": True},
             "is_completed": {"required": False},
             "customer_name": {"required": False, "allow_null": True, "allow_blank": True},
+            "payment_reference_number": {"required": False, "allow_null": True, "allow_blank": True},
         }
         
     def create(self, validated_data):
@@ -348,8 +350,17 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         discount_input = discount_input if discount_input != -1 else None
 
         paid_amount = validated_data.get('paid_amount', Decimal('0.00'))
+        payment_method = validated_data.get('payment_method', 'cash')
+        payment_reference_number = str(validated_data.get('payment_reference_number') or '').strip()
         is_void = validated_data.pop('is_void', False)
         is_completed = validated_data.pop('is_completed', False)
+
+        if payment_method == 'gcash':
+            if not payment_reference_number:
+                raise ValidationError({"payment_reference_number": "Reference number is required for GCash payments."})
+            validated_data['payment_reference_number'] = payment_reference_number
+        else:
+            validated_data['payment_reference_number'] = None
 
         if is_void:
             is_completed = True
@@ -538,6 +549,14 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 _apply_completed_transaction_to_register(transaction_obj)
 
         return transaction_obj
+
+
+class GCashInitiateSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0.01'))
+
+
+class GCashVerifySerializer(serializers.Serializer):
+    source_id = serializers.CharField(max_length=255)
 
 
 class TransactionCompleteSerializer(serializers.Serializer):
