@@ -65,16 +65,6 @@ class OrderSerializer(serializers.ModelSerializer):
             'hidden_by_customer_at',
         ]
 
-    def validate_reference_number(self, value):
-        if value in (None, ''):
-            return value
-
-        normalized_value = ''.join(ch for ch in str(value) if ch.isdigit())
-        if len(normalized_value) < 13 or len(normalized_value) > 15:
-            raise serializers.ValidationError('Reference number must be 13 to 15 digits.')
-
-        return normalized_value
-
     def _create_premade_recipe(self, order, premade_items):
         ingredient_totals = {}
 
@@ -93,8 +83,21 @@ class OrderSerializer(serializers.ModelSerializer):
             except Cake.DoesNotExist as error:
                 raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} does not exist.'}) from error
 
+            # Ensure the premade cake has an associated recipe before proceeding
+            if cake.recipe is None:
+                raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} has no associated recipe.'})
 
-            for recipe_item in cake.recipe.recipe_ingredients.select_related('ingredient').all():
+            # Also ensure the recipe has recipe_ingredients
+            if not hasattr(cake.recipe, 'recipe_ingredients'):
+                raise serializers.ValidationError({'premade_items': f'Recipe for Cake ID {cake_id} is invalid or incomplete.'})
+
+            try:
+                # proceed to iterate through recipe ingredients
+                recipe_ingredients_qs = cake.recipe.recipe_ingredients.select_related('ingredient').all()
+            except Exception as error:
+                raise serializers.ValidationError({'premade_items': f'Failed to read recipe ingredients for Cake ID {cake_id}.'}) from error
+
+            for recipe_item in recipe_ingredients_qs:
                 ingredient_id = recipe_item.ingredient_id
                 amount_needed = Decimal(str(recipe_item.amount_needed)) * Decimal(str(quantity))
                 ingredient_totals[ingredient_id] = ingredient_totals.get(ingredient_id, Decimal('0')) + amount_needed

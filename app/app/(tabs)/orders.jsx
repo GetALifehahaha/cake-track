@@ -96,6 +96,8 @@ const Orders = () => {
 	const finishedOrders = allOrders.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase()));
 
 	const hiddenOrders = allHiddenOrders.filter(order => {
+		// defensive: skip invalid items
+		if (!order || typeof order !== 'object') return false;
 		const query = search.toLowerCase().trim();
 		const orderId = String(order.id || '').toLowerCase();
 		const status = String(order.status || '').toLowerCase();

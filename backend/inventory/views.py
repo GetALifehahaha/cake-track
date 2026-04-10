@@ -187,6 +187,40 @@ class IngredientAllViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     pagination_class = None
     
+    def list(self, request, *args, **kwargs):
+        """
+        Override list to gracefully handle missing DB column errors (e.g., legacy DB without Unit.symbol).
+        If a DB OperationalError referencing a missing column occurs, return a simplified payload
+        that avoids selecting the problematic Unit fields.
+        """
+        from django.db import OperationalError
+        from .models import Unit
+
+        try:
+            return super().list(request, *args, **kwargs)
+        except OperationalError as error:
+            msg = str(error).lower()
+            if 'no such column' in msg or 'inventory_unit.symbol' in msg:
+                # Build simplified response avoiding selection of Unit.symbol
+                queryset = Ingredient.objects.all().order_by(Lower('name'), 'name')
+                data = []
+                for ing in queryset:
+                    unit_val = Unit.objects.filter(id=ing.unit_id).values('id', 'name').first()
+                    data.append({
+                        'id': ing.id,
+                        'name': ing.name,
+                        'unit': unit_val,
+                        'total_stock': str(ing.total_stock),
+                        'low_amount': str(ing.low_amount),
+                        'batches': [],
+                        'containers': [],
+                        'conversions': [],
+                    })
+
+                return Response(data)
+
+            raise
+    
     
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('name')
