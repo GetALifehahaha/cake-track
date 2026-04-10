@@ -11,7 +11,7 @@ import { useToast } from '@/context/ToastContext';
 const QueueAccepted = () => {
 
 	const { addToast } = useToast();
-	const { data, loading, error, patchOrder } = useOrder();
+	const { data, loading, patchOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
@@ -52,7 +52,7 @@ const QueueAccepted = () => {
 
 			addToast("Order completed successfully");
 			setOrderToComplete(null);
-		} catch (err) {
+		} catch {
 			addToast("Failed to complete order.", "error")
 		}
 	}
@@ -60,7 +60,6 @@ const QueueAccepted = () => {
 	const listOrder = data.results?.map((cake, index) =>
 		(<ReadyCard key={index} order={cake} onComplete={() => setOrderToComplete(cake)} onShowDetails={setOrderDetails} />) || null
 	)
-
 
 	return (
 		<div className='flex flex-col min-h-140'>
@@ -90,10 +89,10 @@ const QueueAccepted = () => {
 			}
 
 			{orderToComplete &&
-				<CompletePaymentModal 
-					order={orderToComplete} 
-					onConfirm={completeOrder} 
-					onClose={() => setOrderToComplete(null)} 
+				<CompletePaymentModal
+					order={orderToComplete}
+					onConfirm={completeOrder}
+					onClose={() => setOrderToComplete(null)}
 				/>
 			}
 		</div>

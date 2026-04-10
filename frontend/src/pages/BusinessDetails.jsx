@@ -27,6 +27,7 @@ const BusinessDetails = () => {
     const [secretPIN, setSecretPIN] = useState('');
 
     // ADMIN LOGIC
+    const [username, setUsername] = useState("");
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -47,6 +48,7 @@ const BusinessDetails = () => {
             setFirstName(user.first_name || "");
             setLastName(user.last_name || "");
             setEmail(user.email || "");
+            setUsername(user.username || "");
         }
     }, [data]);
 
@@ -116,7 +118,7 @@ const BusinessDetails = () => {
 
             addToast("Business details changed successfully")
             toggleConfirmationModal();
-        } catch (err) {
+        } catch {
             addToast("Failed to edit business details")
         }
     }
@@ -125,7 +127,8 @@ const BusinessDetails = () => {
         const payload = {
             first_name: firstName,
             last_name: lastName,
-            email
+            email,
+            username
         }
 
         try {
@@ -133,7 +136,7 @@ const BusinessDetails = () => {
             getUserData();
 
             addToast("Admin Account has been updated!");
-        } catch (err) {
+        } catch {
             addToast("Failed to update Admin Account", "error");
         }
     }
@@ -159,64 +162,68 @@ const BusinessDetails = () => {
     return (
         <div className='grid grid-cols-2 w-full h-full gap-4 mb-4'>
             {/* LEFT COLUMN */}
-            <div className='flex flex-col gap-4'>
+            <div className='flex flex-col gap-4 bg-main-white shadow-sm rounded-lg'>
                 {/* Business Details + Credentials combined */}
-                <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='p-8'>
                     <div className='flex items-center justify-between'>
                         <Title text='Business Details' variant='block' />
                         {(businessName != data?.business_name || address !== data?.address || tin != data.tin) &&
-                            <Button text='Save' size='small' onClick={toggleConfirmationModal} />
+                            <Button variant="active" text='Save' size='small' onClick={toggleConfirmationModal} />
                         }
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='Business Name' />
-                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={businessName} onChange={handleBusinessName} />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={businessName} onChange={handleBusinessName} />
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='Address' />
-                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={address} onChange={handleAddress} />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={address} onChange={handleAddress} />
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='TIN' />
-                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={tin} onChange={handleTin} />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={tin} onChange={handleTin} />
                     </div>
                 </div>
 
-                <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='w-full h-1 bg-main-dark' />
+
+                <div className='p-8'>
                     <div className='flex items-center justify-between'>
                         <Title text='Contact and Message' variant='block' />
                         {(contactNumber != data?.contact_number || message != data?.message) &&
-                            <Button text='Save' size='small' onClick={toggleConfirmationModal} />
+                            <Button variant="active" text='Save' size='small' onClick={toggleConfirmationModal} />
                         }
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='Contact Number' />
-                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={contactNumber} onChange={handleContactNumber} />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={contactNumber} onChange={handleContactNumber} />
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='Message' />
-                        <textarea className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full resize-none' rows={3} value={message} onChange={handleMessage} />
+                        <textarea className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full resize-none' rows={3} value={message} onChange={handleMessage} />
                     </div>
                 </div>
 
+                <div className='w-full h-1 bg-main-dark' />
+
                 {/* Secret PIN */}
-                <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='p-8'>
                     <div className='flex items-center justify-between'>
                         <Title text='Secret PIN' variant='block' />
                         {secretPIN != data?.secret_pin &&
-                            <Button text='Save' size='small' onClick={toggleConfirmationModal} />
+                            <Button variant="active" text='Save' size='small' onClick={toggleConfirmationModal} />
                         }
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='POS PIN' />
                         <div className='flex gap-2 items-center justify-between'>
                             {showSecretPIN ?
-                                <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-1/2' value={secretPIN} onChange={handleSecretPIN} />
+                                <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-1/2' value={secretPIN} onChange={handleSecretPIN} />
                                 :
-                                <input type='password' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-1/2' value={secretPIN} onChange={handleSecretPIN} />
+                                <input type='password' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-1/2' value={secretPIN} onChange={handleSecretPIN} />
                             }
                             <button onClick={toggleShowSecretPIN}>
-                                {showSecretPIN ? <EyeClosed /> : <Eye />}
+                                {showSecretPIN ? <Eye /> : <EyeClosed />}
                             </button>
                         </div>
                     </div>
@@ -224,36 +231,42 @@ const BusinessDetails = () => {
             </div>
 
             {/* RIGHT COLUMN */}
-            <div className='flex flex-col gap-4'>
+            <div className='flex flex-col gap-4 bg-main-white shadow-sm rounded-lg'>
                 {/* Personal Information */}
-                <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='p-8'>
                     <div className='flex items-center justify-between'>
                         <Title text='Personal Information' variant='block' />
-                        {(firstName !== user?.first_name || lastName !== user?.last_name || email !== user?.email) && (
-                            <Button text='Save Changes' size='small' onClick={updateAccountDetails} />
+                        {(firstName !== user?.first_name || lastName !== user?.last_name || email !== user?.email || username !== user?.username) && (
+                            <Button variant="active" text='Save' size='small' onClick={updateAccountDetails} />
                         )}
                     </div>
                     <div className='flex gap-4 mt-4'>
                         <div className='flex-1'>
                             <Label variant='small' text='First Name' />
-                            <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                            <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                         </div>
                         <div className='flex-1'>
                             <Label variant='small' text='Last Name' />
-                            <input type='text' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                            <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={lastName} onChange={(e) => setLastName(e.target.value)} />
                         </div>
+                    </div>
+                    <div className='flex-1 mt-4'>
+                        <Label variant='small' text='Username' />
+                        <input type='text' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={username} onChange={(e) => setUsername(e.target.value)} />
                     </div>
                     <div className='mt-4'>
                         <Label variant='small' text='Email Address' />
-                        <input type='email' className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full' value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <input type='email' className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full' value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
                 </div>
 
-                <div className='p-8 rounded-lg bg-main-white shadow-sm'>
+                <div className='w-full h-1 bg-main-dark' />
+
+                <div className='p-8'>
                     <div className='flex items-center justify-between'>
                         <Title text='GCash Information' variant='block' />
                         {(gcashOwnerName !== data?.gcash_owner_name || gcashOwnerNumber !== data?.gcash_owner_number) &&
-                            <Button text='Save' size='small' onClick={toggleConfirmationModal} />
+                            <Button variant="active" text='Save' size='small' onClick={toggleConfirmationModal} />
                         }
                     </div>
 
@@ -261,7 +274,7 @@ const BusinessDetails = () => {
                         <Label variant='small' text='Owner Full Name' />
                         <input
                             type='text'
-                            className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full'
+                            className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full'
                             value={gcashOwnerName}
                             onChange={handleGcashOwnerName}
                         />
@@ -270,7 +283,7 @@ const BusinessDetails = () => {
                         <Label variant='small' text='GCash Number' />
                         <input
                             type='text'
-                            className='mt-1 px-4 py-2 rounded-md text-sm bg-main-dark/50 focus:outline-none w-full'
+                            className='mt-1 px-4 py-2 rounded-md text-md bg-main-dark/50 focus:outline-none w-full'
                             value={gcashOwnerNumber}
                             onChange={handleGcashOwnerNumber}
                         />
@@ -294,6 +307,8 @@ const BusinessDetails = () => {
                     </div>
                 </div>
             </div>
+
+            <div className='h-14' />
 
             {showConfirmationModal &&
                 <ConfirmationModal title="Edit Business Details" content="Are you sure you want to change the business details?" onReject={toggleConfirmationModal} onConfirm={editBusinessDetails} />

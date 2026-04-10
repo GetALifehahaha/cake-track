@@ -12,7 +12,7 @@ const Sidebar = () => {
     const isAdmin = user?.is_staff ? 'admin' : null
     const role = Array.isArray(user?.groups) ? user.groups[0] : null
 
-    const filteredSidebar = SidebarConfig.filter(({allowedRoles}) => allowedRoles.includes(isAdmin || role))
+    const filteredSidebar = SidebarConfig.filter(({ allowedRoles }) => allowedRoles.includes(isAdmin || role))
 
     const [expanded, setExpanded] = useState(true);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -66,7 +66,7 @@ const Sidebar = () => {
                 {expanded && <h5 className={navText}>LOG OUT</h5>}
             </div>
 
-            {showLogoutModal && 
+            {showLogoutModal &&
                 <ConfirmationModal
                     title="Log Out"
                     content="Are you sure you want to log out?"

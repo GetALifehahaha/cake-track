@@ -19,7 +19,7 @@ const Recipe = () => {
 
     const [viewRecipe, setViewRecipe] = useState(null);
     const [showEditRecipe, setShowEditRecipe] = useState(null);
-    
+
     if (loading) return <RecipeSkeleton />
     if (error) return <h5>Error...</h5>
 
@@ -36,7 +36,7 @@ const Recipe = () => {
             await postRecipe(payload);
             setShowAddRecipe(false);
             addToast("A new recipe has been added!");
-        } catch (err) {
+        } catch {
             addToast("Failed to add new recipe", "error");
         }
     };
@@ -51,7 +51,7 @@ const Recipe = () => {
             await patchRecipe(id, payload);
             setShowEditRecipe(null);
             addToast("A recipe has been edited!");
-        } catch (err) {
+        } catch {
             addToast("Failed to edit recipe", "error");
         }
     }
@@ -62,7 +62,7 @@ const Recipe = () => {
             setShowEditRecipe(null);
             selectViewRecipe(null);
             addToast("A recipe has been deleted!");
-        } catch (err) {
+        } catch {
             addToast("Failed to delete recipe", "error");
         }
     }
@@ -87,8 +87,8 @@ const Recipe = () => {
     }
 
     const listRecipes = data.results?.map((recipe) => (
-        <div 
-            key={recipe.id} 
+        <div
+            key={recipe.id}
             onClick={() => selectViewRecipe(recipe)}
             className='relative flex flex-col p-4 bg-main-white rounded-lg shadow-sm border border-border/50 cursor-pointer hover:-translate-y-1 transition'>
             {!recipe.is_available && (
@@ -97,25 +97,29 @@ const Recipe = () => {
                 </div>
             )}
             <h3 className='font-semibold text-lg text-text mt-2'>{recipe.name}</h3>
-            
+
             <div className='flex-1'>
                 <h5 className='text-xs font-semibold text-text/50 uppercase mb-2'>Ingredients</h5>
                 <ul className='flex flex-col gap-1'>
-                    {recipe.ingredients.map(ing => (
-                        <li key={ing.ingredient_id} className='text-sm text-text'>
-                            {(() => {
-                                const display = getBestDisplay(ing);
-                                return (
-                                    <>
-                                        • {formatQty(display.amount)} {display.unitLabel} {ing.ingredient_name}
-                                        {display.usedNonBase && (
-                                            <span className='text-text/50'> ({formatQty(display.baseAmount)} {display.baseUnitLabel})</span>
-                                        )}
-                                    </>
-                                )
-                            })()}
-                        </li>
-                    ))}
+                    {recipe.ingredients.map((ing, index) =>
+                        index > 3 ?
+                            <h5 className='text-sm font-semibold py-2'>And {6 - recipe.ingredients.length} more...</h5>
+                            :
+                            <li key={ing.ingredient_id} className='text-sm text-text'>
+                                {(() => {
+                                    const display = getBestDisplay(ing);
+                                    return (
+                                        <>
+                                            • {formatQty(display.amount)} {display.unitLabel} {ing.ingredient_name}
+                                            {display.usedNonBase && (
+                                                <span className='text-text/50'> ({formatQty(display.baseAmount)} {display.baseUnitLabel})</span>
+                                            )}
+                                        </>
+                                    )
+                                })()}
+                            </li>
+
+                    )}
                 </ul>
             </div>
         </div>
@@ -133,10 +137,10 @@ const Recipe = () => {
                     {listRecipes}
                 </div>
 
-                <Pagination next={data.next} prev={data.prev}/>
+                <Pagination next={data.next} prev={data.prev} />
             </div>
 
-            {showAddRecipe && <AddRecipeModal onConfirm={addRecipe} onClose={handleSetShowAddRecipe}/>}
+            {showAddRecipe && <AddRecipeModal onConfirm={addRecipe} onClose={handleSetShowAddRecipe} />}
 
             <ViewRecipeModal
                 recipe={viewRecipe}
@@ -148,7 +152,7 @@ const Recipe = () => {
             />
 
             {showEditRecipe &&
-            <EditRecipeModal recipe={showEditRecipe} onClose={() => handleShowEditRecipe(null)} onConfirm={editRecipe} />
+                <EditRecipeModal recipe={showEditRecipe} onClose={() => handleShowEditRecipe(null)} onConfirm={editRecipe} />
             }
         </div>
     );

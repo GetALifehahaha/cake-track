@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button, StockLabel, Title } from '../components/atoms';
 import { InventoryDashboardCard, Pagination } from '../components/molecules';
 import { ConfirmationModal, EditInventoryItem, InventoryAddItem, InventoryInOut, TransactionHistoryModal, UnitModal } from '../components/organisms';
@@ -28,7 +28,7 @@ const Inventory = () => {
     const [prepEditItem, setPrepEditItem] = useState(null);
     const [activeIndex, setActiveIndex] = useState(null);
     const [showInOut, setShowInOut] = useState(false);
-    const [showUnitsModal, setShowUnitsModal] = useState(false);
+    const [showContainersModal, setShowContainersModal] = useState(false);
     const [showStockOutAllConfirmationModal, setShowStockOutAllConfirmationModal] = useState(false);
     const [showTransactionHistoryModal, setShowTransactionHistoryModal] = useState(false);
 
@@ -55,7 +55,7 @@ const Inventory = () => {
             await postIngredient(value);
             handleCloseAddItemModal();
             addToast("New ingredient added successfully")
-        } catch (err) {
+        } catch {
             addToast("Failed to add new ingredient", "error")
         }
 
@@ -72,7 +72,7 @@ const Inventory = () => {
             await patchIngredient(value.id, { ...value })
             handlePrepEditItem(null);
             addToast("Ingredient has been edited successfully")
-        } catch (err) {
+        } catch {
             addToast("Failed to edit ingredient", "error")
         }
     }
@@ -84,7 +84,7 @@ const Inventory = () => {
             await deleteIngredient(id);
             handlePrepEditItem(null)
             addToast("Ingredient has been deleted successfully!")
-        } catch (err) {
+        } catch {
             addToast("Failed to delete ingredient", "error")
         }
     }
@@ -94,7 +94,7 @@ const Inventory = () => {
             await stockOutAllExpiredIngredient();
             addToast("All expired ingredients has been stocked out!")
             toggleStockOutAllConfirmationModal();
-        } catch (err) {
+        } catch {
             addToast("Failed to stock out expired ingredients", "error")
         }
     }
@@ -106,7 +106,7 @@ const Inventory = () => {
 
     const handleSetShowInOut = () => setShowInOut(true);
     const handleSetCloseInOut = () => { setShowInOut(false) }
-    const toggleUnitsModal = () => setShowUnitsModal(!showUnitsModal)
+    const toggleContainersModal = () => setShowContainersModal(!showContainersModal)
 
     const getBatchStatus = (expirationDate) => {
         const today = new Date();
@@ -249,7 +249,7 @@ const Inventory = () => {
                             <Button variant='modalOutline' size='small' text='Stock Out Expired Ingredients' icon={Trash} onClick={toggleStockOutAllConfirmationModal} className='shadow-sm' />
                         }
                         <Button variant='modalOutline' size='small' text='Transaction History' icon={Box} onClick={toggleTransactionHistoryModal} className='shadow-sm' />
-                        <Button variant='modalOutline' size='small' text='Manage Units' icon={Box} onClick={toggleUnitsModal} className='shadow-sm' />
+                        <Button variant='modalOutline' size='small' text='Manage Containers' icon={Box} onClick={toggleContainersModal} className='shadow-sm' />
                         <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm' />
                         <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm' />
                     </div>
@@ -289,8 +289,8 @@ const Inventory = () => {
                 <InventoryInOut onClose={handleSetCloseInOut} />
             }
 
-            {showUnitsModal &&
-                <UnitModal onClose={toggleUnitsModal} />
+            {showContainersModal &&
+                <UnitModal onClose={toggleContainersModal} />
             }
 
             {showTransactionHistoryModal &&

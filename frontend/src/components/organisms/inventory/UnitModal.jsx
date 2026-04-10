@@ -1,239 +1,241 @@
-import React, { useState, useEffect } from 'react';
-import { ModalBody } from '../../molecules';
+import React, { useMemo, useState } from 'react';
+import { ModalBody, ModalErrorState, ModalFeedbackCard } from '../../molecules';
 import { Button } from '../../atoms';
-import { ModalFeedbackCard } from '../../molecules';
-import { ModalErrorState } from '../../molecules';
-import { ConfirmationModal } from '..';
-import { Plus, Pen, Trash } from 'lucide-react';
-import useUnits from '@/hooks/useUnits';
+import useContainers from '@/hooks/useContainers';
 import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+
+const createEmptyContainer = () => ({
+    name: '',
+    symbol: '',
+});
+
+const getApiErrorMessage = (error, fallback) => {
+    const payload = error?.response?.data;
+
+    if (typeof payload?.detail === 'string') return payload.detail;
+    if (Array.isArray(payload?.name) && payload.name[0]) return payload.name[0];
+    if (Array.isArray(payload?.symbol) && payload.symbol[0]) return payload.symbol[0];
+    if (typeof payload === 'string') return payload;
+
+    return fallback;
+};
 
 const UnitModal = ({ onClose }) => {
-    const { data: unitData, loading: unitLoading, error: unitError, postUnit, patchUnit, refresh, deleteUnit } = useUnits();
-    const [unitName, setUnitName] = useState('');
-    const [unitAbbreviation, setUnitAbbreviation] = useState('');
-    const [editingUnitId, setEditingUnitId] = useState(null);
-    const [editUnitName, setEditUnitName] = useState('');
-    const [editUnitAbbreviation, setEditUnitAbbreviation] = useState('');
-    const [feedback, setFeedback] = useState('');
-    const [showConfirmPostModal, setShowConfirmPostModal] = useState(false);
-    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
-    const [prepDeleteId, setPrepDeleteId] = useState(null);
+    const {
+        containerData,
+        containerLoading,
+        containerError,
+        postContainer,
+        patchContainer,
+        deleteContainer,
+        refresh,
+    } = useContainers();
 
-    useEffect(() => {
-        refresh();
-    }, []);
+    const [draft, setDraft] = useState(createEmptyContainer());
+    const [editingId, setEditingId] = useState(null);
+    const [editingValues, setEditingValues] = useState(createEmptyContainer());
+    const [feedback, setFeedback] = useState(null);
+    const [busyAction, setBusyAction] = useState('');
 
-    if (unitLoading) return <CRUDModalSkeleton title='Manage Units' subtitle='Add, edit, or delete units for your inventory' onClose={onClose} />
-    if (unitError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load units' details='Unable to load units right now. Please try reloading this modal.' />;
+    if (containerLoading) return <CRUDModalSkeleton title='Manage Containers' subtitle='Create and maintain reusable container labels.' onClose={onClose} />
+    if (containerError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load containers' details='Unable to load containers right now. Please try reloading this modal.' />;
 
-    const resetFeedback = () => setFeedback('');
+    const sortedContainers = useMemo(() => {
+        return [...(containerData || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+    }, [containerData]);
 
-    const closeUnitForm = () => {
-        setUnitName('');
-        setUnitAbbreviation('');
+    const setDraftValue = (key, value) => {
+        if (key === 'name' && value.length > 50) return;
+        if (key === 'symbol' && value.length > 10) return;
+        setDraft(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleShowConfirmPostModal = () => {
-        if (!unitName || !unitAbbreviation) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: "Please don't leave any blank fields",
-                type: 'error'
-            });
-            return;
-        }
-        setShowConfirmPostModal(true);
+    const setEditValue = (key, value) => {
+        if (key === 'name' && value.length > 50) return;
+        if (key === 'symbol' && value.length > 10) return;
+        setEditingValues(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleCloseConfirmPostModal = () => setShowConfirmPostModal(false);
-    const handleShowConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
-    const handleCloseConfirmDeleteModal = () => setShowConfirmDeleteModal(false);
-
-    const handlePostUnit = async () => {
-        await postUnit({
-            name: unitName,
-            abbreviation: unitAbbreviation,
+    const startEdit = (container) => {
+        setEditingId(container.id);
+        setEditingValues({
+            name: container.name || '',
+            symbol: container.symbol || '',
         });
-        resetFeedback();
-        closeUnitForm();
-        handleCloseConfirmPostModal();
+        setFeedback(null);
     };
 
-    const prepDeleteUnit = (id) => {
-        setPrepDeleteId(id);
-        handleShowConfirmDeleteModal();
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditingValues(createEmptyContainer());
     };
 
-    const removePrepDeleteUnit = () => {
-        setPrepDeleteId(null);
-        handleCloseConfirmDeleteModal();
-    };
+    const handleCreateContainer = async () => {
+        const payload = {
+            name: draft.name.trim(),
+            symbol: draft.symbol.trim(),
+        };
 
-    const handleDeleteUnit = async () => {
-        await deleteUnit(prepDeleteId);
-        resetFeedback();
-        removePrepDeleteUnit();
-    };
-
-    const startEditUnit = (unit) => {
-        setEditingUnitId(unit.id);
-        setEditUnitName(unit.name || '');
-        setEditUnitAbbreviation(unit.abbreviation || '');
-    };
-
-    const cancelEditUnit = () => {
-        setEditingUnitId(null);
-        setEditUnitName('');
-        setEditUnitAbbreviation('');
-    };
-
-    const handleSaveUnit = async (unitId) => {
-        if (!editUnitName.trim()) {
-            setFeedback({
-                label: 'Incomplete details',
-                details: 'Unit name is required.',
-                type: 'error'
-            });
+        if (!payload.name) {
+            setFeedback({ type: 'error', label: 'Missing Name', details: 'Container name is required.' });
             return;
         }
 
-        await patchUnit(unitId, {
-            name: editUnitName.trim(),
-            abbreviation: editUnitAbbreviation.trim(),
-        });
-
-        await refresh();
-        cancelEditUnit();
-        resetFeedback();
+        try {
+            setBusyAction('create');
+            await postContainer(payload);
+            setDraft(createEmptyContainer());
+            setFeedback({ type: 'success', label: 'Container Added', details: `${payload.name} is now available for ingredient mappings.` });
+        } catch (error) {
+            setFeedback({
+                type: 'error',
+                label: 'Create Failed',
+                details: getApiErrorMessage(error, 'Unable to create container.'),
+            });
+        } finally {
+            setBusyAction('');
+        }
     };
 
-    const handleUnitNameChange = (e) => {
-        e.preventDefault();
-        if (e.target.value.length > 20) return;
-        setUnitName(e.target.value);
+    const handleSaveEdit = async () => {
+        const payload = {
+            name: editingValues.name.trim(),
+            symbol: editingValues.symbol.trim(),
+        };
+
+        if (!payload.name || !editingId) {
+            setFeedback({ type: 'error', label: 'Missing Name', details: 'Container name is required.' });
+            return;
+        }
+
+        try {
+            setBusyAction(`edit-${editingId}`);
+            await patchContainer(editingId, payload);
+            setFeedback({ type: 'success', label: 'Container Updated', details: `${payload.name} has been updated.` });
+            cancelEdit();
+        } catch (error) {
+            setFeedback({
+                type: 'error',
+                label: 'Update Failed',
+                details: getApiErrorMessage(error, 'Unable to update container.'),
+            });
+        } finally {
+            setBusyAction('');
+        }
     };
 
-    const handleUnitAbbreviationChange = (e) => {
-        e.preventDefault();
-        if (e.target.value.length > 5) return;
-        setUnitAbbreviation(e.target.value);
+    const handleDelete = async (container) => {
+        const approved = window.confirm(`Delete container "${container.name}"?`);
+        if (!approved) return;
+
+        try {
+            setBusyAction(`delete-${container.id}`);
+            await deleteContainer(container.id);
+            setFeedback({ type: 'success', label: 'Container Deleted', details: `${container.name} has been removed.` });
+            if (editingId === container.id) {
+                cancelEdit();
+            }
+        } catch (error) {
+            setFeedback({
+                type: 'error',
+                label: 'Delete Failed',
+                details: getApiErrorMessage(error, 'Unable to delete this container.'),
+            });
+        } finally {
+            setBusyAction('');
+        }
     };
-
-    const capitalize = (str) => str[0].toUpperCase() + str.slice(1);
-
-    const listUnits = unitData.map((unit, index) => (
-        <div
-            key={index}
-            className="flex items-center gap-3 p-4 rounded-xl border border-border bg-main-white"
-        >
-            {editingUnitId === unit.id ? (
-                <>
-                    <input
-                        type='text'
-                        value={editUnitName}
-                        placeholder='Unit Name'
-                        className='flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text'
-                        onChange={(e) => e.target.value.length <= 20 && setEditUnitName(e.target.value)}
-                    />
-                    <input
-                        type='text'
-                        value={editUnitAbbreviation}
-                        placeholder='Abbr'
-                        className='w-24 rounded-md px-3 py-2 bg-main-dark/50 text-text'
-                        onChange={(e) => e.target.value.length <= 5 && setEditUnitAbbreviation(e.target.value)}
-                    />
-                    <Button text="Save" variant="modalOutline" size="fit" onClick={() => handleSaveUnit(unit.id)} />
-                    <Button text="Cancel" variant="modalOutline" size="fit" onClick={cancelEditUnit} />
-                </>
-            ) : (
-                <>
-                    <span className="flex-1 font-medium text-text">
-                        {capitalize(unit.name)} {unit.abbreviation ? `(${unit.abbreviation})` : ''}
-                    </span>
-
-                    <Button
-                        text="Edit"
-                        variant="modalOutline"
-                        size="fit"
-                        icon={Pen}
-                        onClick={() => startEditUnit(unit)}
-                    />
-
-                    <Button
-                        text="Delete"
-                        variant="modalBlock"
-                        className='bg-error'
-                        size="fit"
-                        icon={Trash}
-                        onClick={() => prepDeleteUnit(unit.id)}
-                    />
-                </>
-            )}
-        </div>
-    ));
 
     return (
-        <ModalBody className='w-[60vw]' title='Manage Units' subtitle='Add, edit, or delete units for measurements' onClose={onClose}>
-            <div className='flex flex-col gap-2 w-full'>
-
-                {/* Add New Section */}
-                <div className="flex flex-col gap-2">
-                    <h5 className="text-text">Add New Unit</h5>
-                    <div className="flex gap-2">
+        <ModalBody className='w-[70vw]' title='Manage Containers' subtitle='Create reusable labels like Bottle, Cup, or Piece for ingredient mappings.' onClose={onClose}>
+            <div className='flex flex-col gap-4 w-full'>
+                <div className='border border-border rounded-xl p-4 bg-main-white'>
+                    <h5 className='text-sm font-semibold text-text mb-3'>Add Container</h5>
+                    <div className='grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2'>
                         <input
                             type='text'
-                            value={unitName}
-                            placeholder='Unit Name (e.g. Kilogram)'
-                            className="flex-2 rounded-md px-3 py-2 bg-main-dark/50 text-text"
-                            onChange={handleUnitNameChange}
+                            value={draft.name}
+                            onChange={(event) => setDraftValue('name', event.target.value)}
+                            placeholder='Container name (e.g., Bottle)'
+                            className='px-4 py-2 rounded-md bg-main border border-border focus:outline-none'
                         />
                         <input
                             type='text'
-                            value={unitAbbreviation}
-                            placeholder='Abbr (e.g. kg)'
-                            className="flex-1 rounded-md px-3 py-2 bg-main-dark/50 text-text"
-                            onChange={handleUnitAbbreviationChange}
+                            value={draft.symbol}
+                            onChange={(event) => setDraftValue('symbol', event.target.value)}
+                            placeholder='Symbol (optional)'
+                            className='px-4 py-2 rounded-md bg-main border border-border focus:outline-none'
                         />
                         <Button
-                            text="Add"
-                            variant="modalBlock"
-                            className='bg-text/50'
-                            size="fit"
+                            variant='modalBlock'
+                            text='Add'
                             icon={Plus}
-                            onClick={handleShowConfirmPostModal}
+                            onClick={handleCreateContainer}
+                            loading={busyAction === 'create'}
                         />
                     </div>
                 </div>
 
-                {/* List Section */}
-                <h5 className="text-text mt-2">Existing Units</h5>
-                <div className='flex flex-col gap-2 max-h-[30vh] overflow-auto'>
-                    {listUnits}
+                <div className='border border-border rounded-xl bg-main-white overflow-hidden'>
+                    <div className='px-4 py-3 border-b border-border bg-main'>
+                        <h5 className='text-sm font-semibold text-text'>Available Containers ({sortedContainers.length})</h5>
+                    </div>
+
+                    <div className='max-h-[42vh] overflow-y-auto'>
+                        {sortedContainers.length === 0 && (
+                            <div className='p-6 text-sm text-text/60 text-center'>No containers yet. Create one above to get started.</div>
+                        )}
+
+                        {sortedContainers.map((container) => {
+                            const isEditing = editingId === container.id;
+                            const isSaving = busyAction === `edit-${container.id}`;
+                            const isDeleting = busyAction === `delete-${container.id}`;
+
+                            return (
+                                <div key={container.id} className='px-4 py-3 border-b border-border/70 last:border-b-0 flex flex-col gap-2'>
+                                    {isEditing ? (
+                                        <div className='grid grid-cols-1 md:grid-cols-[1fr_160px_auto_auto] gap-2'>
+                                            <input
+                                                type='text'
+                                                value={editingValues.name}
+                                                onChange={(event) => setEditValue('name', event.target.value)}
+                                                className='px-3 py-2 rounded-md bg-main border border-border focus:outline-none'
+                                            />
+                                            <input
+                                                type='text'
+                                                value={editingValues.symbol}
+                                                onChange={(event) => setEditValue('symbol', event.target.value)}
+                                                className='px-3 py-2 rounded-md bg-main border border-border focus:outline-none'
+                                            />
+                                            <Button variant='modalBlock' text='Save' icon={Check} onClick={handleSaveEdit} loading={isSaving} />
+                                            <Button variant='modalOutline' text='Cancel' icon={X} onClick={cancelEdit} disabled={isSaving} />
+                                        </div>
+                                    ) : (
+                                        <div className='flex items-center gap-3'>
+                                            <div className='flex-1'>
+                                                <h6 className='font-medium text-text'>{container.name}</h6>
+                                                <p className='text-xs text-text/60'>{container.symbol || 'No symbol set'}</p>
+                                            </div>
+
+                                            <Button variant='modalOutline' text='Edit' icon={Pencil} onClick={() => startEdit(container)} disabled={!!busyAction} />
+                                            <Button variant='error' text='Delete' icon={Trash2} onClick={() => handleDelete(container)} disabled={!!busyAction} loading={isDeleting} />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
+
+                {feedback && (
+                    <ModalFeedbackCard type={feedback.type} label={feedback.label} details={feedback.details} />
+                )}
             </div>
 
-            {feedback &&
-                <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
-            }
-
-            {showConfirmPostModal &&
-                <ConfirmationModal
-                    title="Add Unit?"
-                    content="Are you sure you want to add this unit?"
-                    onReject={handleCloseConfirmPostModal}
-                    onConfirm={handlePostUnit}
-                />
-            }
-
-            {showConfirmDeleteModal &&
-                <ConfirmationModal
-                    title="Delete Unit?"
-                    content="Are you sure you want to delete this unit?"
-                    onReject={removePrepDeleteUnit}
-                    onConfirm={handleDeleteUnit}
-                />
-            }
+            <div className='flex justify-end mt-4'>
+                <Button text='Close' variant='modalOutline' onClick={onClose} />
+            </div>
         </ModalBody>
     );
 };

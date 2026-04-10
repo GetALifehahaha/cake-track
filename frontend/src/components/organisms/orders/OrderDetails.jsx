@@ -16,10 +16,12 @@ import API_ENDPOINTS from '@/api/endpoints';
 
 const buildIngredientUnitOptions = (ingredient) => {
     const baseUnit = ingredient?.unit;
-    const conversionUnits = (ingredient?.conversions || [])
-        .map(conversion => ({
-            unit: conversion.from_unit,
-            multiplierToBase: Number(conversion.multiplier_to_base || 1),
+    const containerUnits = (ingredient?.containers || ingredient?.conversions || [])
+        .map(container => ({
+            unit: container.container_unit || container.from_unit,
+            containerName: container.container_name || container.container?.name || null,
+            containerSymbol: container.container_symbol || container.container?.symbol || null,
+            multiplierToBase: Number(container.container_amount || container.multiplier_to_base || 1),
         }))
         .filter(entry => entry.unit);
 
@@ -33,11 +35,11 @@ const buildIngredientUnitOptions = (ingredient) => {
         });
     }
 
-    conversionUnits.forEach(entry => {
+    containerUnits.forEach(entry => {
         if (!unique.has(entry.unit.id)) {
             unique.set(entry.unit.id, {
                 value: String(entry.unit.id),
-                label: entry.unit.abbreviation || entry.unit.name,
+                label: entry.containerSymbol || entry.containerName || entry.unit.abbreviation || entry.unit.name,
                 multiplierToBase: entry.multiplierToBase,
             });
         }
@@ -348,8 +350,6 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         }
     };
 
-    const recipeOptions = availableRecipes.map(recipe => ({ key: recipe.name, value: String(recipe.id) }));
-
     const renderOrderInfo = () => (
         <div className='p-8 space-y-6 overflow-y-auto'>
             <div>
@@ -423,8 +423,8 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </p>
                 </div>
                 <div className='space-y-3'>
-                    <DetailRow label='Delivery Date' value={formattedDeliveryDate} />
-                    <DetailRow label='Delivery Time' value={formattedDeliveryTime} isLast />
+                    <DetailRow label='Pickup Date' value={formattedDeliveryDate} />
+                    <DetailRow label='Pickup Time' value={formattedDeliveryTime} isLast />
                 </div>
             </div>
 

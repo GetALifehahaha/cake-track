@@ -69,6 +69,9 @@ api.interceptors.response.use(
                 if (!refreshToken) {
                     return Promise.reject(error);
                 }
+                // if (!refreshToken) {
+                //     throw new Error("No refresh token available");
+                // }
 
                 // 2. Call backend to get a new access token
                 // NOTE: Use axios.post (not api.post) to avoid using the interceptors again

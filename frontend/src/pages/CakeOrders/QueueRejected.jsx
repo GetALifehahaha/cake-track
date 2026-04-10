@@ -9,7 +9,7 @@ import { OrderDetails } from '@/components/organisms';
 
 const QueueRejected = () => {
 
-	const { data, loading, error, patchOrder } = useOrder();
+	const { data, loading, patchOrder } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
 
 	if (loading) return <Loading />

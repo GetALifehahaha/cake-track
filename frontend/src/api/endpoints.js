@@ -30,6 +30,7 @@ const API_ENDPOINTS = {
     TRANSACTIONS_DEDUCTIONS: "/pos/transactions/deductions/",
     TRANSACTIONS_REGISTER_TRANSACTIONS: "/pos/transactions/register-transactions/",
     UNITS: "/inventory/units/",
+    CONTAINERS: "/inventory/containers/",
     POS_DASHBOARD: "/pos/dashboard/",
     ORDERS_DASHBOARD: "/orders/dashboard/",
     PAYMENT_HISTORY: "/payment/history/",

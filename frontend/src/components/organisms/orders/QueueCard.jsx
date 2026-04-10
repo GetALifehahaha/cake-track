@@ -4,7 +4,7 @@ import { Ellipsis } from 'lucide-react';
 import ConfirmationModalWrapper from '../ConfirmationModalWrapper';
 import { InputRejectModalWrapper } from '..';
 
-const QueueCard = ({ order, onAccept, onReject, onShowDetails }) => {
+const QueueCard = ({ order, onShowDetails }) => {
 
 	const [showOptions, setShowOptions] = useState(false);
 

@@ -80,7 +80,7 @@ const AddCakeModal = ({ onConfirm, onClose }) => {
             };
 
             await onConfirm(payload);
-        } catch (err) {
+        } catch {
             setFeedback({
                 label: 'Error',
                 details: 'Something went wrong while adding the cake.',

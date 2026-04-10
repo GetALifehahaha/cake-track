@@ -1,5 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useRef} from 'react'
-import {jwtDecode} from 'jwt-decode'
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react'
 import api from '@/api/api'
 import { ACCESS_TOKEN, REFRESH_TOKEN } from '@/api/constants'
 import { useNavigate } from 'react-router-dom'
@@ -8,10 +7,10 @@ import { refreshTokenMinutesRemaining } from '@/utils/tokenUtils'
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({children}) => {
+export const AuthProvider = ({ children }) => {
 
     const [user, setUser] = useState(null);
-    const {addToast} = useToast();
+    const { addToast } = useToast();
     const [isAuthorized, setIsAuthorized] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -126,7 +125,7 @@ export const AuthProvider = ({children}) => {
 
     const login = async (username, password) => {
         try {
-            const response = await api.post('/users/token/', {username, password});
+            const response = await api.post('/users/token/', { username, password });
 
             localStorage.setItem(ACCESS_TOKEN, response.data.access);
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
@@ -150,7 +149,7 @@ export const AuthProvider = ({children}) => {
 
     const googleLogin = async (token) => {
         try {
-            const response = await api.post('/users/google-auth/', {token: token});
+            const response = await api.post('/users/google-auth/', { token: token });
 
             localStorage.setItem(ACCESS_TOKEN, response.data.access);
             localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
@@ -171,7 +170,7 @@ export const AuthProvider = ({children}) => {
             return { success: false, error: err.response?.data || err.message };
         }
     }
-    
+
     const logout = () => {
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
@@ -192,7 +191,7 @@ export const AuthProvider = ({children}) => {
     }
 
     return (
-        <AuthContext.Provider value={{user, getUserData, isAuthorized, setUser, login, googleLogin, register, setIsAuthorized, loading, logout, sessionMinutesRemaining, sessionWarning}}>
+        <AuthContext.Provider value={{ user, getUserData, isAuthorized, setUser, login, googleLogin, register, setIsAuthorized, loading, logout, sessionMinutesRemaining, sessionWarning }}>
             {sessionWarning && <div className="w-full bg-warning-fill/20 text-warning-text text-xs font-medium text-center py-1.5 px-4">Your session will expire in {sessionMinutesRemaining} minutes. Please log in again before it expires.</div>}
             {children}
         </AuthContext.Provider>

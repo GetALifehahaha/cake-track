@@ -3,7 +3,7 @@ import { Title, Label, Button } from '../../atoms';
 import { CheckCircle, X, Download, LucidePrinter } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import ReceiptPaper from '@/components/molecules/ReceiptPaper';
-import { buildReceiptPrintHtml, buildReceiptViewModel, formatMoney } from '@/utils/receipt';
+import { buildReceiptViewModel, formatMoney } from '@/utils/receipt';
 
 const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transactionData, businessData }) => {
 
@@ -69,7 +69,7 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
                     <ReceiptPaper receipt={receiptData} />
                 </div>
             </div>
-                
+
         </div>
     )
 }

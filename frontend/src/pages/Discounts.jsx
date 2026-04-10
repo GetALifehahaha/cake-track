@@ -33,7 +33,7 @@ const Discounts = () => {
             await postDiscount(payload);
             addToast('Discount added successfully', 'success');
             clear();
-        } catch (error) {
+        } catch {
             addToast('Failed to add discount', 'error');
         }
     };
@@ -43,7 +43,7 @@ const Discounts = () => {
             await patchDiscount(prepEditDiscount.id, payload);
             addToast('Discount updated successfully', 'success');
             clear();
-        } catch (error) {
+        } catch {
             addToast('Failed to update discount', 'error');
         }
     };
@@ -52,7 +52,7 @@ const Discounts = () => {
         try {
             await patchDiscount(discount.id, { active: !discount.active });
             addToast(`Discount ${discount.active ? 'deactivated' : 'activated'}`, 'success');
-        } catch (error) {
+        } catch {
             addToast('Failed to update discount status', 'error');
         }
     }
@@ -62,7 +62,7 @@ const Discounts = () => {
             await deleteDiscount(id);
             addToast('Discount deleted', 'success');
             clear();
-        } catch (error) {
+        } catch {
             addToast('Failed to delete discount', 'error');
         }
     };

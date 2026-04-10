@@ -4,7 +4,7 @@ import { ModalFeedbackCard, ModalPriceCard, ModalSelectionCard } from '../../mol
 import { X } from 'lucide-react';
 import ConfirmationModal from '../ConfirmationModal';
 
-const PaymentModal = ({ totalPrice, customerName = '', onCustomerNameChange, onConfirm, onClose }) => {
+const PaymentModal = ({ totalPrice, customerName = '', onCustomerNameChange, onConfirm, onClose, loading }) => {
 
     const [receivedPayment, setReceivedPayment] = useState(0);
     const [isExact, setIsExact] = useState(false);
@@ -159,7 +159,7 @@ const PaymentModal = ({ totalPrice, customerName = '', onCustomerNameChange, onC
 
                 <div className='flex gap-4'>
                     <Button variant='modalOutline' size='full' text='Cancel' onClick={onClose} />
-                    <Button variant='modalBlock' size='full' text='Complete Payment' onClick={handleSetShowConfirmationModal} />
+                    <Button variant='modalBlock' size='full' text='Complete Payment' onClick={handleSetShowConfirmationModal} loading={loading} />
                 </div>
 
                 {showConfirmation &&

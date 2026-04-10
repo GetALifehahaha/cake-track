@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Title, Button } from '../atoms';
 
-const ConfirmationModalWrapper = ({ children, onConfirm, onReject, title = "Title", content = 'Content' }) => {
+const ConfirmationModalWrapper = ({ children, onConfirm, title = "Title", content = 'Content' }) => {
 
     const [show, setShow] = useState(false);
 

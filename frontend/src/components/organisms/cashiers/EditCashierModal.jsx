@@ -5,14 +5,14 @@ import ConfirmationModalWrapper from '../ConfirmationModalWrapper';
 import { limitedInput } from '@/utils/safeInput';
 import { isValidEmail } from '@/utils/validators';
 
-const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
+const EditCashierModal = ({ cashier, onConfirm, onClose }) => {
 
     const [firstName, setFirstName] = useState(cashier.first_name || '');
     const [lastName, setLastName] = useState(cashier.last_name || '');
     const [middleName, setMiddleName] = useState(cashier.middle_name || '');
     const [emailAddress, setEmailAddress] = useState(cashier.email || '');
     const [username, setUsername] = useState(cashier.username || '');
-    
+
     const [feedback, setFeedback] = useState("");
 
     const handleFirstName = (e) => {
@@ -46,7 +46,7 @@ const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
     }
 
     const editCashier = () => {
-        if (!firstName || !lastName ||!middleName ||!username || !emailAddress) {
+        if (!firstName || !lastName || !middleName || !username || !emailAddress) {
             setFeedback({
                 label: 'Incomplete details',
                 details: "Please don't leave any blank fields",
@@ -76,11 +76,11 @@ const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
     }
 
     const deactivateCashier = () => {
-        onConfirm({is_active: false});
+        onConfirm({ is_active: false });
     }
 
     const activateCashier = () => {
-        onConfirm({is_active: true});
+        onConfirm({ is_active: true });
     }
 
     return (
@@ -89,39 +89,39 @@ const EditCashierModal = ({cashier, onDeactivate, onConfirm, onClose}) => {
                 <div className='flex flex-col gap-4 w-120'>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='First Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} placeholder='e.g., Adrian' onChange={(e) => handleFirstName(e)}/>
+                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={firstName} placeholder='e.g., Adrian' onChange={(e) => handleFirstName(e)} />
                     </div>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Middle Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={middleName} placeholder='e.g., Adrian Agraviador' onChange={(e) => handleMiddleName(e)}/>
+                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={middleName} placeholder='e.g., Adrian Agraviador' onChange={(e) => handleMiddleName(e)} />
                     </div>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Last Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => handleLastName(e)}/>
+                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={lastName} placeholder='e.g., Agraviador' onChange={(e) => handleLastName(e)} />
                     </div>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='User Name' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={username} placeholder='e.g., adrian_agraviador' onChange={(e) => handleUserName(e)}/>
+                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={username} placeholder='e.g., adrian_agraviador' onChange={(e) => handleUserName(e)} />
                     </div>
                     <div className='flex flex-col gap-2'>
                         <Label variant='modal' text='Email Address' />
-                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={emailAddress} placeholder='e.g., agraviador@gmail.com' onChange={(e) => handleEmailAddress(e)}/>
+                        <input type='text' className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' value={emailAddress} placeholder='e.g., agraviador@gmail.com' onChange={(e) => handleEmailAddress(e)} />
                     </div>
                 </div>
             </div>
 
-            {feedback && 
-                <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type}  />
+            {feedback &&
+                <ModalFeedbackCard label={feedback.label} details={feedback.details} type={feedback.type} />
             }
             <div className='flex gap-4 ml-auto'>
-                {cashier.is_active ? 
-                <ConfirmationModalWrapper title='Deactivate cashier?' content='You can activate an account back again.' onConfirm={deactivateCashier}>
-                    <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-error w-fit text-base cursor-pointer'>Deactivate Cashier</h5>
-                </ConfirmationModalWrapper>
-                :
-                <ConfirmationModalWrapper title='Activate cashier?' content='This will allow the cashier to use the resources again.' onConfirm={activateCashier}>
-                    <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-success w-fit text-base cursor-pointer'>Activate</h5>
-                </ConfirmationModalWrapper>
+                {cashier.is_active ?
+                    <ConfirmationModalWrapper title='Deactivate cashier?' content='You can activate an account back again.' onConfirm={deactivateCashier}>
+                        <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-error w-fit text-base cursor-pointer'>Deactivate Cashier</h5>
+                    </ConfirmationModalWrapper>
+                    :
+                    <ConfirmationModalWrapper title='Activate cashier?' content='This will allow the cashier to use the resources again.' onConfirm={activateCashier}>
+                        <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-success w-fit text-base cursor-pointer'>Activate</h5>
+                    </ConfirmationModalWrapper>
                 }
                 <ConfirmationModalWrapper title='Save changes?' content='Are you finished with the changes?' onConfirm={editCashier}>
                     <h5 className='font-medium border-border border rounded-lg px-4 py-2 text-main-white bg-text w-fit text-base cursor-pointer'>Save</h5>

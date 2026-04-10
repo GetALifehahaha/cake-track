@@ -64,6 +64,7 @@ class DiscountViewSet(viewsets.ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = MediumPageSize
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 

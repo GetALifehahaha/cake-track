@@ -35,7 +35,7 @@ const Pagination = ({ next, prev, pageParam = 'page' }) => {
     }
 
     return (
-        <div className='flex flex-row items-center gap-2 mt-auto mx-auto'>
+        <div className='flex flex-row items-center gap-2 mt-auto mx-auto pt-4'>
 
             {/* Prev Button: Disabled if currentPage is 1 (or if API sends null for prev link) */}
             <button
