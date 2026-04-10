@@ -3,14 +3,14 @@ import { formatMoney } from '@/utils/receipt';
 
 const ReceiptPaper = ({ receipt }) => {
     return (
-        <div className='w-[360px] max-w-full mx-auto p-4 border border-border rounded-lg bg-main-white text-text font-mono'>
+        <div className='receipt-paper w-[360px] max-w-full mx-auto p-4 border border-border rounded-lg bg-main-white text-text font-mono'>
             <h5 className='text-center text-sm font-bold uppercase leading-tight'>{receipt.businessName}</h5>
             <div className='text-center text-[11px] text-text/70 leading-tight'>{receipt.businessAddress}</div>
             <div className='text-center text-[11px] text-text/70 leading-tight'>TIN: {receipt.businessTin}</div>
 
             <div className='border-t border-dashed border-text/40 my-2'></div>
 
-            <div className='text-[11px] space-y-0.5'>
+            <div className='print-section text-[11px] space-y-0.5'>
                 <div className='flex justify-between'>
                     <span>Receipt #</span>
                     <span>{receipt.displayId}</span>
@@ -51,7 +51,7 @@ const ReceiptPaper = ({ receipt }) => {
 
             <div className='border-t border-dashed border-text/40 my-2'></div>
 
-            <div className='text-[11px]'>
+            <div className='print-section text-[11px]'>
                 <div className='grid grid-cols-[32px_1fr_90px] pb-1 border-b border-dashed border-text/40 font-semibold'>
                     <span className='text-center'>Qty</span>
                     <span>Item</span>
@@ -81,7 +81,7 @@ const ReceiptPaper = ({ receipt }) => {
 
             <div className='border-t border-dashed border-text/40 my-2'></div>
 
-            <div className='text-[11px] space-y-0.5'>
+            <div className='print-section text-[11px] space-y-0.5'>
                 <div className='flex justify-between'>
                     <span>Subtotal</span>
                     <span>{formatMoney(receipt.grossTotal)}</span>
@@ -113,7 +113,7 @@ const ReceiptPaper = ({ receipt }) => {
                 </div>
             </div>
 
-            <div className='text-center text-[10px] mt-3 text-text/80 leading-tight'>
+            <div className='print-section footer text-center text-[10px] mt-3 text-text/80 leading-tight'>
                 <div>System-Generated Receipt</div>
                 {receipt.businessContact && <div>{receipt.businessContact}</div>}
                 {receipt.businessMessage && <div className='font-bold'>{receipt.businessMessage}</div>}

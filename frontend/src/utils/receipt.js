@@ -149,121 +149,125 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
                 <meta charset="UTF-8" />
                 <title>${escapeHtml(documentTitle)}</title>
                 <style>
-                    body {
-                        margin: 0;
-                        padding: 16px;
-                        font-family: 'Courier New', Courier, monospace;
-                        color: #111827;
-                        background: #ffffff;
-                        display: flex;
-                        justify-content: center;
-                    }
-                    .receipt {
-                        width: 320px;
-                        border: 1px solid #d1d5db;
-                        border-radius: 10px;
-                        padding: 14px;
-                    }
-                    .title {
-                        font-size: 14px;
-                        font-weight: 700;
-                        text-transform: uppercase;
-                        text-align: center;
-                        margin: 0;
-                    }
-                    .sub {
-                        font-size: 11px;
-                        text-align: center;
-                        line-height: 1.3;
-                    }
-                    .separator {
-                        border-top: 1px dashed #9ca3af;
-                        margin: 8px 0;
-                    }
-                    .meta-line {
-                        display: flex;
-                        justify-content: space-between;
-                        font-size: 11px;
-                        line-height: 1.35;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 4px;
-                    }
-                    th {
-                        text-align: left;
-                        font-size: 11px;
-                        padding: 4px 0;
-                        border-bottom: 1px dashed #9ca3af;
-                    }
-                    td {
-                        font-size: 11px;
-                        padding: 5px 0;
-                        vertical-align: top;
-                    }
-                    .qty {
-                        width: 32px;
-                        text-align: center;
-                    }
-                    .amount {
-                        width: 90px;
-                        text-align: right;
-                        white-space: nowrap;
-                    }
-                    .item-name {
-                        padding-right: 6px;
-                    }
-                    .item-variant {
-                        font-size: 10px;
-                        color: #6b7280;
-                    }
-                    .line-before {
-                        text-decoration: line-through;
-                        color: #6b7280;
-                        margin-right: 4px;
-                    }
-                    .totals {
-                        margin-top: 6px;
-                    }
-                    .total-row {
-                        display: flex;
-                        justify-content: space-between;
-                        font-size: 11px;
-                        line-height: 1.4;
-                    }
-                    .grand-total {
-                        border-top: 1px solid #374151;
-                        margin-top: 8px;
-                        padding-top: 6px;
-                        font-size: 12px;
-                        font-weight: 700;
-                    }
-                    .footer {
-                        margin-top: 10px;
-                        text-align: center;
-                        font-size: 10px;
-                        line-height: 1.35;
-                    }
-                    .footer-strong {
-                        font-weight: 700;
-                    }
-                    @media print {
-                        @page {
-                            size: 80mm auto;
-                            margin: 4mm;
-                        }
-                        body {
-                            padding: 0;
-                        }
-                        .receipt {
-                            width: 72mm;
-                            border: 0;
-                            border-radius: 0;
-                            padding: 0;
-                        }
-                    }
-                </style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Courier New', Courier, monospace;
+        color: #111827;
+        background: #ffffff;
+        display: flex;
+        justify-content: center;
+    }
+    .receipt {
+        width: 48mm;
+        max-width: 48mm;
+        box-sizing: border-box;
+        padding: 2mm 0;
+    }
+    .title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        text-align: center;
+        margin: 0;
+    }
+    .sub {
+        font-size: 11px;
+        text-align: center;
+        line-height: 1.3;
+    }
+    .separator {
+        border-top: 1px dashed #9ca3af;
+        margin: 8px 0;
+    }
+    .meta-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        line-height: 1.35;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+    }
+    th {
+        text-align: left;
+        font-size: 11px;
+        padding: 4px 0;
+        border-bottom: 1px dashed #9ca3af;
+    }
+    td {
+        font-size: 11px;
+        padding: 5px 0;
+        vertical-align: top;
+    }
+    .qty {
+        width: 32px;
+        text-align: center;
+    }
+    .amount {
+        width: 90px;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .item-name {
+        padding-right: 6px;
+    }
+    .item-variant {
+        font-size: 10px;
+        color: #6b7280;
+    }
+    .line-before {
+        text-decoration: line-through;
+        color: #6b7280;
+        margin-right: 4px;
+    }
+    .totals {
+        margin-top: 6px;
+    }
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+    .grand-total {
+        border-top: 1px solid #374151;
+        margin-top: 8px;
+        padding-top: 6px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .footer {
+        margin-top: 10px;
+        text-align: center;
+        font-size: 10px;
+        line-height: 1.35;
+    }
+    .footer-strong {
+        font-weight: 700;
+    }
+    
+    tr, td, th, .meta-line, .total-row, .separator {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    @media print {
+        @page {
+            margin: 0;
+        }
+        body {
+            width: 100%;
+            display: block;
+        }
+        .receipt {
+            width: 48mm;
+            margin: 0 auto;
+        }
+    }
+</style>
             </head>
             <body>
                 <div class="receipt">

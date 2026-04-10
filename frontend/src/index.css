@@ -19,24 +19,124 @@ html {
 }
 
 @media print {
-  body {
-    background: white !important;
+  @page {
+    size: 58mm auto;
+    margin: 0 !important;
   }
 
-  /* Only show the receipt */
-  #receipt {
-    width: 100%;
-    margin: 0 auto;
-    page-break-after: always;
-  }
-
-  /* Hide everything except the receipt */
   body * {
     visibility: hidden;
   }
   
   #receipt, #receipt * {
     visibility: visible;
+  }
+
+  html, body {
+    width: 58mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff;
+  }
+
+  #receipt {
+    position: static !important;
+    width: 48mm !important;
+    max-width: 48mm !important;
+    margin: 0 !important;
+    padding: 0 2mm 0 0 !important;
+    box-sizing: border-box;
+    left: 0 !important;
+    top: 0 !important;
+  }
+
+  #receipt .title {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0;
+  }
+
+  #receipt .sub {
+    font-size: 6px;
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  #receipt .meta-line,
+  #receipt th,
+  #receipt td,
+  #receipt .total-row {
+    font-size: 6px;
+    line-height: 1.15;
+  }
+
+  #receipt .item-variant {
+    font-size: 5px;
+    color: #6b7280;
+  }
+
+  #receipt .grand-total {
+    font-size: 7px;
+    font-weight: 700;
+  }
+
+  #receipt .footer {
+    font-size: 5px;
+    margin-top: 6px;
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  #receipt table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 3px;
+  }
+
+  #receipt th {
+    text-align: left;
+    padding: 2px 0;
+    border-bottom: 1px dashed #9ca3af;
+  }
+
+  #receipt td {
+    padding: 2px 0;
+    vertical-align: top;
+  }
+
+  #receipt .qty {
+    width: 14px;
+    text-align: left;
+  }
+
+  #receipt .amount {
+    width: 40px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  #receipt .item-name {
+    padding-right: 2px;
+    word-break: break-word;
+  }
+
+  #receipt .separator {
+    border-top: 1px dashed #9ca3af;
+    margin: 4px 0;
+  }
+
+  #receipt .print-section,
+  #receipt table,
+  #receipt tr,
+  #receipt td,
+  #receipt th,
+  #receipt .meta-line,
+  #receipt .total-row,
+  #receipt .footer {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }
 

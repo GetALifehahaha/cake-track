@@ -18,7 +18,7 @@ const isOnPublicAuthPage = () => {
 
 api.interceptors.request.use(
     async (config) => {
-        if (config.url?.includes('/users/token/') || config.url?.includes('/users/token/refresh/')) {
+        if (config.url?.includes('users/token/') || config.url?.includes('users/token/refresh/')) {
             return config;
         }
 
@@ -74,7 +74,7 @@ const refreshAccessToken = async () => {
     isRefreshing = true;
 
     try {
-        const res = await axios.post(`${url}/users/token/refresh/`, { refresh });
+        const res = await axios.post(`${url}users/token/refresh/`, { refresh });
         const access = res.data.access;
 
         localStorage.setItem(ACCESS_TOKEN, access)
