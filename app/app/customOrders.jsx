@@ -88,20 +88,17 @@ const CustomOrders = () => {
     ]
 
 
-    // Map dropdown values to cakeImages asset keys based on tier
-    // Handles inconsistency: round tier1 uses 'straw', but tier2-3 use 'strawberry'
     const getFillingKey = (fillingValue, shape, tier) => {
         if (fillingValue === 'strawberry' && shape === 'round' && tier > 1) {
             return 'strawberry';
         } else if (fillingValue === 'strawberry' && shape === 'round' && tier === 1) {
             return 'straw';
         } else if (fillingValue === 'strawberry') {
-            return 'straw'; // sheet uses 'straw' for all tiers
+            return 'straw'; 
         }
-        return fillingValue; // choco and vanilla are consistent
+        return fillingValue; 
     };
 
-    // Listen for address selected from locationPicker (via locationStore)
     useFocusEffect(
         useCallback(() => {
             const addr = locationStore.consumeAddress();
@@ -111,7 +108,6 @@ const CustomOrders = () => {
         }, [])
     );
 
-    // Set vanilla as default filling when tier is selected
     useEffect(() => {
         if (tier && !filling) {
             setFilling('vanilla');
@@ -130,17 +126,14 @@ const CustomOrders = () => {
             return;
         }
 
-        const tierKey = `tier${tier}`; // e.g. 'tier1', 'tier2', 'tier3'
+        const tierKey = `tier${tier}`; 
         let newLayers = [];
 
-        // --- BASE FLAVOR PREVIEW FIX ---
         if (page === 2 || page === 3) {
-            // Use selected base flavor for preview, fallback to yellow
             const baseKey = baseFlavor || 'yellow';
             const base = assets.bases?.[tierKey]?.[baseKey];
             if (base) newLayers.push(base);
 
-            // Page 3 only: show filling on top of base
             if (page === 3 && filling) {
                 const fillKey = getFillingKey(filling, shape, tier);
                 const fill = assets.fillings?.[tierKey]?.[fillKey];
@@ -148,14 +141,11 @@ const CustomOrders = () => {
             }
 
         } else if (page >= 4) {
-            // Page 4+: Coating color replaces yellow. Fillings are hidden by coating.
             const activeCoating = coatingColor || 'yellow';
             const base = assets.bases?.[tierKey]?.[activeCoating];
             if (base) newLayers.push(base);
 
-            // --- PIPINGS/DRIPS LOGIC FIX ---
             if (border && borderColor) {
-                // Try both pipings and drips for both shapes
                 if (border === 'piping' && assets.pipings?.[tierKey]?.[borderColor]) {
                     newLayers.push(assets.pipings[tierKey][borderColor]);
                 } else if (border === 'drip' && assets.drips?.[tierKey]?.[borderColor]) {
@@ -163,14 +153,12 @@ const CustomOrders = () => {
                 }
             }
 
-            // 3. Sprinkles — variant matches the border type (drip or pipe)
             if (page >= 5 && toppings === 'sprinkles') {
                 const sprinkleVariant = border === 'drip' ? 'drip' : 'pipe';
                 const sprinkle = assets.sprinkles?.[sprinkleVariant]?.[tierKey];
                 if (sprinkle) newLayers.push(sprinkle);
             }
 
-            // --- CANDLE ADD-ON FIX ---
             if (page >= 6 && addOn === 'candle') {
                 const candle = cakeImages.accessories?.[tierKey];
                 if (candle) newLayers.push(candle);
@@ -190,7 +178,6 @@ const CustomOrders = () => {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#8B5A3C" />
-                {/* Optional: Add text so the user knows why it's taking time */}
                 {isSubmitting && <Text className="text-secondary-light mt-2">Processing Order...</Text>}
             </View>
         );
@@ -468,13 +455,12 @@ const CustomOrders = () => {
 
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsMultipleSelection: true, // Allow selecting multiple
-            selectionLimit: 5 - images.length, // Dynamic limit
+            allowsMultipleSelection: true,
+            selectionLimit: 5 - images.length, 
             quality: 1,
         });
 
         if (!result.canceled) {
-            // Append new images to existing list
             const newUris = result.assets.map(asset => asset.uri);
             setImages([...images, ...newUris]);
         }
@@ -483,14 +469,12 @@ const CustomOrders = () => {
     const uploadToCloudinary = async (imageUri) => {
         if (!imageUri) return null;
 
-        // Extract the file name and type from the URI
         const filename = imageUri.split('/').pop();
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image/jpeg`;
 
         const formData = new FormData();
 
-        // REACT NATIVE SPECIFIC: formatting the file object
         formData.append("file", {
             uri: imageUri,
             name: filename,
@@ -505,8 +489,6 @@ const CustomOrders = () => {
                 {
                     method: "POST",
                     body: formData,
-                    // Note: Do NOT set 'Content-Type': 'multipart/form-data' header manually. 
-                    // Fetch does this automatically with the correct boundary.
                 }
             );
 
@@ -569,34 +551,33 @@ const CustomOrders = () => {
 
     function formatText(str) {
         return str
-            .split('_')                 // ["On", "both"]
+            .split('_')                 
             .map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             )
-            .join(' ');                 // "On Both"
+            .join(' ');               
     }
 
 
     return (
         <SafeAreaView className='flex-1 bg-[#8B5A3C]'>
-            {/* 1. Behavior: 'padding' is best for iOS. Android often handles this automatically.
-               If you see double spacing on Android, change it to undefined for Platform.OS === 'android' 
-            */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
                 <ScrollView
                     className="flex-1"
-                    // 2. This ensures the white background stretches to the bottom even if content is short
+  
                     contentContainerStyle={{ flexGrow: 1 }}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* IMAGE CONTAINER */}
                     <View style={{ height: SCREEN_HEIGHT * 0.35 }} className="w-full items-center justify-center p-4">
-                        <View className='aspect-square h-[90%] bg-[#f7e8e1fe] rounded-lg justify-center items-center shadow-sm'>
+                        <View className='aspect-square h-[90%] border-8 border-white rounded-[40px] justify-center items-center shadow-sm relative'>
+                            <View className='absolute h-4 w-4/5 bg-white rounded-2xl -z-10 bottom-8'></View>
+                            <View className='absolute h-2 w-4/5 bg-white/20 rounded-2xl -z-10 bottom-14'></View>
+                            <View className='absolute h-4 w-4/5 bg-white rounded-2xl -z-10 top-8'></View>
                             {personallyDesign ? (
                                 <View className="items-center">
                                     <Text className='text-sm font-semibold text-gray-300'>CUSTOM DESIGN</Text>
@@ -620,6 +601,7 @@ const CustomOrders = () => {
                                     <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
                                 )
                             )}
+                            
                         </View>
                     </View>
 
