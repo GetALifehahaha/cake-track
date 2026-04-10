@@ -5,7 +5,8 @@ import { useLocalSearchParams, usePathname } from "expo-router";
 import { useMemo } from "react";
 
 export default function useOrder(options = {}) {
-    const { includeHiddenOrders = false } = options;
+    const { includeArchivedOrders = false, includeHiddenOrders = false } = options;
+    const shouldIncludeArchivedOrders = includeArchivedOrders || includeHiddenOrders;
     const queryClient = useQueryClient();
     // CHANGED: Expo equivalent of useSearchParams
     const params = useLocalSearchParams(); 
@@ -19,17 +20,17 @@ export default function useOrder(options = {}) {
         placeholderData: (previousData) => previousData,
     });
 
-    const hiddenOrdersQuery = useQuery({
-        queryKey: ['orders', 'hidden'],
-        queryFn: () => OrderApi(null, null, 'GET_HIDDEN_ALL_PAGES'),
-        enabled: includeHiddenOrders,
+    const archivedOrdersQuery = useQuery({
+        queryKey: ['orders', 'archived'],
+        queryFn: () => OrderApi(null, null, 'GET_ARCHIVED_ALL_PAGES'),
+        enabled: shouldIncludeArchivedOrders,
         placeholderData: (previousData) => previousData,
     });
 
     // --- 3. Mutations ---
     const onSuccessInvalidate = () => {
         queryClient.invalidateQueries({ queryKey: ['orders'] });
-        queryClient.invalidateQueries({ queryKey: ['orders', 'hidden'] });
+        queryClient.invalidateQueries({ queryKey: ['orders', 'archived'] });
     };
 
     const createMutation = useMutation({
@@ -52,25 +53,26 @@ export default function useOrder(options = {}) {
         onSuccess: onSuccessInvalidate,
     });
 
-    const hideMutation = useMutation({
-        mutationFn: (id) => OrderApi(null, id, "HIDE"),
+    const archiveMutation = useMutation({
+        mutationFn: (id) => OrderApi(null, id, "ARCHIVE"),
         onSuccess: onSuccessInvalidate,
     });
 
     // --- 4. Return Interface ---
     return {
         data: ordersQuery.data || [],
-        hiddenData: hiddenOrdersQuery.data || [],
+        archivedData: archivedOrdersQuery.data || [],
+        hiddenData: archivedOrdersQuery.data || [],
         
         loading: ordersQuery.isLoading || 
-                 hiddenOrdersQuery.isLoading ||
+                 archivedOrdersQuery.isLoading ||
                  createMutation.isPending || 
                  updateMutation.isPending || 
                  deleteMutation.isPending ||
                  batchUpdateMutation.isPending ||
-                 hideMutation.isPending,
+                 archiveMutation.isPending,
 
-        error: ordersQuery.error || hiddenOrdersQuery.error || createMutation.error || updateMutation.error,
+        error: ordersQuery.error || archivedOrdersQuery.error || createMutation.error || updateMutation.error,
 
         postOrder: async (params) => {
             return createMutation.mutateAsync(params);
@@ -88,14 +90,18 @@ export default function useOrder(options = {}) {
             return deleteMutation.mutateAsync(id);
         },
 
+        archiveOrder: async (id) => {
+            return archiveMutation.mutateAsync(id);
+        },
+
         hideOrder: async (id) => {
-            return hideMutation.mutateAsync(id);
+            return archiveMutation.mutateAsync(id);
         },
 
         refresh: async () => {
             const tasks = [ordersQuery.refetch()];
-            if (includeHiddenOrders) {
-                tasks.push(hiddenOrdersQuery.refetch());
+            if (shouldIncludeArchivedOrders) {
+                tasks.push(archivedOrdersQuery.refetch());
             }
             await Promise.allSettled(tasks);
         },

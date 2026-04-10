@@ -96,6 +96,9 @@ export default function Index() {
                     <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
                         Greetings, {!user && 'Guest'}{user?.first_name || ''} {user?.last_name || ''}
                     </Text>
+                    <Text className='text-white font-bold text-xs ml-8 mb-6 max-w-[80%]'>
+                        Update: 1
+                    </Text>
                     <ImageBackground
                         source={greetingsTexture}
                         resizeMode='repeat'

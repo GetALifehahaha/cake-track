@@ -6,9 +6,9 @@ import { capitalize } from '@/utils/capitalize'
 import { router } from 'expo-router'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
 
-const HIDEABLE_STATUSES = ['completed', 'refunded', 'rejected', 'cancelled'];
+const ARCHIVABLE_STATUSES = ['completed', 'refunded', 'rejected', 'cancelled'];
 
-const OrderCard = ({ order, onHide }) => {
+const OrderCard = ({ order, onArchive, onHide }) => {
 
     const swipeableRef = useRef(null);
 
@@ -21,11 +21,9 @@ const OrderCard = ({ order, onHide }) => {
         cancelled: "text-red-600 bg-red-100 border-red-200",
         refunded: "text-red-600 bg-red-100 border-red-200",
 
-        // Handle both 'ready' and 'ready_for_pickup' just in case
         ready: "text-yellow-700 bg-yellow-100 border-yellow-200",
         ready_for_pickup: "text-yellow-700 bg-yellow-100 border-yellow-200",
 
-        // Handle both 'completed' and 'accepted'
         completed: "text-green-700 bg-green-100 border-green-200",
         accepted: "text-green-700 bg-green-100 border-green-200",
     };
@@ -37,17 +35,18 @@ const OrderCard = ({ order, onHide }) => {
         });
     }
 
-    const canHide = HIDEABLE_STATUSES.includes(String(order?.status || '').toLowerCase()) && typeof onHide === 'function';
+    const archiveHandler = onArchive || onHide;
+    const canArchive = ARCHIVABLE_STATUSES.includes(String(order?.status || '').toLowerCase()) && typeof archiveHandler === 'function';
 
-    const handleHide = () => {
+    const handleArchive = () => {
         swipeableRef.current?.close();
-        onHide(order.id);
+        archiveHandler(order.id);
     };
 
-    const renderHideAction = () => (
+    const renderArchiveAction = () => (
         <View className='justify-center items-center mb-4 mr-1'>
             <TouchableOpacity
-                onPress={handleHide}
+                onPress={handleArchive}
                 activeOpacity={0.8}
                 className='bg-red-500 rounded-xl px-5 py-6 min-w-10 h-full items-center justify-center ml-2'
             >
@@ -84,7 +83,7 @@ const OrderCard = ({ order, onHide }) => {
         </TouchableOpacity>
     );
 
-    if (!canHide) {
+    if (!canArchive) {
         return cardBody;
     }
 
@@ -92,7 +91,7 @@ const OrderCard = ({ order, onHide }) => {
         <Swipeable
             ref={swipeableRef}
             overshootRight={false}
-            renderRightActions={renderHideAction}
+            renderRightActions={renderArchiveAction}
         >
             {cardBody}
         </Swipeable>

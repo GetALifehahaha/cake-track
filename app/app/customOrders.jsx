@@ -29,7 +29,6 @@ import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
 import { formatPhoneNumber, isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
 
-// Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CustomOrders = () => {
@@ -198,8 +197,6 @@ const CustomOrders = () => {
     }
 
     const orderCake = async () => {
-        // Capture the cake preview BEFORE showing the loading spinner,
-        // because setIsSubmitting unmounts the preview View
         let capturedCakeUri = null;
         if (!personallyDesign && customLayers.length > 0 && cakePreviewRef.current) {
             try {
@@ -212,25 +209,22 @@ const CustomOrders = () => {
             }
         }
 
-        setIsSubmitting(true); // Start loading spinner
+        setIsSubmitting(true); 
 
         try {
             let uploadedImageUrls = [];
 
             let imagesToUpload = [...images];
 
-            // Prepend the captured cake preview so it becomes the main/first image
             if (capturedCakeUri) {
                 imagesToUpload.unshift(capturedCakeUri);
             }
 
-            // 1. Upload Image if it exists
             if (imagesToUpload.length > 0) {
                 const uploadPromises = imagesToUpload.map(uri => uploadToCloudinary(uri));
                 uploadedImageUrls = await Promise.all(uploadPromises);
             }
 
-            // 2. Prepare Payload (Use uploadedImageUrl instead of local 'image')
             const cakeData = personallyDesign ? {
                 occasion: occasion === "other" ? specifyOccasion : occasion,
                 shape: "Custom Request",
@@ -259,7 +253,6 @@ const CustomOrders = () => {
                 message: messageType === "none" ? "" : message,
             };
 
-            // Format dates for Django (YYYY-MM-DD and HH:MM:SS)
             const formattedDate = dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate;
             const formattedTime = pickupTime instanceof Date ? pickupTime.toTimeString().split(' ')[0] : pickupTime;
 
@@ -279,10 +272,9 @@ const CustomOrders = () => {
                 }),
                 comments: comments,
                 image: uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null,
-                uploaded_images: uploadedImageUrls // <--- SEND THE CLOUDINARY URL HERE
+                uploaded_images: uploadedImageUrls
             };
 
-            // 3. Post to Backend
             const response = await postOrder(payload);
 
             const newOrderId = response?.id || response?.data?.id;
@@ -296,7 +288,6 @@ const CustomOrders = () => {
                     },
                 });
             } else {
-                // Fallback if no ID returned (shouldn't happen if backend is 200 OK)
                 showToast("Order placed, but ID missing. Check Order History.");
                 router.push('/orderSuccess');
             }
@@ -305,11 +296,10 @@ const CustomOrders = () => {
             console.error(err);
             showToast("Failed to place order. Please try again.", "error")
         } finally {
-            setIsSubmitting(false); // Stop loading spinner
+            setIsSubmitting(false); 
         }
     }
 
-    // --- Validation Logic ---
     const validateCurrentPage = () => {
         switch (page) {
             case 1: // Cake Details
@@ -390,7 +380,6 @@ const CustomOrders = () => {
                     showToast("Please select a pickup time for your order", 'error');
                     return false;
                 }
-                // If personally designing, force them to add a comment describing the cake
                 if (personallyDesign && (!comments || comments.trim() === "")) {
                     showToast("Please describe your custom design in the comments", 'error');
                     return false;
@@ -398,7 +387,6 @@ const CustomOrders = () => {
                 return true;
 
             case 9: // Image
-                // NEW: If personally designing, an image reference is required
                 if (personallyDesign && images.length === 0) {
                     showToast("Please upload a reference image for your custom design", 'error');
                     return false;
@@ -443,14 +431,10 @@ const CustomOrders = () => {
         }
     };
 
-    // --- FIX 2: Updated Logic to Skip Pages 4 and 5 if personallyDesign is true ---
     const handleChangePage = (direction) => {
         if (direction === 'next' && page < maxPage) {
             if (validateCurrentPage()) {
-                // --- NEW LOGIC: Personally Design Flow ---
                 if (personallyDesign && page === 1) {
-                    // Skip Pages 2-7 (Form, Flavors, Coating, Addons, Message, Cupcakes)
-                    // Jump straight to Page 8 (Comments/Due Date)
                     setPage(8);
                 }
                 else {
@@ -458,9 +442,7 @@ const CustomOrders = () => {
                 }
             }
         } else if (direction === 'prev' && page > 1) {
-            // --- NEW LOGIC: Back Button for Personally Design ---
             if (personallyDesign && page === 8) {
-                // If on Comments page and it's a personal design, go back to Page 1
                 setPage(1);
             } else {
                 setPage(page - 1);
@@ -473,7 +455,6 @@ const CustomOrders = () => {
     }
 
     const pickImage = async () => {
-        // Limit total images to 6
         if (images.length >= 5) {
             showToast("Maximum 6 images allowed", "error");
             return;

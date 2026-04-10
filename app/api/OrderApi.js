@@ -40,7 +40,7 @@
                 return fetchSinglePage('/orders/orders/my-orders/', params || {});
             }
 
-            else if (method === "GET_HIDDEN_ALL_PAGES") {
+            else if (method === "GET_ARCHIVED_ALL_PAGES" || method === "GET_HIDDEN_ALL_PAGES") {
                 return fetchSinglePage('/orders/orders/my-hidden-orders/', params || {});
             }
             
@@ -60,7 +60,7 @@
                 return response;
             }
 
-            else if (method === "HIDE") {
+            else if (method === "ARCHIVE" || method === "HIDE") {
                 const response = await api.post(`/orders/orders/${id}/hide/`);
                 return response.data;
             }

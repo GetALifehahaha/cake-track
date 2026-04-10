@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router'
 import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView'
 
 const COMPLETED_STATUSES = ['completed'];
-const HIDEABLE_STATUSES = ['completed', 'rejected', 'refunded', 'cancelled'];
+const ARCHIVABLE_STATUSES = ['completed', 'rejected', 'refunded', 'cancelled'];
 
 const Orders = () => {
 	const ordersTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
@@ -22,7 +22,7 @@ const Orders = () => {
 	const [activeTab, setActiveTab] = useState('orders');
 	const router = useRouter();
 
-	const { data, hiddenData, loading, error, refresh, hideOrder } = useOrder({ includeHiddenOrders: true });
+	const { data, archivedData, loading, error, refresh, archiveOrder } = useOrder({ includeArchivedOrders: true });
 
 	const onRefresh = async () => {
 		await refresh();
@@ -32,12 +32,12 @@ const Orders = () => {
 		setFilters(selectedStatuses);
 	};
 
-	const handleHideOrder = async (orderId) => {
+	const handleArchiveOrder = async (orderId) => {
 		try {
-			await hideOrder(orderId);
+			await archiveOrder(orderId);
 			refresh();
-		} catch (hideError) {
-			console.error('Hide order failed:', hideError?.response?.data || hideError?.message);
+		} catch (archiveError) {
+			console.error('Archive order failed:', archiveError?.response?.data || archiveError?.message);
 		}
 	};
 
@@ -74,7 +74,7 @@ const Orders = () => {
 	)
 
 	const allOrders = Array.isArray(data) ? data : [];
-	const allHiddenOrders = Array.isArray(hiddenData) ? hiddenData : [];
+	const allArchivedOrders = Array.isArray(archivedData) ? archivedData : [];
 
 	const filteredList = allOrders.filter(order => {
 		const query = search.toLowerCase().trim();
@@ -91,12 +91,12 @@ const Orders = () => {
 	});
 
 	const listOrders = filteredList.map((order, index) => (
-		<OrderCard key={index} order={order} onHide={handleHideOrder} />
+		<OrderCard key={index} order={order} onArchive={handleArchiveOrder} />
 	))
 
 	const finishedOrders = allOrders.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase()));
 
-	const hiddenOrders = allHiddenOrders.filter(order => {
+	const archivedOrders = allArchivedOrders.filter(order => {
 		// defensive: skip invalid items
 		if (!order || typeof order !== 'object') return false;
 		const query = search.toLowerCase().trim();
@@ -104,16 +104,16 @@ const Orders = () => {
 		const status = String(order.status || '').toLowerCase();
 
 		const matchesSearch = search === "" || orderId.includes(query);
-		const isHideableStatus = HIDEABLE_STATUSES.includes(status);
+		const isArchivableStatus = ARCHIVABLE_STATUSES.includes(status);
 
-		return matchesSearch && isHideableStatus;
+		return matchesSearch && isArchivableStatus;
 	});
 
 	const listCompleteOrders = finishedOrders.map((order, index) => (
-		<OrderCard key={index} order={order} onHide={handleHideOrder} />
+		<OrderCard key={index} order={order} onArchive={handleArchiveOrder} />
 	))
 
-	const listHiddenOrders = hiddenOrders.map((order, index) => (
+	const listArchivedOrders = archivedOrders.map((order, index) => (
 		<TouchableOpacity
 			key={index}
 			className='rounded-xl border border-gray-200 bg-white px-4 py-3'
@@ -168,29 +168,9 @@ const Orders = () => {
 					contentContainerStyle={{ paddingBottom: 20 }}
 					onRefresh={onRefresh}
 				>
+					
 					<View className='flex px-6'>
-						<View className='mb-4 flex-row rounded-lg border border-gray-200 bg-white p-1'>
-							<TouchableOpacity
-								className={`flex-1 rounded-md px-3 py-2 ${activeTab === 'orders' ? 'bg-primary' : 'bg-white'}`}
-								onPress={() => setActiveTab('orders')}
-							>
-								<Text className={`text-center font-semibold ${activeTab === 'orders' ? 'text-white' : 'text-gray-600'}`}>Orders</Text>
-							</TouchableOpacity>
-							<TouchableOpacity
-								className={`flex-1 rounded-md px-3 py-2 ${activeTab === 'acquired' ? 'bg-primary' : 'bg-white'}`}
-								onPress={() => setActiveTab('acquired')}
-							>
-								<Text className={`text-center font-semibold ${activeTab === 'acquired' ? 'text-white' : 'text-gray-600'}`}>Acquired</Text>
-							</TouchableOpacity>
-							<TouchableOpacity
-								className={`flex-1 rounded-md px-3 py-2 ${activeTab === 'hidden' ? 'bg-primary' : 'bg-white'}`}
-								onPress={() => setActiveTab('hidden')}
-							>
-								<Text className={`text-center font-semibold ${activeTab === 'hidden' ? 'text-white' : 'text-gray-600'}`}>Hidden Orders</Text>
-							</TouchableOpacity>
-						</View>
-
-						<View className='flex-row items-center gap-2 bg-white shadow-md p-3 rounded-md border border-gray-200'>
+						<View className='flex-row items-center gap-2 bg-white shadow-md p-3 px-6 rounded-full border border-gray-200 mb-2'>
 							<Search opacity={.50} color="gray" />
 							<TextInput
 								className='flex-1'
@@ -199,6 +179,28 @@ const Orders = () => {
 								placeholder='Search orders...'
 							/>
 						</View>
+						<View className='mb-4 flex-row rounded-full border border-gray-200 bg-white p-1'>
+							<TouchableOpacity
+								className={`flex-1 rounded-full px-3 py-2 ${activeTab === 'orders' ? 'bg-primary' : 'bg-white'}`}
+								onPress={() => setActiveTab('orders')}
+							>
+								<Text className={`text-center font-semibold ${activeTab === 'orders' ? 'text-white' : 'text-gray-600'}`}>Orders</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								className={`flex-1 rounded-full px-3 py-2 ${activeTab === 'acquired' ? 'bg-primary' : 'bg-white'}`}
+								onPress={() => setActiveTab('acquired')}
+							>
+								<Text className={`text-center font-semibold ${activeTab === 'acquired' ? 'text-white' : 'text-gray-600'}`}>Acquired</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								className={`flex-1 rounded-full px-3 py-2 ${activeTab === 'archived' ? 'bg-primary' : 'bg-white'}`}
+								onPress={() => setActiveTab('archived')}
+							>
+								<Text className={`text-center font-semibold ${activeTab === 'archived' ? 'text-white' : 'text-gray-600'}`}>Archives</Text>
+							</TouchableOpacity>
+						</View>
+
+						
 
 						{activeTab === 'orders' && (
 							<View className='mt-6 gap-4'>
@@ -244,19 +246,19 @@ const Orders = () => {
 							</View>
 						)}
 
-						{activeTab === 'hidden' && (
+						{activeTab === 'archived' && (
 							<View className='mt-6 gap-4'>
 								<View className='flex-row items-center justify-between'>
-									<Text className='font-semibold text-lg'>Hidden Orders</Text>
+									<Text className='font-semibold text-lg'>Archived Orders</Text>
 								</View>
 
-								{listHiddenOrders.length > 0 ?
+								{listArchivedOrders.length > 0 ?
 									<View className='gap-2'>
-										{listHiddenOrders}
+										{listArchivedOrders}
 									</View>
 									: (
 										<View className='items-center justify-center py-10 opacity-50'>
-											<Text>No hidden orders yet.</Text>
+											<Text>No archived orders yet.</Text>
 										</View>
 									)}
 							</View>
