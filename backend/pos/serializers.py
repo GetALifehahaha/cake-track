@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from users.serializers import UserSerializer
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
@@ -354,6 +355,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         payment_reference_number = str(validated_data.get('payment_reference_number') or '').strip()
         is_void = validated_data.pop('is_void', False)
         is_completed = validated_data.pop('is_completed', False)
+
+        if str(payment_method).lower() == 'gcash' and not getattr(settings, 'POS_GCASH_ENABLED', False):
+            raise ValidationError({"payment_method": "GCash POS payments are temporarily disabled."})
 
         if payment_method == 'gcash':
             if not payment_reference_number:

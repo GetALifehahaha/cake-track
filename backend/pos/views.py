@@ -250,6 +250,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return None
         return RegisterMoneySerializer(register_money).data
 
+    @staticmethod
+    def _gcash_disabled_response():
+        return Response(
+            {"detail": "GCash POS payments are temporarily disabled."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
     
     def get_serializer_class(self, *args, **kwargs):
         if self.action in ['create', 'update', 'partial_update']:
@@ -329,6 +336,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='gcash-initiate')
     def gcash_initiate(self, request):
+        if not getattr(settings, 'POS_GCASH_ENABLED', False):
+            return self._gcash_disabled_response()
+
         serializer = GCashInitiateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -382,6 +392,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='gcash-verify')
     def gcash_verify(self, request):
+        if not getattr(settings, 'POS_GCASH_ENABLED', False):
+            return self._gcash_disabled_response()
+
         serializer = GCashVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
