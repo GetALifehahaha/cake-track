@@ -250,7 +250,7 @@ const Discounts = () => {
                     </div>
                 )}
 
-                <Pagination prev={discountPagination?.previous} next={discountPagination?.next} />
+                <Pagination prev={discountPagination?.previous} next={discountPagination?.next} count={discountPagination?.count} />
             </div>
 
             {showAddModal && (

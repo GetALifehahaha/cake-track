@@ -62,7 +62,7 @@ const TransactionHistoryModal = ({ onClose }) => {
                     </div>
                 </div>
 
-                <Pagination next={transactions.next} prev={transactions.prev} />
+                <Pagination next={transactions.next} prev={transactions.prev} count={transactions?.count} />
             </div>
             <div className='flex justify-end px-6 py-4 border-t border-border/50 bg-gray-50'>
                 <Button variant='modalOutline' text='Close' onClick={onClose} />

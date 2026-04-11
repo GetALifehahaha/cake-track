@@ -1,63 +1,104 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-const Pagination = ({ next, prev, pageParam = 'page' }) => {
-    // 1. Remove useState(pageNum) - The URL is the Source of Truth
+const Pagination = ({ next, prev, count, pageParam = 'page', pageSize = 20 }) => {
 
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // 2. Derive current page directly from the URL (Safe and current)
-    const currentPage = parseInt(searchParams.get(pageParam) || '1', 10);
+    const currentPageFromUrl = parseInt(searchParams.get(pageParam) || '1', 10);
+    const currentPage = Number.isNaN(currentPageFromUrl) || currentPageFromUrl < 1 ? 1 : currentPageFromUrl;
+    const queryPageSize = parseInt(searchParams.get('page_size') || '', 10);
+    const pageSizeFromProp = Number(pageSize);
+    const resolvedPageSize =
+        Number.isFinite(pageSizeFromProp) && pageSizeFromProp > 0
+            ? pageSizeFromProp
+            : (Number.isNaN(queryPageSize) || queryPageSize <= 0 ? 20 : queryPageSize);
 
-    const handleSetPageNum = (direction) => {
-        // 3. Clone existing parameters (non-destructive update)
+    const parsedCount = Number(count);
+    const hasCount = Number.isFinite(parsedCount) && parsedCount >= 0;
+    const totalPages = hasCount
+        ? Math.max(1, Math.ceil(parsedCount / resolvedPageSize))
+        : (!next ? currentPage : null);
+
+    const setPage = (targetPage) => {
         const newParams = new URLSearchParams(searchParams);
-        let newPage = currentPage;
+        const boundedPage = totalPages ? Math.min(Math.max(targetPage, 1), totalPages) : Math.max(targetPage, 1);
 
-        if (direction === "prev") {
-            // Check if we can go back
-            if (currentPage <= 1) {
-                return;
-            }
-            newPage = currentPage - 1;
-        } else if (direction === "next") {
-            // No need to check if we can go forward; the 'disabled' attribute handles the limit
-            newPage = currentPage + 1;
-        }
-
-        // 4. Update the 'page' parameter in the URL
-        newParams.set(pageParam, newPage);
+        newParams.set(pageParam, String(boundedPage));
         setSearchParams(newParams);
 
-        // 5. Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    };
+
+    const handleSetPageNum = (direction) => {
+        if (direction === 'first') {
+            if (currentPage <= 1) return;
+            setPage(1);
+            return;
+        }
+
+        if (direction === 'prev') {
+            if (currentPage <= 1 || !prev) return;
+            setPage(currentPage - 1);
+            return;
+        }
+
+        if (direction === 'next') {
+            if (!next) return;
+            setPage(currentPage + 1);
+            return;
+        }
+
+        if (direction === 'last') {
+            if (!totalPages || currentPage >= totalPages) return;
+            setPage(totalPages);
+        }
+    };
+
+    const currentDisplayPage = totalPages ? Math.min(currentPage, totalPages) : currentPage;
+    const firstDisabled = currentDisplayPage <= 1;
+    const prevDisabled = currentDisplayPage <= 1 || !prev;
+    const nextDisabled = !next;
+    const lastDisabled = !totalPages || currentDisplayPage >= totalPages;
 
     return (
-        <div className='flex flex-row items-center gap-2 mt-auto mx-auto pt-4'>
+        <div className='flex flex-row flex-wrap items-center justify-center gap-2 mt-auto ml-auto pt-4'>
 
-            {/* Prev Button: Disabled if currentPage is 1 (or if API sends null for prev link) */}
             <button
-                onClick={() => handleSetPageNum("prev")}
-                disabled={currentPage === 1 || !prev}
-                className={`p-2 rounded-sm bg-main-dark cursor-pointer transition-opacity ${(!prev || currentPage === 1) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-main-dark/80'}`}
+                onClick={() => handleSetPageNum('first')}
+                disabled={firstDisabled}
+                className={`px-2.5 py-2 rounded-sm bg-main-dark cursor-pointer transition-opacity flex items-center gap-1 text-xs font-semibold ${firstDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-main-dark/80'}`}
             >
-                <ChevronLeft size={18} />
+                <span>First</span>
             </button>
 
-            {/* Current Page Indicator */}
-            <span className='rounded-sm bg-main-dark aspect-square w-8 flex justify-center items-center font-medium'>
-                <h5>{currentPage}</h5>
+            <button
+                onClick={() => handleSetPageNum('prev')}
+                disabled={prevDisabled}
+                className={`px-2.5 py-2 rounded-sm bg-main-dark cursor-pointer transition-opacity flex items-center gap-1 text-xs font-semibold ${prevDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-main-dark/80'}`}
+            >
+                <ChevronLeft size={16} />
+            </button>
+
+            <span className='rounded-sm bg-main-dark h-9 min-w-28 px-3 flex justify-center items-center font-semibold text-sm'>
+                <h5>{currentDisplayPage} / {totalPages ?? '?'}</h5>
             </span>
 
-            {/* Next Button: Disabled if API sends null for next link */}
             <button
-                onClick={() => handleSetPageNum("next")}
-                disabled={!next}
-                className={`p-2 rounded-sm bg-main-dark cursor-pointer transition-opacity ${!next ? 'opacity-50 cursor-not-allowed' : 'hover:bg-main-dark/80'}`}
+                onClick={() => handleSetPageNum('next')}
+                disabled={nextDisabled}
+                className={`px-2.5 py-2 rounded-sm bg-main-dark cursor-pointer transition-opacity flex items-center gap-1 text-xs font-semibold ${nextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-main-dark/80'}`}
             >
-                <ChevronRight size={18} />
+                <ChevronRight size={16} />
+            </button>
+
+            <button
+                onClick={() => handleSetPageNum('last')}
+                disabled={lastDisabled}
+                className={`px-2.5 py-2 rounded-sm bg-main-dark cursor-pointer transition-opacity flex items-center gap-1 text-xs font-semibold ${lastDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-main-dark/80'}`}
+            >
+                <span>Last</span>
             </button>
         </div>
     );

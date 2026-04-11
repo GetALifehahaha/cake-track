@@ -270,7 +270,7 @@ const Inventory = () => {
                     <div className='mt-2' />
                     {/* Pagination */}
                     <div className='mt-auto mx-auto'>
-                        <Pagination next={ingredientData.next} prev={ingredientData.previous} />
+                        <Pagination next={ingredientData.next} prev={ingredientData.previous} count={ingredientData?.count} />
                     </div>
                 </div>
             </div>

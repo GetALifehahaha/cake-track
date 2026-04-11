@@ -859,7 +859,7 @@ const Home = () => {
                         </div>
                     </div>
                 }
-                <Pagination prev={productData.previous} next={productData.next} />
+                <Pagination prev={productData.previous} next={productData.next} count={productData?.count} />
             </div>
 
 

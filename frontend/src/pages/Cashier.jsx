@@ -179,9 +179,7 @@ const Cashier = () => {
 
                     {listCashiers}
 
-                    <div className='mt-auto mx-auto'>
-                        <Pagination prev={data.previous} next={data.next} />
-                    </div>
+                        <Pagination prev={data.previous} next={data.next} count={data?.count} />
                 </div>
             </div>
 

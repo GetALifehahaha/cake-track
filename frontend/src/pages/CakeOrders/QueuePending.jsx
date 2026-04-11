@@ -221,7 +221,7 @@ const QueuePending = () => {
 				</div>
 			}
 
-			<Pagination prev={data.previous} next={data.next} />
+			<Pagination prev={data.previous} next={data.next} count={data?.count} />
 
 			{showOrderDetails &&
 				<OrderDetails orderDetails={orderDetails} onClose={handleShowOrderDetails} />
