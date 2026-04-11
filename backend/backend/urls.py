@@ -20,6 +20,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from django.conf.urls.static import static
 from django.conf import settings
 from rest_framework.routers import DefaultRouter
+from django.http import HttpResponse
 
 from users.views import CreateUserView, UserProfileView, UserViewSet, GoogleAuthView, OTPViewSet, VerifyOTPViewSet, ChangePasswordViaToken, ActivateAccountView, AddressViewSet, CustomTokenObtainPairView, DeactivateAccountView, ReactivateAccountView
 
@@ -28,6 +29,7 @@ router.register('users', UserViewSet, basename="cashiers")
 router.register('addresses', AddressViewSet, basename="addresses")
 
 urlpatterns = [
+    path('', lambda request: HttpResponse("OK")),
     path('admin/', admin.site.urls),
     path('pos/', include('pos.urls')),
     path('inventory/', include('inventory.urls')),
@@ -42,8 +44,8 @@ urlpatterns = [
     path('users/token/refresh/', TokenRefreshView.as_view(), name="refresh_token"),
     path('api-auth/', include('rest_framework.urls', namespace="rest_framework")),
     path('request-otp/', OTPViewSet.as_view({'post': 'create'}), name="request-otp"),
-    path('verify-otp/', VerifyOTPViewSet.as_view({'post': 'create'}, name="verify-otp")),
-    path('change-password-token/', ChangePasswordViaToken.as_view({'post': 'create'}, name="change-password-token")),
+    path('verify-otp/', VerifyOTPViewSet.as_view({'post': 'create'}), name="verify-otp"),
+    path('change-password-token/', ChangePasswordViaToken.as_view({'post': 'create'}), name="change-password-token"),
     path('payment/', include('payment.urls')),
     path('', include(router.urls))
 ]
