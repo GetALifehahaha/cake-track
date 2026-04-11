@@ -1,6 +1,5 @@
 from rest_framework import serializers, validators
 from django.contrib.auth.models import User, Group
-from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode
@@ -20,6 +19,7 @@ from .services import (
     get_deletion_due_date,
     purge_expired_deactivated_accounts,
 )
+from .email_templates import send_activation_template_email
 
 MIN_CREDENTIAL_LENGTH = 8
 
@@ -163,39 +163,31 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data['is_active'] = False
-        middle_name = validated_data.pop('middle_name', '')
-        user = User.objects.create_user(**validated_data)
-        profile = UserProfile.objects.create(user=user, middle_name=middle_name, activation_token=str(uuid.uuid4()))
+        with transaction.atomic():
+            validated_data['is_active'] = False
+            middle_name = validated_data.pop('middle_name', '')
+            user = User.objects.create_user(**validated_data)
+            profile = UserProfile.objects.create(user=user, middle_name=middle_name, activation_token=str(uuid.uuid4()))
 
-        cashier_group, _ = Group.objects.get_or_create(name="cashier")
-        user.groups.add(cashier_group)
+            cashier_group, _ = Group.objects.get_or_create(name="cashier")
+            user.groups.add(cashier_group)
 
-        user.save()
+            user.save()
 
-        activation_link = f"{settings.FRONTEND_URL}/setAccount?token={profile.activation_token}"
+            activation_link = f"{settings.FRONTEND_URL}/setAccount?token={profile.activation_token}"
 
-        subject = 'Activate Your Cashier Account'
-        
-        # Using html_message for a better UI
-        html_content = f"""
-            <p>Hi {user.first_name},</p>
-            <p>An admin has created a cashier account for you.</p>
-            <a href="{activation_link}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                Activate Account
-            </a>
-        """
+            try:
+                send_activation_template_email(
+                    recipient_email=user.email,
+                    cashier_name=user.first_name or user.username,
+                    activation_url=activation_link,
+                )
+            except Exception:
+                raise serializers.ValidationError({
+                    'email': 'Failed to send activation email via Resend. Check template IDs and sender settings.'
+                })
 
-        send_mail(
-            subject,
-            f"Activate your account: {activation_link}",
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            html_message=html_content,
-            fail_silently=True
-        )
-
-        return user
+            return user
     
 
 class AddressSerializer(serializers.ModelSerializer):

@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
-    'anymail',
 ]
 
 MIDDLEWARE = [
@@ -186,14 +185,13 @@ PAYMONGO_PUBLIC_KEY = config('PAYMONGO_PUBLIC_KEY')
 PAYMONGO_BASE_URL = config('PAYMONGO_BASE_URL')
 POS_GCASH_ENABLED = config('POS_GCASH_ENABLED', default=False, cast=bool)
 NGROK_URL = config('NGROK_URL')
+RESEND_API_KEY = config('RESEND_API_KEY', default=config('RESEND_API', default=''))
+RESEND_FROM_EMAIL = config('RESEND_FROM_EMAIL', default='')
+RESEND_ACTIVATION_TEMPLATE_ID = config('RESEND_ACTIVATION_TEMPLATE_ID', default='')
+RESEND_OTP_TEMPLATE_ID = config('RESEND_OTP_TEMPLATE_ID', default='')
 
 
-EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 DEFAULT_FROM_EMAIL = "sencioahlannour@gmail.com"
-
-ANYMAIL = {
-    "BREVO_API_KEY": config('BREVO_API')
-    }
 
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 BACKEND_URL = config('BACKEND_URL', default='http://127.0.0.1:8000/')

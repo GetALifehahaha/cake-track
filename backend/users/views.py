@@ -194,11 +194,9 @@ class GoogleAuthView(APIView):
         
 import random
 import secrets
-from django.core.mail import send_mail
-from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-import random
+from .email_templates import send_otp_template_email
 
 class OTPViewSet(viewsets.ModelViewSet):
     queryset = OTP.objects.all()
@@ -227,16 +225,21 @@ class OTPViewSet(viewsets.ModelViewSet):
                 }
             )
 
-            subject = 'Your Password Reset OTP'
-            message = f"Your OTP for password reset is {random_otp}. It will expire in 15 minutes. If you didn't request this OTP, disregard this email."
-            
-            send_mail(
-                subject, 
-                message, 
-                settings.DEFAULT_FROM_EMAIL, 
-                [email],
-                fail_silently=False,
-            )
+            try:
+                send_otp_template_email(
+                    recipient_email=email,
+                    cashier_name=user.first_name or user.username,
+                    otp_value=random_otp,
+                )
+            except Exception:
+                return Response(
+                    {
+                        'type': 'error',
+                        'label': 'Failed to send OTP',
+                        'details': 'Unable to send OTP email via Resend. Please try again later.'
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
         
         return Response({'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
 
