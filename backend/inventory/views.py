@@ -226,8 +226,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('name')
     serializer_class = RecipeSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
+    ordering_fields = ['name', 'id']
+    ordering = ['name']
 
     def get_queryset(self):
         queryset = Recipe.objects.all().order_by('name')

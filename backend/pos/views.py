@@ -75,6 +75,9 @@ class DiscountViewSet(viewsets.ModelViewSet):
     pagination_class = MediumPageSize
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['discount_type', 'scope', 'active']
+    ordering_fields = ['value', 'used_count', 'id']
+    ordering = ['-id']
 
     search_fields = ['name']
 

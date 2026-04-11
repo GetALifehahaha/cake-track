@@ -6,9 +6,7 @@ import useQueryFetch from "./useQueryFetch";
 
 export default function useCashier() {
     const [searchParams] = useSearchParams();
-    const q = searchParams.get('q');
-
-    const apiParams = useMemo(() => ({ ...(q ? { q } : {}) }), [q]);
+    const apiParams = useMemo(() => Object.fromEntries(searchParams.entries()), [searchParams]);
     const cashiersQuery = useQueryFetch("cashiers", API_ENDPOINTS.USERS, apiParams);
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate("cashiers");
 

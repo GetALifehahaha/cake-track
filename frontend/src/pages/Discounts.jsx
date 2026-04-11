@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Title, Button } from '../components/atoms';
+import { Title, Button, Dropdown } from '../components/atoms';
 import { Pagination } from '../components/molecules';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import useDiscount from '@/hooks/useDiscount';
@@ -9,9 +9,36 @@ import { useToast } from '@/context/ToastContext';
 import { AddDiscountModal, EditDiscountModal } from '../components/organisms';
 import { DiscountsSkeleton } from '@/components/molecules/Skeletons';
 import { cn } from '@/utils/cn';
+import { useSearchParams } from 'react-router-dom';
+
+const discountTypeOptions = [
+    { key: 'Percentage', value: 'percentage' },
+    { key: 'Fixed', value: 'fixed' },
+];
+
+const discountScopeOptions = [
+    { key: 'All Products', value: 'all_products' },
+    { key: 'Selected Products', value: 'selected_products' },
+    { key: 'Selected Categories', value: 'selected_category' },
+];
+
+const discountStatusOptions = [
+    { key: 'Active', value: 'true' },
+    { key: 'Inactive', value: 'false' },
+];
+
+const discountSortOptions = [
+    { key: 'Value: Low to High', value: 'value' },
+    { key: 'Value: High to Low', value: '-value' },
+    { key: 'Usage: Low to High', value: 'used_count' },
+    { key: 'Usage: High to Low', value: '-used_count' },
+    { key: 'Created: Oldest First', value: 'id' },
+    { key: 'Created: Newest First', value: '-id' },
+];
 
 const Discounts = () => {
     const { addToast } = useToast();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { discountData, discountPagination, discountLoading, discountError, postDiscount, patchDiscount, deleteDiscount } = useDiscount();
     const { allProducts: productData, loading: productLoading } = useProduct();
     const { categoryData, categoryLoading } = useCategory();
@@ -22,6 +49,36 @@ const Discounts = () => {
 
     if (discountLoading || productLoading || categoryLoading) return <DiscountsSkeleton />;
     if (discountError) return <h5>Error loading discount data</h5>;
+
+    const selectedType = searchParams.get('discount_type') || null;
+    const selectedScope = searchParams.get('scope') || null;
+    const selectedStatus = searchParams.get('active') || null;
+    const selectedSorting = searchParams.get('ordering') || null;
+
+    const updateQueryParams = (updates) => {
+        const params = new URLSearchParams(searchParams);
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                params.delete(key);
+                return;
+            }
+
+            params.set(key, value);
+        });
+
+        params.set('page', '1');
+        setSearchParams(params);
+    };
+
+    const clearFiltersAndSorting = () => {
+        updateQueryParams({
+            discount_type: null,
+            scope: null,
+            active: null,
+            ordering: null,
+        });
+    };
 
     const clear = () => {
         setShowAddModal(false);
@@ -75,6 +132,60 @@ const Discounts = () => {
             <div className='flex flex-row justify-between items-center'>
                 <Title text="Discounts" />
                 <Button variant='block' text='Add Discount' icon={Plus} onClick={() => setShowAddModal(true)} />
+            </div>
+
+            <div className='rounded-lg '>
+                <div className='flex flex-wrap items-end gap-3'>
+                    <div className='min-w-44'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Type</h5>
+                        <Dropdown
+                            size='full'
+                            variant='white'
+                            selection='All types'
+                            value={selectedType}
+                            options={discountTypeOptions}
+                            onSelect={(value) => updateQueryParams({ discount_type: value })}
+                        />
+                    </div>
+
+                    <div className='min-w-52'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Scope</h5>
+                        <Dropdown
+                            size='full'
+                            variant='white'
+                            selection='All scopes'
+                            value={selectedScope}
+                            options={discountScopeOptions}
+                            onSelect={(value) => updateQueryParams({ scope: value })}
+                        />
+                    </div>
+
+                    <div className='min-w-40'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Status</h5>
+                        <Dropdown
+                            size='full'
+                            variant='white'
+                            selection='Any status'
+                            value={selectedStatus}
+                            options={discountStatusOptions}
+                            onSelect={(value) => updateQueryParams({ active: value })}
+                        />
+                    </div>
+
+                    <div className='min-w-56'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Sort By</h5>
+                        <Dropdown
+                            size='full'
+                            variant='white'
+                            selection='Default'
+                            value={selectedSorting}
+                            options={discountSortOptions}
+                            onSelect={(value) => updateQueryParams({ ordering: value })}
+                        />
+                    </div>
+
+                    <Button variant='modalOutline' size='small' text='Clear' onClick={clearFiltersAndSorting} />
+                </div>
             </div>
 
             <div className='flex flex-col h-[75vh] justify-between'>

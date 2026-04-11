@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Title } from '@/components/atoms';
+import { Button, Dropdown, Title } from '@/components/atoms';
 import { ChevronLeft, ChevronRight, Plus, AlertCircle, EllipsisVertical, Edit } from 'lucide-react';
 import { AddRecipeModal, EditRecipeModal } from '@/components/organisms';
 import useRecipe from '@/hooks/useRecipe';
@@ -9,10 +9,19 @@ import { useToast } from '@/context/ToastContext';
 import ViewRecipeModal from '@/components/organisms/recipe/ViewRecipeModal';
 import { RecipeSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty, getBestDisplay } from '@/utils/recipeUnits';
+import { useSearchParams } from 'react-router-dom';
+
+const recipeSortOptions = [
+    { key: 'Name: A to Z', value: 'name' },
+    { key: 'Name: Z to A', value: '-name' },
+    { key: 'Created: Oldest First', value: 'id' },
+    { key: 'Created: Newest First', value: '-id' },
+];
 
 const Recipe = () => {
 
     const { addToast } = useToast();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { data, loading, error, postRecipe, patchRecipe, deleteRecipe, cookRecipe } = useRecipe();
     const [showAddRecipe, setShowAddRecipe] = useState(false);
     const [cookingRecipeId, setCookingRecipeId] = useState(null);
@@ -20,8 +29,30 @@ const Recipe = () => {
     const [viewRecipe, setViewRecipe] = useState(null);
     const [showEditRecipe, setShowEditRecipe] = useState(null);
 
+    const selectedOrdering = searchParams.get('ordering') || null;
+
     if (loading) return <RecipeSkeleton />
     if (error) return <h5>Error...</h5>
+
+    const updateQueryParams = (updates) => {
+        const params = new URLSearchParams(searchParams);
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                params.delete(key);
+                return;
+            }
+
+            params.set(key, value);
+        });
+
+        params.set('page', '1');
+        setSearchParams(params);
+    };
+
+    const clearSorting = () => {
+        updateQueryParams({ ordering: null });
+    };
 
     const selectViewRecipe = (recipe) => {
         setViewRecipe(recipe)
@@ -131,15 +162,30 @@ const Recipe = () => {
         <div className='h-full flex flex-col p-6'>
             <Title text='Recipes' />
             <div className='mt-8 border-accent-mute border rounded-lg p-6 flex-1 flex flex-col bg-accent-mute/5' >
-                <span className='ml-auto mb-6'>
+                <div className='mb-6 flex flex-wrap items-end justify-between gap-2'>
+                    <div className='flex items-end gap-2'>
+                        <div className='w-56'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Sort By</h5>
+                            <Dropdown
+                                size='full'
+                                variant='white'
+                                selection='Default'
+                                value={selectedOrdering}
+                                options={recipeSortOptions}
+                                onSelect={(value) => updateQueryParams({ ordering: value })}
+                            />
+                        </div>
+                        <Button variant='modalOutline' size='small' text='Clear' onClick={clearSorting} />
+                    </div>
+
                     <Button text='Add Recipe' icon={Plus} variant='block' onClick={handleSetShowAddRecipe} />
-                </span>
+                </div>
 
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
                     {listRecipes}
                 </div>
 
-                <Pagination next={data.next} prev={data.prev} />
+                <Pagination next={data.next} prev={data.previous} />
             </div>
 
             {showAddRecipe && <AddRecipeModal onConfirm={addRecipe} onClose={handleSetShowAddRecipe} />}

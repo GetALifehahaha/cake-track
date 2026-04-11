@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import API_ENDPOINTS from "@/api/endpoints";
 import { useSearchParams } from 'react-router-dom';
 import useMutate from "./useMutate";
@@ -5,9 +6,10 @@ import useQueryFetch from "./useQueryFetch";
 
 export default function useRecipe(params = {}){
     const [searchParams] = useSearchParams();
-    const q = searchParams.get('q');
-
-    const apiParams = { ...params, ...(q ? { q } : {}) };
+    const apiParams = useMemo(() => {
+        const urlParams = Object.fromEntries(searchParams.entries());
+        return { ...params, ...urlParams };
+    }, [params, searchParams]);
 
     const recipeQuery = useQueryFetch("recipes", API_ENDPOINTS.RECIPES, apiParams);
     const { create, update, remove, request, loading: mutateLoading, error: mutateError } =

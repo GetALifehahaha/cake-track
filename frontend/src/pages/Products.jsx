@@ -9,30 +9,51 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import Loading from '@/components/molecules/Loading';
 
+const productSortOptions = [
+    { key: 'Name: A to Z', value: 'name' },
+    { key: 'Name: Z to A', value: '-name' },
+    { key: 'Price: Low to High', value: 'price' },
+    { key: 'Price: High to Low', value: '-price' },
+    { key: 'Created: Oldest First', value: 'created_at' },
+    { key: 'Created: Newest First', value: '-created_at' },
+];
+
 const Products = () => {
     const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
     const { categoryData, categoryLoading, categoryError } = useCategory();
     const { postProduct, data: productData, patchProduct, loading: productLoading, error: productError, batchUnarchiveProduct } = useProduct();
-    const [filter, setFilter] = useState(null);
     const [prepEditProduct, setPrepEditProduct] = useState(null);
+
+    const selectedCategory = searchParams.get('categories__name') || null;
+    const selectedOrdering = searchParams.get('ordering') || null;
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-    const handleSetFilter = (value) => {
-        setSearchParams(prevParams => {
-            if (value) {
-                prevParams.set('categories__name', value);
-            } else {
-                prevParams.delete('categories__name');
+    const updateQueryParams = (updates) => {
+        const params = new URLSearchParams(searchParams);
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                params.delete(key);
+                return;
             }
-            return prevParams;
+
+            params.set(key, value);
         });
 
-        setFilter(value)
+        params.set('page', '1');
+        setSearchParams(params);
+    };
+
+    const clearFiltersAndSorting = () => {
+        updateQueryParams({
+            categories__name: null,
+            ordering: null,
+        });
     };
 
     if (productLoading || categoryLoading) return <ProductsSkeletonLoading />
@@ -104,6 +125,7 @@ const Products = () => {
     }
 
     const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } })
+    const categoryFilterOptions = categoryData.map((cat) => ({ key: cat.name, value: cat.name }));
 
     const listProducts = productData.results.map(product =>
         <>
@@ -118,12 +140,34 @@ const Products = () => {
     return (
         <div className='flex flex-col gap-8'>
             <div className='flex flex-row justify-between'>
-                <div className='flex items-center'>
-                    <Dropdown value={filter} selection='Filter Product' forPageFilter={true} onSelect={handleSetFilter} options={categoryOptions} size='regular' />
-                    <div className='mx-1    ' />
-                    <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
+                <div className='flex items-end gap-2'>
+                    <div className='w-44'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Category</h5>
+                        <Dropdown
+                            size='full'
+                            variant='block'
+                            value={selectedCategory}
+                            selection='All categories'
+                            onSelect={(value) => updateQueryParams({ categories__name: value })}
+                            options={categoryFilterOptions}
+                        />
+                    </div>
+
+                    <div className='w-56'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Sort By</h5>
+                        <Dropdown
+                            size='full'
+                            variant='white'
+                            value={selectedOrdering}
+                            selection='Default'
+                            onSelect={(value) => updateQueryParams({ ordering: value })}
+                            options={productSortOptions}
+                        />
+                    </div>
+
                 </div>
                 <div className='flex items-center gap-4'>
+                    <Button variant='block2' text='Archives' icon={Archive} onClick={handleShowArchivedModal} />
                     <Button variant='block2' text='Manage Categories' icon={Settings} onClick={handleShowCategoryModal} />
                     <Button variant='block' text='Add Item' icon={Plus} onClick={handleShowAddProductModal} />
                 </div>

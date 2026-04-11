@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Button, Title } from '../components/atoms';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { Button, Dropdown, Title } from '../components/atoms';
 import { TransactionDetails } from '../components/organisms';
 import { Ellipsis, X } from 'lucide-react';
 import useTransaction from '@/hooks/useTransaction';
@@ -12,6 +12,21 @@ import { formatToDecimal } from '@/utils/formatToDecimal';
 import { TransactionsSkeleton } from '@/components/molecules/Skeletons';
 import { useToast } from '@/context/ToastContext';
 import { inputNumber, inputText } from '@/utils/safeInput';
+
+const transactionStatusOptions = [
+    { key: 'Success', value: 'success' },
+    { key: 'Voided', value: 'voided' },
+];
+
+const toCashierOption = (cashier) => {
+    if (!cashier?.id) return null;
+
+    const id = String(cashier.id);
+    const fullName = [cashier.first_name, cashier.last_name].filter(Boolean).join(' ').trim();
+    const label = fullName || cashier.username || cashier.email || `Cashier ${cashier.id}`;
+
+    return { id, option: { key: label, value: id } };
+};
 
 const Transactions = () => {
     const {
@@ -32,6 +47,37 @@ const Transactions = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentDateParams = searchParams.get('created_at');
     const selectedDate = currentDateParams ? new Date(currentDateParams) : null;
+    const selectedCashier = searchParams.get('cashier') || null;
+    const selectedStatus =
+        searchParams.get('is_void') === 'true'
+            ? 'voided'
+            : searchParams.get('is_void') === 'false'
+                ? 'success'
+                : null;
+
+    const [cashierOptionsCache, setCashierOptionsCache] = useState({});
+
+    useEffect(() => {
+        const incoming = data?.results || [];
+        if (!incoming.length) return;
+
+        setCashierOptionsCache((previous) => {
+            const next = { ...previous };
+
+            incoming.forEach((item) => {
+                const parsed = toCashierOption(item?.cashier);
+                if (!parsed) return;
+
+                next[parsed.id] = parsed.option;
+            });
+
+            return next;
+        });
+    }, [data?.results]);
+
+    const cashierOptions = useMemo(() => {
+        return Object.values(cashierOptionsCache).sort((a, b) => String(a.key).localeCompare(String(b.key)));
+    }, [cashierOptionsCache]);
 
     useEffect(() => {
         if (searchParams.get('is_completed') === 'true') return;
@@ -65,17 +111,48 @@ const Transactions = () => {
     if (loading) return <TransactionsSkeleton />;
     if (error) return <h5>Error loading transactions</h5>;
 
-    const handleSetDateFilter = (dateValue) => {
-        const newParams = Object.fromEntries(searchParams.entries());
+    const updateTransactionParams = (updates) => {
+        const params = new URLSearchParams(searchParams);
 
-        if (dateValue) {
-            newParams.created_at = formatDateForAPI(dateValue);
-        } else {
-            delete newParams.created_at;
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                params.delete(key);
+                return;
+            }
+
+            params.set(key, value);
+        });
+
+        params.set('is_completed', 'true');
+        params.set('transaction_page', '1');
+        setSearchParams(params);
+    };
+
+    const handleSetDateFilter = (dateValue) => {
+        updateTransactionParams({
+            created_at: dateValue ? formatDateForAPI(dateValue) : null,
+        });
+    };
+
+    const handleSetCashierFilter = (value) => {
+        updateTransactionParams({ cashier: value });
+    };
+
+    const handleSetStatusFilter = (value) => {
+        if (!value) {
+            updateTransactionParams({ is_void: null });
+            return;
         }
 
-        newParams.is_completed = 'true';
-        setSearchParams(newParams);
+        updateTransactionParams({ is_void: value === 'voided' ? 'true' : 'false' });
+    };
+
+    const clearFilters = () => {
+        updateTransactionParams({
+            cashier: null,
+            is_void: null,
+            created_at: null,
+        });
     };
 
     const getGroupKey = (dateString) => {
@@ -242,12 +319,44 @@ const Transactions = () => {
                 <div className='flex items-center'>
                     <Title variant='block' text={fullDate} />
                     <div className='flex-1' />
-                    {selectedDate && (
-                        <X size={18} className='text-text/50 cursor-pointer mr-2' onClick={() => handleSetDateFilter(false)} />
-                    )}
-                    <span className='w-60'>
-                        <DatePicker className='bg-white' selected={selectedDate} onSelect={handleSetDateFilter} />
-                    </span>
+
+                    <div className='flex flex-wrap items-end gap-2'>
+                        <div className='w-48'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Cashier</h5>
+                            <Dropdown
+                                size='full'
+                                variant='outline'
+                                selection='All cashiers'
+                                value={selectedCashier}
+                                options={cashierOptions}
+                                onSelect={handleSetCashierFilter}
+                            />
+                        </div>
+
+                        <div className='w-36'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Status</h5>
+                            <Dropdown
+                                size='full'
+                                variant='outline'
+                                selection='Any status'
+                                value={selectedStatus}
+                                options={transactionStatusOptions}
+                                onSelect={handleSetStatusFilter}
+                            />
+                        </div>
+
+                        <div className='w-60'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Date</h5>
+                            <div className='flex items-center gap-2'>
+                                <DatePicker className='bg-white' selected={selectedDate} onSelect={handleSetDateFilter} />
+                                {selectedDate && (
+                                    <X size={18} className='text-text/50 cursor-pointer' onClick={() => handleSetDateFilter(null)} />
+                                )}
+                            </div>
+                        </div>
+
+                        <Button variant='modalOutline' size='small' text='Clear' onClick={clearFilters} />
+                    </div>
                 </div>
 
                 <div className='flex flex-row items-center bg-accent-mute rounded-t-2xl mt-4'>

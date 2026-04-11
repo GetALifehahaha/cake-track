@@ -12,7 +12,8 @@ const Dropdown = ({selection, value, variant="block", size="fit", options=[{Opti
     const variants = {
         outline: 'bg-main border-main-dark text-text/50',
         block: 'bg-accent',
-        modal: 'bg-border/50 text-text outline-none border-none placeholder:text-text/50'
+        modal: 'bg-border/50 text-text outline-none border-none placeholder:text-text/50',
+        white: 'bg-main-white shadow-sm text-text border-none font-medium'
     }
 
     const sizes = {

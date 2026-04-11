@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Title } from '../components/atoms';
+import { Button, Dropdown, Title } from '../components/atoms';
 import { AddCashierModal, EditCashierModal } from '../components/organisms';
 import { Plus, Ellipsis, ChevronLeft, ChevronRight } from 'lucide-react';
 import useCashier from '@/hooks/useCashier';
@@ -8,17 +8,59 @@ import { Pagination } from '@/components/molecules';
 import { useToast } from '@/context/ToastContext';
 import clsx from 'clsx';
 import { CashierSkeleton } from '@/components/molecules/Skeletons';
+import { useSearchParams } from 'react-router-dom';
+
+const cashierStatusOptions = [
+    { key: 'Active', value: 'true' },
+    { key: 'Inactive', value: 'false' },
+];
+
+const cashierSortOptions = [
+    { key: 'Full Name: A to Z', value: 'first_name,last_name' },
+    { key: 'Full Name: Z to A', value: '-first_name,-last_name' },
+    { key: 'Username: A to Z', value: 'username' },
+    { key: 'Username: Z to A', value: '-username' },
+    { key: 'Email: A to Z', value: 'email' },
+    { key: 'Email: Z to A', value: '-email' },
+];
 
 const Cashier = () => {
 
     const { addToast } = useToast();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { data, loading, refresh, postCashier, patchCashier } = useCashier();
 
     const [showAddCashierModal, setShowAddCashierModal] = useState(false);
     const [showEditCashierModal, setShowEditCashierModal] = useState(false);
     const [prepCashier, setPrepCashier] = useState(null)
 
+    const selectedStatus = searchParams.get('is_active') || null;
+    const selectedOrdering = searchParams.get('ordering') || null;
+
     if (loading) return <CashierSkeleton />
+
+    const updateQueryParams = (updates) => {
+        const params = new URLSearchParams(searchParams);
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                params.delete(key);
+                return;
+            }
+
+            params.set(key, value);
+        });
+
+        params.set('page', '1');
+        setSearchParams(params);
+    };
+
+    const clearFiltersAndSorting = () => {
+        updateQueryParams({
+            is_active: null,
+            ordering: null,
+        });
+    };
 
     const handleShowAddCashierModal = () => {
         setShowAddCashierModal(!showAddCashierModal)
@@ -95,7 +137,32 @@ const Cashier = () => {
                 <div className="flex flex-row justify-between items-center">
                     <Title variant='block' text='Cashiers' />
 
-                    <div className='flex flex-row items-center gap-2'>
+                    <div className='flex flex-row items-end gap-2'>
+                        <div className='w-36'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Status</h5>
+                            <Dropdown
+                                size='full'
+                                variant='white'
+                                selection='Any status'
+                                value={selectedStatus}
+                                options={cashierStatusOptions}
+                                onSelect={(value) => updateQueryParams({ is_active: value })}
+                            />
+                        </div>
+
+                        <div className='w-56'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Sort By</h5>
+                            <Dropdown
+                                size='full'
+                                variant='white'
+                                selection='Default'
+                                value={selectedOrdering}
+                                options={cashierSortOptions}
+                                onSelect={(value) => updateQueryParams({ ordering: value })}
+                            />
+                        </div>
+
+                        <Button variant='modalOutline' size='small' text='Clear' onClick={clearFiltersAndSorting} />
                         <Button variant='block' size='small' text='Add Cashier' icon={Plus} onClick={handleShowAddCashierModal} />
                     </div>
                 </div>

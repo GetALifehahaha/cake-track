@@ -17,6 +17,7 @@ class TransactionFilter(FilterSet):
     is_void = django_filters.BooleanFilter(field_name='is_void')
     is_completed = django_filters.BooleanFilter(field_name='is_completed')
     completed_at = django_filters.DateFilter(field_name='completed_at', lookup_expr='date')
+    cashier = django_filters.NumberFilter(field_name='cashier_id')
 
     # # Example Range Filter (For transactions created in a period)
     # created_after = django_filters.DateFilter(field_name='created_at', lookup_expr='date__gte')
@@ -26,4 +27,4 @@ class TransactionFilter(FilterSet):
     class Meta:
         model = Transaction
         # List all fields available for filtering via query parameters
-        fields = ['created_at', 'payment_method', 'is_void', 'is_completed', 'completed_at']
+        fields = ['created_at', 'payment_method', 'is_void', 'is_completed', 'completed_at', 'cashier']

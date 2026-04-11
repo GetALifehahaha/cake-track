@@ -4,6 +4,7 @@ import uuid
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets, generics, filters
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, IsAuthenticated
@@ -61,8 +62,11 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [DjangoModelPermissions, IsAdmin]
 
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_active']
     search_fields = ['username', 'email', 'first_name', 'last_name']
+    ordering_fields = ['first_name', 'last_name', 'username', 'email']
+    ordering = ['first_name', 'last_name']
     
     def get_queryset(self):
         queryset = User.objects.filter(groups__name="cashier")
