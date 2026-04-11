@@ -186,18 +186,18 @@ const ForgotPassword = () => {
 		}
 	}
   	return (
-		<div className='bg-main w-full h-screen flex justify-center items-center'>
-			<div className='rounded-md p-8 bg-main-white flex flex-col gap-2 shadow-md min-w-[40vw]'>
-				<h5 className='text-lg text-center font-bold text-accent-dark'>Forgot Password</h5>
-				<h5 className='text-md font-semibold text-accent-mute mb-8'>Follow the following instructions to gain access to your account</h5>
+		<div className='bg-main w-full min-h-screen flex justify-center items-center px-4 py-6 sm:px-6'>
+			<div className='w-full max-w-2xl rounded-md p-5 sm:p-8 bg-main-white flex flex-col gap-2 shadow-md'>
+				<h5 className='text-lg sm:text-xl text-center font-bold text-accent-dark'>Forgot Password</h5>
+				<h5 className='text-sm sm:text-md font-semibold text-accent-mute mb-6 sm:mb-8'>Follow the following instructions to gain access to your account</h5>
 
 				{page === 1 &&
 					<>
 						<h5 className='text-sm text-accent-text font-medium'>Enter your email address</h5>
-						<div className='flex gap-2 items-center justify-between'>
+						<div className='flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between'>
 							<input type='text' value={email} onChange={(e) => handleEmail(e)} className='bg-accent-mute/20 p-1 rounded-md font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute flex-1' 
 								placeholder='Enter your email address'/>
-							<Button variant='modalBlock' text={otpMessage ? 'Resend OTP' : 'Send OTP'} size='small' onClick={submitEmail} />
+							<Button className='w-full sm:w-auto' variant='modalBlock' text={otpMessage ? 'Resend OTP' : 'Send OTP'} size='small' onClick={submitEmail} />
 						</div>
 						{otpMessage &&
 							<>
@@ -206,7 +206,7 @@ const ForgotPassword = () => {
 									<input type='text' inputMode='numeric' value={otp} onChange={(e) => handleOtp(e)} className='bg-accent-mute/20 p-1 rounded-md font-medium text-lg tracking-widest text-center focus:outline-none focus:border-accent-mute flex-1' 
 										placeholder='Enter OTP'/>
 								</div>
-								<Button className='mx-auto mt-2' text='Verify OTP' onClick={verifyOtp} />
+								<Button className='mx-auto mt-2 w-full sm:w-auto' text='Verify OTP' onClick={verifyOtp} />
 							</>
 						}
 						{Object.keys(feedback).length > 0 &&
@@ -221,7 +221,7 @@ const ForgotPassword = () => {
 						{Object.keys(feedback).length > 0 &&
 							<ModalFeedbackCard type={feedback.type} label={feedback.label} details={feedback.details} />
 						}
-						<Button className='mx-auto mt-2' text='Change Password' onClick={handleConfirmModal} />
+						<Button className='mx-auto mt-2 w-full sm:w-auto' text='Change Password' onClick={handleConfirmModal} />
 					</>
 				}
 			</div>

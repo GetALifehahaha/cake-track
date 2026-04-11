@@ -74,14 +74,14 @@ const SetAccount = () => {
     }
 
     return (
-        <div className='w-full h-screen flex items-center justify-center bg-main'>
+        <div className='w-full min-h-screen flex items-center justify-center bg-main px-4 py-6 sm:px-6'>
             {
                 hasValidParams ? (
-                    <div className='rounded-md p-8 bg-main-white flex flex-col gap-2 shadow-md min-w-160'>
-                        <h5 className='text-2xl font-bold text-accent-dark mb-8 text-center'>Welcome to CakeTrack!</h5>
-                        <h5 className='text-md font-semibold text-accent-mute'>Set your password</h5>
+                    <div className='w-full max-w-2xl rounded-md p-5 sm:p-8 bg-main-white flex flex-col gap-2 shadow-md'>
+                        <h5 className='text-xl sm:text-2xl font-bold text-accent-dark mb-6 sm:mb-8 text-center'>Welcome to CakeTrack!</h5>
+                        <h5 className='text-sm sm:text-md font-semibold text-accent-mute'>Set your password</h5>
 
-                        <div className='flex items-center justify-center gap-2 mb-6'>
+                        <div className='flex items-center justify-center gap-2 mb-5 sm:mb-6'>
                             {!showPassword ?
                                 <>
                                     <input
@@ -93,9 +93,9 @@ const SetAccount = () => {
                                             setNewpassword(e.target.value);
                                             setFeedback(null);
                                         }}
-                                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full min-w-0'
                                     />
-                                    <EyeClosed onClick={() => setShowPassword(true)} />
+                                    <EyeClosed className='shrink-0 cursor-pointer' onClick={() => setShowPassword(true)} />
                                 </>
                                 :
                                 <>
@@ -108,9 +108,9 @@ const SetAccount = () => {
                                             setNewpassword(e.target.value);
                                             setFeedback(null);
                                         }}
-                                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                                        className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full min-w-0'
                                     />
-                                    <Eye onClick={() => setShowPassword(false)} />
+                                    <Eye className='shrink-0 cursor-pointer' onClick={() => setShowPassword(false)} />
                                 </>
                             }
                         </div>
@@ -130,14 +130,14 @@ const SetAccount = () => {
                             />
                         }
 
-                        {loading ? <h5 className='text-accent text-center mt-2'>Activating your account. Please wait...</h5> :
-                            !success ? <Link to={'/login'} className='mx-auto mt-2 p-2.5 px-4 bg-accent font-semibold text-white text-md rounded-lg'>Enter CakeTrack</Link> : <Button variant='active' className='mx-auto mt-2' text='Set Password' onClick={confirmPassword} />
+                        {loading ? <h5 className='text-accent text-center mt-2 text-sm sm:text-base'>Activating your account. Please wait...</h5> :
+                            success ? <Link to={'/login'} className='mx-auto mt-2 p-2.5 px-4 bg-accent font-semibold text-white text-sm sm:text-md rounded-lg w-full sm:w-auto text-center'>Enter CakeTrack</Link> : <Button variant='active' className='mx-auto mt-2 w-full sm:w-auto' text='Set Password' onClick={confirmPassword} />
                         }
                     </div>
                 ) : (
-                    <div className='rounded-md p-8 bg-main-white shadow-md flex flex-col items-center justify-center gap-2'>
+                    <div className='w-full max-w-lg rounded-md p-6 sm:p-8 bg-main-white shadow-md flex flex-col items-center justify-center gap-2 text-center'>
                         <Search size={48} className='text-accent animate-bounce' />
-                        <h5 className='text-xl text-red-500 font-semibold'>Invalid Link</h5>
+                        <h5 className='text-lg sm:text-xl text-red-500 font-semibold'>Invalid Link</h5>
                         <p>You do not have the correct credentials or the link is broken.</p>
                     </div>
                 )

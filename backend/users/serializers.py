@@ -180,7 +180,7 @@ class CashierCreateSerializer(serializers.ModelSerializer):
             try:
                 send_activation_template_email(
                     recipient_email=user.email,
-                    cashier_name=user.first_name or user.username,
+                    cashier_name= user.username,
                     activation_url=activation_link,
                 )
             except Exception:
