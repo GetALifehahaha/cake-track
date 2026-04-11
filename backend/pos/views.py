@@ -9,7 +9,7 @@ import qrcode
 
 # Create your views here.
 from django.db.models import Sum, Count, F, DateTimeField
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate, Lower
 from django.utils import timezone
 from datetime import timedelta
 
@@ -66,6 +66,24 @@ from payment.paymongo import PayMongoWrapper
 class MediumPageSize(PageNumberPagination):
     page_size = 20
     max_page_size = 100
+
+
+class ProductOrderingFilter(filters.OrderingFilter):
+    """Map product name ordering to a lower-cased annotation for case-insensitive sorting."""
+
+    def get_ordering(self, request, queryset, view):
+        ordering = super().get_ordering(request, queryset, view)
+        if not ordering:
+            return ordering
+
+        mapped = []
+        for field in ordering:
+            descending = field.startswith('-')
+            field_name = field[1:] if descending else field
+            mapped_field = 'name_sort' if field_name == 'name' else field_name
+            mapped.append(f"-{mapped_field}" if descending else mapped_field)
+
+        return mapped
     
 
 class DiscountViewSet(viewsets.ModelViewSet):
@@ -148,17 +166,22 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = MediumPageSize
     
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, ProductOrderingFilter]
     
     filterset_fields = ['categories__name', 'is_archived']
     
     search_fields = ['name']
     
-    ordering_fields = ['name', 'price', 'created_at']
+    ordering_fields = ['name', 'created_at']
     ordering = ['name']
     
     def get_queryset(self):
-        queryset = Product.objects.prefetch_related('variants__recipe', 'categories').all()
+        queryset = (
+            Product.objects
+            .prefetch_related('variants__recipe', 'categories')
+            .annotate(name_sort=Lower('name'))
+            .all()
+        )
         
         if self.action == "list":
             is_archived_param = self.request.query_params.get('is_archived'); #type: ignore

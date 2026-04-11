@@ -183,8 +183,6 @@ const Discounts = () => {
                             onSelect={(value) => updateQueryParams({ ordering: value })}
                         />
                     </div>
-
-                    <Button variant='modalOutline' size='small' text='Clear' onClick={clearFiltersAndSorting} />
                 </div>
             </div>
 

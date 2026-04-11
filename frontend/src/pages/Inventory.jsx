@@ -248,10 +248,10 @@ const Inventory = () => {
                         {ingredientDashboard.summary.expired_count > 0 &&
                             <Button variant='modalOutline' size='small' text='Stock Out Expired Ingredients' icon={Trash} onClick={toggleStockOutAllConfirmationModal} className='shadow-sm' />
                         }
-                        <Button variant='modalOutline' size='small' text='Transaction History' icon={Box} onClick={toggleTransactionHistoryModal} className='shadow-sm' />
-                        <Button variant='modalOutline' size='small' text='Manage Containers' icon={Box} onClick={toggleContainersModal} className='shadow-sm' />
-                        <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm' />
-                        <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm' />
+                        <Button variant='modalOutline' size='small' text='Transaction History' icon={Box} onClick={toggleTransactionHistoryModal} className='shadow-sm bg-white text-text' />
+                        <Button variant='modalOutline' size='small' text='Manage Containers' icon={Box} onClick={toggleContainersModal} className='shadow-sm bg-white text-text' />
+                        <Button variant='modalOutline' size='small' text='Adjust Stocks' icon={Box} onClick={handleSetShowInOut} className='shadow-sm bg-white text-text' />
+                        <Button variant='block' size='small' text='Add Item' icon={Plus} onClick={handleShowAddItemModal} className='rounded-md border-accent shadow-sm ' />
                     </div>
                 </div>
 

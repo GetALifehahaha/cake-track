@@ -175,7 +175,6 @@ const Recipe = () => {
                                 onSelect={(value) => updateQueryParams({ ordering: value })}
                             />
                         </div>
-                        <Button variant='modalOutline' size='small' text='Clear' onClick={clearSorting} />
                     </div>
 
                     <Button text='Add Recipe' icon={Plus} variant='block' onClick={handleSetShowAddRecipe} />

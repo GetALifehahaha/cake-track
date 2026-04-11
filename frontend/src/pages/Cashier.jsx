@@ -132,12 +132,12 @@ const Cashier = () => {
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
+                <Title text='Recipes' />
             <div className='border-accent-mute border rounded-lg p-4'>
                 {/* Header */}
                 <div className="flex flex-row justify-between items-center">
-                    <Title variant='block' text='Cashiers' />
 
-                    <div className='flex flex-row items-end gap-2'>
+                    <div className='flex flex-row items-end gap-2 w-full mb-4'>
                         <div className='w-36'>
                             <h5 className='text-xs font-semibold text-text/50 mb-1'>Status</h5>
                             <Dropdown
@@ -162,8 +162,7 @@ const Cashier = () => {
                             />
                         </div>
 
-                        <Button variant='modalOutline' size='small' text='Clear' onClick={clearFiltersAndSorting} />
-                        <Button variant='block' size='small' text='Add Cashier' icon={Plus} onClick={handleShowAddCashierModal} />
+                        <Button variant='block' size='small' text='Add Cashier' icon={Plus} onClick={handleShowAddCashierModal} className='ml-auto' />
                     </div>
                 </div>
 

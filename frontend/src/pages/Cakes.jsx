@@ -126,9 +126,6 @@ const Cakes = () => {
                             onSelect={(value) => updateQueryParams({ ordering: value })}
                         />
                     </div>
-
-                    <Button variant='modalOutline' size='small' text='Clear' onClick={clearSorting} />
-
                 </div>
                 
                 <div className='flex items-center gap-2'>

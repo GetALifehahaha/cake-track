@@ -12,8 +12,6 @@ import Loading from '@/components/molecules/Loading';
 const productSortOptions = [
     { key: 'Name: A to Z', value: 'name' },
     { key: 'Name: Z to A', value: '-name' },
-    { key: 'Price: Low to High', value: 'price' },
-    { key: 'Price: High to Low', value: '-price' },
     { key: 'Created: Oldest First', value: 'created_at' },
     { key: 'Created: Newest First', value: '-created_at' },
 ];

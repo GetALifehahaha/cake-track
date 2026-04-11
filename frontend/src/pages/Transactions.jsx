@@ -325,7 +325,7 @@ const Transactions = () => {
                             <h5 className='text-xs font-semibold text-text/50 mb-1'>Cashier</h5>
                             <Dropdown
                                 size='full'
-                                variant='outline'
+                                variant='white'
                                 selection='All cashiers'
                                 value={selectedCashier}
                                 options={cashierOptions}
@@ -337,7 +337,7 @@ const Transactions = () => {
                             <h5 className='text-xs font-semibold text-text/50 mb-1'>Status</h5>
                             <Dropdown
                                 size='full'
-                                variant='outline'
+                                variant='white'
                                 selection='Any status'
                                 value={selectedStatus}
                                 options={transactionStatusOptions}
@@ -354,8 +354,6 @@ const Transactions = () => {
                                 )}
                             </div>
                         </div>
-
-                        <Button variant='modalOutline' size='small' text='Clear' onClick={clearFilters} />
                     </div>
                 </div>
 
