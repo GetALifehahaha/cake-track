@@ -82,7 +82,7 @@ const QueueAccepted = () => {
 				}
 			</div>
 			{data.results?.length > 0 ?
-				<div className='grid grid-cols-5 gap-4 mt-8'>
+				<div className='grid grid-cols-4 gap-4 mt-8'>
 					{listOrder}
 
 				</div>

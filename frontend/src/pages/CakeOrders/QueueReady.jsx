@@ -33,17 +33,6 @@ const QueueAccepted = () => {
 		setSearchParams(newParams)
 	}
 
-
-	const handleSetPageNum = (direction) => {
-		if (direction == "prev") {
-			if (pageNum - 1 == 0) return;
-
-			setPageNum(pageNum - 1);
-		} else if (direction == "next") {
-			setPageNum(pageNum + 1);
-		}
-	}
-
 	const completeOrder = async (orderId, payload) => {
 		if (!orderId) return;
 
@@ -72,7 +61,7 @@ const QueueAccepted = () => {
 				}
 			</div>
 			{data.results?.length > 0 ?
-				<div className='grid grid-cols-5 gap-4 mt-8'>
+				<div className='grid grid-cols-4 gap-4 mt-8'>
 					{listOrder}
 				</div>
 				:
