@@ -1,5 +1,5 @@
 import { View, TextInput } from 'react-native';
-import Dropdown from '@/components/atoms/Dropdown';
+import ModalSelectButton from '@/components/atoms/ModalSelectButton';
 import FormLabel from '@/components/atoms/FormLabel';
 import { useRef } from 'react';
 
@@ -17,19 +17,20 @@ const MessagePage = ({ messageType, setMessageType, message, setMessage }) => {
 
     return (
         <View className='gap-4'>
-            <View style={{ zIndex: 2000 }}>
+            <View>
                 <FormLabel text={"Message Type"} />
-                <Dropdown
+                <ModalSelectButton
                     items={[
                         { label: 'On Cake (Icing Writing)', value: 'on_cake' },
                         { label: 'On Card (Message Card)', value: 'on_card' },
                         { label: 'On Both', value: 'on_both' },
                         { label: 'No Message', value: 'none' },
                     ]}
+                    value={messageType}
                     placeholder={"Select message type"}
+                    title="Choose Message Placement"
+                    subtitle="Pick where your custom message should appear."
                     onChangeValue={handleMessageTypeChange}
-                    zIndex={2000}
-                    zIndexInverse={1000}
                 />
             </View>
 

@@ -1,6 +1,6 @@
 import './global.css';
 import { useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, Animated } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { router } from 'expo-router'
@@ -72,6 +72,8 @@ const CustomOrders = () => {
 
     // Ref to capture the cake preview as a single image
     const cakePreviewRef = useRef();
+    const previewScaleX = useRef(new Animated.Value(1)).current;
+    const previewScaleY = useRef(new Animated.Value(1)).current;
 
     const pageTitles = [
         'Cake Details',
@@ -159,7 +161,7 @@ const CustomOrders = () => {
                 if (sprinkle) newLayers.push(sprinkle);
             }
 
-            if (page >= 6 && addOn === 'candle') {
+            if (page >= 5 && addOn === 'candle') {
                 const candle = cakeImages.accessories?.[tierKey];
                 if (candle) newLayers.push(candle);
             }
@@ -167,6 +169,41 @@ const CustomOrders = () => {
 
         setCustomLayers(newLayers);
     }, [page, shape, tier, baseFlavor, filling, coatingColor, border, borderColor, toppings, addOn]);
+
+    useEffect(() => {
+        if (personallyDesign || shape === 'other' || customLayers.length === 0) {
+            return;
+        }
+
+        Animated.sequence([
+            Animated.parallel([
+                Animated.timing(previewScaleX, {
+                    toValue: 1.07,
+                    duration: 120,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(previewScaleY, {
+                    toValue: 0.93,
+                    duration: 120,
+                    useNativeDriver: true,
+                }),
+            ]),
+            Animated.parallel([
+                Animated.spring(previewScaleX, {
+                    toValue: 1,
+                    speed: 14,
+                    bounciness: 9,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(previewScaleY, {
+                    toValue: 1,
+                    speed: 14,
+                    bounciness: 9,
+                    useNativeDriver: true,
+                }),
+            ]),
+        ]).start();
+    }, [customLayers, personallyDesign, shape, previewScaleX, previewScaleY]);
 
 
 
@@ -272,6 +309,7 @@ const CustomOrders = () => {
                     params: {
                         amount: '500.00',
                         paymentType: 'custom',
+                        orderId: newOrderId,
                     },
                 });
             } else {
@@ -329,9 +367,25 @@ const CustomOrders = () => {
                     showToast("Please select a coating color", 'error');
                     return false;
                 }
+                if (!border) {
+                    showToast("Please select a border style", 'error');
+                    return false;
+                }
+                if (!borderColor) {
+                    showToast("Please select a border color", 'error');
+                    return false;
+                }
                 return true;
 
             case 5: // Add-ons
+                if (!toppings) {
+                    showToast("Please select a toppings option", 'error');
+                    return false;
+                }
+                if (!addOn) {
+                    showToast("Please select an add-on option", 'error');
+                    return false;
+                }
                 return true;
 
             case 6: // Message
@@ -587,16 +641,18 @@ const CustomOrders = () => {
                                 shape === "other" ? (
                                     <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
                                 ) : customLayers.length > 0 ? (
-                                    <View ref={cakePreviewRef} collapsable={false} style={{ width: 300, height: 300 }}>
-                                        {customLayers.map((layerSource, index) => (
-                                            <Image
-                                                key={index}
-                                                source={layerSource}
-                                                style={{ width: '100%', height: '100%', position: 'absolute' }}
-                                                resizeMode="contain"
-                                            />
-                                        ))}
-                                    </View>
+                                    <Animated.View style={{ transform: [{ scaleX: previewScaleX }, { scaleY: previewScaleY }] }}>
+                                        <View ref={cakePreviewRef} collapsable={false} style={{ width: 300, height: 300 }}>
+                                            {customLayers.map((layerSource, index) => (
+                                                <Image
+                                                    key={index}
+                                                    source={layerSource}
+                                                    style={{ width: '100%', height: '100%', position: 'absolute' }}
+                                                    resizeMode="contain"
+                                                />
+                                            ))}
+                                        </View>
+                                    </Animated.View>
                                 ) : (
                                     <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
                                 )

@@ -1,6 +1,6 @@
 import { View, Text, TextInput } from 'react-native';
 import Checkbox from '@/components/atoms/Checkbox';
-import Dropdown from '@/components/atoms/Dropdown';
+import ModalSelectButton from '@/components/atoms/ModalSelectButton';
 import FormLabel from '@/components/atoms/FormLabel';
 import { AlertCircle } from 'lucide-react-native';
 
@@ -8,7 +8,7 @@ const CakeDetailPage = ({ occasion, setOccasion, specifyOccasion, setSpecifyOcca
     <View className='gap-4'>
         <View className=''>
             <FormLabel text={"Occassion"} />
-            <Dropdown
+            <ModalSelectButton
                 items={[
                     { label: 'Birthday', value: 'birthday' },
                     { label: 'Anniversary', value: 'anniversary' },
@@ -16,7 +16,10 @@ const CakeDetailPage = ({ occasion, setOccasion, specifyOccasion, setSpecifyOcca
                     { label: 'Graduation', value: 'graduation' },
                     { label: 'Other', value: 'other' },
                 ]}
+                value={occasion}
                 placeholder={"Select an occasion"}
+                title="Pick an Occasion"
+                subtitle="Tell us what this cake is for so we can guide the style."
                 onChangeValue={setOccasion}
             />
             {occasion == 'other' && (

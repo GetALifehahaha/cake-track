@@ -1,5 +1,5 @@
 import { View, Text, TextInput } from 'react-native';
-import Dropdown from '@/components/atoms/Dropdown';
+import ModalSelectButton from '@/components/atoms/ModalSelectButton';
 import FormLabel from '@/components/atoms/FormLabel';
 import Checkbox from '@/components/atoms/Checkbox';
 
@@ -29,7 +29,7 @@ const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcake
                 </View>
                 <View>
                     <FormLabel text={"Frosting"} />
-                    <Dropdown
+                    <ModalSelectButton
                         items={[
                             { label: 'White', value: 'white' },
                             { label: 'Black', value: 'black' },
@@ -37,7 +37,10 @@ const CupcakePage = ({ hasCupcakes, toggleHasCupcakes, cupcakesCount, setCupcake
                             { label: 'Blue', value: 'blue' },
                             { label: 'Yellow', value: 'yellow' },
                         ]}
+                        value={cupcakesFrosting}
                         placeholder={"Select frosting color"}
+                        title="Select Frosting Color"
+                        subtitle="Choose cupcake frosting to match your cake theme."
                         onChangeValue={setCupcakesFrosting}
                     />
                 </View>

@@ -164,8 +164,8 @@ const Checkout = () => {
                 uploaded_images: cartImages
             };
 
-            await postOrder(payload);
-            // const newOrderId = response?.id || response?.data?.id;
+            const response = await postOrder(payload);
+            const newOrderId = response?.id || response?.data?.id;
 
             const downpaymentAmount = (premadeTotal * 0.15).toFixed(2);
 
@@ -176,6 +176,7 @@ const Checkout = () => {
                 params: {
                     amount: downpaymentAmount,
                     paymentType: 'cake',
+                    orderId: newOrderId || '',
                 },
             })
 

@@ -512,7 +512,7 @@ class CakeViewSet(viewsets.ModelViewSet):
     
     search_fields = ['name']
     
-    ordering_fields = ['name', 'price', 'created_at']
+    ordering_fields = ['name', 'price', 'created_at', 'times_ordered']
     ordering = ['name']
 
     def get_queryset(self):
@@ -528,6 +528,21 @@ class CakeViewSet(viewsets.ModelViewSet):
             return queryset.filter(is_archived=False)
         
         return queryset
+
+    @action(detail=False, methods=['get'], url_path='best-sellers', permission_classes=[permissions.AllowAny])
+    def best_sellers(self, request):
+        limit_param = request.query_params.get('limit', 3)
+
+        try:
+            limit = int(limit_param)
+        except (TypeError, ValueError):
+            return Response({'detail': 'limit must be an integer.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        limit = max(1, min(limit, 20))
+
+        queryset = Cake.objects.filter(is_archived=False).order_by('-times_ordered', 'name')[:limit]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
     def unarchive(self, request):

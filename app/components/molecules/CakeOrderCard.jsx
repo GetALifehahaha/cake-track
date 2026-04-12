@@ -2,14 +2,38 @@ import { View, Text, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { Minus, Plus } from 'lucide-react-native'
 
-const CakeOrderCard = ({ id, image, name, price, description, baseFlavor, addedToCart, addToCart, amount, onSetAmount }) => {
+const CakeOrderCard = ({
+    id,
+    image,
+    name,
+    price,
+    description,
+    baseFlavor,
+    addedToCart,
+    addToCart,
+    amount,
+    onSetAmount,
+    isBestSeller = false,
+    rank,
+    orderedCount = 0,
+}) => {
 
     const handleAddToCart = () => {
         addToCart({ id, name, price, amount: 1, image });
     }
 
+    const soldLabel = Number.isFinite(Number(orderedCount))
+        ? `${Number(orderedCount)} sold`
+        : null;
+
     return (
-        <View className='flex-row px-6 py-4 border-b border-b-gray-300 w-full items-center bg-white gap-4'>
+        <View
+            className={`flex-row px-6 py-4 w-full items-center gap-4 ${
+                isBestSeller
+                    ? 'bg-[#FFF7EA] border-2 border-[#E6BE86] rounded-2xl mb-3 shadow-sm'
+                    : 'bg-white border-b border-b-gray-300'
+            }`}
+        >
             <Image
                 style={{ width: 100, height: 100 }}
                 resizeMode='contain'
@@ -18,9 +42,22 @@ const CakeOrderCard = ({ id, image, name, price, description, baseFlavor, addedT
 
 
             <View className='flex-1 pl-4 justify-center'>
+                <View className='flex-row items-center gap-2 mb-1'>
+                    {isBestSeller && (
+                        <View className='px-2 py-1 rounded-full bg-[#8B5A3C]'>
+                            <Text className='text-white text-[10px] font-bold uppercase tracking-wide'>Best Seller</Text>
+                        </View>
+                    )}
+                    {typeof rank === 'number' && (
+                        <Text className='text-xs font-semibold text-[#8B5A3C]'>#{rank}</Text>
+                    )}
+                </View>
                 <Text className='font-extrabold text-lg mb-1'>{name}</Text>
                 {baseFlavor && (
                     <Text className='text-base text-gray-500 mb-1'>Flavor: {baseFlavor.charAt(0).toUpperCase() + baseFlavor.slice(1)}</Text>
+                )}
+                {soldLabel && (
+                    <Text className='text-xs text-gray-500 mb-1'>{soldLabel}</Text>
                 )}
                 <View className='flex-row items-center justify-between mt-2 '>
 

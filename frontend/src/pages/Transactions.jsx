@@ -295,10 +295,10 @@ const Transactions = () => {
             <div className='px-4 py-2.5 rounded-xl border-2 border-border'>
                 <div className='flex items-center gap-4 flex-wrap'>
                     <div className='p-2.5 px-8 rounded-lg bg-accent-dark/80 border border-border flex items-center gap-12'>
-                        <h5 className='text-white/80 font-medium text-md'>
+                        <h5 className='text-white/ font-medium text-md'>
                             Today's Revenue: <strong className='ml-2 text-white p-2'>₱ {(data.daily_total_revenue).toFixed(2)}</strong>
                         </h5>
-                        <h5 className='text-white/80 font-medium text-md'>
+                        <h5 className='text-white/ font-medium text-md'>
                             Register Money: <strong className='ml-2 text-white'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
                         </h5>
                     </div>

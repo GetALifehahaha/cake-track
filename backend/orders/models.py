@@ -101,6 +101,7 @@ class Cake(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     is_archived = models.BooleanField(default=False)
+    times_ordered = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name

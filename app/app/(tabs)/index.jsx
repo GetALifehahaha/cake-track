@@ -1,48 +1,48 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ImageBackground, ActivityIndicator } from 'react-native'
 import React, { useState, useContext, useEffect } from 'react'
-import CakeCard from '@/components/molecules/CakeCard'
 import { AuthContext } from '@/context/AuthContext'
 import { OpeningContext } from '@/context/OpeningContext'
 import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView';
 import Carousel from 'react-native-reanimated-carousel';
 import { Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import { Star, ArrowRight, TrendingUp } from 'lucide-react-native';
 import api from '@/api/api';
 
 const { width } = Dimensions.get('window');
 const greetingsTexture = require('@/assets/images/texture/Cake back Designs Greetings area.jpg');
-const cakesTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any.jpg');
 
 export default function Index() {
     const { user, loading, getUserData } = useContext(AuthContext)
     const { openingTime, blockedDates, loading: loadingOpening, refresh: refreshOpening } = useContext(OpeningContext)
 
-    const [cakes, setCakes] = useState([]);
-    const [loadingCakes, setLoadingCakes] = useState(true);
+    const [topCakes, setTopCakes] = useState([]);
+    const [loadingTopCakes, setLoadingTopCakes] = useState(true);
 
-    const fetchCakes = async () => {
+    const fetchTopCakes = async () => {
         try {
-            const response = await api.get('/orders/cakes/');
+            const response = await api.get('/orders/cakes/best-sellers/', {
+                params: { limit: 3 }
+            });
             const data = response.data.results || response.data;
-            setCakes(data);
+            setTopCakes(Array.isArray(data) ? data.slice(0, 3) : []);
         } catch (error) {
-            console.error("Failed to fetch cakes for carousel:", error);
+            console.error("Failed to fetch best-selling cakes:", error);
+            setTopCakes([]);
         } finally {
-            setLoadingCakes(false);
+            setLoadingTopCakes(false);
         }
     };
 
     const onRefresh = async () => {
         await Promise.allSettled([
-            fetchCakes(),
+            fetchTopCakes(),
             refreshOpening?.(),
             user ? getUserData?.() : Promise.resolve(),
         ]);
     };
 
     useEffect(() => {
-        fetchCakes();
+        fetchTopCakes();
     }, []);
 
     const carouselItems = [
@@ -174,61 +174,63 @@ export default function Index() {
                             {/* Premade Cakes */}
                             <View className='relative mb-4'>
                                 <Text className='font-extrabold text-lg px-6 py-4 text-[#8B5A3C]'>
-                                    Pre-made Cakes
+                                    Top 3 Best-Selling Cakes
                                 </Text>
 
-                                <Carousel
-                                    loop={true}
-                                    width={width / 2}
-                                    height={200}
-                                    style={{ width: width }}
-                                    data={cakes}
-                                    autoPlay={true}
-                                    autoPlayInterval={1}
-                                    scrollAnimationDuration={5000}
-                                    withAnimation={{
-                                        type: 'timing',
-                                        config: { duration: 5000, easing: Easing.linear }
-                                    }}
-                                    renderItem={({ item }) => (
-                                        <View className="flex-1 px-2 py-2">
-                                            <TouchableOpacity
-                                                className="flex-1 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 justify-between items-center"
-                                                activeOpacity={0.9}
-                                            >
-                                                <View className="w-full h-32 items-center justify-center mb-2">
-                                                    <Image
-                                                        source={{ uri: item.image }}
-                                                        style={{ width: '100%', height: '100%' }}
-                                                        resizeMode="contain"
-                                                    />
-                                                </View>
-                                                <View className="w-full items-center">
-                                                    <Text className="text-primary font-bold text-center text-sm" numberOfLines={1}>
-                                                        {item.name}
-                                                    </Text>
-                                                </View>
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
-                                />
+                                {loadingTopCakes ? (
+                                    <View className='w-full py-8 items-center justify-center'>
+                                        <ActivityIndicator size="small" color="#8B5A3C" />
+                                    </View>
+                                ) : topCakes.length > 0 ? (
+                                    <Carousel
+                                        loop={topCakes.length > 1}
+                                        width={width / 2}
+                                        height={215}
+                                        style={{ width: width }}
+                                        data={topCakes}
+                                        autoPlay={topCakes.length > 1}
+                                        autoPlayInterval={2500}
+                                        scrollAnimationDuration={700}
+                                        withAnimation={{
+                                            type: 'timing',
+                                            config: { duration: 700, easing: Easing.linear }
+                                        }}
+                                        renderItem={({ item, index }) => (
+                                            <View className="flex-1 px-2 py-2">
+                                                <TouchableOpacity
+                                                    className="flex-1 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 justify-between items-center"
+                                                    activeOpacity={0.9}
+                                                    onPress={() => router.push('/cakeOrders')}
+                                                >
+                                                    <View className='w-full flex-row items-center justify-between mb-2'>
+                                                        <Text className='text-[11px] font-bold px-2 py-1 rounded-full bg-[#8B5A3C] text-white'>
+                                                            #{index + 1} Best Seller
+                                                        </Text>
+                                                        <Text className='text-[11px] text-[#8B5A3C] font-semibold'>
+                                                            {item.times_ordered || 0} sold
+                                                        </Text>
+                                                    </View>
+                                                    <View className="w-full h-28 items-center justify-center mb-2">
+                                                        <Image
+                                                            source={{ uri: item.image }}
+                                                            style={{ width: '100%', height: '100%' }}
+                                                            resizeMode="contain"
+                                                        />
+                                                    </View>
+                                                    <View className="w-full items-center">
+                                                        <Text className="text-primary font-bold text-center text-sm" numberOfLines={1}>
+                                                            {item.name}
+                                                        </Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                    />
+                                ) : (
+                                    <Text className='text-center text-gray-500 px-6 pb-4'>No best-selling cakes yet.</Text>
+                                )}
                             </View>
 
-                            {/* Best Creations Banners */}
-                            {/* <View className='px-6 mb-10'>
-                        {customBanners.map((banner) => (
-                            <TouchableOpacity 
-                                key={banner.id} 
-                                className='w-full h-40 mb-4 rounded-2xl overflow-hidden shadow-sm border border-gray-100'
-                                activeOpacity={0.9}
-                                onPress={() => router.push('/customOrders')}
-                            >
-                                <Image source={banner.image} className='w-full h-full' resizeMode='cover' />
-                            </TouchableOpacity>
-                        ))}
-                    </View> */}
-
-                            {/* Best Creations Banners (Hardcoded Temporarily) */}
                             <View className='mb-10 mt-4'>
                                 <View className='flex-row justify-between items-center px-6 mb-4'>
                                     <Text className='font-extrabold text-lg text-black'>Best Creations!</Text>
@@ -259,13 +261,11 @@ export default function Index() {
                                 <View className='flex-row flex-wrap justify-between'>
                                     <View className='w-1/2 mb-4'>
                                         <Text className='font-bold text-[#8B5A3C] mb-3'>Support</Text>
-                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>Contact Us</Text></TouchableOpacity> */}
                                         <TouchableOpacity onPress={() => router.push('/faq')}><Text className='text-gray-500 text-xs mb-2'>FAQ</Text></TouchableOpacity>
                                         <TouchableOpacity onPress={() => router.push('/orders')}><Text className='text-gray-500 text-xs mb-2'>Track Order</Text></TouchableOpacity>
                                     </View>
                                     <View className='w-1/2 mb-4'>
                                         <Text className='font-bold text-[#8B5A3C] mb-3'>Company</Text>
-                                        {/* <TouchableOpacity><Text className='text-gray-500 text-xs mb-2'>About Us</Text></TouchableOpacity> */}
                                         <TouchableOpacity onPress={() => router.push('/termsOfService')}><Text className='text-gray-500 text-xs mb-2'>Terms of Service</Text></TouchableOpacity>
                                         <TouchableOpacity onPress={() => router.push('/termsAndConditions')}><Text className='text-gray-500 text-xs mb-2'>Terms and Conditions</Text></TouchableOpacity>
                                         <TouchableOpacity onPress={() => router.push('/privacyPolicy')}><Text className='text-gray-500 text-xs mb-2'>Privacy Policy</Text></TouchableOpacity>

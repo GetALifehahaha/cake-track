@@ -5,6 +5,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     Animated,
+    Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,8 +14,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import api from '@/api/api';
 
 const GCashPaymentScreen = () => {
-    const { amount, paymentType } = useLocalSearchParams();
+    const { amount, paymentType, orderId } = useLocalSearchParams();
     const [copied, setCopied] = useState(false);
+    const [showReferenceNotice, setShowReferenceNotice] = useState(false);
     const [gcashOwnerName, setGcashOwnerName] = useState('');
     const [gcashOwnerNumber, setGcashOwnerNumber] = useState('');
     const toastOpacity = React.useRef(new Animated.Value(0)).current;
@@ -75,6 +77,7 @@ const GCashPaymentScreen = () => {
     const amountLabel = paymentTypeValue === 'custom'
         ? 'Custom Order Downpayment'
         : 'Cake Order Downpayment (15%)';
+    const orderIdValue = Array.isArray(orderId) ? orderId[0] : orderId;
 
     const displayMaskedName = maskGCashOwnerName(gcashOwnerName) || 'A********R S.';
     const displayNumber = formatGCashNumber(gcashOwnerNumber) || '0994 286 7630';
@@ -89,6 +92,20 @@ const GCashPaymentScreen = () => {
             Animated.delay(1500),
             Animated.timing(toastOpacity, { toValue: 0, duration: 250, useNativeDriver: true }),
         ]).start(() => setCopied(false));
+    };
+
+    const handleProceedToHomePress = () => {
+        setShowReferenceNotice(true);
+    };
+
+    const handleProceedHome = () => {
+        setShowReferenceNotice(false);
+        router.replace('/');
+    };
+
+    const handleGoToOrders = () => {
+        setShowReferenceNotice(false);
+        router.replace('/(tabs)/orders');
     };
 
     return (
@@ -138,7 +155,7 @@ const GCashPaymentScreen = () => {
                     <Text style={styles.copyBtnText}>{copied ? 'Copied!' : 'Copy Number'}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/')} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.backBtn} onPress={handleProceedToHomePress} activeOpacity={0.85}>
                     <Text style={styles.backBtnText}>Proceed to Home</Text>
                 </TouchableOpacity>
 
@@ -146,6 +163,33 @@ const GCashPaymentScreen = () => {
                 <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
                     <Text style={styles.toastText}>Number copied!</Text>
                 </Animated.View>
+
+                <Modal
+                    visible={showReferenceNotice}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setShowReferenceNotice(false)}
+                >
+                    <View style={styles.noticeOverlay}>
+                        <View style={styles.noticeCard}>
+                            <Text style={styles.noticeTitle}>Before You Proceed</Text>
+                            <Text style={styles.noticeBody}>
+                                Please input your payment reference number in Order Details after paying via GCash to avoid delays.
+                            </Text>
+                            {!!orderIdValue && (
+                                <Text style={styles.noticeOrderId}>Order ID: {orderIdValue}</Text>
+                            )}
+
+                            <TouchableOpacity style={styles.noticePrimaryBtn} onPress={handleGoToOrders} activeOpacity={0.9}>
+                                <Text style={styles.noticePrimaryBtnText}>Go to Orders</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.noticeSecondaryBtn} onPress={handleProceedHome} activeOpacity={0.9}>
+                                <Text style={styles.noticeSecondaryBtnText}>Proceed Home Anyway</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
 
 
             </View>
@@ -322,6 +366,65 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         fontWeight: '500',
+    },
+    noticeOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.48)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    noticeCard: {
+        width: '100%',
+        borderRadius: 18,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#ead9ca',
+        padding: 20,
+    },
+    noticeTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#5f3518',
+        marginBottom: 8,
+    },
+    noticeBody: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#7b5a42',
+        marginBottom: 12,
+    },
+    noticeOrderId: {
+        fontSize: 12,
+        color: '#946f54',
+        marginBottom: 14,
+        fontWeight: '600',
+    },
+    noticePrimaryBtn: {
+        backgroundColor: '#7a4520',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        marginBottom: 10,
+    },
+    noticePrimaryBtnText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    noticeSecondaryBtn: {
+        borderWidth: 1,
+        borderColor: '#d6b89f',
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 11,
+    },
+    noticeSecondaryBtnText: {
+        color: '#7a4520',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
 

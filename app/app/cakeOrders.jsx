@@ -14,6 +14,7 @@ const CakeOrders = () => {
     const router = useRouter();
 
     const [cakes, setCakes] = useState([]);
+    const [bestSellerCakeId, setBestSellerCakeId] = useState(null);
     const [fetchingCakes, setFetchingCakes] = useState(true);
     const { cart, addToCart, setAmount } = useCart();
     const [input, setInput] = useState("");
@@ -21,18 +22,18 @@ const CakeOrders = () => {
     useEffect(() => {
         const fetchCakes = async () => {
             try {
-                const response = await api.get('/orders/cakes/');
-                // DRF might return paginated data (response.data.results) or a flat array (response.data)
-                console.log(response.data)
+                const response = await api.get('/orders/cakes/', {
+                    params: { ordering: '-times_ordered,name' }
+                });
                 const data = response.data.results || response.data;
                 setCakes(data);
+                setBestSellerCakeId(data?.[0]?.id ?? null);
             } catch (error) {
                 console.error("Failed to fetch cakes:", error);
             } finally {
                 setFetchingCakes(false);
             }
         }
-
         fetchCakes();
     }, []);
 
@@ -48,20 +49,24 @@ const CakeOrders = () => {
         return null;
     }
 
-    // Filter cakes based on search input
     const filteredCakes = cakes.filter(cake => 
         cake.name.toLowerCase().includes(input.toLowerCase())
     );
 
-    const listCakes = filteredCakes.map((cake, index) => (
+    const cakeRankById = new Map(cakes.map((cake, index) => [cake.id, index + 1]));
+
+    const listCakes = filteredCakes.map((cake) => (
         <CakeOrderCard 
-            key={index} 
+            key={cake.id} 
             id={cake.id} 
             price={cake.price} 
-            image={{ uri: cake.image }} // Pass the Cloudinary URL
+            image={{ uri: cake.image }} 
             name={cake.name} 
             baseFlavor={cake.base_flavor}
-            description={""} // Omitted description
+            description={""} 
+            isBestSeller={cake.id === bestSellerCakeId}
+            rank={cakeRankById.get(cake.id)}
+            orderedCount={cake.times_ordered || 0}
             addedToCart={cart.some((prod) => prod.id === cake.id)} 
             addToCart={addToCart} 
             amount={cart.find((prod) => prod.id === cake.id)?.amount || 0} 
@@ -81,10 +86,11 @@ const CakeOrders = () => {
 
                     <View className='px-2 py-1.5 mt-2 border-y border-y-gray-300 flex-row gap-2 items-center'>
                         <Search style={{ opacity: 0.5 }} />
-                        <TextInput className='text-lg' value={input} onChangeText={setInput} placeholder='Search for cake' />
+                        <TextInput className='text-lg w-full' value={input} onChangeText={setInput} placeholder='Search for cake' />
                     </View>
 
-                    <Text className='text-2xl font-extrabold px-2 py-4'>Pre-made Cakes</Text>
+                    <Text className='text-2xl font-extrabold px-2 pt-4'>Pre-made Cakes</Text>
+                    <Text className='text-sm px-2 pb-2 text-secondary-light'>Sorted by best-selling cakes</Text>
 
                     <View className='w-full p-2'>
                         {listCakes.length > 0 ? listCakes : (
