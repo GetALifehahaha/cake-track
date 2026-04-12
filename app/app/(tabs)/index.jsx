@@ -13,6 +13,7 @@ const greetingsTexture = require('@/assets/images/texture/Cake back Designs Gree
 
 export default function Index() {
     const { user, loading, getUserData } = useContext(AuthContext)
+    const { openingTime, blockedDates, loading: loadingOpening, refresh: refreshOpening } = useContext(OpeningContext)
 
     const [topCakes, setTopCakes] = useState([]);
     const [loadingTopCakes, setLoadingTopCakes] = useState(true);
