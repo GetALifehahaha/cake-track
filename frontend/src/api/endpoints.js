@@ -9,6 +9,7 @@ const API_ENDPOINTS = {
     DISCOUNTS: "/pos/discounts/",
     DISCOUNT_USAGE: "/pos/discount-usage/",
     INGREDIENTS: "/inventory/ingredients/",
+    INGREDIENTS_PAGINATED: "/inventory/ingredients-paginated/",
     INGREDIENTS_ALL: "/inventory/ingredients-all/",
     INGREDIENTS_DASHBOARD: "/inventory/dashboard/",
     INGREDIENTS_STOCK_OUT_EXPIRED: "/inventory/ingredients/stock-out-expired/",

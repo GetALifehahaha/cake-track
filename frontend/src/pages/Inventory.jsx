@@ -22,7 +22,10 @@ const Inventory = () => {
         postIngredient,
         patchIngredient,
         deleteIngredient,
-        stockOutAllExpiredIngredient } = useIngredient();
+        stockOutAllExpiredIngredient } = useIngredient({
+            usePaginatedInventory: true,
+            includeAllIngredients: false,
+        });
     const [showAddItemModal, setShowAddItemModal] = useState(false);
     const [showEditItemModal, setShowEditItemModal] = useState(false);
     const [prepEditItem, setPrepEditItem] = useState(null);
@@ -132,7 +135,7 @@ const Inventory = () => {
     }
 
 
-    const listIngredientData = ingredientData.results.map((item, index) =>
+    const listIngredientData = (ingredientData.results || []).map((item, index) =>
         <div className='flex flex-col gap-2' key={index}>
             <div className='p-2.5 flex flex-row items-center text-text font-medium text-md text-center bg-main-white border-b-main-dark border-b-2 cursor-pointer border-x border-x-main-dark' onClick={() => handleSetActiveIndex(index)}>
                 <div className='w-1/25'><ChevronDown size={18} className={`cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} /></div>
@@ -269,9 +272,7 @@ const Inventory = () => {
 
                     <div className='mt-2' />
                     {/* Pagination */}
-                    <div className='mt-auto mx-auto'>
-                        <Pagination next={ingredientData.next} prev={ingredientData.previous} count={ingredientData?.count} />
-                    </div>
+                    <Pagination next={ingredientData.next} prev={ingredientData.previous} count={ingredientData?.count} />
                 </div>
             </div>
 

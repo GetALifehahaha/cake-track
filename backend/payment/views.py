@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status as http_status
+from rest_framework.pagination import PageNumberPagination
 
 from django.conf import settings
 from orders.models import Order
@@ -393,6 +394,12 @@ class RepayOrderView(APIView):
             )
 
 
+class PaymentHistoryPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class PaymentHistoryView(APIView):
     """Web endpoint for cake-order payment history."""
     def get(self, request):
@@ -405,5 +412,7 @@ class PaymentHistoryView(APIView):
         if order_id:
             queryset = queryset.filter(orders__id=order_id)
 
-        serializer = PaymentSerializer(queryset, many=True)
-        return Response(serializer.data, status=http_status.HTTP_200_OK)
+        paginator = PaymentHistoryPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = PaymentSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)

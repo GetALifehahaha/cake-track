@@ -3,14 +3,16 @@ import Loading from '@/components/molecules/Loading';
 import usePayments from '@/hooks/usePayments';
 import { formatDateForDisplay } from '@/utils/date';
 import { Title } from '@/components/atoms';
+import { Pagination } from '@/components/molecules';
 
 const QueueHistory = () => {
     const { data, loading, error } = usePayments();
+    const paymentResults = data?.results || [];
 
     if (loading) return <Loading />;
     if (error) return <h5>Error loading payment history</h5>;
 
-    const listHistory = data.map((payment, index) => (
+    const listHistory = paymentResults.map((payment, index) => (
         <div className='flex w-full text-sm py-2 border-b border-b-main-dark items-center' key={payment.id || index}>
             <h5 className='text-text font-medium text-center py-0.5 flex-1'>{payment.order_id}</h5>
             <h5 className='text-text font-medium text-center py-0.5 flex-1 capitalize'>{payment.payment_type?.replace('_', ' ')}</h5>
@@ -41,6 +43,8 @@ const QueueHistory = () => {
                     </div>
                 )}
             </div>
+
+            <Pagination next={data?.next} prev={data?.previous} count={data?.count} pageSize={20} />
         </div>
     );
 };

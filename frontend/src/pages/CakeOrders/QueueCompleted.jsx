@@ -40,12 +40,9 @@ const QueueReady = () => {
 			</div>
 			<div className='flex flex-col items-center gap-2 py-2 min-h-100'>
 				{listCompletedTransactions}
-
-				<span className='mt-auto'>
-					<Pagination prev={data.previous} next={data.next} count={data?.count} />
-				</span>
 			</div>
 
+			<Pagination prev={data.previous} next={data.next} count={data?.count} />
 			{orderDetails &&
 				<OrderDetails orderDetails={orderDetails} onClose={() => setOrderDetails(null)} />
 			}

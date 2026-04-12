@@ -10,7 +10,7 @@ const AcceptedCard = ({ order, onComplete, onShowDetails, onRefund }) => {
 	const canReadyForPickup = Boolean(order?.ingredients_deducted_at);
 
 	return (
-		<div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md min-h-60 cursor-pointer	'
+		<div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md min-h-60 cursor-pointer	h-fit'
 			onClick={() => { setShowOptions(true) }}>
 			{order?.cancellation_requested && !showOptions && (
 				<span className='absolute bottom-3 right-3 px-2 py-1 rounded-full bg-error text-white text-[10px] font-semibold leading-none'>

@@ -8,7 +8,7 @@ const ReadyCard = ({ order, onComplete, onShowDetails }) => {
 	const [showOptions, setShowOptions] = useState(false);
 
 	return (
-		<div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md min-h-60 cursor-pointer	'
+		<div className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md min-h-60 cursor-pointer	h-fit'
 			onClick={() => { setShowOptions(true) }}>
 			{showOptions &&
 				<div className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'

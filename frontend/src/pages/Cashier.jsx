@@ -167,7 +167,7 @@ const Cashier = () => {
                 </div>
 
                 {/* Table */}
-                <div className='mt-2 flex flex-col min-h-120'>
+                <div className='mt-2 flex flex-col min-h-100'>
                     <div className='p-2 bg-accent-mute rounded-lg flex flex-row items-center text-white text-sm text-center'>
                         <h5 className='flex-1'>Full Name</h5>
                         {/* <h5 className='basis-1/5'>Contact Number</h5>
@@ -179,8 +179,8 @@ const Cashier = () => {
 
                     {listCashiers}
 
-                        <Pagination prev={data.previous} next={data.next} count={data?.count} />
                 </div>
+                <Pagination prev={data.previous} next={data.next} count={data?.count} />
             </div>
 
             {/* Modals */}

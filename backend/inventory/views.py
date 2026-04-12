@@ -2,6 +2,7 @@ from rest_framework.decorators import action
 from django.shortcuts import render
 from rest_framework import permissions, viewsets, generics, filters, status
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.db import models, transaction
 from django.db.models.deletion import ProtectedError
 from django.db.models import F
@@ -71,6 +72,40 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if self.action == "list" or self.action == "retrieve":
             return TransactionHistorySerializer
         return TransactionSerializer
+
+
+def _get_filtered_ingredients_queryset(filter_value):
+    today = timezone.now().date()
+
+    if filter_value == 'available':
+        return Ingredient.objects.filter(total_stock__gt=0).distinct().order_by(Lower('name'), 'name')
+
+    if filter_value == 'out_of_stock':
+        return Ingredient.objects.exclude(total_stock__gt=0).order_by(Lower('name'), 'name')
+
+    if filter_value == 'near_expiration':
+        seven_days = today + timedelta(days=7)
+        return Ingredient.objects.filter(
+            transactions__transaction_type='in',
+            transactions__remaining_amount__gt=0,
+            transactions__expiration_date__gt=today,
+            transactions__expiration_date__lte=seven_days
+        ).distinct().order_by(Lower('name'), 'name')
+
+    if filter_value == 'expired':
+        return Ingredient.objects.filter(
+            transactions__transaction_type='in',
+            transactions__remaining_amount__gt=0,
+            transactions__expiration_date__lte=today
+        ).distinct().order_by(Lower('name'), 'name')
+
+    return Ingredient.objects.all().order_by(Lower('name'), 'name')
+
+
+class IngredientInventoryPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
     
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -78,39 +113,13 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    pagination_class = None
 
     search_fields = ['name']
 
     def get_queryset(self):
-
-        filter = self.request.query_params.get('filter')
-
-        today = timezone.now().date()
-
-        if filter == 'available':
-            return Ingredient.objects.filter(total_stock__gt=0).distinct().order_by(Lower('name'), 'name')
-
-        elif filter == 'out_of_stock':
-            return Ingredient.objects.exclude(total_stock__gt=0).order_by(Lower('name'), 'name')
-
-        elif filter == 'near_expiration':
-            seven_days = today + timedelta(days=7)
-
-            return Ingredient.objects.filter(
-                transactions__transaction_type='in',
-                transactions__remaining_amount__gt=0,
-                transactions__expiration_date__gt=today,
-                transactions__expiration_date__lte=seven_days
-            ).distinct().order_by(Lower('name'), 'name')
-
-        elif filter == 'expired':
-            return Ingredient.objects.filter(
-                transactions__transaction_type='in',
-                transactions__remaining_amount__gt=0,
-                transactions__expiration_date__lte=today
-            ).distinct().order_by(Lower('name'), 'name')
-
-        return Ingredient.objects.all().order_by(Lower('name'), 'name')
+        filter_value = self.request.query_params.get('filter')
+        return _get_filtered_ingredients_queryset(filter_value)
 
     @action(detail=False, methods=["post"], url_path="stock-out-expired")
     def stock_out_expired(self, request):
@@ -179,6 +188,19 @@ class IngredientViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK
         )
+
+
+class IngredientPaginatedViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all().order_by(Lower('name'), 'name')
+    serializer_class = IngredientSerializer
+    permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name']
+    pagination_class = IngredientInventoryPagination
+
+    def get_queryset(self):
+        filter_value = self.request.query_params.get('filter')
+        return _get_filtered_ingredients_queryset(filter_value)
     
     
 class IngredientAllViewSet(viewsets.ModelViewSet):

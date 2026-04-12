@@ -122,7 +122,7 @@ const QueuePending = () => {
 
 	const listOrder = data.results.map((cake, index) =>
 		<div
-			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60'
+			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60 h-fit'
 			onClick={() => setShowOptions(cake.id)}
 			key={index}
 		>
@@ -212,7 +212,7 @@ const QueuePending = () => {
 				}
 			</div>
 			{data.results.length > 0 ?
-				<div className='grid grid-cols-4 gap-4 mt-8'>
+				<div className='grid grid-cols-4 gap-4 mt-8 min-h-100'>
 					{listOrder}
 				</div>
 				:

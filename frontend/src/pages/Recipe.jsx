@@ -184,8 +184,8 @@ const Recipe = () => {
                     {listRecipes}
                 </div>
 
-                <Pagination next={data.next} prev={data.previous} count={data?.count} />
             </div>
+            <Pagination next={data.next} prev={data.previous} count={data?.count} />
 
             {showAddRecipe && <AddRecipeModal onConfirm={addRecipe} onClose={handleSetShowAddRecipe} />}
 

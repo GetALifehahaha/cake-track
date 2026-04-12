@@ -4,7 +4,12 @@ import API_ENDPOINTS from "@/api/endpoints";
 import useMutate from "./useMutate";
 import useQueryFetch from "./useQueryFetch";
 
-export default function useIngredient() {
+export default function useIngredient(options = {}) {
+    const {
+        usePaginatedInventory = false,
+        includeAllIngredients = true,
+    } = options;
+
     const [searchParams] = useSearchParams();
 
     const apiParams = useMemo(() => {
@@ -13,14 +18,22 @@ export default function useIngredient() {
         return params;
     }, [searchParams]);
 
-    const ingredientsQuery = useQueryFetch("ingredients", API_ENDPOINTS.INGREDIENTS, apiParams);
-    const fetchAllIngredients = useQueryFetch("ingredient-fetch-all", API_ENDPOINTS.INGREDIENTS_ALL);
+    const ingredientsEndpoint = usePaginatedInventory
+        ? API_ENDPOINTS.INGREDIENTS_PAGINATED
+        : API_ENDPOINTS.INGREDIENTS;
+    const ingredientsKey = usePaginatedInventory ? "ingredients-paginated" : "ingredients";
+
+    const ingredientsQuery = useQueryFetch(ingredientsKey, ingredientsEndpoint, apiParams);
+    const fetchAllIngredients = useQueryFetch("ingredient-fetch-all", API_ENDPOINTS.INGREDIENTS_ALL, undefined, {
+        enabled: includeAllIngredients,
+    });
     const dashboardQuery = useQueryFetch("ingredient-dashboard", API_ENDPOINTS.INGREDIENTS_DASHBOARD);
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate(
         "ingredients",
         {
             invalidateKeys: [
                 ["ingredients"],
+                ["ingredients-paginated"],
                 ["ingredient-fetch-all"],
                 ["ingredient-dashboard"],
                 ["inventory-transactions"],
@@ -40,15 +53,15 @@ export default function useIngredient() {
             ingredientsQuery.isPending ||
             dashboardQuery.isPending ||
             mutateLoading ||
-            fetchAllIngredients.isPending,
+            (includeAllIngredients && fetchAllIngredients.isPending),
 
         ingredientError:
             ingredientsQuery.error ||
             dashboardQuery.error ||
             mutateError ||
-            fetchAllIngredients.error,
+            (includeAllIngredients ? fetchAllIngredients.error : null),
 
-        ingredientAll: fetchAllIngredients.data || [],
+        ingredientAll: includeAllIngredients ? (fetchAllIngredients.data || []) : [],
 
         postIngredient: (params) => create(API_ENDPOINTS.INGREDIENTS, params),
         patchIngredient: (id, data) => update(`${API_ENDPOINTS.INGREDIENTS}${id}/`, data),
@@ -58,7 +71,9 @@ export default function useIngredient() {
         refresh: () => {
             ingredientsQuery.refetch();
             dashboardQuery.refetch();
-            fetchAllIngredients.refetch();
+            if (includeAllIngredients) {
+                fetchAllIngredients.refetch();
+            }
         },
     };
 }

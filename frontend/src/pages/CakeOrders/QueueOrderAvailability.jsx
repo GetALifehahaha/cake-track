@@ -1,20 +1,24 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { X, Plus, Trash2, Clock, CalendarOff, Edit2 } from 'lucide-react'
 import { Title } from '../../components/atoms'
 import { useToast } from '@/context/ToastContext'
 import { formatTime } from '../../utils/formatTime.js'
 import { BlockedDates, ClosingHoursModal, ConfirmationModal } from '@/components/organisms'
+import { Pagination } from '@/components/molecules'
 import { isDatePast } from '@/utils/isDatePast'
 import { formatDisplayDate } from '@/utils/formatDisplayDate'
 import useOrder from '@/hooks/useOrders'
 import useOperatingHours from '@/hooks/useOperatingHours'
 import Loading from '@/components/molecules/Loading'
+import { useSearchParams } from 'react-router-dom'
 
 const QueueOrderAvailability = () => {
 	const { addToast } = useToast()
+	const [searchParams, setSearchParams] = useSearchParams()
 
 	const { blockedDates, blockDates, unblockDates, blockedDatesLoading, blockedDatesError } = useOrder()
 	const { operatingHours, loading: hoursLoading, updateOperatingHours } = useOperatingHours()
+	const BLOCKED_PAGE_SIZE = 10
 
 	const [selectedDates, setSelectedDates] = useState([])
 	const [showBlockModal, setShowBlockModal] = useState(false)
@@ -37,6 +41,25 @@ const QueueOrderAvailability = () => {
 		: filter === 'past'
 			? pastDates
 			: [...upcomingDates, ...pastDates]
+
+	const blockedPageFromUrl = parseInt(searchParams.get('blocked_page') || '1', 10)
+	const blockedPageRaw = Number.isNaN(blockedPageFromUrl) || blockedPageFromUrl < 1 ? 1 : blockedPageFromUrl
+	const blockedTotalPages = Math.max(1, Math.ceil(displayDates.length / BLOCKED_PAGE_SIZE))
+	const blockedPage = Math.min(blockedPageRaw, blockedTotalPages)
+	const blockedPageStart = (blockedPage - 1) * BLOCKED_PAGE_SIZE
+	const paginatedDisplayDates = displayDates.slice(blockedPageStart, blockedPageStart + BLOCKED_PAGE_SIZE)
+
+	const visibleDateIds = paginatedDisplayDates.map(({ id }) => id)
+	const areAllVisibleDatesSelected =
+		visibleDateIds.length > 0 && visibleDateIds.every(id => selectedDates.includes(id))
+
+	useEffect(() => {
+		if (blockedPageRaw === blockedPage) return
+
+		const params = new URLSearchParams(searchParams)
+		params.set('blocked_page', String(blockedPage))
+		setSearchParams(params, { replace: true })
+	}, [blockedPage, blockedPageRaw, searchParams, setSearchParams])
 
 	const handleBlockDates = async (dates) => {
 		try {
@@ -82,7 +105,20 @@ const QueueOrderAvailability = () => {
 	}
 
 	const toggleSelectAll = () => {
-		setSelectedDates(selectedDates.length === displayDates.length ? [] : displayDates.map(d => d.id))
+		if (areAllVisibleDatesSelected) {
+			setSelectedDates(prev => prev.filter(id => !visibleDateIds.includes(id)))
+			return
+		}
+
+		setSelectedDates(prev => Array.from(new Set([...prev, ...visibleDateIds])))
+	}
+
+	const handleFilterChange = (value) => {
+		const params = new URLSearchParams(searchParams)
+		params.set('blocked_page', '1')
+		setSearchParams(params)
+		setFilter(value)
+		setSelectedDates([])
 	}
 
 	if (blockedDatesLoading || hoursLoading) return <Loading />
@@ -177,7 +213,7 @@ const QueueOrderAvailability = () => {
 							{[['upcoming', 'Upcoming'], ['past', 'Past'], ['all', 'All']].map(([val, label]) => (
 								<button
 									key={val}
-									onClick={() => { setFilter(val); setSelectedDates([]) }}
+									onClick={() => handleFilterChange(val)}
 									className={`px-3 py-1.5 font-medium transition-colors cursor-pointer
 										${filter === val ? 'bg-accent-mute text-white' : 'text-text/60 hover:bg-main-dark/40'}`}
 								>
@@ -212,7 +248,7 @@ const QueueOrderAvailability = () => {
 						<span className='w-8 flex justify-center'>
 							<input
 								type='checkbox'
-								checked={selectedDates.length === displayDates.length && displayDates.length > 0}
+								checked={areAllVisibleDatesSelected}
 								onChange={toggleSelectAll}
 								className='accent-accent-mute cursor-pointer'
 							/>
@@ -234,7 +270,7 @@ const QueueOrderAvailability = () => {
 							</div>
 						</div>
 					) : (
-						displayDates.map(({ id, date }, i) => {
+						paginatedDisplayDates.map(({ id, date }, i) => {
 							const past = isDatePast(date)
 							const isChecked = selectedDates.includes(id)
 
@@ -244,7 +280,7 @@ const QueueOrderAvailability = () => {
 									onClick={() => toggleSelectDate({ id, date })}
 									className={`
 										flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors
-										${i !== displayDates.length - 1 ? 'border-b border-b-main-dark' : ''}
+										${i !== paginatedDisplayDates.length - 1 ? 'border-b border-b-main-dark' : ''}
 										${isChecked ? 'bg-accent-mute/5' : 'hover:bg-main-dark/30'}
 									`}
 								>
@@ -292,6 +328,14 @@ const QueueOrderAvailability = () => {
 						})
 					)}
 				</div>
+
+				<Pagination
+					next={blockedPage < blockedTotalPages ? 'next' : null}
+					prev={blockedPage > 1 ? 'prev' : null}
+					count={displayDates.length}
+					pageParam='blocked_page'
+					pageSize={BLOCKED_PAGE_SIZE}
+				/>
 			</div>
 
 			{/* ── Modals ── */}
