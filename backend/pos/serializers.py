@@ -44,6 +44,8 @@ def _apply_completed_transaction_to_register(transaction_obj):
 
 
 class DiscountSerializer(serializers.ModelSerializer):
+    usage_percentage = serializers.SerializerMethodField()
+
     categories = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Category.objects.all(),
@@ -57,21 +59,46 @@ class DiscountSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "discount_type", "value", "scope",
             "products", "categories", "start_date", "end_date",
-            "min_order_total", "usage_limit", "used_count", "active"
+            "min_order_total", "usage_limit", "usage_type", "used_count", "usage_percentage", "active"
         ]
-        read_only_fields = ["used_count"]
+        read_only_fields = ["used_count", "usage_percentage"]
+
+    def get_usage_percentage(self, obj):
+        usage_limit = obj.usage_limit
+        if not usage_limit or usage_limit <= 0:
+            return None
+
+        return round((obj.used_count / usage_limit) * 100, 2)
 
     def validate(self, attrs):
         discount_type = attrs.get("discount_type", getattr(self.instance, "discount_type", None))
         value = attrs.get("value", getattr(self.instance, "value", None))
+        scope = attrs.get("scope", getattr(self.instance, "scope", None))
+        min_order_total = attrs.get("min_order_total", getattr(self.instance, "min_order_total", Decimal("0.00")))
         start_date = attrs.get("start_date", getattr(self.instance, "start_date", None))
         end_date = attrs.get("end_date", getattr(self.instance, "end_date", None))
+
+        if self.instance:
+            selected_products = attrs.get("products", self.instance.products.all())
+            selected_categories = attrs.get("category", self.instance.category.all())
+        else:
+            selected_products = attrs.get("products")
+            selected_categories = attrs.get("category")
 
         if value is not None and value <= 0:
             raise serializers.ValidationError({"value": "Discount value must be greater than 0."})
 
         if discount_type == "percentage" and value is not None and value > 100:
             raise serializers.ValidationError({"value": "Percentage discount cannot exceed 100."})
+
+        if min_order_total is not None and min_order_total < 0:
+            raise serializers.ValidationError({"min_order_total": "Minimum order total cannot be negative."})
+
+        if scope == 'selected_products' and not selected_products:
+            raise serializers.ValidationError({"products": "Select at least one product for selected product scope."})
+
+        if scope == 'selected_category' and not selected_categories:
+            raise serializers.ValidationError({"categories": "Select at least one category for selected category scope."})
 
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({"end_date": "End date cannot be earlier than start date."})
@@ -95,7 +122,7 @@ class DiscountUsageSerializer(serializers.ModelSerializer):
             validated_data["discount_snapshot"] = {
                 "id": discount.id,
                 "name": discount.name,
-                "type": discount.type,
+                "type": discount.discount_type,
                 "value": str(discount.value),
             }
 
@@ -412,6 +439,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
             discount_amount = Decimal('0.00')
             locked_discount = None
+            discountable_total = Decimal('0.00')
+            eligible_discount_items = []
+            usage_increment = 0
 
             if discount_input:
                 locked_discount = Discount.objects.select_for_update().get(id=discount_input.id)
@@ -423,17 +453,14 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                     raise ValidationError({"discount": f"A minimum order total of {locked_discount.min_order_total} is required."})
 
                 # Isolate the total of items eligible for the discount
-                discountable_total = Decimal('0.00')
-
                 if locked_discount.scope == 'all_products':
-                    discountable_total = gross_total
+                    eligible_discount_items = list(items_data)
 
                 elif locked_discount.scope == 'selected_products':
                     valid_product_ids = set(locked_discount.products.values_list('id', flat=True))
-                    discountable_total = sum(
-                        Decimal(str(item['product_variant'].price)) * item['quantity']
-                        for item in items_data if item['product'].id in valid_product_ids
-                    )
+                    eligible_discount_items = [
+                        item for item in items_data if item['product'].id in valid_product_ids
+                    ]
 
                 elif locked_discount.scope == 'selected_category':
                     valid_category_ids = set(locked_discount.categories.values_list('id', flat=True))
@@ -442,13 +469,33 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                         product_category_ids = set(product_obj.categories.values_list('id', flat=True))
                         return bool(product_category_ids & valid_category_ids)
 
-                    discountable_total = sum(
-                        Decimal(str(item['product_variant'].price)) * item['quantity']
-                        for item in items_data if _matches_selected_category(item['product'])
-                    )
+                    eligible_discount_items = [
+                        item for item in items_data if _matches_selected_category(item['product'])
+                    ]
+
+                discountable_total = sum(
+                    Decimal(str(item['product_variant'].price)) * item['quantity']
+                    for item in eligible_discount_items
+                )
 
                 # Apply math only if there are eligible items
                 if discountable_total > Decimal('0.00'):
+                    usage_increment = (
+                        sum(int(item['quantity']) for item in eligible_discount_items)
+                        if locked_discount.usage_type == 'per_product'
+                        else 1
+                    )
+
+                    if locked_discount.usage_limit is not None:
+                        remaining_usage = max(locked_discount.usage_limit - locked_discount.used_count, 0)
+                        if usage_increment > remaining_usage:
+                            if locked_discount.usage_type == 'per_product':
+                                raise ValidationError(
+                                    {"discount": f"Only {remaining_usage} product usage(s) remaining for this discount."}
+                                )
+
+                            raise ValidationError({"discount": "Discount usage limit has been reached."})
+
                     if locked_discount.discount_type == 'percentage':
                         discount_amount = discountable_total * (locked_discount.value / Decimal('100.00'))
                     elif locked_discount.discount_type == 'fixed':
@@ -484,20 +531,16 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 transaction_obj._assign_sequence()
                 transaction_obj.save(update_fields=['sequence_date', 'sequence_number'])
 
+            eligible_variant_ids = {
+                item['product_variant'].id for item in eligible_discount_items
+            }
+
             for item in items_data:
                 item_price = Decimal(str(item['product_variant'].price))
                 item_total = item_price * item['quantity']
                 item_discount = Decimal('0.00')
 
-                is_eligible = False
-                
-                if locked_discount:
-                    if locked_discount.scope == 'all_products':
-                        is_eligible = True
-                    elif locked_discount.scope == 'selected_products' and item['product'].id in valid_product_ids:
-                        is_eligible = True
-                    elif locked_discount.scope == 'selected_category' and _matches_selected_category(item['product']):
-                        is_eligible = True
+                is_eligible = bool(locked_discount and item['product_variant'].id in eligible_variant_ids)
 
                 if is_eligible and discountable_total > Decimal('0.00'):
                     proportion = item_total / discountable_total
@@ -521,20 +564,17 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                         "type": locked_discount.discount_type,
                         "value": str(locked_discount.value),
                         "scope": locked_discount.scope,
+                        "usage_type": locked_discount.usage_type,
+                        "usage_increment": usage_increment,
                         "min_order_total": str(locked_discount.min_order_total),
                     }
                 )
                 
                 # Optional: Record exactly which products triggered the discount
                 if locked_discount.scope in ['selected_products', 'selected_category']:
-                    eligible_products = [
-                        item['product'] for item in items_data 
-                        if (locked_discount.scope == 'selected_products' and item['product'].id in valid_product_ids) or 
-                           (locked_discount.scope == 'selected_category' and _matches_selected_category(item['product']))
-                    ]
-                    usage_record.products.set(eligible_products)
+                    usage_record.products.set({item['product'].id for item in eligible_discount_items})
                 
-                locked_discount.used_count += 1
+                locked_discount.used_count += usage_increment
                 locked_discount.save(update_fields=['used_count'])
 
             if not is_void and ingredient_totals:

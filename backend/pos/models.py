@@ -20,6 +20,11 @@ class Discount(models.Model):
         ("selected_category", "Selected Category"),
     ]
 
+    USAGE_TYPE = [
+        ("per_order", "Per Order"),
+        ("per_product", "Per Product"),
+    ]
+
     name = models.CharField(max_length=100)
 
     discount_type = models.CharField(
@@ -64,6 +69,12 @@ class Discount(models.Model):
     usage_limit = models.PositiveIntegerField(
         null=True,
         blank=True
+    )
+
+    usage_type = models.CharField(
+        max_length=30,
+        choices=USAGE_TYPE,
+        default="per_order",
     )
 
     used_count = models.PositiveIntegerField(default=0)

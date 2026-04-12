@@ -8,7 +8,7 @@ from django.conf import settings
 import qrcode
 
 # Create your views here.
-from django.db.models import Sum, Count, F, DateTimeField
+from django.db.models import Sum, Count, F, DateTimeField, Case, When, Value, FloatField, ExpressionWrapper
 from django.db.models.functions import TruncDate, Lower
 from django.utils import timezone
 from datetime import timedelta
@@ -92,12 +92,30 @@ class DiscountViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = MediumPageSize
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['discount_type', 'scope', 'active']
-    ordering_fields = ['value', 'used_count', 'id']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, ProductOrderingFilter]
+    filterset_fields = ['discount_type', 'scope', 'usage_type', 'active']
+    ordering_fields = ['name', 'value', 'used_count', 'usage_percentage', 'id']
     ordering = ['-id']
 
     search_fields = ['name']
+
+    def get_queryset(self):
+        usage_percentage_expr = Case(
+            When(
+                usage_limit__gt=0,
+                then=ExpressionWrapper(
+                    F('used_count') * Value(100.0) / F('usage_limit'),
+                    output_field=FloatField(),
+                ),
+            ),
+            default=Value(0.0),
+            output_field=FloatField(),
+        )
+
+        return Discount.objects.annotate(
+            usage_percentage=usage_percentage_expr,
+            name_sort=Lower('name'),
+        )
 
     def list(self, request, *args, **kwargs):
         fetch_all = str(request.query_params.get('all', 'false')).lower() == 'true'
