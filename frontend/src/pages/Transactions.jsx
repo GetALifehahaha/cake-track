@@ -292,23 +292,26 @@ const Transactions = () => {
         <div className='w-full mx-auto flex flex-col gap-8'>
             <Title variant='page' text='Transaction History' />
 
-            <div className='px-4 py-2.5 rounded-md border border-border'>
+            <div className='px-4 py-2.5 rounded-xl border-2 border-border'>
                 <div className='flex items-center gap-4 flex-wrap'>
-                    <h5 className='text-accent-text font-medium text-md'>
-                        Today's Revenue: <strong className='ml-2 text-accent-dark'>₱ {(data.daily_total_revenue).toFixed(2)}</strong>
-                    </h5>
-                    <h5 className='text-accent-text font-medium text-md'>
-                        Register Money: <strong className='ml-2 text-accent-dark'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
-                    </h5>
+                    <div className='p-2.5 px-8 rounded-lg bg-accent-mute/20 border border-border flex items-center gap-12'>
+                        <h5 className='text-accent-text font-medium text-md'>
+                            Today's Revenue: <strong className='ml-2 text-accent-dark p-2'>₱ {(data.daily_total_revenue).toFixed(2)}</strong>
+                        </h5>
+                        <h5 className='text-accent-text font-medium text-md'>
+                            Register Money: <strong className='ml-2 text-accent-dark'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
+                        </h5>
+                    </div>
 
                     <div className='ml-auto flex items-center gap-2'>
-                        <Button variant='modalOutline' size='small' text='Set Register Money' onClick={() => setShowRegisterMoneyModal(true)} />
+                        <Button variant='modalBlock' size='small' text='Set Register Money' onClick={() => setShowRegisterMoneyModal(true)} />
                         {user?.is_staff && (
                             <Button
-                                variant='modalOutline'
+                                variant='modalBlock'
                                 size='small'
                                 text='Register Transactions'
                                 onClick={() => setShowRegisterTransactionsModal(true)}
+                                className='bg-white text-text shadow-sm'
                             />
                         )}
                     </div>

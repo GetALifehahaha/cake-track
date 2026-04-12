@@ -4,6 +4,8 @@ import { ArrowRight, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ConfirmationModal, ConfirmationModalWrapper, InputRejectModalWrapper } from '@/components/organisms'
 import useOrder from '@/hooks/useOrders'
+import useQueryFetch from '@/hooks/useQueryFetch'
+import API_ENDPOINTS from '@/api/endpoints'
 import Loading from '@/components/molecules/Loading'
 import { useToast } from '@/context/ToastContext'
 import useIngredient from '@/hooks/useIngredient'
@@ -12,14 +14,20 @@ import { capitalize } from '@/utils/capitalize'
 const QueueOverview = () => {
 
 	const { addToast } = useToast();
-	const { data, loading, error, patchOrder } = useOrder();
+	const { patchOrder } = useOrder();
+	const overviewQuery = useQueryFetch('orders-overview', API_ENDPOINTS.ORDERS_OVERVIEW);
+	const overviewData = overviewQuery.data || {};
+	const pendingOrders = overviewData.pending_orders || [];
+	const acceptedOrders = overviewData.accepted_orders || [];
+	const dueSoonOrders = overviewData.due_soon_orders || [];
+	const pendingCount = Number(overviewData.pending_count || 0);
 	const { ingredientDashboard, ingredientError, ingredientLoading } = useIngredient();
 	const navigate = useNavigate();
 
 	const [removeId, setRemoveId] = useState(null);
 
-	if (loading || ingredientLoading) return <Loading />
-	if (error || ingredientError) return <h5>Error</h5>
+	if (overviewQuery.isPending || ingredientLoading) return <Loading />
+	if (overviewQuery.error || ingredientError) return <h5>Error</h5>
 
 	const acceptedOrdersHeaders = [
 		"ID", "Name", "Cake Flavor", "w/ Cupcake", "Placement Order", "Due Date"
@@ -46,24 +54,6 @@ const QueueOverview = () => {
 	const getFirstName = (fullName) => {
 		if (!fullName) return '';
 		return String(fullName).trim().split(/\s+/)[0] || '';
-	};
-
-	const isDueSoon = (dateString) => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		const inputDate = new Date(dateString);
-
-		if (isNaN(inputDate.getTime())) {
-			return false;
-		}
-
-		inputDate.setHours(0, 0, 0, 0);
-
-		const diffMs = inputDate.getTime() - today.getTime();
-		const MS_PER_DAY = 1000 * 60 * 60 * 24;
-		const diffDays = Math.round(diffMs / MS_PER_DAY);
-		return diffDays >= 0 && diffDays <= 3;
 	};
 
 	// METHODS
@@ -95,10 +85,10 @@ const QueueOverview = () => {
 	}
 
 	// LISTS
-	const listPending = data.results.filter((item) => item.status.toLowerCase() == "pending").slice(0, 5).map((order, index) =>
+	const listPending = pendingOrders.map((order, index) =>
 		<div key={index} className='flex w-full text-sm items-center'>
 			<h5 className='basis-1/4 '>{getFirstName(order.full_name)}</h5>
-			<h5 className='basis-1/4 px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold text-center text-xs'>{capitalize(order.cake_orders.occasion)}</h5>
+			<h5 className='basis-1/4 px-2 py-1 rounded-full border-gray-dark text-gray-dark border font-semibold text-center text-xs'>{capitalize(order.cake_orders?.occasion || '')}</h5>
 			<h5 className='basis-1/4 text-right'>{parseDate(order.due_date)}</h5>
 			<div className='basis-1/4 flex items-center gap-2 justify-end'>
 				<InputRejectModalWrapper onReject={() => setRemoveId(null)} onConfirm={setOrderToReject}>
@@ -110,11 +100,11 @@ const QueueOverview = () => {
 			</div>
 		</div>
 	)
-	const listAccepted = data.results.filter((item) => item.status.toLowerCase() == "accepted").slice(0, 5).map((order, index) =>
+	const listAccepted = acceptedOrders.map((order, index) =>
 		<div key={index} className='flex justify-between items-center py-2 w-full border-b border-b-main-dark'>
 			<h5 className='basis-1/6 text-center'>{order.id}</h5>
 			<h5 className='basis-1/6 text-center'>{order.full_name}</h5>
-			<h5 className='basis-1/6 text-center'>{capitalize(order.cake_orders.base_flavor)}</h5>
+			<h5 className='basis-1/6 text-center'>{capitalize(order.cake_orders?.base_flavor || '')}</h5>
 			<span className='basis-1/6 flex justify-center'>
 				{order.cupcake_orders
 					? <h5 className='text-center text-xs font-semibold text-text/50 border border-gray-400 w-fit px-4 rounded-full'>Yes</h5>
@@ -124,7 +114,7 @@ const QueueOverview = () => {
 			<h5 className='basis-1/6 text-center'>{parseDate(order.due_date)}</h5>
 		</div>
 	)
-	const listDueSoon = data.results.filter((item) => (item.status.toLowerCase() == "accepted" && isDueSoon(item.due_date))).slice(0, 5).map((order, index) =>
+	const listDueSoon = dueSoonOrders.map((order, index) =>
 		<div key={index} className='flex justify-between items-center w-full px-4'>
 			<h5 className='text-center py-1 font-medium'>{order.full_name}</h5>
 			<h5 className='text-center py-1'>{parseDate(order.due_date)}</h5>
@@ -140,7 +130,7 @@ const QueueOverview = () => {
 					<div className='flex justify-between items-center pb-2 border-b border-b-border'>
 						<div className='flex gap-2'>
 							<Title variant='modal' text='Pending' />
-							<h5 className='font-semibold text-text/50'>{data.results.filter((order) => order.status.toLowerCase() == "pending").length}</h5>
+							<h5 className='font-semibold text-text/50'>{pendingCount}</h5>
 						</div>
 						<button className='flex items-center gap-2 text-accent cursor-pointer' onClick={() => navigate('/queue/pending')}><h5>View All</h5><ArrowRight size={16} /></button>
 					</div>
@@ -150,9 +140,9 @@ const QueueOverview = () => {
 						<div className='flex flex-col gap-2 p-2 text-xs font-medium'>
 							{listPending}
 						</div>
-						{data.results.filter((item) => item.status.toLowerCase() == "pending").length > 5 &&
+						{pendingCount > pendingOrders.length &&
 							<h5 className='text-text/50 text-xs font-semibold text-right'>
-								And {data.results.filter((item) => item.status.toLowerCase() == "pending").length - 5} more...
+								And {pendingCount - pendingOrders.length} more...
 							</h5>
 						}
 					</div>

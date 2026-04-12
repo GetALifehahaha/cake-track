@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     OrderViewSet,
+    OrderOverviewViewSet,
     CakeOrderViewSet,
     CupcakeOrderViewSet,
     DashboardView,
@@ -13,6 +14,7 @@ from .views import (
 
 routers = DefaultRouter()
 routers.register(r'orders', OrderViewSet)
+routers.register(r'overview', OrderOverviewViewSet, basename='orders-overview')
 routers.register(r'cake-order', CakeOrderViewSet)
 routers.register(r'cupcake-order', CupcakeOrderViewSet)
 routers.register(r'cakes', CakeViewSet)

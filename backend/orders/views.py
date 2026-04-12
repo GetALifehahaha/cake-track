@@ -2,6 +2,7 @@ from django.shortcuts import render
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 
 from rest_framework import permissions, viewsets, filters, status, generics
 from django_filters.rest_framework import DjangoFilterBackend
@@ -32,7 +33,7 @@ from .models import (
     OpeningTime
 )
 
-from users.permissions import IsCashier, IsCustomerOrAdmin
+from users.permissions import IsCashier, IsCustomerOrAdmin, IsAdmin
 from .filters import OrderFilter
 
 class OrderPageSize(PageNumberPagination):
@@ -414,6 +415,41 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save(update_fields=['ingredients_deducted_at'])
 
         return Response({"message": "Ingredients deducted successfully."}, status=status.HTTP_200_OK)
+
+
+class OrderOverviewViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def list(self, request):
+        pending_orders_qs = (
+            Order.objects
+            .filter(status__iexact='pending')
+            .select_related('customer', 'cake_orders', 'cupcake_orders')
+            .order_by('created_at', 'id')
+        )
+        accepted_orders_qs = (
+            Order.objects
+            .filter(status__iexact='accepted')
+            .select_related('customer', 'cake_orders', 'cupcake_orders')
+            .order_by('created_at', 'id')
+        )
+
+        today = timezone.localdate()
+        due_soon_orders_qs = (
+            accepted_orders_qs
+            .filter(due_date__gte=today, due_date__lte=today + timedelta(days=3))
+            .order_by('due_date', 'created_at', 'id')
+        )
+
+        payload = {
+            'pending_count': pending_orders_qs.count(),
+            'accepted_count': accepted_orders_qs.count(),
+            'pending_orders': OrderSerializer(pending_orders_qs[:5], many=True, context={'request': request}).data,
+            'accepted_orders': OrderSerializer(accepted_orders_qs[:5], many=True, context={'request': request}).data,
+            'due_soon_orders': OrderSerializer(due_soon_orders_qs[:5], many=True, context={'request': request}).data,
+        }
+
+        return Response(payload, status=status.HTTP_200_OK)
 
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
