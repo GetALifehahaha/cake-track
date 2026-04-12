@@ -1,11 +1,11 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 const Pagination = ({ next, prev, count, pageParam = 'page', pageSize = 20 }) => {
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const [inputPage, setInputPage] = useState();
+    const [inputPage, setInputPage] = useState('');
     
     const currentPageFromUrl = parseInt(searchParams.get(pageParam) || '1', 10);
     const currentPage = Number.isNaN(currentPageFromUrl) || currentPageFromUrl < 1 ? 1 : currentPageFromUrl;
@@ -21,10 +21,11 @@ const Pagination = ({ next, prev, count, pageParam = 'page', pageSize = 20 }) =>
     const totalPages = hasCount
         ? Math.max(1, Math.ceil(parsedCount / resolvedPageSize))
         : (!next ? currentPage : null);
+    const maxInputLength = totalPages ? String(totalPages).length : 6;
 
     useEffect(() => {
-        setInputPage(currentPage);
-    }, [currentPage])
+        setInputPage(String(currentPage));
+    }, [currentPage]);
 
     const setPage = (targetPage) => {
         const newParams = new URLSearchParams(searchParams);
@@ -68,19 +69,36 @@ const Pagination = ({ next, prev, count, pageParam = 'page', pageSize = 20 }) =>
     const lastDisabled = !totalPages || currentDisplayPage >= totalPages;
 
     return (
-        <div className='flex items-center w-full justify-between p-4'>
+        <div className='flex items-center w-full justify-between p-4 border-t-2 border-t-border'>
             <div className='flex items-center gap-4 font-semibold text-sm px-8 p-2.5 border border-border rounded-2xl'>
                 <h5>Page: </h5>
                     <form onSubmit={(e) => {
                         e.preventDefault();
-                        setPage(inputPage);
+                        if (inputPage === '') {
+                            setInputPage(String(currentPage));
+                            return;
+                        }
+
+                        const parsedInput = Number.parseInt(inputPage, 10);
+                        if (Number.isNaN(parsedInput)) {
+                            setInputPage(String(currentPage));
+                            return;
+                        }
+
+                        setPage(parsedInput);
                     }}>
                         <input
                             type="text"
                             min="1"
-                            max={totalPages}
-                            value={inputPage}
-                            onChange={(e) => setInputPage(e.target.value)}
+                            value={inputPage ?? ''}
+                            onChange={(e) => {
+                                const raw = e.target.value;
+
+                                if (!/^\d*$/.test(raw)) return;
+                                if (raw.length > maxInputLength) return;
+
+                                setInputPage(raw);
+                            }}
                             className="w-8 p-1.5 text-center bg-main-dark/20 rounded-md shadow-sm"
                         />
                     </form>
