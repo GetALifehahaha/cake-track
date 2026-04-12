@@ -1,7 +1,7 @@
 import { View, Text, Image, TextInput, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import React, { useContext, useState } from 'react'
-import { Search, SlidersHorizontal } from 'lucide-react-native'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { Search, SlidersHorizontal, ChevronUp } from 'lucide-react-native'
 import OrderCard from '@/components/molecules/OrderCard'
 import useOrder from '@/hooks/useOrder'
 import { AuthContext } from '@/context/AuthContext'
@@ -11,6 +11,7 @@ import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollV
 
 const COMPLETED_STATUSES = ['completed'];
 const ARCHIVABLE_STATUSES = ['completed', 'rejected', 'refunded', 'cancelled'];
+const PAGE_SIZE = 10;
 
 const Orders = () => {
 	const ordersTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
@@ -20,6 +21,10 @@ const Orders = () => {
 	const [filters, setFilters] = useState([]);
 	const [showFilter, setShowFilter] = useState(false);
 	const [activeTab, setActiveTab] = useState('orders');
+	const [visibleCounts, setVisibleCounts] = useState({ orders: PAGE_SIZE, acquired: PAGE_SIZE, archived: PAGE_SIZE });
+	const [hasScrolledPastFirstBatch, setHasScrolledPastFirstBatch] = useState({ orders: false, acquired: false, archived: false });
+	const [scrollY, setScrollY] = useState(0);
+	const scrollRef = useRef(null);
 	const router = useRouter();
 
 	const { data, archivedData, loading, error, refresh, archiveOrder } = useOrder({ includeArchivedOrders: true });
@@ -40,6 +45,64 @@ const Orders = () => {
 			console.error('Archive order failed:', archiveError?.response?.data || archiveError?.message);
 		}
 	};
+
+	const handleTabChange = (tabName) => {
+		setActiveTab(tabName);
+		scrollRef.current?.scrollTo({ y: 0, animated: false });
+		setScrollY(0);
+	};
+
+	const loadNextBatchForTab = (tabName, totalItems) => {
+		const currentVisible = visibleCounts[tabName] || PAGE_SIZE;
+		if (currentVisible >= totalItems) return;
+
+		const nextVisible = Math.min(currentVisible + PAGE_SIZE, totalItems);
+
+		setVisibleCounts((previous) => ({
+			...previous,
+			[tabName]: nextVisible,
+		}));
+
+		if (currentVisible <= PAGE_SIZE && nextVisible > PAGE_SIZE) {
+			setHasScrolledPastFirstBatch((previous) => ({
+				...previous,
+				[tabName]: true,
+			}));
+		}
+	};
+
+	const handleScroll = ({ nativeEvent }) => {
+		const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+		const currentY = contentOffset.y;
+		setScrollY(currentY);
+
+		const isNearBottom = layoutMeasurement.height + currentY >= contentSize.height - 120;
+		if (!isNearBottom) return;
+
+		if (activeTab === 'orders') {
+			loadNextBatchForTab('orders', filteredList.length);
+			return;
+		}
+
+		if (activeTab === 'acquired') {
+			loadNextBatchForTab('acquired', finishedOrders.length);
+			return;
+		}
+
+		loadNextBatchForTab('archived', archivedOrders.length);
+	};
+
+	const handleScrollToTop = () => {
+		scrollRef.current?.scrollTo({ y: 0, animated: true });
+		setScrollY(0);
+	};
+
+	useEffect(() => {
+		setVisibleCounts({ orders: PAGE_SIZE, acquired: PAGE_SIZE, archived: PAGE_SIZE });
+		setHasScrolledPastFirstBatch({ orders: false, acquired: false, archived: false });
+		setScrollY(0);
+		scrollRef.current?.scrollTo({ y: 0, animated: false });
+	}, [search, filters, data, archivedData]);
 
 	if (!user) {
 		return (
@@ -90,10 +153,6 @@ const Orders = () => {
 		return matchesSearch && matchesStatus && isActiveOrder;
 	});
 
-	const listOrders = filteredList.map((order, index) => (
-		<OrderCard key={index} order={order} onArchive={handleArchiveOrder} />
-	))
-
 	const finishedOrders = allOrders.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase()));
 
 	const archivedOrders = allArchivedOrders.filter(order => {
@@ -109,13 +168,21 @@ const Orders = () => {
 		return matchesSearch && isArchivableStatus;
 	});
 
-	const listCompleteOrders = finishedOrders.map((order, index) => (
-		<OrderCard key={index} order={order} onArchive={handleArchiveOrder} />
-	))
+	const visibleOrders = filteredList.slice(0, visibleCounts.orders);
+	const visibleFinishedOrders = finishedOrders.slice(0, visibleCounts.acquired);
+	const visibleArchivedOrders = archivedOrders.slice(0, visibleCounts.archived);
 
-	const listArchivedOrders = archivedOrders.map((order, index) => (
+	const listOrders = visibleOrders.map((order) => (
+		<OrderCard key={order.id} order={order} onArchive={handleArchiveOrder} />
+	));
+
+	const listCompleteOrders = visibleFinishedOrders.map((order) => (
+		<OrderCard key={order.id} order={order} onArchive={handleArchiveOrder} />
+	));
+
+	const listArchivedOrders = visibleArchivedOrders.map((order, index) => (
 		<TouchableOpacity
-			key={index}
+			key={order.id || `archived-${index}`}
 			className='rounded-xl border border-gray-200 bg-white px-4 py-3'
 			onPress={() => router.push({ pathname: '/orderDetails', params: { orderData: JSON.stringify(order) } })}
 		>
@@ -133,7 +200,8 @@ const Orders = () => {
 	const totalOrders = allOrders.length;
 	const readyOrders = allOrders.filter(o => o.status === 'ready').length;
 	const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
-	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>)
+	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>);
+	const shouldShowScrollTop = hasScrolledPastFirstBatch[activeTab] && scrollY > 220;
 
 	return (
 		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="repeat">
@@ -165,8 +233,11 @@ const Orders = () => {
 				</View>
 
 				<GlobalRefreshScrollView
+					ref={scrollRef}
 					contentContainerStyle={{ paddingBottom: 20 }}
 					onRefresh={onRefresh}
+					onScroll={handleScroll}
+					scrollEventThrottle={16}
 				>
 					
 					<View className='flex px-6'>
@@ -182,19 +253,19 @@ const Orders = () => {
 						<View className='mb-4 flex-row rounded-full border border-gray-200 bg-white p-1'>
 							<TouchableOpacity
 								className={`flex-1 rounded-full px-3 py-2 ${activeTab === 'orders' ? 'bg-primary' : 'bg-white'}`}
-								onPress={() => setActiveTab('orders')}
+								onPress={() => handleTabChange('orders')}
 							>
 								<Text className={`text-center font-semibold ${activeTab === 'orders' ? 'text-white' : 'text-gray-600'}`}>Orders</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								className={`flex-1 rounded-full px-3 py-2 ${activeTab === 'acquired' ? 'bg-primary' : 'bg-white'}`}
-								onPress={() => setActiveTab('acquired')}
+								onPress={() => handleTabChange('acquired')}
 							>
 								<Text className={`text-center font-semibold ${activeTab === 'acquired' ? 'text-white' : 'text-gray-600'}`}>Acquired</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								className={`flex-1 rounded-full px-3 py-2 ${activeTab === 'archived' ? 'bg-primary' : 'bg-white'}`}
-								onPress={() => setActiveTab('archived')}
+								onPress={() => handleTabChange('archived')}
 							>
 								<Text className={`text-center font-semibold ${activeTab === 'archived' ? 'text-white' : 'text-gray-600'}`}>Archives</Text>
 							</TouchableOpacity>
@@ -265,6 +336,14 @@ const Orders = () => {
 						)}
 					</View>
 				</GlobalRefreshScrollView>
+				{shouldShowScrollTop && (
+					<TouchableOpacity
+						onPress={handleScrollToTop}
+						className='absolute right-5 bottom-24 h-12 w-12 rounded-full items-center justify-center bg-primary shadow'
+					>
+						<ChevronUp color='white' size={20} />
+					</TouchableOpacity>
+				)}
 				<OrderFilter activeFilters={filters} show={showFilter} onChoose={handleFilterChoose} onClose={() => setShowFilter(false)} />
 			</SafeAreaView>
 		</ImageBackground>

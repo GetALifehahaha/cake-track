@@ -4,6 +4,7 @@ import { Button } from '../../atoms';
 import useContainers from '@/hooks/useContainers';
 import { CRUDModalSkeleton } from '@/components/molecules/Skeletons';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 
 const createEmptyContainer = () => ({
     name: '',
@@ -22,6 +23,9 @@ const getApiErrorMessage = (error, fallback) => {
 };
 
 const UnitModal = ({ onClose }) => {
+
+    const {addToast }= useToast();
+
     const {
         containerData,
         containerLoading,
@@ -29,7 +33,6 @@ const UnitModal = ({ onClose }) => {
         postContainer,
         patchContainer,
         deleteContainer,
-        refresh,
     } = useContainers();
 
     const [draft, setDraft] = useState(createEmptyContainer());
@@ -39,11 +42,6 @@ const UnitModal = ({ onClose }) => {
     const [busyAction, setBusyAction] = useState('');
 
     if (containerLoading) return <CRUDModalSkeleton title='Manage Containers' subtitle='Create and maintain reusable container labels.' onClose={onClose} />
-    if (containerError) return <ModalErrorState onClose={onClose} onRetry={refresh} title='Failed to load containers' details='Unable to load containers right now. Please try reloading this modal.' />;
-
-    const sortedContainers = useMemo(() => {
-        return [...(containerData || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
-    }, [containerData]);
 
     const setDraftValue = (key, value) => {
         if (key === 'name' && value.length > 50) return;
@@ -88,11 +86,7 @@ const UnitModal = ({ onClose }) => {
             setDraft(createEmptyContainer());
             setFeedback({ type: 'success', label: 'Container Added', details: `${payload.name} is now available for ingredient mappings.` });
         } catch (error) {
-            setFeedback({
-                type: 'error',
-                label: 'Create Failed',
-                details: getApiErrorMessage(error, 'Unable to create container.'),
-            });
+            addToast(`Failed to create container.`, 'error')
         } finally {
             setBusyAction('');
         }
@@ -115,11 +109,7 @@ const UnitModal = ({ onClose }) => {
             setFeedback({ type: 'success', label: 'Container Updated', details: `${payload.name} has been updated.` });
             cancelEdit();
         } catch (error) {
-            setFeedback({
-                type: 'error',
-                label: 'Update Failed',
-                details: getApiErrorMessage(error, 'Unable to update container.'),
-            });
+            addToast(`Failed to update container.`, 'error');
         } finally {
             setBusyAction('');
         }
@@ -137,11 +127,7 @@ const UnitModal = ({ onClose }) => {
                 cancelEdit();
             }
         } catch (error) {
-            setFeedback({
-                type: 'error',
-                label: 'Delete Failed',
-                details: getApiErrorMessage(error, 'Unable to delete this container.'),
-            });
+            addToast(`Failed to delete container.`, 'error');
         } finally {
             setBusyAction('');
         }
@@ -179,15 +165,15 @@ const UnitModal = ({ onClose }) => {
 
                 <div className='border border-border rounded-xl bg-main-white overflow-hidden'>
                     <div className='px-4 py-3 border-b border-border bg-main'>
-                        <h5 className='text-sm font-semibold text-text'>Available Containers ({sortedContainers.length})</h5>
+                        <h5 className='text-sm font-semibold text-text'>Available Containers ({containerData.length})</h5>
                     </div>
 
                     <div className='max-h-[42vh] overflow-y-auto'>
-                        {sortedContainers.length === 0 && (
+                        {containerData.length === 0 && (
                             <div className='p-6 text-sm text-text/60 text-center'>No containers yet. Create one above to get started.</div>
                         )}
 
-                        {sortedContainers.map((container) => {
+                        {containerData.map((container) => {
                             const isEditing = editingId === container.id;
                             const isSaving = busyAction === `edit-${container.id}`;
                             const isDeleting = busyAction === `delete-${container.id}`;

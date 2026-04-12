@@ -1,8 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, forwardRef } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
 import { useGlobalRefresh } from '@/context/GlobalRefreshContext';
 
-const GlobalRefreshScrollView = ({ children, onRefresh, refreshControl, ...props }) => {
+const GlobalRefreshScrollView = forwardRef(({ children, onRefresh, refreshControl, ...props }, ref) => {
     const { refreshing, triggerRefresh } = useGlobalRefresh();
 
     const handleRefresh = useCallback(async () => {
@@ -11,6 +11,7 @@ const GlobalRefreshScrollView = ({ children, onRefresh, refreshControl, ...props
 
     return (
         <ScrollView
+            ref={ref}
             {...props}
             refreshControl={refreshControl || (
                 <RefreshControl
@@ -24,6 +25,8 @@ const GlobalRefreshScrollView = ({ children, onRefresh, refreshControl, ...props
             {children}
         </ScrollView>
     );
-};
+});
+
+GlobalRefreshScrollView.displayName = 'GlobalRefreshScrollView';
 
 export default GlobalRefreshScrollView;
