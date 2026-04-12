@@ -206,6 +206,7 @@ class OTPViewSet(viewsets.ModelViewSet):
     queryset = OTP.objects.all()
     serializer_class = OTPSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def create(self, request):
         email = request.data.get('email', '').strip().lower()
@@ -245,13 +246,21 @@ class OTPViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
         
-        return Response({'type': 'success', 'label': 'OTP Sent!', 'details': 'The OTP has been sent! Check your email address for more information'}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                'type': 'success',
+                'label': 'Request received',
+                'details': 'If this email is registered, an OTP has been sent. Please check your inbox and spam folder.',
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class VerifyOTPViewSet(viewsets.ModelViewSet):
     queryset = OTP.objects.all()
     serializer_class = OTPSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def create(self, request):
         received_otp = request.data.get('otp')
@@ -289,6 +298,7 @@ class VerifyOTPViewSet(viewsets.ModelViewSet):
 class ChangePasswordViaToken(viewsets.ModelViewSet):
     queryset = PasswordResetToken.objects.all()
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def create(self, request):
         received_token = request.data.get('token')

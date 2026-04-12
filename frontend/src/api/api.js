@@ -8,6 +8,22 @@ const api = axios.create({
     baseURL: url
 })
 
+const PUBLIC_AUTH_ENDPOINTS = [
+    'users/token/',
+    'users/token/refresh/',
+    'users/user/register/',
+    'users/google-auth/',
+    'users/user/reactivate/',
+    'users/user/activate/',
+    'request-otp/',
+    'verify-otp/',
+    'change-password-token/',
+]
+
+const isPublicAuthEndpoint = (requestUrl = '') => {
+    return PUBLIC_AUTH_ENDPOINTS.some(path => requestUrl.includes(path))
+}
+
 const PUBLIC_AUTH_PATHS = ['/login', '/forgotPassword', '/setAccount'];
 
 const isOnPublicAuthPage = () => {
@@ -18,7 +34,7 @@ const isOnPublicAuthPage = () => {
 
 api.interceptors.request.use(
     async (config) => {
-        if (config.url?.includes('users/token/') || config.url?.includes('users/token/refresh/')) {
+        if (isPublicAuthEndpoint(config.url || '')) {
             return config;
         }
 
@@ -105,7 +121,7 @@ api.interceptors.response.use(
         const request = error.config;
 
         // if request give unauthorized
-        if (error.response?.status === 401 && !request._retry) {
+        if (error.response?.status === 401 && !request._retry && !isPublicAuthEndpoint(request?.url || '')) {
             // turn retry = true
             request._retry = true;
 

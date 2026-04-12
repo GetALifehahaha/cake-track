@@ -5,6 +5,21 @@ import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || '').trim()
 
+const PUBLIC_AUTH_ENDPOINTS = [
+    '/users/token/',
+    '/users/token/refresh/',
+    '/users/user/register/',
+    '/users/google-auth/',
+    '/users/user/reactivate/',
+    '/users/user/activate/',
+    '/request-otp/',
+    '/verify-otp/',
+    '/change-password-token/',
+];
+
+const isPublicAuthEndpoint = (requestUrl = '') =>
+    PUBLIC_AUTH_ENDPOINTS.some((endpoint) => requestUrl.includes(endpoint));
+
 
 const api = axios.create({
     baseURL: API_BASE_URL
@@ -13,6 +28,11 @@ const api = axios.create({
 api.interceptors.request.use(
     async (config) => {
         try {
+            const requestUrl = config?.url || '';
+            if (isPublicAuthEndpoint(requestUrl)) {
+                return config;
+            }
+
             const token = await AsyncStorage.getItem(ACCESS_TOKEN);
 
             if (token) {
@@ -34,15 +54,7 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         const requestUrl = originalRequest?.url || '';
-        const authEndpoints = [
-            '/users/token/',
-            '/users/token/refresh/',
-            '/users/user/register/',
-            '/users/google-auth/',
-            '/users/user/reactivate/',
-            '/users/user/activate/',
-        ];
-        const isAuthEndpoint = authEndpoints.some((endpoint) => requestUrl.includes(endpoint));
+        const isAuthEndpoint = isPublicAuthEndpoint(requestUrl);
 
         if (error.response) {
             console.error(`Error ${error.response.status}: ${error.config?.url}`);
