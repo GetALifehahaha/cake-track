@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, ChevronDown } from 'lucide-react-native';
 
 const TermsAndConditions = () => {
+    const termsTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
     const toc = [
         {
             label: "About CakeTrack and Michelle's Cakes and Cafe",
@@ -122,54 +123,57 @@ We are not liable for any indirect, incidental, or consequential losses, includi
         },
     ];
 
-    const [expandedSections, setExpandedSections] = useState([]);
+    const [expandedIndex, setExpandedIndex] = useState(null);
 
     const handleExpanded = (index) => {
-        setExpandedSections((prev) => {
-            if (prev.includes(index)) {
-                return prev.filter((item) => item !== index);
-            }
-            return [...prev, index];
-        });
+        setExpandedIndex((previous) => (previous === index ? null : index));
     };
 
     return (
-        <SafeAreaView className='flex-1 bg-main-form'>
-            <View className='flex-row items-center justify-between px-6 py-4 border-b border-secondary-light'>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <ArrowLeft style={{ color: '#8B5A3C' }} />
-                </TouchableOpacity>
-                <Text className='text-primary text-xl font-semibold'>Terms and Conditions</Text>
-                <View className='w-6' />
-            </View>
+        <ImageBackground source={termsTexture} style={{ flex: 1 }} resizeMode='repeat'>
+            <SafeAreaView className='flex-1' style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                <View className='flex-row items-center justify-between px-6 py-4 border-b border-secondary-light bg-white/90'>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <ArrowLeft style={{ color: '#8B5A3C' }} />
+                    </TouchableOpacity>
+                    <Text className='text-primary text-xl font-semibold'>Terms and Conditions</Text>
+                    <View className='w-6' />
+                </View>
 
-            <ScrollView className='flex-1 px-6 py-4' showsVerticalScrollIndicator={false}>
-                {toc.map(({ label, content }, index) => {
-                    const isExpanded = expandedSections.includes(index);
+                <ScrollView className='flex-1 px-5 pt-4' showsVerticalScrollIndicator={false}>
+                    <View className='mb-4 rounded-2xl bg-[#FFF7EA] border border-[#E6BE86] p-4'>
+                        <Text className='text-primary text-lg font-extrabold'>Terms and Conditions</Text>
+                        <Text className='text-secondary-strong text-sm mt-1'>Tap a section to read details.</Text>
+                    </View>
 
-                    return (
-                        <TouchableOpacity
-                            key={index}
-                            className='mb-4 p-4 rounded-xl border border-secondary-light bg-white'
-                            onPress={() => handleExpanded(index)}
-                        >
-                            <View className='flex flex-row gap-4 items-start justify-between'>
-                                <Text className='text-primary font-bold text-base mb-2'>{index + 1}. {label}</Text>
-                                <ChevronDown
-                                    color={'#8B5A3C'}
-                                    style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
-                                />
-                            </View>
-                            {isExpanded && (
-                                <Text className='text-secondary-strong p-2 border-t mt-2 border-t-secondary-light'>
-                                    {content}
-                                </Text>
-                            )}
-                        </TouchableOpacity>
-                    );
-                })}
-            </ScrollView>
-        </SafeAreaView>
+                    {toc.map(({ label, content }, index) => {
+                        const isExpanded = expandedIndex === index;
+
+                        return (
+                            <TouchableOpacity
+                                key={label}
+                                className='mb-3 rounded-2xl border border-[#E7D8C8] bg-white px-4 py-4'
+                                activeOpacity={0.9}
+                                onPress={() => handleExpanded(index)}
+                            >
+                                <View className='flex-row gap-3 items-start justify-between'>
+                                    <Text className='text-primary font-bold text-base flex-1'>{index + 1}. {label}</Text>
+                                    <View style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}>
+                                        <ChevronDown color='#8B5A3C' size={20} />
+                                    </View>
+                                </View>
+                                {isExpanded && (
+                                    <Text className='text-secondary-strong leading-6 border-t border-[#EEE4D8] mt-3 pt-3'>
+                                        {content}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                    <View className='h-4' />
+                </ScrollView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
