@@ -121,70 +121,72 @@ const Layout = () => {
     return (
         <div className='w-full h-screen bg-main flex'>
             <Sidebar />
+            
+            <div className='flex-1 p-2 bg-main-white overflow-y-auto'>
+                <div className='flex-1 flex flex-col p-6 gap-8  rounded-md bg-main shadow-md'>
+                    <div className='flex justify-between'>
+                        <form className='basis-1/2 flex items-center gap-2' onSubmit={handleSearch}>
+                            {
+                                !hideSearchbar && <>
+                                    <Searchbar onChange={(value) => handleSetSearchText(value)} />
+                                    {searchText.trim().length > 0 &&
+                                        <Button icon={Search} text='' variant='icon' className='rounded-2xl' onClick={handleSearch} />
+                                    }
+                                </>
+                            }
+                        </form>
 
-            <div className='flex-1 flex flex-col px-6 py-4 gap-8 overflow-y-auto'>
-                <div className='flex justify-between'>
-                    <form className='basis-1/2 flex items-center gap-2' onSubmit={handleSearch}>
-                        {
-                            !hideSearchbar && <>
-                                <Searchbar onChange={(value) => handleSetSearchText(value)} />
-                                {searchText.trim().length > 0 &&
-                                    <Button icon={Search} text='' variant='icon' className='rounded-2xl' onClick={handleSearch} />
-                                }
-                            </>
-                        }
-                    </form>
+                        <div className='flex gap-2'>
+                            {isAdmin && (
+                                <div ref={notificationRef} className='relative'>
+                                    <button
+                                        onClick={() => setShowNotifications(prev => !prev)}
+                                        className='relative w-10 h-10 rounded-full bg-main-white border border-border flex items-center justify-center hover:bg-main/70'
+                                    >
+                                        <Bell size={18} className='text-text/80' />
+                                        {totalNotificationCount > 0 && (
+                                            <span className='absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-error text-main-white text-[10px] font-bold flex items-center justify-center'>
+                                                {totalNotificationCount > 99 ? '99+' : totalNotificationCount}
+                                            </span>
+                                        )}
+                                    </button>
 
-                    <div className='flex gap-2'>
-                        {isAdmin && (
-                            <div ref={notificationRef} className='relative'>
-                                <button
-                                    onClick={() => setShowNotifications(prev => !prev)}
-                                    className='relative w-10 h-10 rounded-full bg-main-white border border-border flex items-center justify-center hover:bg-main/70'
-                                >
-                                    <Bell size={18} className='text-text/80' />
-                                    {totalNotificationCount > 0 && (
-                                        <span className='absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-error text-main-white text-[10px] font-bold flex items-center justify-center'>
-                                            {totalNotificationCount > 99 ? '99+' : totalNotificationCount}
-                                        </span>
+                                    {showNotifications && (
+                                        <div className='absolute right-0 mt-2 w-80 bg-main-white border border-border rounded-lg shadow-lg z-30'>
+                                            <div className='px-4 py-3 border-b border-border'>
+                                                <h5 className='font-semibold text-text'>Notifications</h5>
+                                            </div>
+
+                                            <div className='p-2 flex flex-col gap-1'>
+                                                {notifications.map((item) => (
+                                                    <button
+                                                        key={item.id}
+                                                        onClick={() => {
+                                                            setShowNotifications(false);
+                                                            item.onClick();
+                                                        }}
+                                                        className='w-full text-left px-3 py-2 rounded-md hover:bg-main/70 border border-transparent hover:border-border transition'
+                                                    >
+                                                        <div className='flex items-center justify-between'>
+                                                            <h5 className='text-sm font-semibold text-text'>{item.label}</h5>
+                                                            {item.count > 0 && (
+                                                                <span className='text-xs font-bold text-error'>{item.count}</span>
+                                                            )}
+                                                        </div>
+                                                        <h5 className='text-xs text-text/60 mt-0.5'>{item.details}</h5>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     )}
-                                </button>
-
-                                {showNotifications && (
-                                    <div className='absolute right-0 mt-2 w-80 bg-main-white border border-border rounded-lg shadow-lg z-30'>
-                                        <div className='px-4 py-3 border-b border-border'>
-                                            <h5 className='font-semibold text-text'>Notifications</h5>
-                                        </div>
-
-                                        <div className='p-2 flex flex-col gap-1'>
-                                            {notifications.map((item) => (
-                                                <button
-                                                    key={item.id}
-                                                    onClick={() => {
-                                                        setShowNotifications(false);
-                                                        item.onClick();
-                                                    }}
-                                                    className='w-full text-left px-3 py-2 rounded-md hover:bg-main/70 border border-transparent hover:border-border transition'
-                                                >
-                                                    <div className='flex items-center justify-between'>
-                                                        <h5 className='text-sm font-semibold text-text'>{item.label}</h5>
-                                                        {item.count > 0 && (
-                                                            <span className='text-xs font-bold text-error'>{item.count}</span>
-                                                        )}
-                                                    </div>
-                                                    <h5 className='text-xs text-text/60 mt-0.5'>{item.details}</h5>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        <ProfileCard user={user} />
+                                </div>
+                            )}
+                            <ProfileCard user={user} />
+                        </div>
                     </div>
-                </div>
 
-                <Outlet />
+                    <Outlet />
+                </div>
             </div>
         </div>
     )

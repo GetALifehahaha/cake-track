@@ -41,7 +41,7 @@ const Sidebar = () => {
     return (
         <div
             className={`
-                bg-main-white border-border border-r-2 px-2 py-2
+                bg-main-white  px-2 py-2
                 flex flex-col overflow-hidden
                 transition-all duration-300
                 ${expanded ? 'w-64' : 'w-20'}
