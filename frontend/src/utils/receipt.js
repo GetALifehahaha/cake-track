@@ -130,12 +130,13 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
         `
         : '';
 
-    const orderRow = receipt.orderNumber
-        ? `<div class="meta-line"><span>Order #:</span><span>${escapeHtml(receipt.orderNumber)}</span></div>`
-        : '';
-
-    const customerRow = receipt.customerName
-        ? `<div class="meta-line"><span>Customer:</span><span>${escapeHtml(receipt.customerName)}</span></div>`
+    const orderHeader = receipt.orderNumber
+        ? `
+            <div class="order-highlight">
+                <div class="order-number">${escapeHtml(receipt.orderNumber)}</div>
+                ${receipt.customerName ? `<div class="order-customer">${escapeHtml(receipt.customerName)}</div>` : ''}
+            </div>
+        `
         : '';
 
     const footerMessage = receipt.businessMessage
@@ -149,20 +150,24 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
                 <meta charset="UTF-8" />
                 <title>${escapeHtml(documentTitle)}</title>
                 <style>
+    :root {
+        --receipt-paper-width: 58mm;
+        --receipt-inline-padding: 0.8mm;
+    }
     body {
         margin: 0;
         padding: 0;
         font-family: 'Courier New', Courier, monospace;
         color: #111827;
         background: #ffffff;
-        display: flex;
-        justify-content: center;
+        width: var(--receipt-paper-width);
+        display: block;
     }
     .receipt {
-        width: 48mm;
-        max-width: 48mm;
+        width: 100%;
+        max-width: none;
         box-sizing: border-box;
-        padding: 2mm 0;
+        padding: 2mm var(--receipt-inline-padding);
     }
     .title {
         font-size: 14px;
@@ -176,9 +181,34 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
         text-align: center;
         line-height: 1.3;
     }
+    .tin-line {
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        line-height: 1.25;
+        margin-top: 4px;
+    }
+    .order-highlight {
+        text-align: center;
+        margin: 8px 0 4px;
+    }
+    .order-number {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .order-customer {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-top: 4px;
+    }
     .separator {
         border-top: 1px dashed #9ca3af;
         margin: 8px 0;
+    }
+    .print-block {
+        padding: 3px 0;
     }
     .meta-line {
         display: flex;
@@ -225,6 +255,7 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
     }
     .totals {
         margin-top: 6px;
+        padding: 2px 0;
     }
     .total-row {
         display: flex;
@@ -241,9 +272,16 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
     }
     .footer {
         margin-top: 10px;
+        padding: 2px 0;
         text-align: center;
-        font-size: 10px;
+        font-size: 12px;
+        font-weight: 700;
         line-height: 1.35;
+    }
+    .footer-notice {
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.25;
     }
     .footer-strong {
         font-weight: 700;
@@ -256,15 +294,21 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
 
     @media print {
         @page {
+            size: var(--receipt-paper-width) auto;
             margin: 0;
         }
-        body {
-            width: 100%;
+        html, body {
+            width: var(--receipt-paper-width);
+            margin: 0;
+            padding: 0;
             display: block;
         }
         .receipt {
-            width: 48mm;
-            margin: 0 auto;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            box-sizing: border-box;
+            padding: 2mm var(--receipt-inline-padding);
         }
     }
 </style>
@@ -273,33 +317,36 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
                 <div class="receipt">
                     <h1 class="title">${escapeHtml(receipt.businessName)}</h1>
                     <div class="sub">${escapeHtml(receipt.businessAddress)}</div>
-                    <div class="sub">TIN: ${escapeHtml(receipt.businessTin)}</div>
+                    ${orderHeader}
+                    <div class="sub tin-line">TIN: ${escapeHtml(receipt.businessTin)}</div>
 
                     <div class="separator"></div>
 
-                    <div class="meta-line"><span>Receipt #:</span><span>${escapeHtml(receipt.displayId)}</span></div>
-                    ${orderRow}
-                    <div class="meta-line"><span>Date:</span><span>${escapeHtml(receipt.date)}</span></div>
-                    <div class="meta-line"><span>Time:</span><span>${escapeHtml(receipt.time)}</span></div>
-                    <div class="meta-line"><span>Cashier:</span><span>${escapeHtml(receipt.cashierName)}</span></div>
-                    <div class="meta-line"><span>Order Type:</span><span>${escapeHtml(receipt.orderType)}</span></div>
-                    <div class="meta-line"><span>Payment:</span><span>${escapeHtml(receipt.paymentMethod)}</span></div>
-                    ${customerRow}
+                    <div class="print-block">
+                        <div class="meta-line"><span>Receipt #:</span><span>${escapeHtml(receipt.displayId)}</span></div>
+                        <div class="meta-line"><span>Date:</span><span>${escapeHtml(receipt.date)}</span></div>
+                        <div class="meta-line"><span>Time:</span><span>${escapeHtml(receipt.time)}</span></div>
+                        <div class="meta-line"><span>Cashier:</span><span>${escapeHtml(receipt.cashierName)}</span></div>
+                        <div class="meta-line"><span>Order Type:</span><span>${escapeHtml(receipt.orderType)}</span></div>
+                        <div class="meta-line"><span>Payment:</span><span>${escapeHtml(receipt.paymentMethod)}</span></div>
+                    </div>
 
                     <div class="separator"></div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="qty">Qty</th>
-                                <th>Item</th>
-                                <th class="amount">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsHtml}
-                        </tbody>
-                    </table>
+                    <div class="print-block">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="qty">Qty</th>
+                                    <th>Item</th>
+                                    <th class="amount">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHtml}
+                            </tbody>
+                        </table>
+                    </div>
 
                     <div class="separator"></div>
 
@@ -328,10 +375,10 @@ export const buildReceiptPrintHtml = (receipt, documentTitle = 'Receipt') => {
                     </div>
 
                     <div class="footer">
-                        <div>System-Generated Receipt</div>
+                        <div class="footer-notice">System-Generated Receipt</div>
                         <div>${escapeHtml(receipt.businessContact)}</div>
                         ${footerMessage}
-                        <div>Not an official receipt</div>
+                        <div class="footer-notice">Not an official receipt</div>
                     </div>
                 </div>
             </body>

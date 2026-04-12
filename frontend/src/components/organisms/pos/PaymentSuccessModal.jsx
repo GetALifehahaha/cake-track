@@ -65,7 +65,7 @@ const PaymentSuccessModal = ({ totalAmount, amountReceived, onClose, transaction
             </div>
 
             <div style={{ display: "none" }}>
-                <div ref={contentRef} id="receipt" className="bg-white text-black p-3">
+                <div ref={contentRef} id="receipt" className="bg-white text-black">
                     <ReceiptPaper receipt={receiptData} />
                 </div>
             </div>

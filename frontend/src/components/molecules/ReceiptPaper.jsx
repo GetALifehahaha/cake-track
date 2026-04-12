@@ -4,23 +4,25 @@ import { formatMoney } from '@/utils/receipt';
 const ReceiptPaper = ({ receipt }) => {
     return (
         <div className='receipt-paper w-[360px] max-w-full mx-auto p-4 border border-border rounded-lg bg-main-white text-text font-mono'>
-            <h5 className='text-center text-sm font-bold uppercase leading-tight'>{receipt.businessName}</h5>
-            <div className='text-center text-[11px] text-text/70 leading-tight'>{receipt.businessAddress}</div>
-            <div className='text-center text-[11px] text-text/70 leading-tight'>TIN: {receipt.businessTin}</div>
+            <h5 className='title text-center text-sm font-bold uppercase leading-tight'>{receipt.businessName}</h5>
+            <div className='sub text-center text-[11px] text-text/70 leading-tight'>{receipt.businessAddress}</div>
+            {receipt.orderNumber && (
+                <div className='order-highlight text-center mt-2 mb-1'>
+                    <div className='order-number text-5xl font-extrabold leading-none'>{receipt.orderNumber}</div>
+                    {receipt.customerName && (
+                        <div className='order-customer text-base font-bold leading-tight mt-1'>{receipt.customerName}</div>
+                    )}
+                </div>
+            )}
+            <div className='sub tin-line text-center text-[13px] font-bold uppercase leading-tight mt-1'>TIN: {receipt.businessTin}</div>
 
             <div className='border-t border-dashed border-text/40 my-2'></div>
 
-            <div className='print-section text-[11px] space-y-0.5'>
+            <div className='print-section py-1 text-[11px] space-y-0.5'>
                 <div className='flex justify-between'>
                     <span>Receipt #</span>
                     <span>{receipt.displayId}</span>
                 </div>
-                {receipt.orderNumber && (
-                    <div className='flex justify-between'>
-                        <span>Order #</span>
-                        <span>{receipt.orderNumber}</span>
-                    </div>
-                )}
                 <div className='flex justify-between'>
                     <span>Date</span>
                     <span>{receipt.date}</span>
@@ -41,17 +43,11 @@ const ReceiptPaper = ({ receipt }) => {
                     <span>Payment</span>
                     <span className='uppercase'>{receipt.paymentMethod}</span>
                 </div>
-                {receipt.customerName && (
-                    <div className='flex justify-between'>
-                        <span>Customer</span>
-                        <span>{receipt.customerName}</span>
-                    </div>
-                )}
             </div>
 
             <div className='border-t border-dashed border-text/40 my-2'></div>
 
-            <div className='print-section text-[11px]'>
+            <div className='print-section py-1 text-[11px]'>
                 <div className='grid grid-cols-[32px_1fr_90px] pb-1 border-b border-dashed border-text/40 font-semibold'>
                     <span className='text-center'>Qty</span>
                     <span>Item</span>
@@ -81,7 +77,7 @@ const ReceiptPaper = ({ receipt }) => {
 
             <div className='border-t border-dashed border-text/40 my-2'></div>
 
-            <div className='print-section text-[11px] space-y-0.5'>
+            <div className='print-section py-1 text-[11px] space-y-0.5'>
                 <div className='flex justify-between'>
                     <span>Subtotal</span>
                     <span>{formatMoney(receipt.grossTotal)}</span>
@@ -113,11 +109,11 @@ const ReceiptPaper = ({ receipt }) => {
                 </div>
             </div>
 
-            <div className='print-section footer text-center text-[10px] mt-3 text-text/80 leading-tight'>
-                <div>System-Generated Receipt</div>
+            <div className='print-section py-1 footer text-center text-[11px] mt-3 text-text/90 leading-tight font-bold'>
+                <div className='footer-notice'>System-Generated Receipt</div>
                 {receipt.businessContact && <div>{receipt.businessContact}</div>}
                 {receipt.businessMessage && <div className='font-bold'>{receipt.businessMessage}</div>}
-                <div>Not an official receipt</div>
+                <div className='footer-notice'>Not an official receipt</div>
             </div>
         </div>
     );

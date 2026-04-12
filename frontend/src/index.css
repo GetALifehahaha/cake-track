@@ -14,13 +14,20 @@ html {
     font-size: 90%;
 }
 
+:root {
+  --receipt-paper-width: 58mm;
+  --receipt-inline-padding: 0.8mm;
+  --receipt-base-font-size: 7px;
+  --receipt-footer-font-size: 9px;
+}
+
 *{
     font-family: "Jakarta Sans";
 }
 
 @media print {
   @page {
-    size: 58mm auto;
+    size: var(--receipt-paper-width) auto;
     margin: 0 !important;
   }
 
@@ -33,7 +40,7 @@ html {
   }
 
   html, body {
-    width: 58mm !important;
+    width: var(--receipt-paper-width) !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff;
@@ -41,17 +48,28 @@ html {
 
   #receipt {
     position: static !important;
-    width: 48mm !important;
-    max-width: 48mm !important;
+    width: 100% !important;
+    max-width: none !important;
     margin: 0 !important;
-    padding: 0 2mm 0 0 !important;
+    padding: 0 !important;
     box-sizing: border-box;
     left: 0 !important;
     top: 0 !important;
   }
 
+  #receipt .receipt-paper {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 2mm var(--receipt-inline-padding) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+
   #receipt .title {
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
     text-align: center;
@@ -59,34 +77,70 @@ html {
   }
 
   #receipt .sub {
-    font-size: 6px;
+    font-size: 7px;
     text-align: center;
-    line-height: 1.1;
+    line-height: 1.2;
+  }
+
+  #receipt .order-highlight {
+    text-align: center;
+    margin: 4px 0 2px;
+  }
+
+  #receipt .order-number {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  #receipt .order-customer {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+
+  #receipt .tin-line {
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-transform: uppercase;
   }
 
   #receipt .meta-line,
   #receipt th,
   #receipt td,
   #receipt .total-row {
-    font-size: 6px;
-    line-height: 1.15;
+    font-size: var(--receipt-base-font-size);
+    line-height: 1.2;
   }
 
   #receipt .item-variant {
-    font-size: 5px;
+    font-size: 6px;
     color: #6b7280;
   }
 
   #receipt .grand-total {
-    font-size: 7px;
+    font-size: 8px;
     font-weight: 700;
   }
 
   #receipt .footer {
-    font-size: 5px;
-    margin-top: 6px;
+    font-size: var(--receipt-footer-font-size);
+    margin-top: 8px;
     text-align: center;
-    line-height: 1.1;
+    line-height: 1.35;
+  }
+
+  #receipt .footer-notice {
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  #receipt .print-section {
+    padding-top: 2px;
+    padding-bottom: 2px;
   }
 
   #receipt table {
