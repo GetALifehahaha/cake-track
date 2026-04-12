@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, TextInput, Modal } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, XCircle } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
 import { useToast } from '@/context/ToastContext';
 import api from '@/api/api';
+import ActionConfirmModal from '@/components/organisms/ActionConfirmModal';
 import { useEffect, useState } from 'react';
 
 const getReferenceDigits = (value = '') => value.replace(/\D/g, '').slice(0, 15);
@@ -816,35 +817,17 @@ const OrderDetails = () => {
                 </View>
             </ScrollView>
 
-            <Modal
+            <ActionConfirmModal
                 visible={showCancelConfirmModal}
-                transparent
-                animationType='fade'
-                onRequestClose={closeCancelConfirmation}
-            >
-                <View className='flex-1 bg-black/50 justify-center items-center px-6'>
-                    <View className='bg-white w-full p-6 rounded-2xl shadow-lg'>
-                        <Text className='text-xl font-bold mb-2 text-primary'>Confirm Cancellation</Text>
-                        <Text className='text-secondary-strong mb-8'>
-                            Are you sure you want to cancel this order? This cannot be undone.
-                        </Text>
-
-                        <View className='flex-row justify-between gap-4 items-center'>
-                            <TouchableOpacity onPress={closeCancelConfirmation} disabled={cancelling || requestingCancellation}>
-                                <Text className='text-secondary-light font-bold text-lg '>No</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity onPress={confirmCancelAction} disabled={cancelling || requestingCancellation}>
-                                {(cancelling || requestingCancellation) ? (
-                                    <ActivityIndicator size='small' color='#8B5A3C' />
-                                ) : (
-                                    <Text className='text-red-500 font-bold text-lg'>Yes, Cancel</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+                title={pendingCancelAction === 'request' ? 'Confirm Cancellation Request' : 'Confirm Cancellation'}
+                message='Are you sure you want to cancel this order? This cannot be undone.'
+                cancelText='No, Keep Order'
+                confirmText={pendingCancelAction === 'request' ? 'Yes, Request Cancellation' : 'Yes, Cancel Order'}
+                onCancel={closeCancelConfirmation}
+                onConfirm={confirmCancelAction}
+                loading={cancelling || requestingCancellation}
+                destructive
+            />
         </SafeAreaView>
     );
 };

@@ -13,7 +13,6 @@ const greetingsTexture = require('@/assets/images/texture/Cake back Designs Gree
 
 export default function Index() {
     const { user, loading, getUserData } = useContext(AuthContext)
-    const { openingTime, blockedDates, loading: loadingOpening, refresh: refreshOpening } = useContext(OpeningContext)
 
     const [topCakes, setTopCakes] = useState([]);
     const [loadingTopCakes, setLoadingTopCakes] = useState(true);
@@ -145,9 +144,6 @@ export default function Index() {
                 <View className='bg-primary flex-1'>
                     <Text className='text-white font-extrabold text-lg mt-auto ml-8 pt-20 pb-4'>
                         Greetings, {!user && 'Guest'}{user?.first_name || ''} {user?.last_name || ''}
-                    </Text>
-                    <Text className='text-white font-bold text-xs ml-8 mb-6 max-w-[80%]'>
-                        Update: 1
                     </Text>
                     <ImageBackground
                         source={greetingsTexture}

@@ -27,7 +27,7 @@ import {
 import api from '@/api/api';
 import { AuthContext } from '@/context/AuthContext';
 import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView';
-import ConfirmModal from '@/components/organisms/ConfirmModal';
+import ActionConfirmModal from '@/components/organisms/ActionConfirmModal';
 
 const formatPhone = (value) => {
   const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
@@ -80,6 +80,8 @@ const SettingsTab = () => {
 
   const [loadingBusiness, setLoadingBusiness] = useState(true);
   const [showGcashPreview, setShowGcashPreview] = useState(false);
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [businessDetails, setBusinessDetails] = useState({
     business_name: '',
     address: '',
@@ -157,6 +159,28 @@ const SettingsTab = () => {
       fetchBusinessAndSchedule(),
       getUserData?.(),
     ]);
+  };
+
+  const openLogoutConfirmation = () => {
+    if (loggingOut) return;
+    setShowLogoutConfirmModal(true);
+  };
+
+  const closeLogoutConfirmation = () => {
+    if (loggingOut) return;
+    setShowLogoutConfirmModal(false);
+  };
+
+  const confirmLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+      setShowLogoutConfirmModal(false);
+    }
   };
 
   const gcashNumberFormatted = formatPhone(businessDetails.gcash_owner_number);
@@ -336,12 +360,14 @@ const SettingsTab = () => {
             </View>
 
             {user && (
-              <ConfirmModal details={'Are you sure you want to logout?'} onConfirm={logout}>
-                <View className='bg-secondary-strong flex-row gap-2 items-center justify-center p-3.5 rounded-lg'>
-                  <LogOut size={16} color='white' />
-                  <Text className='text-base font-bold text-white'>Logout</Text>
-                </View>
-              </ConfirmModal>
+              <TouchableOpacity
+                className='bg-secondary-strong flex-row gap-2 items-center justify-center p-3.5 rounded-lg'
+                onPress={openLogoutConfirmation}
+                disabled={loggingOut}
+              >
+                <LogOut size={16} color='white' />
+                <Text className='text-base font-bold text-white'>{loggingOut ? 'Logging out...' : 'Logout'}</Text>
+              </TouchableOpacity>
             )}
 
             <Text className='text-center text-gray-400 text-[11px] mt-5'>CakeTrack 2026</Text>
@@ -377,6 +403,17 @@ const SettingsTab = () => {
           </View>
         </View>
       </Modal>
+
+      <ActionConfirmModal
+        visible={showLogoutConfirmModal}
+        title='Logout'
+        message='Are you sure you want to logout?'
+        cancelText='No, Stay Logged In'
+        confirmText='Yes, Logout'
+        onCancel={closeLogoutConfirmation}
+        onConfirm={confirmLogout}
+        loading={loggingOut}
+      />
     </ImageBackground>
   );
 };

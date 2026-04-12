@@ -1,16 +1,19 @@
 import { View, Text, TouchableOpacity } from 'react-native'
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import Checkbox from '../atoms/Checkbox'
 import { Cake } from 'lucide-react-native'
 import { capitalize } from '@/utils/capitalize'
 import { router } from 'expo-router'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
+import ActionConfirmModal from '@/components/organisms/ActionConfirmModal'
 
 const ARCHIVABLE_STATUSES = ['completed', 'refunded', 'rejected', 'cancelled'];
 
 const OrderCard = ({ order, onArchive, onHide }) => {
 
     const swipeableRef = useRef(null);
+    const [showHideConfirmModal, setShowHideConfirmModal] = useState(false);
+    const [hidingOrder, setHidingOrder] = useState(false);
 
     const statusVariants = {
         unpaid: "text-orange-600 bg-orange-100 border-orange-200",
@@ -40,7 +43,26 @@ const OrderCard = ({ order, onArchive, onHide }) => {
 
     const handleArchive = () => {
         swipeableRef.current?.close();
-        archiveHandler(order.id);
+        setShowHideConfirmModal(true);
+    };
+
+    const confirmHideOrder = async () => {
+        if (hidingOrder) return;
+
+        setHidingOrder(true);
+        try {
+            await archiveHandler(order.id);
+            setShowHideConfirmModal(false);
+        } catch (error) {
+            console.error('Hide order failed:', error?.response?.data || error?.message || error);
+        } finally {
+            setHidingOrder(false);
+        }
+    };
+
+    const closeHideConfirmModal = () => {
+        if (hidingOrder) return;
+        setShowHideConfirmModal(false);
     };
 
     const renderArchiveAction = () => (
@@ -90,13 +112,26 @@ const OrderCard = ({ order, onArchive, onHide }) => {
     }
 
     return (
-        <Swipeable
-            ref={swipeableRef}
-            overshootRight={false}
-            renderRightActions={renderArchiveAction}
-        >
-            {cardBody}
-        </Swipeable>
+        <>
+            <Swipeable
+                ref={swipeableRef}
+                overshootRight={false}
+                renderRightActions={renderArchiveAction}
+            >
+                {cardBody}
+            </Swipeable>
+
+            <ActionConfirmModal
+                visible={showHideConfirmModal}
+                title='Hide Order'
+                message='Are you sure you want to hide this order? You can still view it in Archives.'
+                cancelText='No, Keep Visible'
+                confirmText='Yes, Hide Order'
+                onCancel={closeHideConfirmModal}
+                onConfirm={confirmHideOrder}
+                loading={hidingOrder}
+            />
+        </>
     );
 }
 
