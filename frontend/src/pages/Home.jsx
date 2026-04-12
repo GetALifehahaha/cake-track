@@ -935,7 +935,7 @@ const Home = () => {
     const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } });
 
     return (
-        <div className='flex gap-4 w-full h-full'>
+        <div className='flex gap-4 w-full h-screen'>
             {/* Middle */}
             <div className='flex-1 flex flex-col gap-4'>
                 <div className='flex flex-row gap-1 items-center'>

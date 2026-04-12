@@ -17,8 +17,17 @@ export default function Index() {
 
     const [topCakes, setTopCakes] = useState([]);
     const [loadingTopCakes, setLoadingTopCakes] = useState(true);
+    const [allCakes, setAllCakes] = useState([]);
+    const [loadingAllCakes, setLoadingAllCakes] = useState(true);
+
+    const formatCakePrice = (value) => {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return 'PHP 0.00';
+        return `PHP ${parsed.toFixed(2)}`;
+    };
 
     const fetchTopCakes = async () => {
+        setLoadingTopCakes(true);
         try {
             const response = await api.get('/orders/cakes/best-sellers/', {
                 params: { limit: 3 }
@@ -33,16 +42,57 @@ export default function Index() {
         }
     };
 
+    const fetchAllCakes = async () => {
+        setLoadingAllCakes(true);
+        try {
+            let nextUrl = '/orders/cakes/?ordering=name';
+            const visitedUrls = new Set();
+            const merged = [];
+
+            while (nextUrl && !visitedUrls.has(nextUrl)) {
+                visitedUrls.add(nextUrl);
+                const response = await api.get(nextUrl);
+                const payload = response?.data;
+
+                if (Array.isArray(payload)) {
+                    merged.push(...payload);
+                    break;
+                }
+
+                if (Array.isArray(payload?.results)) {
+                    merged.push(...payload.results);
+                }
+
+                nextUrl = payload?.next || null;
+            }
+
+            const uniqueCakes = Array.from(new Map(
+                merged.map((cake) => [cake.id, cake])
+            ).values());
+
+            setAllCakes(uniqueCakes);
+        } catch (error) {
+            console.error('Failed to fetch all cakes:', error);
+            setAllCakes([]);
+        } finally {
+            setLoadingAllCakes(false);
+        }
+    };
+
     const onRefresh = async () => {
         await Promise.allSettled([
             fetchTopCakes(),
+            fetchAllCakes(),
             refreshOpening?.(),
             user ? getUserData?.() : Promise.resolve(),
         ]);
     };
 
     useEffect(() => {
-        fetchTopCakes();
+        Promise.allSettled([
+            fetchTopCakes(),
+            fetchAllCakes(),
+        ]);
     }, []);
 
     const carouselItems = [
@@ -228,6 +278,68 @@ export default function Index() {
                                     />
                                 ) : (
                                     <Text className='text-center text-gray-500 px-6 pb-4'>No best-selling cakes yet.</Text>
+                                )}
+                            </View>
+
+                            <View className='px-6 mb-8'>
+                                <View className='flex-row items-end justify-between mb-4'>
+                                    <View className='flex-1 pr-2'>
+                                        <Text className='font-extrabold text-lg text-[#2F2F2F]'>All Cakes</Text>
+                                        <Text className='text-xs text-gray-500 mt-1'>Explore every available pre-made cake.</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => router.push('/cakeOrders')}
+                                        className='px-3 py-2 rounded-full bg-[#8B5A3C]'
+                                    >
+                                        <Text className='text-white text-xs font-bold'>View Menu</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {loadingAllCakes ? (
+                                    <View className='w-full py-8 items-center justify-center'>
+                                        <ActivityIndicator size='small' color='#8B5A3C' />
+                                    </View>
+                                ) : allCakes.length > 0 ? (
+                                    <View className='flex-row flex-wrap justify-between'>
+                                        {allCakes.map((cake, index) => (
+                                            <TouchableOpacity
+                                                key={cake.id || `all-cake-${index}`}
+                                                className='w-[48%] mb-4 rounded-2xl overflow-hidden border border-[#E7D8C8] bg-white shadow-sm'
+                                                activeOpacity={0.9}
+                                                onPress={() => router.push('/cakeOrders')}
+                                            >
+                                                <View className='px-3 pt-3 pb-2 bg-[#FFF7EA]'>
+                                                    <Text className='text-[10px] font-bold uppercase text-[#8B5A3C]'>Available Today</Text>
+                                                </View>
+
+                                                <View className='h-28 items-center justify-center px-3 bg-white'>
+                                                    {cake.image ? (
+                                                        <Image
+                                                            source={{ uri: cake.image }}
+                                                            style={{ width: '100%', height: '100%' }}
+                                                            resizeMode='contain'
+                                                        />
+                                                    ) : (
+                                                        <Text className='text-xs text-gray-400'>No image</Text>
+                                                    )}
+                                                </View>
+
+                                                <View className='px-3 pb-4 pt-2'>
+                                                    <Text className='font-bold text-sm text-[#3E2D1E]' numberOfLines={1}>
+                                                        {cake.name}
+                                                    </Text>
+                                                    <Text className='text-xs text-gray-500 mt-1' numberOfLines={1}>
+                                                        {cake.base_flavor ? `Flavor: ${cake.base_flavor}` : 'Freshly baked'}
+                                                    </Text>
+                                                    <Text className='mt-2 text-base font-extrabold text-[#8B5A3C]'>
+                                                        {formatCakePrice(cake.price)}
+                                                    </Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <Text className='text-center text-gray-500 py-2'>No cakes available right now.</Text>
                                 )}
                             </View>
 

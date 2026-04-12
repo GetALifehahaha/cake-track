@@ -159,7 +159,7 @@ const Recipe = () => {
     ));
 
     return (
-        <div className='h-full flex flex-col p-6'>
+        <div className='h-full flex flex-col p-6 min-h-140'>
             <Title text='Recipes' />
             <div className='mt-8 border-accent-mute border rounded-lg p-6 flex-1 flex flex-col bg-accent-mute/5' >
                 <div className='mb-6 flex flex-wrap items-end justify-between gap-2'>

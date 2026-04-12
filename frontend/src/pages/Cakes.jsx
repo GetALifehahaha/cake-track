@@ -112,7 +112,7 @@ const Cakes = () => {
     ));
 
     return (
-        <div className='flex flex-col gap-8'>
+        <div className='flex flex-col gap-8 min-h-140'>
             <div className='flex justify-between items-center'>
                 <div className='flex items-end gap-2'>
                     <div className='w-56'>

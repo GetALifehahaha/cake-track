@@ -215,7 +215,7 @@ const Discounts = () => {
                         <h5 className='text-sm font-medium text-text/50'>No discounts to show</h5>
                     </div>
                 ) : (
-                    <div className='overflow-x-auto w-full'>
+                    <div className='w-full'>
                         <div className='p-2 py-3 bg-accent-mute rounded-t-lg flex flex-row items-center text-white text-sm text-center'>
                             <h5 className='flex-1 text-left pl-2'>Name</h5>
                             <h5 className='flex-1 text-left'>Type</h5>
