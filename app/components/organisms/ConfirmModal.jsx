@@ -6,24 +6,21 @@ const ConfirmModal = ({ children, details, prevent, preventDetails, onConfirm, }
     const [visible, setVisible] = useState(false);
 
     const handleConfirm = () => {
-        onConfirm();      // Fire the parent's function
-        setVisible(false); // Close modal
+        onConfirm();      
+        setVisible(false); 
     }
 
     return (
         <>
-            {/* 2. Wrap children in a Touchable so clicking them opens the modal */}
             <TouchableOpacity onPress={() => setVisible(true)}>
                 {children}
             </TouchableOpacity>
 
             <Modal
-                visible={visible} // Fixed: was 'open'
                 transparent
                 animationType="fade"
-                onRequestClose={() => setVisible(false)} // Fixed: was 'setOpen'
+                onRequestClose={() => setVisible(false)} 
             >
-                {/* 3. Overlay Background (Dimmed) */}
                 <View className='flex-1 bg-black/50 justify-center items-center px-6'>
 
                     {/* 4. The White Card */}
@@ -34,7 +31,6 @@ const ConfirmModal = ({ children, details, prevent, preventDetails, onConfirm, }
                             {details}
                         </Text>
 
-                        {/* Buttons Row */}
                         <View className='flex-row justify-end gap-8'>
                             <TouchableOpacity onPress={() => setVisible(false)}>
                                 <Text className='text-secondary-light font-bold text-lg'>Cancel</Text>

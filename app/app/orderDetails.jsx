@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, TextInput, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, XCircle } from 'lucide-react-native';
@@ -72,6 +72,8 @@ const OrderDetails = () => {
     const [submittingReference, setSubmittingReference] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [requestingCancellation, setRequestingCancellation] = useState(false);
+    const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
+    const [pendingCancelAction, setPendingCancelAction] = useState(null);
     const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
     const [editableComments, setEditableComments] = useState('');
     const [editableImages, setEditableImages] = useState([]);
@@ -358,6 +360,31 @@ const OrderDetails = () => {
         }
     };
 
+    const openCancelConfirmation = (actionType = 'cancel') => {
+        if (cancelling || requestingCancellation) return;
+        setPendingCancelAction(actionType);
+        setShowCancelConfirmModal(true);
+    };
+
+    const closeCancelConfirmation = () => {
+        if (cancelling || requestingCancellation) return;
+        setShowCancelConfirmModal(false);
+        setPendingCancelAction(null);
+    };
+
+    const confirmCancelAction = async () => {
+        if (!pendingCancelAction) return;
+
+        if (pendingCancelAction === 'request') {
+            await handleRequestCancellation();
+        } else {
+            await handleCancel();
+        }
+
+        setShowCancelConfirmModal(false);
+        setPendingCancelAction(null);
+    };
+
     return (
         <SafeAreaView className='flex-1 bg-[#F5F5F5]'>
             {/* Header with Back Button */}
@@ -412,7 +439,7 @@ const OrderDetails = () => {
 
                     {currentStatus === 'unpaid' && (
                         <TouchableOpacity
-                            onPress={handleCancel}
+                            onPress={() => openCancelConfirmation('cancel')}
                             disabled={cancelling || submittingReference}
                             className='flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80'
                         >
@@ -429,7 +456,7 @@ const OrderDetails = () => {
 
                     {(currentStatus === 'pending' || currentStatus === 'accepted') && !cancellationRequested && (
                         <TouchableOpacity
-                            onPress={handleRequestCancellation}
+                            onPress={() => openCancelConfirmation('request')}
                             disabled={requestingCancellation}
                             className={`flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80 ${requestingCancellation ? 'opacity-60' : ''}`}
                         >
@@ -788,6 +815,36 @@ const OrderDetails = () => {
 
                 </View>
             </ScrollView>
+
+            <Modal
+                visible={showCancelConfirmModal}
+                transparent
+                animationType='fade'
+                onRequestClose={closeCancelConfirmation}
+            >
+                <View className='flex-1 bg-black/50 justify-center items-center px-6'>
+                    <View className='bg-white w-full p-6 rounded-2xl shadow-lg'>
+                        <Text className='text-xl font-bold mb-2 text-primary'>Confirm Cancellation</Text>
+                        <Text className='text-secondary-strong mb-8'>
+                            Are you sure you want to cancel this order? This cannot be undone.
+                        </Text>
+
+                        <View className='flex-row justify-between gap-4 items-center'>
+                            <TouchableOpacity onPress={closeCancelConfirmation} disabled={cancelling || requestingCancellation}>
+                                <Text className='text-secondary-light font-bold text-lg '>No</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={confirmCancelAction} disabled={cancelling || requestingCancellation}>
+                                {(cancelling || requestingCancellation) ? (
+                                    <ActivityIndicator size='small' color='#8B5A3C' />
+                                ) : (
+                                    <Text className='text-red-500 font-bold text-lg'>Yes, Cancel</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };

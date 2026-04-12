@@ -108,6 +108,10 @@ const GCashPaymentScreen = () => {
         router.replace('/(tabs)/orders');
     };
 
+    const handleWaitGoBack = () => {
+        setShowReferenceNotice(false);
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
@@ -186,6 +190,10 @@ const GCashPaymentScreen = () => {
 
                             <TouchableOpacity style={styles.noticeSecondaryBtn} onPress={handleProceedHome} activeOpacity={0.9}>
                                 <Text style={styles.noticeSecondaryBtnText}>Proceed Home Anyway</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.noticeTertiaryBtn} onPress={handleWaitGoBack} activeOpacity={0.9}>
+                                <Text style={styles.noticeTertiaryBtnText}>Wait, Go Back</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -423,6 +431,17 @@ const styles = StyleSheet.create({
     },
     noticeSecondaryBtnText: {
         color: '#7a4520',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    noticeTertiaryBtn: {
+        marginTop: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+    },
+    noticeTertiaryBtnText: {
+        color: '#946f54',
         fontSize: 14,
         fontWeight: '600',
     },

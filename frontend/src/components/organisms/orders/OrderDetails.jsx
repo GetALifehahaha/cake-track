@@ -135,6 +135,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const [search, setSearch] = useState('');
     const [selectedIngredients, setSelectedIngredients] = useState([]);
     const [selectedRecipeId, setSelectedRecipeId] = useState('');
+    const [selectedPremadeRecipeLinkId, setSelectedPremadeRecipeLinkId] = useState('');
     const [savingRecipe, setSavingRecipe] = useState(false);
     const [showRecipeSelectionModal, setShowRecipeSelectionModal] = useState(false);
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
@@ -144,8 +145,19 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     useEffect(() => {
         setOrderSnapshot(orderDetails);
         setCurrentStep(1);
-        const initialRecipe = orderDetails?.recipe_details;
-        setSelectedIngredients(mapRecipeToIngredientItems(initialRecipe));
+        const initialPremadeRecipes = Array.isArray(orderDetails?.premade_recipe_details)
+            ? orderDetails.premade_recipe_details
+            : [];
+
+        if (initialPremadeRecipes.length > 0) {
+            const firstRecipeLink = initialPremadeRecipes[0];
+            setSelectedPremadeRecipeLinkId(String(firstRecipeLink.id));
+            setSelectedIngredients(mapRecipeToIngredientItems(firstRecipeLink?.recipe_details));
+        } else {
+            const initialRecipe = orderDetails?.recipe_details;
+            setSelectedPremadeRecipeLinkId('');
+            setSelectedIngredients(mapRecipeToIngredientItems(initialRecipe));
+        }
     }, [orderDetails]);
 
     const isAccepted = orderSnapshot?.status === 'accepted';
@@ -155,6 +167,10 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         ? orderSnapshot.premade_recipe_details
         : [];
     const hasGeneratedPremadeRecipes = premadeRecipeDetails.length > 0;
+    const activePremadeRecipe = useMemo(() => {
+        if (!hasGeneratedPremadeRecipes) return null;
+        return premadeRecipeDetails.find(link => String(link.id) === String(selectedPremadeRecipeLinkId)) || premadeRecipeDetails[0];
+    }, [hasGeneratedPremadeRecipes, premadeRecipeDetails, selectedPremadeRecipeLinkId]);
     const hasSavedRecipe = Boolean(orderSnapshot?.recipe) || hasGeneratedPremadeRecipes;
     const hasDeducted = Boolean(orderSnapshot?.ingredients_deducted_at);
     const isRecipeEditable = isAccepted && !hasDeducted;
@@ -209,11 +225,30 @@ const OrderDetails = ({ orderDetails, onClose }) => {
 
     const availableRecipes = useMemo(() => recipeData?.results || [], [recipeData]);
 
+    useEffect(() => {
+        if (!hasGeneratedPremadeRecipes) return;
+        const hasSelectedRecipe = premadeRecipeDetails.some(link => String(link.id) === String(selectedPremadeRecipeLinkId));
+
+        if (!hasSelectedRecipe) {
+            const firstRecipeLink = premadeRecipeDetails[0];
+            setSelectedPremadeRecipeLinkId(String(firstRecipeLink.id));
+            setSelectedIngredients(mapRecipeToIngredientItems(firstRecipeLink?.recipe_details));
+        }
+    }, [hasGeneratedPremadeRecipes, premadeRecipeDetails, selectedPremadeRecipeLinkId]);
+
     const loadRecipeById = (recipeId) => {
         const recipe = availableRecipes.find(item => String(item.id) === String(recipeId));
         if (!recipe) return;
 
         setSelectedIngredients(mapRecipeToIngredientItems(recipe));
+    };
+
+    const loadPremadeRecipeForEdit = (recipeLinkId) => {
+        const recipeLink = premadeRecipeDetails.find(link => String(link.id) === String(recipeLinkId));
+        if (!recipeLink) return;
+
+        setSelectedPremadeRecipeLinkId(String(recipeLinkId));
+        setSelectedIngredients(mapRecipeToIngredientItems(recipeLink?.recipe_details));
     };
 
     const addIngredient = (ingredient) => {
@@ -340,8 +375,64 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         }
     };
 
+    const savePremadeRecipeEdits = async () => {
+        if (!validateIngredients()) return;
+        if (!activePremadeRecipe?.recipe) {
+            addToast('No premade recipe selected.', 'error');
+            return;
+        }
+
+        const payload = {
+            name: activePremadeRecipe?.recipe_details?.name || `Temporary recipe - ${orderSnapshot.id}`,
+            instructions: activePremadeRecipe?.recipe_details?.instructions || `Temporary recipe for order ${orderSnapshot.id}`,
+            is_temporary: true,
+            ingredients: selectedIngredients.map(item => ({
+                ingredient_id: item.ingredient_id,
+                amount_needed: Number(item.amount_needed),
+                input_unit_id: Number(item.display_unit_id),
+            })),
+        };
+
+        try {
+            setSavingRecipe(true);
+
+            const savedRecipe = await patchRecipe(activePremadeRecipe.recipe, payload);
+
+            setOrderSnapshot(prev => {
+                const updatedPremadeRecipeDetails = (prev?.premade_recipe_details || []).map(link => {
+                    if (String(link.id) !== String(activePremadeRecipe.id)) return link;
+
+                    return {
+                        ...link,
+                        recipe: savedRecipe.id,
+                        recipe_details: savedRecipe,
+                    };
+                });
+
+                const updatedSnapshot = {
+                    ...prev,
+                    premade_recipe_details: updatedPremadeRecipeDetails,
+                };
+
+                if (String(prev?.recipe || '') === String(activePremadeRecipe.recipe)) {
+                    updatedSnapshot.recipe = savedRecipe.id;
+                    updatedSnapshot.recipe_details = savedRecipe;
+                }
+
+                return updatedSnapshot;
+            });
+
+            setSelectedIngredients(mapRecipeToIngredientItems(savedRecipe));
+            addToast('Premade recipe updated.', 'success');
+        } catch {
+            addToast('Failed to update premade recipe.', 'error');
+        } finally {
+            setSavingRecipe(false);
+        }
+    };
+
     const handleDeductIngredients = async () => {
-        if (!orderSnapshot.recipe) {
+        if (!hasSavedRecipe) {
             addToast('Save a recipe before deduction.', 'error');
             return;
         }
@@ -491,62 +582,151 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 <>
                     <div className='p-4 border-b border-border bg-main'>
                         <h4 className='font-semibold text-sm text-text'>Auto-generated Premade Recipes ({premadeRecipeDetails.length})</h4>
-                        <p className='text-xs text-text/60 mt-1'>Each premade cake with a saved recipe is listed separately for this order.</p>
+                        <p className='text-xs text-text/60 mt-1'>Each premade cake with a saved recipe is listed separately for this order. Select one and edit ingredients as needed.</p>
+
+                        <div className='mt-3 flex flex-wrap gap-2'>
+                            {premadeRecipeDetails.map((premadeRecipe, index) => {
+                                const isSelected = String(premadeRecipe?.id) === String(activePremadeRecipe?.id);
+
+                                return (
+                                    <button
+                                        key={premadeRecipe?.id || `${premadeRecipe?.recipe || 'recipe'}-tab-${index}`}
+                                        type='button'
+                                        onClick={() => loadPremadeRecipeForEdit(premadeRecipe?.id)}
+                                        className={`px-3 py-2 rounded-lg text-sm border transition-colors ${isSelected ? 'bg-accent-text text-main-white border-accent-text' : 'bg-main-white text-text border-border hover:border-accent/60'}`}
+                                    >
+                                        {getPremadeRecipeLabel(premadeRecipe, index)}
+                                        <span className={`ml-2 text-xs ${isSelected ? 'text-main-white/80' : 'text-text/60'}`}>x{premadeRecipe?.quantity || 1}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <div className='flex-1 overflow-y-auto p-4 space-y-4 bg-main/40'>
-                        {premadeRecipeDetails.map((premadeRecipe, index) => {
-                            const recipeIngredients = Array.isArray(premadeRecipe?.recipe_details?.ingredients)
-                                ? premadeRecipe.recipe_details.ingredients
-                                : [];
+                    <div className='px-4 py-2 bg-main border-b border-border'>
+                        <p className='text-xs text-text/60'>Editing: <span className='font-semibold text-text'>{activePremadeRecipe ? getPremadeRecipeLabel(activePremadeRecipe, 0) : 'No recipe selected'}</span></p>
+                    </div>
 
-                            return (
-                                <div key={premadeRecipe?.id || `${premadeRecipe?.recipe || 'recipe'}-${index}`} className='border border-border rounded-2xl overflow-hidden bg-main-white'>
-                                    <div className='px-4 py-3 border-b border-border bg-main'>
-                                        <h5 className='text-sm font-bold text-text'>{getPremadeRecipeLabel(premadeRecipe, index)}</h5>
-                                        <p className='text-xs text-text/60'>Qty: {premadeRecipe?.quantity || 1}</p>
-                                    </div>
-
-                                    <div className='overflow-x-auto'>
-                                        <table className='w-full text-sm'>
-                                            <thead className='bg-main-white sticky top-0 z-10'>
-                                                <tr className='text-left text-text/60 text-[11px] uppercase'>
-                                                    <th className='px-4 py-2'>Ingredient</th>
-                                                    <th className='px-4 py-2'>Amount</th>
-                                                    <th className='px-4 py-2'>In Stock</th>
-                                                    <th className='px-4 py-2'>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {recipeIngredients.map((item) => {
-                                                    const amountNeeded = Number(item?.amount_needed || 0);
-                                                    const stockAmount = Number(item?.ingredient_stock || 0);
-                                                    const isMissing = amountNeeded > 0 && stockAmount < amountNeeded;
-
-                                                    return (
-                                                        <tr key={`${premadeRecipe?.id || index}-${item.ingredient_id}`} className='border-t border-border'>
-                                                            <td className='px-4 py-2 font-semibold text-text'>{item.ingredient_name}</td>
-                                                            <td className='px-4 py-2 text-text/80'>{formatQty(item.amount_needed)} {item.ingredient_unit}</td>
-                                                            <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
-                                                            <td className='px-4 py-2'>
-                                                                <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
-                                                                    {isMissing ? 'Low' : 'OK'}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                                {recipeIngredients.length === 0 && (
-                                                    <tr>
-                                                        <td className='px-4 py-6 text-text/50 text-center' colSpan={4}>No ingredients on this recipe.</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                    <div className='flex flex-1 overflow-hidden bg-main/50'>
+                        <div className='basis-1/4 border-r border-border flex flex-col'>
+                            <div className='px-4 py-3 border-b border-border'>
+                                <h4 className='font-semibold text-sm text-text'>Available Ingredients</h4>
+                            </div>
+                            <div className='p-3'>
+                                <div className='relative'>
+                                    <Search size={16} className='absolute left-3 top-2.5 text-text/50' />
+                                    <input
+                                        type='text'
+                                        value={search}
+                                        onChange={(event) => setSearch(event.target.value)}
+                                        disabled={hasDeducted}
+                                        placeholder='Search an ingredient...'
+                                        className='w-full pl-9 pr-3 py-2 text-sm bg-main-white border border-border rounded-lg focus:outline-none'
+                                    />
                                 </div>
-                            );
-                        })}
+                            </div>
+
+                            <div className='flex-1 overflow-y-auto px-3 pb-3 space-y-2'>
+                                {filteredIngredients.map(ingredient => (
+                                    <button
+                                        key={ingredient.id}
+                                        type='button'
+                                        onClick={() => !hasDeducted && addIngredient(ingredient)}
+                                        disabled={hasDeducted}
+                                        className='w-full text-left p-3 rounded-lg border border-border bg-main-white hover:border-accent transition-colors'
+                                    >
+                                        <h5 className='text-sm font-semibold text-text'>{ingredient.name}</h5>
+                                        <p className='text-[11px] text-text/60'>Stock: {formatQty(ingredient.total_stock)} {ingredient?.unit?.abbreviation}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className='flex-1 flex flex-col'>
+                            <div className='px-4 py-3 border-b border-border bg-main-white'>
+                                <h4 className='font-semibold text-sm text-text'>Transaction Items ({selectedIngredients.length})</h4>
+                            </div>
+
+                            <div className='flex-1 overflow-y-auto'>
+                                {selectedIngredients.length === 0 ? (
+                                    <div className='h-full flex items-center justify-center text-text/50'>
+                                        <div className='text-center'>
+                                            <ShoppingBag size={26} className='mx-auto mb-3 opacity-40' />
+                                            <h5 className='text-sm font-semibold text-text/60'>No ingredients added yet</h5>
+                                            <p className='text-xs mt-1'>Click an ingredient from the left panel.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <table className='w-full text-sm'>
+                                        <thead className='bg-main-white sticky top-0 z-10'>
+                                            <tr className='text-left text-text/60 text-[11px] uppercase'>
+                                                <th className='px-4 py-2'>Ingredient</th>
+                                                <th className='px-4 py-2'>Amount</th>
+                                                <th className='px-4 py-2'>Unit</th>
+                                                <th className='px-4 py-2'>In Stock</th>
+                                                <th className='px-4 py-2'>Status</th>
+                                                <th className='px-4 py-2' />
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedIngredients.map(item => {
+                                                const amountNeeded = getAmountNeededInBaseUnit(item);
+                                                const stock = Number(item.ingredient_stock || 0);
+                                                const isMissing = amountNeeded > 0 && stock < amountNeeded;
+
+                                                return (
+                                                    <tr key={item.ingredient_id} className='border-t border-border'>
+                                                        <td className='px-4 py-2'>
+                                                            <h5 className='font-semibold text-text'>{item.ingredient_name}</h5>
+                                                            <p className='text-[11px] text-text/60'>Stock: {formatQty(item.ingredient_stock)} {item.ingredient_unit}</p>
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <input
+                                                                type='text'
+                                                                value={item.amount_needed}
+                                                                onChange={(event) => updateAmount(item.ingredient_id, event.target.value)}
+                                                                disabled={hasDeducted}
+                                                                className='w-16 px-2 py-1 border border-border rounded bg-main-white focus:outline-none'
+                                                            />
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <div className='w-24'>
+                                                                {hasDeducted ? (
+                                                                    <div className='px-2 py-1 border border-border rounded bg-main text-xs text-text/70'>
+                                                                        {item.display_unit_label || 'Unit'}
+                                                                    </div>
+                                                                ) : (
+                                                                    <Dropdown
+                                                                        size='full'
+                                                                        variant='modal'
+                                                                        value={item.display_unit_id}
+                                                                        selection={item.display_unit_label || 'Unit'}
+                                                                        options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
+                                                                        onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
+                                                                        allowNone={false}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
+                                                        <td className='px-4 py-2'>
+                                                            <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
+                                                                {isMissing ? 'Low' : 'OK'}
+                                                            </span>
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <button onClick={() => !hasDeducted && removeIngredient(item.ingredient_id)} disabled={hasDeducted} className='text-text/60 hover:text-error disabled:opacity-40 disabled:cursor-not-allowed'>
+                                                                <X size={16} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </>
             ) : (
@@ -700,9 +880,18 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         <div className='p-6 overflow-y-auto flex-1 border-t border-border'>
             {hasGeneratedPremadeRecipes ? (
                 <>
-                    <div className='mb-4'>
-                        <h3 className='text-lg font-bold text-text'>Review Ingredients</h3>
-                        <p className='text-sm text-text/60'>Saved temporary premade recipes for this order.</p>
+                    <div className='mb-4 flex items-center justify-between'>
+                        <div>
+                            <h3 className='text-lg font-bold text-text'>Review Ingredients</h3>
+                            <p className='text-sm text-text/60'>Saved temporary premade recipes for this order.</p>
+                        </div>
+                        <button
+                            onClick={() => !hasDeducted && setCurrentStep(2)}
+                            disabled={hasDeducted}
+                            className='px-4 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                            Edit Recipes
+                        </button>
                     </div>
 
                     <div className='space-y-4'>
@@ -873,6 +1062,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                 className='px-6 py-2.5 rounded-lg bg-accent-text text-main-white text-sm font-semibold hover:opacity-90'
                             >
                                 View Review
+                            </button>
+                        )}
+
+                        {currentStep === 2 && hasGeneratedPremadeRecipes && !hasDeducted && (
+                            <button
+                                onClick={savePremadeRecipeEdits}
+                                disabled={savingRecipe || ingredientLoading || !activePremadeRecipe}
+                                className='px-6 py-2.5 rounded-lg bg-accent-text text-main-white text-sm font-semibold disabled:opacity-50 hover:opacity-90'
+                            >
+                                {savingRecipe ? 'Saving...' : 'Save Recipe Changes'}
                             </button>
                         )}
 
