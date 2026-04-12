@@ -33,6 +33,8 @@ const QueueAccepted = () => {
 		setSearchParams(newParams)
 	}
 
+	console.log(data)
+
 	const completeOrder = async () => {
 		if (completeId === null) return;
 
@@ -91,7 +93,7 @@ const QueueAccepted = () => {
 					<h5 className='text-accent-text/75 font-semibold'>No accepted orders</h5>
 				</div>
 			}
-			<Pagination prev={data.previous} next={data.next} count={data?.count} />
+			<Pagination prev={data.previous} next={data.next} count={data?.count} pageSize={8} />
 
 
 			{orderDetails &&

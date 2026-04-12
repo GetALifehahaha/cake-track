@@ -70,7 +70,7 @@ const QueueAccepted = () => {
 				</div>
 			}
 
-			<Pagination prev={data.previous} next={data.next} count={data?.count} />
+			<Pagination prev={data.previous} next={data.next} count={data?.count} pageSize={8} />
 
 
 			{orderDetails &&

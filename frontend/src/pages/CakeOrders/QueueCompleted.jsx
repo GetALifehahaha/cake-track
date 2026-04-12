@@ -42,7 +42,7 @@ const QueueReady = () => {
 				{listCompletedTransactions}
 			</div>
 
-			<Pagination prev={data.previous} next={data.next} count={data?.count} />
+			<Pagination prev={data.previous} next={data.next} count={data?.count} pageSize={8} />
 			{orderDetails &&
 				<OrderDetails orderDetails={orderDetails} onClose={() => setOrderDetails(null)} />
 			}
