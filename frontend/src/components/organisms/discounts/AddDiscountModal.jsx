@@ -13,6 +13,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
         discount_type: 'percentage',
         value: '0',
         scope: 'all_products',
+        usage_type: 'per_order',
         products: [],
         categories: [],
         is_indefinite: false,
@@ -47,6 +48,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
         if (hasInvalidValue) missingFields.push('value')
 
         if (!discountData.scope) missingFields.push('scope')
+        if (!discountData.usage_type) missingFields.push('usage_type')
         if (discountData.scope === 'selected_products' && (!discountData.products || discountData.products.length === 0)) {
             missingFields.push('products')
         }
@@ -177,6 +179,7 @@ const AddDiscountModal = ({ onConfirm, onClose, productOptions = [], categoryOpt
                 <DiscountModalPage2
                     data={{
                         scope: discountData.scope,
+                        usage_type: discountData.usage_type,
                         min_order_total: discountData.min_order_total,
                         usage_limit: discountData.usage_limit,
                         active: discountData.active,

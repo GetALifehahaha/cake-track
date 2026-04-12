@@ -27,9 +27,18 @@ const discountStatusOptions = [
     { key: 'Inactive', value: 'false' },
 ];
 
+const discountUsageTypeOptions = [
+    { key: 'Per Order', value: 'per_order' },
+    { key: 'Per Product', value: 'per_product' },
+];
+
 const discountSortOptions = [
+    { key: 'Name: A to Z', value: 'name' },
+    { key: 'Name: Z to A', value: '-name' },
     { key: 'Value: Low to High', value: 'value' },
     { key: 'Value: High to Low', value: '-value' },
+    { key: 'Usage %: Low to High', value: 'usage_percentage' },
+    { key: 'Usage %: High to Low', value: '-usage_percentage' },
     { key: 'Usage: Low to High', value: 'used_count' },
     { key: 'Usage: High to Low', value: '-used_count' },
     { key: 'Created: Oldest First', value: 'id' },
@@ -52,6 +61,7 @@ const Discounts = () => {
 
     const selectedType = searchParams.get('discount_type') || null;
     const selectedScope = searchParams.get('scope') || null;
+    const selectedUsageType = searchParams.get('usage_type') || null;
     const selectedStatus = searchParams.get('active') || null;
     const selectedSorting = searchParams.get('ordering') || null;
 
@@ -75,6 +85,7 @@ const Discounts = () => {
         updateQueryParams({
             discount_type: null,
             scope: null,
+            usage_type: null,
             active: null,
             ordering: null,
         });
@@ -161,6 +172,18 @@ const Discounts = () => {
                     </div>
 
                     <div className='min-w-40'>
+                        <h5 className='text-xs font-semibold text-text/50 mb-1'>Usage Type</h5>
+                        <Dropdown
+                            size='full'
+                            variant='white'
+                            selection='All usage types'
+                            value={selectedUsageType}
+                            options={discountUsageTypeOptions}
+                            onSelect={(value) => updateQueryParams({ usage_type: value })}
+                        />
+                    </div>
+
+                    <div className='min-w-40'>
                         <h5 className='text-xs font-semibold text-text/50 mb-1'>Status</h5>
                         <Dropdown
                             size='full'
@@ -198,6 +221,7 @@ const Discounts = () => {
                             <h5 className='flex-1 text-left'>Type</h5>
                             <h5 className='flex-1 text-left'>Value</h5>
                             <h5 className='flex-1 text-left'>Scope</h5>
+                            <h5 className='flex-1 text-left'>Usage Type</h5>
                             <h5 className='flex-1 text-left'>Usage (Used/Limit)</h5>
                             <h5 className='flex-1 text-left'>Status</h5>
                             <h5 className='flex-1 text-left'>Actions</h5>
@@ -224,6 +248,10 @@ const Discounts = () => {
                                         {discount.scope.replace('_', ' ')}
                                     </h5>
 
+                                    <h5 className='flex-1 text-left capitalize'>
+                                        {String(discount.usage_type || 'per_order').replace('_', ' ')}
+                                    </h5>
+
                                     <h5 className='flex-1 text-left'>
                                         {discount.used_count} / {discount.usage_limit || '∞'}
                                     </h5>
@@ -235,7 +263,7 @@ const Discounts = () => {
                                     </div>
 
                                     <div className='flex-1 flex justify-start'>
-                                        <button className={cn('bg-main-dark flex p-1 w-12 rounded-full cursor-pointer border 1.5 border-border', discount.active ? 'bg-success justify-end' : 'justify-start')}
+                                        <button className={cn('bg-main-dark flex p-1 w-12 rounded-full cursor-pointer border 1.5 border-border', discount.active ? 'bg-green-500 justify-end' : 'justify-start')}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 toggleStatus(discount);

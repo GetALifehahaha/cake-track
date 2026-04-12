@@ -33,7 +33,7 @@ export const ToastProvider = ({ children }) => {
                 {toasts.map((toast) => (
                     <div key={toast.id}
                         className={`
-                            px-5 py-4 rounded-xl text-sm font-semibold text-white transition-all flex flex-row items-center gap-2 bg-neutral-900 animate-in fade-in
+                            px-5 py-4 rounded-xl text-sm font-semibold text-white transition-all flex flex-row justify-between items-center gap-2 bg-neutral-900 animate-in fade-in
                         `}>
                         {toast.type === "error" ? <CircleAlert className='text-error' /> : ''}
                         {toast.type === "success" ? <CircleCheck className='text-success' /> : ''}
@@ -41,7 +41,7 @@ export const ToastProvider = ({ children }) => {
                         <h5
                             className={`
                         `}>{toast.message}</h5>
-                        <X className={`
+                        <X className={`cursor-pointer hover:bg-main/20 rounded-full p-0.5
                         `} onClick={() => removeToast(toast.id)} />
                     </div>
                 ))}

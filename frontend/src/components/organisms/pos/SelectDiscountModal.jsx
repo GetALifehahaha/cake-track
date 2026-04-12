@@ -8,12 +8,24 @@ import Modal from '@/components/molecules/Modal';
 const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClose, currentDiscountId = null }) => {
     const [selectedDiscountDetail, setSelectedDiscountDetail] = useState(null);
     const [searchText, setSearchText] = useState('');
+    const usageTypeLabelMap = {
+        per_order: 'Per Order',
+        per_product: 'Per Product',
+    };
 
     const formatMoney = (value) => Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const getItemCategoryIds = (item) => {
-        if (Array.isArray(item?.categories)) return item.categories.map(c => c.id);
-        if (Array.isArray(item?.product?.categories)) return item.product.categories.map(c => c.id);
+        if (Array.isArray(item?.categories)) {
+            return item.categories
+                .map((category) => Number(category?.id ?? category))
+                .filter(Number.isFinite);
+        }
+        if (Array.isArray(item?.product?.categories)) {
+            return item.product.categories
+                .map((category) => Number(category?.id ?? category))
+                .filter(Number.isFinite);
+        }
         return [];
     };
 
@@ -23,21 +35,38 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
         const evaluated = discounts.map(discount => {
             let isApplicable = true;
             let reason = "";
+            const usageType = discount.usage_type || 'per_order';
+            const discountProductIds = new Set(
+                (discount.products || [])
+                    .map((id) => Number(id))
+                    .filter(Number.isFinite)
+            );
+            const discountCategoryIds = new Set(
+                (discount.categories || [])
+                    .map((id) => Number(id))
+                    .filter(Number.isFinite)
+            );
 
             const hasUsageLimit = discount.usage_limit !== null && discount.usage_limit !== undefined;
             const usageLimitReached = hasUsageLimit && Number(discount.used_count || 0) >= Number(discount.usage_limit || 0);
 
             const eligibleItems = cartItems.filter(item => {
                 if (discount.scope === 'all_products') return true;
-                if (discount.scope === 'selected_products') return (discount.products || []).includes(item.id);
+                if (discount.scope === 'selected_products') return discountProductIds.has(Number(item.id));
                 if (discount.scope === 'selected_category') {
                     const itemCategoryIds = getItemCategoryIds(item);
-                    return itemCategoryIds.some(id => (discount.categories || []).includes(id));
+                    return itemCategoryIds.some((id) => discountCategoryIds.has(id));
                 }
                 return false;
             });
 
             const applicableProductNames = [...new Set(eligibleItems.map(item => item.name).filter(Boolean))];
+            const usageDeductionCount = usageType === 'per_product'
+                ? eligibleItems.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+                : 1;
+            const usageLimit = hasUsageLimit ? Number(discount.usage_limit || 0) : null;
+            const usedCount = Number(discount.used_count || 0);
+            const remainingUsage = hasUsageLimit ? Math.max((usageLimit || 0) - usedCount, 0) : null;
 
             const applicableBefore = eligibleItems.reduce((sum, item) => sum + getItemLineTotal(item), 0);
             let discountAmount = 0;
@@ -83,24 +112,24 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
             if (discount.active === false) {
                 isApplicable = false;
                 reason = "Discount is inactive";
-                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown, usageDeductionCount, remainingUsage };
             }
 
             if (discount.start_date && new Date(discount.start_date) > new Date()) {
                 isApplicable = false;
                 reason = "Discount not active yet";
-                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown, usageDeductionCount, remainingUsage };
 
             } else if (discount.end_date && new Date(discount.end_date) < new Date()) {
                 isApplicable = false;
                 reason = "Discount has expired";
-                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown, usageDeductionCount, remainingUsage };
             }
 
             if (usageLimitReached) {
                 isApplicable = false;
                 reason = "Usage limit reached";
-                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+                return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown, usageDeductionCount, remainingUsage };
             }
 
             if (grossTotal < parseFloat(discount.min_order_total)) {
@@ -120,7 +149,26 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                 }
             }
 
-            return { ...discount, isApplicable, reason, applicableBefore, applicableAfter, orderAfter, discountAmount, applicableProductNames, itemBreakdown };
+            if (isApplicable && hasUsageLimit && remainingUsage !== null && usageDeductionCount > remainingUsage) {
+                isApplicable = false;
+                reason = usageType === 'per_product'
+                    ? `Only ${remainingUsage} product usage(s) left`
+                    : 'Usage limit reached';
+            }
+
+            return {
+                ...discount,
+                isApplicable,
+                reason,
+                applicableBefore,
+                applicableAfter,
+                orderAfter,
+                discountAmount,
+                applicableProductNames,
+                itemBreakdown,
+                usageDeductionCount,
+                remainingUsage,
+            };
         });
 
         return evaluated.sort((a, b) => {
@@ -130,7 +178,9 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
     }, [discounts, cartItems, grossTotal]);
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'Always active';
         const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return 'N/A';
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
@@ -196,6 +246,9 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                                     <span className="capitalize px-2 py-0.5 bg-main-dark/20 rounded-sm">
                                         {discount.scope.replace('_', ' ')}
                                     </span>
+                                    <span className="px-2 py-0.5 bg-main-dark/20 rounded-sm">
+                                        {usageTypeLabelMap[discount.usage_type || 'per_order']}
+                                    </span>
                                     {parseFloat(discount.min_order_total) > 0 && (
                                         <span className="px-2 py-0.5 bg-main-dark/20 rounded-sm">
                                             Min: ₱{discount.min_order_total}
@@ -233,6 +286,12 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                                 <span>{formatDate(discount.start_date)} to {formatDate(discount.end_date)}</span>
                             </div>
 
+                            <div className='text-xs text-text/60 font-semibold'>
+                                {discount.usage_limit
+                                    ? `Usage: ${discount.used_count}/${discount.usage_limit}`
+                                    : 'Usage: Unlimited'}
+                            </div>
+
                             {!discount.isApplicable && (
                                 <div className="flex items-center gap-1 text-xs font-bold text-red-500">
                                     <AlertCircle size={14} />
@@ -265,6 +324,9 @@ const SelectDiscountModal = ({ discounts, cartItems, grossTotal, onSelect, onClo
                                 <h5 className='font-semibold text-text text-base'>{selectedDiscountDetail.name}</h5>
                                 <h5 className='text-xs text-text/60 capitalize'>
                                     {selectedDiscountDetail.scope.replace('_', ' ')}
+                                </h5>
+                                <h5 className='text-xs text-text/60'>
+                                    {usageTypeLabelMap[selectedDiscountDetail.usage_type || 'per_order']}
                                 </h5>
                             </div>
                             <div className='text-right'>

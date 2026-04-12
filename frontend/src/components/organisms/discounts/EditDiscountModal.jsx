@@ -27,6 +27,7 @@ const EditDiscountModal = ({ discount, productOptions = [], categoryOptions = []
         discount_type: discount.discount_type || 'percentage',
         value: String(discount.value ?? '0'),
         scope: discount.scope || 'all_products',
+        usage_type: discount.usage_type || 'per_order',
         products: discount.products || [],
         categories: discount.categories || [],
         is_indefinite: initialIndefinite,
@@ -42,6 +43,7 @@ const EditDiscountModal = ({ discount, productOptions = [], categoryOptions = []
         discount_type: discount.discount_type || 'percentage',
         value: String(discount.value ?? '0'),
         scope: discount.scope || 'all_products',
+        usage_type: discount.usage_type || 'per_order',
         products: discount.products || [],
         categories: discount.categories || [],
         is_indefinite: initialIndefinite,
@@ -76,6 +78,7 @@ const EditDiscountModal = ({ discount, productOptions = [], categoryOptions = []
         if (hasInvalidValue) missingFields.push('value')
 
         if (!discountData.scope) missingFields.push('scope')
+        if (!discountData.usage_type) missingFields.push('usage_type')
         if (discountData.scope === 'selected_products' && (!discountData.products || discountData.products.length === 0)) {
             missingFields.push('products')
         }
@@ -216,6 +219,7 @@ const EditDiscountModal = ({ discount, productOptions = [], categoryOptions = []
                 <DiscountModalPage2
                     data={{
                         scope: discountData.scope,
+                        usage_type: discountData.usage_type,
                         min_order_total: discountData.min_order_total,
                         usage_limit: discountData.usage_limit,
                         active: discountData.active,

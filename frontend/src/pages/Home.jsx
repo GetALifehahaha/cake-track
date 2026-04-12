@@ -158,6 +158,7 @@ const Home = () => {
                 ...item,
                 id: product.id,
                 name: product.name,
+                categories: Array.isArray(product.categories) ? product.categories : [],
                 variant_id: variant.id,
                 label: variant.label,
                 price: Number(variant.price),
@@ -254,6 +255,78 @@ const Home = () => {
         return discountData.find(d => d.id === discount.id) || null;
     }, [discount, discountData]);
 
+    const validateDiscountUsage = (discountToValidate, cartItems = checkoutProducts) => {
+        if (!discountToValidate) return { ok: true };
+
+        const hasUsageLimit = discountToValidate.usage_limit !== null && discountToValidate.usage_limit !== undefined;
+        if (!hasUsageLimit) return { ok: true };
+
+        const usageType = discountToValidate.usage_type || 'per_order';
+        const usageLimit = Number(discountToValidate.usage_limit || 0);
+        const usedCount = Number(discountToValidate.used_count || 0);
+        const remainingUsage = Math.max(usageLimit - usedCount, 0);
+        const discountProductIds = new Set(
+            (discountToValidate.products || [])
+                .map((id) => Number(id))
+                .filter(Number.isFinite)
+        );
+        const discountCategoryIds = new Set(
+            (discountToValidate.categories || [])
+                .map((id) => Number(id))
+                .filter(Number.isFinite)
+        );
+
+        const getItemCategoryIds = (item) => {
+            if (Array.isArray(item?.categories)) {
+                return item.categories
+                    .map((category) => Number(category?.id ?? category))
+                    .filter(Number.isFinite);
+            }
+            if (Array.isArray(item?.product?.categories)) {
+                return item.product.categories
+                    .map((category) => Number(category?.id ?? category))
+                    .filter(Number.isFinite);
+            }
+            return [];
+        };
+
+        const isEligible = (item) => {
+            if (discountToValidate.scope === 'all_products') return true;
+            if (discountToValidate.scope === 'selected_products') {
+                return discountProductIds.has(Number(item.id));
+            }
+            if (discountToValidate.scope === 'selected_category') {
+                const itemCategoryIds = getItemCategoryIds(item);
+                return itemCategoryIds.some((id) => discountCategoryIds.has(id));
+            }
+            return false;
+        };
+
+        const eligibleItems = cartItems.filter(isEligible);
+
+        if (discountToValidate.scope !== 'all_products' && eligibleItems.length === 0) {
+            return { ok: false, reason: 'No eligible cart items for this discount.' };
+        }
+
+        const usageNeeded = usageType === 'per_product'
+            ? eligibleItems.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+            : 1;
+
+        if (usageNeeded <= 0) {
+            return { ok: false, reason: 'No eligible usage units found for this discount.' };
+        }
+
+        if (usageNeeded > remainingUsage) {
+            if (usageType === 'per_product') {
+                return { ok: false, reason: `Only ${remainingUsage} product usage(s) remaining for this discount.` };
+            }
+
+            return { ok: false, reason: 'Discount usage limit has been reached.' };
+        }
+
+        return { ok: true };
+    }
+
     const discountBreakdown = useMemo(() => {
         const itemMap = {};
         checkoutProducts.forEach((product) => {
@@ -273,20 +346,39 @@ const Home = () => {
             };
         }
 
+        const discountProductIds = new Set(
+            (selectedDiscount.products || [])
+                .map((id) => Number(id))
+                .filter(Number.isFinite)
+        );
+        const discountCategoryIds = new Set(
+            (selectedDiscount.categories || [])
+                .map((id) => Number(id))
+                .filter(Number.isFinite)
+        );
+
         const getItemCategoryIds = (item) => {
-            if (Array.isArray(item?.categories)) return item.categories.map(c => c.id);
-            if (Array.isArray(item?.product?.categories)) return item.product.categories.map(c => c.id);
+            if (Array.isArray(item?.categories)) {
+                return item.categories
+                    .map((category) => Number(category?.id ?? category))
+                    .filter(Number.isFinite);
+            }
+            if (Array.isArray(item?.product?.categories)) {
+                return item.product.categories
+                    .map((category) => Number(category?.id ?? category))
+                    .filter(Number.isFinite);
+            }
             return [];
         };
 
         const isEligible = (item) => {
             if (selectedDiscount.scope === 'all_products') return true;
             if (selectedDiscount.scope === 'selected_products') {
-                return (selectedDiscount.products || []).includes(item.id);
+                return discountProductIds.has(Number(item.id));
             }
             if (selectedDiscount.scope === 'selected_category') {
                 const itemCategoryIds = getItemCategoryIds(item);
-                return itemCategoryIds.some(id => (selectedDiscount.categories || []).includes(id));
+                return itemCategoryIds.some((id) => discountCategoryIds.has(id));
             }
             return false;
         };
@@ -401,11 +493,14 @@ const Home = () => {
     }
 
     const selectDiscount = (discount) => {
-        const hasUsageLimit = discount?.usage_limit !== null && discount?.usage_limit !== undefined;
-        const usageLimitReached = hasUsageLimit && Number(discount?.used_count || 0) >= Number(discount?.usage_limit || 0);
+        if (discount?.isApplicable === false) {
+            addToast(discount?.reason || 'This discount is not applicable.', 'error');
+            return;
+        }
 
-        if (usageLimitReached) {
-            addToast('Discount usage limit has been reached.', 'error');
+        const usageValidation = validateDiscountUsage(discount);
+        if (!usageValidation.ok) {
+            addToast(usageValidation.reason || 'This discount cannot be applied to current cart.', 'error');
             return;
         }
 
@@ -604,6 +699,19 @@ const Home = () => {
                 setModalFeedbackContent({ type: "error", label: "Insufficient Payment", details: "The payment amount is less than the total due." });
                 setShowModalFeedback(true);
                 return;
+            }
+
+            if (selectedDiscount) {
+                const discountUsageValidation = validateDiscountUsage(selectedDiscount, sanitizedCheckoutProducts);
+                if (!discountUsageValidation.ok) {
+                    setModalFeedbackContent({
+                        type: "error",
+                        label: "Discount Not Applicable",
+                        details: discountUsageValidation.reason || "Selected discount cannot be applied to the current cart.",
+                    });
+                    setShowModalFeedback(true);
+                    return;
+                }
             }
 
             const checkoutProductsPayload = sanitizedCheckoutProducts.map(p => ({

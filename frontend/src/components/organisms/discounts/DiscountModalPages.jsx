@@ -135,6 +135,7 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = nul
 
     const [discountData, setDiscountData] = useState({
         scope: data?.scope || 'all_products',
+        usage_type: data?.usage_type || 'per_order',
         min_order_total: data?.min_order_total ?? '0.00',
         usage_limit: data?.usage_limit ?? '',
         active: data?.active ?? true,
@@ -147,6 +148,7 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = nul
     useEffect(() => {
         onDraftChange?.({
             scope: discountData.scope,
+            usage_type: discountData.usage_type,
             min_order_total: discountData.min_order_total,
             usage_limit: discountData.usage_limit,
             active: discountData.active,
@@ -159,6 +161,11 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = nul
         { key: 'Entire Order', value: 'all_products' },
         { key: 'Selected Products', value: 'selected_products' },
         { key: 'Selected Category', value: 'selected_category' },
+    ]
+
+    const usageTypeOptions = [
+        { key: 'Per Order', value: 'per_order' },
+        { key: 'Per Product', value: 'per_product' },
     ]
 
     const [showScopeModal, setShowScopeModal] = useState(false);
@@ -175,6 +182,14 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = nul
             setFeedback({
                 label: 'Invalid Scope',
                 message: 'Please select a discount scope.'
+            })
+            return false
+        }
+
+        if (!discountData.usage_type) {
+            setFeedback({
+                label: 'Invalid Usage Type',
+                message: 'Please select how usage should be deducted.'
             })
             return false
         }
@@ -223,6 +238,7 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = nul
 
         onSubmit({
             scope: discountData.scope,
+            usage_type: discountData.usage_type,
             min_order_total: discountData.min_order_total === '' ? '0' : discountData.min_order_total,
             usage_limit: discountData.usage_limit,
             active: discountData.active,
@@ -328,6 +344,18 @@ export const DiscountModalPage2 = ({ data, onSubmit, onBack, onDraftChange = nul
             </div>
 
             <div className='flex gap-4'>
+                <div className='flex flex-col gap-2 flex-1'>
+                    <Label text='Usage Type' variant='small' />
+                    <Dropdown
+                        variant='modal'
+                        size='full'
+                        selection='Select usage type'
+                        value={discountData.usage_type}
+                        options={usageTypeOptions}
+                        allowNone={false}
+                        onSelect={(val) => setDiscountData({ ...discountData, usage_type: val })}
+                    />
+                </div>
                 <div className='flex flex-col gap-2 flex-1'>
                     <Label text='Min Order Total (P)' variant='small' />
                     <input
@@ -591,6 +619,7 @@ export const DiscountModalPage4 = ({
             scope: scopeLabelMap[source.scope] || source.scope || '-',
             min_order_total: source.min_order_total || '0',
             usage_limit: source.usage_limit || 'No limit',
+            usage_type: source.usage_type === 'per_product' ? 'Per Product' : 'Per Order',
             active: source.active ? 'Yes' : 'No',
             is_indefinite: source.is_indefinite ? 'Yes' : 'No',
             start_date: source.is_indefinite ? 'N/A' : formatDateTime(source.start_date),
@@ -610,6 +639,7 @@ export const DiscountModalPage4 = ({
         ['Type', 'discount_type'],
         ['Value', 'value'],
         ['Scope', 'scope'],
+        ['Usage Type', 'usage_type'],
         ['Min Order Total', 'min_order_total'],
         ['Usage Limit', 'usage_limit'],
         ['Active', 'active'],
@@ -638,6 +668,7 @@ export const DiscountModalPage4 = ({
         { label: 'Type', key: 'discount_type', value: currentDisplay.discount_type, required: true },
         { label: 'Value', key: 'value', value: currentDisplay.value, required: true },
         { label: 'Scope', key: 'scope', value: currentDisplay.scope, required: true },
+        { label: 'Usage Type', key: 'usage_type', value: currentDisplay.usage_type, required: true },
         { label: 'Min Order Total', key: 'min_order_total', value: currentDisplay.min_order_total, required: false },
         { label: 'Usage Limit', key: 'usage_limit', value: currentDisplay.usage_limit, required: false },
         { label: 'Active', key: 'active', value: currentDisplay.active, required: false },
