@@ -1,28 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrderApi from "@/api/OrderApi";
-// CHANGED: Use Expo Router hooks instead of react-router-dom
-import { useLocalSearchParams, usePathname } from "expo-router"; 
 import { useMemo } from "react";
 
 export default function useOrder(options = {}) {
-    const { includeArchivedOrders = false, includeHiddenOrders = false } = options;
+    const { includeArchivedOrders = false, includeHiddenOrders = false, searchQuery = '' } = options;
     const shouldIncludeArchivedOrders = includeArchivedOrders || includeHiddenOrders;
     const queryClient = useQueryClient();
-    // CHANGED: Expo equivalent of useSearchParams
-    const params = useLocalSearchParams(); 
+    const queryParams = useMemo(() => {
+        const trimmed = String(searchQuery || '').trim();
+        if (!trimmed) return {};
+        return { search: trimmed };
+    }, [searchQuery]);
 
     // --- 2. GET: Fetch Orders ---
     const ordersQuery = useQuery({
         // queryKey: ['orders', apiParams], 
         // queryFn: () => OrderApi(apiParams),
-        queryKey: ['orders'],
-        queryFn: () => OrderApi(null, null, 'GET_ALL_PAGES'),
+        queryKey: ['orders', 'my-orders', queryParams.search || ''],
+        queryFn: () => OrderApi(queryParams, null, 'GET_ALL_PAGES'),
         placeholderData: (previousData) => previousData,
     });
 
     const archivedOrdersQuery = useQuery({
-        queryKey: ['orders', 'archived'],
-        queryFn: () => OrderApi(null, null, 'GET_ARCHIVED_ALL_PAGES'),
+        queryKey: ['orders', 'archived', queryParams.search || ''],
+        queryFn: () => OrderApi(queryParams, null, 'GET_ARCHIVED_ALL_PAGES'),
         enabled: shouldIncludeArchivedOrders,
         placeholderData: (previousData) => previousData,
     });

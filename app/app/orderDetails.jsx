@@ -26,6 +26,19 @@ const formatCurrency = (value = 0) => {
     return `₱ ${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const formatEnumLabel = (value = '') => {
+    const normalized = String(value || '').trim();
+    if (!normalized) return '';
+    if (normalized.toUpperCase() === 'N/A') return 'N/A';
+
+    return normalized
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+};
+
 const parseOrderDataParam = (orderDataParam) => {
     if (!orderDataParam) return {};
 
@@ -134,7 +147,7 @@ const OrderDetails = () => {
 
     // Logic for cupcakes (based on your JSX)
     const hasCupcakes = !!orderData.cupcake_orders; // Check your API structure for this
-    const cupcakesCount = orderData.cupcake_orders?.count || 0;
+    const cupcakesCount = Number(orderData.cupcake_orders?.amount ?? 0);
     const cupcakesFrosting = orderData.cupcake_orders?.frosting || "";
 
     const reloadOrderDetails = async () => {
@@ -560,7 +573,7 @@ const OrderDetails = () => {
                             <View className='flex-row flex-wrap justify-between gap-2'>
                                 <View className='w-[48%] p-4 bg-white rounded-lg'>
                                     <Text className='text-gray-400 text-xs mb-1'>Message Type</Text>
-                                    <Text className='text-primary text-lg font-semibold capitalize'>{messageType || 'None'}</Text>
+                                    <Text className='text-primary text-lg font-semibold'>{formatEnumLabel(messageType) || 'None'}</Text>
                                 </View>
                                 <View className='w-[48%] p-4 bg-white rounded-lg'>
                                     <Text className='text-gray-400 text-xs mb-1'>Message</Text>
@@ -585,11 +598,11 @@ const OrderDetails = () => {
                             <View className='flex-row flex-wrap justify-between gap-2'>
                                 <View className='w-[48%] p-4 bg-white rounded-lg'>
                                     <Text className='text-gray-400 text-xs mb-1'>Cupcake Count</Text>
-                                    <Text className='text-primary text-lg font-semibold capitalize'>{cupcakesCount} x</Text>
+                                    <Text className='text-primary text-lg font-semibold'>{cupcakesCount} x</Text>
                                 </View>
                                 <View className='w-[48%] p-4 bg-white rounded-lg'>
                                     <Text className='text-gray-400 text-xs mb-1'>Frosting</Text>
-                                    <Text className='text-primary text-lg font-semibold'>{cupcakesFrosting || 'None'}</Text>
+                                    <Text className='text-primary text-lg font-semibold'>{formatEnumLabel(cupcakesFrosting) || 'None'}</Text>
                                 </View>
                             </View>
                         }

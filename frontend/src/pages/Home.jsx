@@ -961,7 +961,7 @@ const Home = () => {
                         </h5>
                     </div>
                     :
-                    <div className='h-[80vh]  flex items-center flex-col gap-2'>
+                    <div className='flex items-center flex-col gap-2 h-[80vh] justify-between'>
                         <div className='overflow-y-auto grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-wrap'>
                             {listProduct}
                         </div>

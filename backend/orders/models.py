@@ -105,6 +105,21 @@ class Cake(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class OrderPremadeRecipe(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='premade_recipes')
+    cake = models.ForeignKey('Cake', on_delete=models.SET_NULL, null=True, blank=True, related_name='order_premade_recipes')
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='premade_order_recipes')
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+
+    def __str__(self):
+        cake_name = self.cake.name if self.cake else 'Unknown Cake'
+        return f"{self.order_id} - {cake_name} x{self.quantity}"
     
 
 class BlockedDate(models.Model):

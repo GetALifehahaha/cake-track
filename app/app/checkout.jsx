@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native'
-import React, { useContext, useState, useCallback } from 'react'
+import React, { useContext, useState, useCallback, useEffect } from 'react'
 import { useCart } from '@/context/CartContext'
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,11 +29,17 @@ const Checkout = () => {
     const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`.trim());
     const [address, setAddress] = useState("");
     const [email, setEmail] = useState(user?.email || "");
-    const [phoneNumber, setPhoneNumber] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState(formatPhoneNumber(user?.phone_number || ""));
     const [dueDate, setDueDate] = useState();
     const [pickupTime, setPickupTime] = useState();
     const [agreeToTOC, setAgreeToTOC] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (user?.phone_number && !String(phoneNumber || '').trim()) {
+            setPhoneNumber(formatPhoneNumber(String(user.phone_number)));
+        }
+    }, [user?.phone_number, phoneNumber]);
 
     // Listen for address selected from locationPicker (via locationStore)
     useFocusEffect(

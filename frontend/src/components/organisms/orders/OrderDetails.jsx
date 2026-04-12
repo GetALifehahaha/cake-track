@@ -94,6 +94,18 @@ const formatDeliveryDate = (value) => {
     });
 };
 
+const getPremadeRecipeLabel = (premadeRecipe, index) => {
+    if (premadeRecipe?.cake_name) {
+        return premadeRecipe.cake_name;
+    }
+
+    if (premadeRecipe?.recipe_details?.name) {
+        return premadeRecipe.recipe_details.name;
+    }
+
+    return `Premade Item ${index + 1}`;
+};
+
 const StepMarker = ({ number, label, active, done, onClick }) => {
     const variantClass = done
         ? 'bg-success text-main-white'
@@ -139,7 +151,11 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const isAccepted = orderSnapshot?.status === 'accepted';
     const isRejected = orderSnapshot?.status === 'rejected';
     const isCancellationRequested = Boolean(orderSnapshot?.cancellation_requested);
-    const hasSavedRecipe = Boolean(orderSnapshot?.recipe);
+    const premadeRecipeDetails = Array.isArray(orderSnapshot?.premade_recipe_details)
+        ? orderSnapshot.premade_recipe_details
+        : [];
+    const hasGeneratedPremadeRecipes = premadeRecipeDetails.length > 0;
+    const hasSavedRecipe = Boolean(orderSnapshot?.recipe) || hasGeneratedPremadeRecipes;
     const hasDeducted = Boolean(orderSnapshot?.ingredients_deducted_at);
     const isRecipeEditable = isAccepted && !hasDeducted;
     const payments = orderSnapshot?.payments || [];
@@ -471,6 +487,70 @@ const OrderDetails = ({ orderDetails, onClose }) => {
 
     const renderIngredientsStep = () => (
         <div className='flex-1 overflow-hidden flex flex-col border-t border-border'>
+            {hasGeneratedPremadeRecipes ? (
+                <>
+                    <div className='p-4 border-b border-border bg-main'>
+                        <h4 className='font-semibold text-sm text-text'>Auto-generated Premade Recipes ({premadeRecipeDetails.length})</h4>
+                        <p className='text-xs text-text/60 mt-1'>Each premade cake with a saved recipe is listed separately for this order.</p>
+                    </div>
+
+                    <div className='flex-1 overflow-y-auto p-4 space-y-4 bg-main/40'>
+                        {premadeRecipeDetails.map((premadeRecipe, index) => {
+                            const recipeIngredients = Array.isArray(premadeRecipe?.recipe_details?.ingredients)
+                                ? premadeRecipe.recipe_details.ingredients
+                                : [];
+
+                            return (
+                                <div key={premadeRecipe?.id || `${premadeRecipe?.recipe || 'recipe'}-${index}`} className='border border-border rounded-2xl overflow-hidden bg-main-white'>
+                                    <div className='px-4 py-3 border-b border-border bg-main'>
+                                        <h5 className='text-sm font-bold text-text'>{getPremadeRecipeLabel(premadeRecipe, index)}</h5>
+                                        <p className='text-xs text-text/60'>Qty: {premadeRecipe?.quantity || 1}</p>
+                                    </div>
+
+                                    <div className='overflow-x-auto'>
+                                        <table className='w-full text-sm'>
+                                            <thead className='bg-main-white sticky top-0 z-10'>
+                                                <tr className='text-left text-text/60 text-[11px] uppercase'>
+                                                    <th className='px-4 py-2'>Ingredient</th>
+                                                    <th className='px-4 py-2'>Amount</th>
+                                                    <th className='px-4 py-2'>In Stock</th>
+                                                    <th className='px-4 py-2'>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {recipeIngredients.map((item) => {
+                                                    const amountNeeded = Number(item?.amount_needed || 0);
+                                                    const stockAmount = Number(item?.ingredient_stock || 0);
+                                                    const isMissing = amountNeeded > 0 && stockAmount < amountNeeded;
+
+                                                    return (
+                                                        <tr key={`${premadeRecipe?.id || index}-${item.ingredient_id}`} className='border-t border-border'>
+                                                            <td className='px-4 py-2 font-semibold text-text'>{item.ingredient_name}</td>
+                                                            <td className='px-4 py-2 text-text/80'>{formatQty(item.amount_needed)} {item.ingredient_unit}</td>
+                                                            <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
+                                                            <td className='px-4 py-2'>
+                                                                <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
+                                                                    {isMissing ? 'Low' : 'OK'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                                {recipeIngredients.length === 0 && (
+                                                    <tr>
+                                                        <td className='px-4 py-6 text-text/50 text-center' colSpan={4}>No ingredients on this recipe.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </>
+            ) : (
+                <>
             <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
 
                 <div className='ml-auto flex items-center gap-2'>
@@ -611,59 +691,122 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     </div>
                 </div>
             </div>
+                </>
+            )}
         </div>
     );
 
     const renderReviewStep = () => (
         <div className='p-6 overflow-y-auto flex-1 border-t border-border'>
-            <div className='mb-4 flex items-center justify-between'>
-                <div>
-                    <h3 className='text-lg font-bold text-text'>Review Ingredients</h3>
-                    <p className='text-sm text-text/60'>Saved temporary recipe for this order.</p>
-                </div>
-                <button
-                    onClick={() => !hasDeducted && setCurrentStep(2)}
-                    disabled={hasDeducted}
-                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main disabled:opacity-50 disabled:cursor-not-allowed'
-                >
-                    Edit Recipe
-                </button>
-            </div>
+            {hasGeneratedPremadeRecipes ? (
+                <>
+                    <div className='mb-4'>
+                        <h3 className='text-lg font-bold text-text'>Review Ingredients</h3>
+                        <p className='text-sm text-text/60'>Saved temporary premade recipes for this order.</p>
+                    </div>
 
-            <div className='border border-border rounded-xl overflow-hidden'>
-                <table className='w-full text-sm'>
-                    <thead className='bg-main text-text/70 text-[11px] uppercase'>
-                        <tr>
-                            <th className='px-4 py-2 text-left'>Ingredient</th>
-                            <th className='px-4 py-2 text-left'>Amount</th>
-                            <th className='px-4 py-2 text-left'>In Stock</th>
-                            <th className='px-4 py-2 text-left'>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {selectedIngredients.map(item => {
-                            const missing = getAmountNeededInBaseUnit(item) > Number(item.ingredient_stock || 0);
+                    <div className='space-y-4'>
+                        {premadeRecipeDetails.map((premadeRecipe, index) => {
+                            const recipeIngredients = Array.isArray(premadeRecipe?.recipe_details?.ingredients)
+                                ? premadeRecipe.recipe_details.ingredients
+                                : [];
+
                             return (
-                                <tr key={item.ingredient_id} className='border-t border-border'>
-                                    <td className='px-4 py-2 font-semibold text-text'>{item.ingredient_name}</td>
-                                    <td className='px-4 py-2 text-text/80'>{formatQty(item.amount_needed)} {item.display_unit_label}</td>
-                                    <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
-                                    <td className='px-4 py-2'>
-                                        <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${missing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
-                                            {missing ? 'Insufficient' : 'OK'}
-                                        </span>
-                                    </td>
-                                </tr>
+                                <div key={premadeRecipe?.id || `${premadeRecipe?.recipe || 'recipe'}-review-${index}`} className='border border-border rounded-xl overflow-hidden'>
+                                    <div className='px-4 py-3 border-b border-border bg-main'>
+                                        <h4 className='text-sm font-bold text-text'>{getPremadeRecipeLabel(premadeRecipe, index)}</h4>
+                                        <p className='text-xs text-text/60'>Qty: {premadeRecipe?.quantity || 1}</p>
+                                    </div>
+
+                                    <table className='w-full text-sm'>
+                                        <thead className='bg-main text-text/70 text-[11px] uppercase'>
+                                            <tr>
+                                                <th className='px-4 py-2 text-left'>Ingredient</th>
+                                                <th className='px-4 py-2 text-left'>Amount</th>
+                                                <th className='px-4 py-2 text-left'>In Stock</th>
+                                                <th className='px-4 py-2 text-left'>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {recipeIngredients.map((item) => {
+                                                const missing = Number(item?.amount_needed || 0) > Number(item?.ingredient_stock || 0);
+                                                return (
+                                                    <tr key={`${premadeRecipe?.id || index}-${item.ingredient_id}`} className='border-t border-border'>
+                                                        <td className='px-4 py-2 font-semibold text-text'>{item.ingredient_name}</td>
+                                                        <td className='px-4 py-2 text-text/80'>{formatQty(item.amount_needed)} {item.ingredient_unit}</td>
+                                                        <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
+                                                        <td className='px-4 py-2'>
+                                                            <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${missing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
+                                                                {missing ? 'Insufficient' : 'OK'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {recipeIngredients.length === 0 && (
+                                                <tr>
+                                                    <td className='px-4 py-6 text-text/50 text-center' colSpan={4}>No ingredients saved yet.</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             );
                         })}
-                        {selectedIngredients.length === 0 && (
-                            <tr>
-                                <td className='px-4 py-6 text-text/50 text-center' colSpan={4}>No ingredients saved yet.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className='mb-4 flex items-center justify-between'>
+                        <div>
+                            <h3 className='text-lg font-bold text-text'>Review Ingredients</h3>
+                            <p className='text-sm text-text/60'>Saved temporary recipe for this order.</p>
+                        </div>
+                        <button
+                            onClick={() => !hasDeducted && setCurrentStep(2)}
+                            disabled={hasDeducted}
+                            className='px-4 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                            Edit Recipe
+                        </button>
+                    </div>
+
+                    <div className='border border-border rounded-xl overflow-hidden'>
+                        <table className='w-full text-sm'>
+                            <thead className='bg-main text-text/70 text-[11px] uppercase'>
+                                <tr>
+                                    <th className='px-4 py-2 text-left'>Ingredient</th>
+                                    <th className='px-4 py-2 text-left'>Amount</th>
+                                    <th className='px-4 py-2 text-left'>In Stock</th>
+                                    <th className='px-4 py-2 text-left'>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedIngredients.map(item => {
+                                    const missing = getAmountNeededInBaseUnit(item) > Number(item.ingredient_stock || 0);
+                                    return (
+                                        <tr key={item.ingredient_id} className='border-t border-border'>
+                                            <td className='px-4 py-2 font-semibold text-text'>{item.ingredient_name}</td>
+                                            <td className='px-4 py-2 text-text/80'>{formatQty(item.amount_needed)} {item.display_unit_label}</td>
+                                            <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
+                                            <td className='px-4 py-2'>
+                                                <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${missing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
+                                                    {missing ? 'Insufficient' : 'OK'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {selectedIngredients.length === 0 && (
+                                    <tr>
+                                        <td className='px-4 py-6 text-text/50 text-center' colSpan={4}>No ingredients saved yet.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
 
             <div className='mt-4 text-xs text-text/60'>
                 {hasDeducted ? 'Ingredients already deducted for this order.' : 'Deduct all ingredients once recipe review is complete.'}
@@ -689,7 +832,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                         <div className='flex items-center gap-4'>
                             <StepMarker number={1} label='Order Info' onClick={() => setCurrentStep(1)} active={currentStep === 1} done={currentStep > 1} />
                             <div className='h-px w-8 bg-border' />
-                            <StepMarker number={2} label='Ingredients' onClick={() => !hasDeducted && setCurrentStep(2)} active={currentStep === 2} done={currentStep > 2} />
+                            <StepMarker number={2} label='Ingredients' onClick={() => (hasGeneratedPremadeRecipes ? setCurrentStep(2) : !hasDeducted && setCurrentStep(2))} active={currentStep === 2} done={currentStep > 2} />
                             <div className='h-px w-8 bg-border' />
                             <StepMarker number={3} label='Review' onClick={() => setCurrentStep(3)} active={currentStep === 3} done={false} />
                         </div>
@@ -701,14 +844,14 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 </div>
 
                 {currentStep === 1 && renderOrderInfo()}
-                {isRecipeEditable && currentStep === 2 && renderIngredientsStep()}
+                {currentStep === 2 && (isRecipeEditable || hasGeneratedPremadeRecipes) && renderIngredientsStep()}
                 {isAccepted && currentStep === 3 && renderReviewStep()}
 
                 {isAccepted && (
                     <div className='p-4 bg-main-white border-t border-border flex items-center justify-end gap-2'>
                         {currentStep > 1 && (
                             <button
-                                onClick={() => setCurrentStep(prev => (hasDeducted ? 1 : Math.max(1, prev - 1)))}
+                                onClick={() => setCurrentStep(prev => ((hasDeducted && !hasGeneratedPremadeRecipes) ? 1 : Math.max(1, prev - 1)))}
                                 className='px-5 py-2 rounded-lg border border-border text-sm font-semibold bg-main-white hover:bg-main'
                             >
                                 ← Back
@@ -720,7 +863,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                                 onClick={() => setCurrentStep(2)}
                                 className='px-6 py-2.5 rounded-lg bg-accent-text text-main-white text-sm font-semibold hover:opacity-90'
                             >
-                                Next Step
+                                {hasGeneratedPremadeRecipes ? 'View Ingredients' : 'Next Step'}
                             </button>
                         )}
 
@@ -733,7 +876,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                             </button>
                         )}
 
-                        {currentStep === 2 && !hasDeducted && (
+                        {currentStep === 2 && hasGeneratedPremadeRecipes && (
+                            <button
+                                onClick={() => setCurrentStep(3)}
+                                className='px-6 py-2.5 rounded-lg bg-accent-text text-main-white text-sm font-semibold hover:opacity-90'
+                            >
+                                Next Step
+                            </button>
+                        )}
+
+                        {currentStep === 2 && !hasGeneratedPremadeRecipes && !hasDeducted && (
                             <button
                                 onClick={saveOrderRecipe}
                                 disabled={savingRecipe || ingredientLoading}

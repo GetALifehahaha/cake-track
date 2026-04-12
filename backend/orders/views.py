@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from decimal import Decimal, ROUND_HALF_UP
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from datetime import timedelta
 
@@ -103,7 +103,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = OrderFilter
     
-    search_fields = ['customer__first_name', 'customer__last_name', '=id']
+    search_fields = ['customer__first_name', 'customer__last_name', '=id', 'cake_orders__occasion', 'cake_orders__base_flavor']
     ordering_fields = ['created_at', 'updated_at', 'status']
     
     def get_queryset(self):
@@ -145,6 +145,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             queryset = queryset.order_by('-created_at')
 
+        queryset = self.filter_queryset(queryset)
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -154,6 +156,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "This endpoint is only available for customers."}, status=status.HTTP_403_FORBIDDEN)
 
         queryset = Order.objects.filter(customer=request.user, hidden_by_customer=True).order_by('-hidden_by_customer_at', '-updated_at')
+        queryset = self.filter_queryset(queryset)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -163,6 +166,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Hidden orders are only available for customers."}, status=status.HTTP_403_FORBIDDEN)
 
         queryset = Order.objects.filter(customer=request.user, hidden_by_customer=True).order_by('-hidden_by_customer_at', '-updated_at')
+        queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -394,22 +398,35 @@ class OrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not order.recipe:
-            return Response(
-                {"detail": "No recipe attached to this order."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         if order.ingredients_deducted_at is not None:
             return Response(
                 {"detail": "Ingredients already deducted for this order."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            order.recipe.cook(reason=f"Stock out done for order #{order.id}.")
-        except ValidationError as error:
-            return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        premade_recipe_links = order.premade_recipes.select_related('recipe', 'cake').all()
+
+        if premade_recipe_links.exists():
+            try:
+                with transaction.atomic():
+                    for recipe_link in premade_recipe_links:
+                        cake_name = recipe_link.cake.name if recipe_link.cake else 'Premade Cake'
+                        recipe_link.recipe.cook(
+                            reason=f"Stock out done for order #{order.id} ({cake_name} x{recipe_link.quantity})."
+                        )
+            except ValidationError as error:
+                return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if not order.recipe:
+                return Response(
+                    {"detail": "No recipe attached to this order."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                order.recipe.cook(reason=f"Stock out done for order #{order.id}.")
+            except ValidationError as error:
+                return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
         order.ingredients_deducted_at = timezone.now()
         order.save(update_fields=['ingredients_deducted_at'])

@@ -27,6 +27,7 @@ import {
 	SetAccount,
 	Cakes,
 	QueueHistory,
+	LandingPage
 } from './pages'
 import { ProtectedRoute } from './components/organisms'
 
@@ -74,6 +75,7 @@ const App = () => {
 				<Route path='/setAccount' element={<SetAccount />} />
 				<Route path='/forgotPassword' element={<ForgotPassword />} />
 				<Route path='*' element={<NotFound />} />
+				<Route path='/landingPage' element={<LandingPage />} />
 			</Routes>
 		</QueryClientProvider>
 	)

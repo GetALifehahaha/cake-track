@@ -67,7 +67,7 @@ const CustomOrders = () => {
     const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`);
     const [address, setAddress] = useState('');
     const [email, setEmail] = useState(user?.email || '');
-    const [contactNumber, setContactNumber] = useState('');
+    const [contactNumber, setContactNumber] = useState(formatPhoneNumber(user?.phone_number || ''));
     const [agreeToTOC, setAgreeToTOC] = useState(false);
 
     // Ref to capture the cake preview as a single image
@@ -115,6 +115,12 @@ const CustomOrders = () => {
             setFilling('vanilla');
         }
     }, [tier]);
+
+    useEffect(() => {
+        if (user?.phone_number && !String(contactNumber || '').trim()) {
+            setContactNumber(formatPhoneNumber(String(user.phone_number)));
+        }
+    }, [user?.phone_number, contactNumber]);
 
     useEffect(() => {
         if (!shape || !tier || shape === 'other') {

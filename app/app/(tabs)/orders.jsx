@@ -1,4 +1,4 @@
-import { View, Text, Image, TextInput, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native'
+import { View, Text, Image, TextInput, ActivityIndicator, TouchableOpacity, ImageBackground, Animated, Easing } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Search, SlidersHorizontal, ChevronUp } from 'lucide-react-native'
@@ -17,17 +17,24 @@ const Orders = () => {
 	const ordersTexture = require('@/assets/images/texture/Cake back Designs Cakes area or any2.jpg');
 
 	const { user } = useContext(AuthContext)
-	const [search, setSearch] = useState("");
+	const [searchInput, setSearchInput] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
 	const [filters, setFilters] = useState([]);
 	const [showFilter, setShowFilter] = useState(false);
 	const [activeTab, setActiveTab] = useState('orders');
 	const [visibleCounts, setVisibleCounts] = useState({ orders: PAGE_SIZE, acquired: PAGE_SIZE, archived: PAGE_SIZE });
 	const [hasScrolledPastFirstBatch, setHasScrolledPastFirstBatch] = useState({ orders: false, acquired: false, archived: false });
 	const [scrollY, setScrollY] = useState(0);
+	const [showScrollTopFab, setShowScrollTopFab] = useState(false);
 	const scrollRef = useRef(null);
+	const scrollTopAnim = useRef(new Animated.Value(0)).current;
 	const router = useRouter();
+	const shouldShowScrollTop = hasScrolledPastFirstBatch[activeTab] && scrollY > 220;
 
-	const { data, archivedData, loading, error, refresh, archiveOrder } = useOrder({ includeArchivedOrders: true });
+	const { data, archivedData, loading, error, refresh, archiveOrder } = useOrder({
+		includeArchivedOrders: true,
+		searchQuery,
+	});
 
 	const onRefresh = async () => {
 		await refresh();
@@ -44,6 +51,10 @@ const Orders = () => {
 		} catch (archiveError) {
 			console.error('Archive order failed:', archiveError?.response?.data || archiveError?.message);
 		}
+	};
+
+	const applySearchQuery = () => {
+		setSearchQuery(searchInput.trim());
 	};
 
 	const handleTabChange = (tabName) => {
@@ -98,11 +109,28 @@ const Orders = () => {
 	};
 
 	useEffect(() => {
+		if (shouldShowScrollTop) {
+			setShowScrollTopFab(true);
+		}
+
+		Animated.timing(scrollTopAnim, {
+			toValue: shouldShowScrollTop ? 1 : 0,
+			duration: shouldShowScrollTop ? 220 : 180,
+			easing: shouldShowScrollTop ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+			useNativeDriver: true,
+		}).start(({ finished }) => {
+			if (finished && !shouldShowScrollTop) {
+				setShowScrollTopFab(false);
+			}
+		});
+	}, [shouldShowScrollTop, scrollTopAnim]);
+
+	useEffect(() => {
 		setVisibleCounts({ orders: PAGE_SIZE, acquired: PAGE_SIZE, archived: PAGE_SIZE });
 		setHasScrolledPastFirstBatch({ orders: false, acquired: false, archived: false });
 		setScrollY(0);
 		scrollRef.current?.scrollTo({ y: 0, animated: false });
-	}, [search, filters, data, archivedData]);
+	}, [searchQuery, filters, data, archivedData]);
 
 	if (!user) {
 		return (
@@ -140,32 +168,22 @@ const Orders = () => {
 	const allArchivedOrders = Array.isArray(archivedData) ? archivedData : [];
 
 	const filteredList = allOrders.filter(order => {
-		const query = search.toLowerCase().trim();
-		const orderId = order.id.toString();
-
-		const matchesSearch = search === "" ||
-			orderId.toLowerCase().includes(query)
-
 		const matchesStatus = filters.length === 0 || filters.includes(order.status);
 
 		const isActiveOrder = !COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase());
 
-		return matchesSearch && matchesStatus && isActiveOrder;
+		return matchesStatus && isActiveOrder;
 	});
 
 	const finishedOrders = allOrders.filter(order => COMPLETED_STATUSES.includes(String(order.status || '').toLowerCase()));
 
 	const archivedOrders = allArchivedOrders.filter(order => {
-		// defensive: skip invalid items
 		if (!order || typeof order !== 'object') return false;
-		const query = search.toLowerCase().trim();
-		const orderId = String(order.id || '').toLowerCase();
 		const status = String(order.status || '').toLowerCase();
 
-		const matchesSearch = search === "" || orderId.includes(query);
 		const isArchivableStatus = ARCHIVABLE_STATUSES.includes(status);
 
-		return matchesSearch && isArchivableStatus;
+		return isArchivableStatus;
 	});
 
 	const visibleOrders = filteredList.slice(0, visibleCounts.orders);
@@ -196,12 +214,10 @@ const Orders = () => {
 		</TouchableOpacity>
 	));
 
-	// Calculate stats based on actual data
 	const totalOrders = allOrders.length;
 	const readyOrders = allOrders.filter(o => o.status === 'ready').length;
 	const pendingOrders = allOrders.filter(o => o.status === 'pending').length;
 	const activeFilters = filters.map((filter, index) => <Text key={index} className='capitalize font-semibold text-lg text-gray-500'>{filter}</Text>);
-	const shouldShowScrollTop = hasScrolledPastFirstBatch[activeTab] && scrollY > 220;
 
 	return (
 		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="repeat">
@@ -241,13 +257,22 @@ const Orders = () => {
 				>
 					
 					<View className='flex px-6'>
-						<View className='flex-row items-center gap-2 bg-white shadow-md p-3 px-6 rounded-full border border-gray-200 mb-2'>
-							<Search opacity={.50} color="gray" />
+						<View className='w-full flex-row items-center gap-2 bg-white shadow-md py-3 pl-4 pr-2 rounded-full border border-gray-200 mb-3'>
+							<TouchableOpacity
+								onPress={applySearchQuery}
+								className='h-9 w-9 rounded-full items-center justify-center bg-[#f7f2eb]'
+							>
+								<Search opacity={0.7} color="#8B5A3C" size={18} />
+							</TouchableOpacity>
 							<TextInput
-								className='flex-1'
-								value={search}
-								onChangeText={(text) => setSearch(text)}
-								placeholder='Search orders...'
+								className='flex-1 px-1 text-[15px]'
+								value={searchInput}
+								onChangeText={setSearchInput}
+								onSubmitEditing={applySearchQuery}
+								returnKeyType='search'
+								placeholder='Search order ID, occasion, or flavor'
+								placeholderTextColor="#9ca3af"
+								autoCapitalize='none'
 							/>
 						</View>
 						<View className='mb-4 flex-row rounded-full border border-gray-200 bg-white p-1'>
@@ -336,13 +361,37 @@ const Orders = () => {
 						)}
 					</View>
 				</GlobalRefreshScrollView>
-				{shouldShowScrollTop && (
-					<TouchableOpacity
-						onPress={handleScrollToTop}
-						className='absolute right-5 bottom-24 h-12 w-12 rounded-full items-center justify-center bg-primary shadow'
+				{showScrollTopFab && (
+					<Animated.View
+						pointerEvents={shouldShowScrollTop ? 'auto' : 'none'}
+						style={{
+							position: 'absolute',
+							right: 18,
+							bottom: 108,
+							opacity: scrollTopAnim,
+							transform: [
+								{
+									translateY: scrollTopAnim.interpolate({
+										inputRange: [0, 1],
+										outputRange: [22, 0],
+									}),
+								},
+								{
+									scale: scrollTopAnim.interpolate({
+										inputRange: [0, 1],
+										outputRange: [0.86, 1],
+									}),
+								},
+							],
+						}}
 					>
-						<ChevronUp color='white' size={20} />
-					</TouchableOpacity>
+						<TouchableOpacity
+							onPress={handleScrollToTop}
+							className='h-14 w-14 rounded-full items-center justify-center bg-primary shadow-lg'
+						>
+							<ChevronUp color='white' size={26} />
+						</TouchableOpacity>
+					</Animated.View>
 				)}
 				<OrderFilter activeFilters={filters} show={showFilter} onChoose={handleFilterChoose} onClose={() => setShowFilter(false)} />
 			</SafeAreaView>

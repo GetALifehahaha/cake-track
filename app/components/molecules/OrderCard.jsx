@@ -76,7 +76,9 @@ const OrderCard = ({ order, onArchive, onHide }) => {
                     </View>
                     <View className='p-2 bg-gray-100 flex-row gap-2 items-center'>
                         <Cake opacity={.8} />
-                        <Text className='font-medium'>{capitalize(order.cake_orders.base_flavor)}</Text>
+                        <Text className='font-medium flex-1' numberOfLines={1} ellipsizeMode='tail'>
+                            {capitalize(order.cake_orders.base_flavor)}
+                        </Text>
                     </View>
                 </View>
             </View>

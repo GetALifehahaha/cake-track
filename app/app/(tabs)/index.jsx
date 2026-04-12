@@ -287,14 +287,7 @@ export default function Index() {
                                         <Text className='font-extrabold text-lg text-[#2F2F2F]'>All Cakes</Text>
                                         <Text className='text-xs text-gray-500 mt-1'>Explore every available pre-made cake.</Text>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={() => router.push('/cakeOrders')}
-                                        className='px-3 py-2 rounded-full bg-[#8B5A3C]'
-                                    >
-                                        <Text className='text-white text-xs font-bold'>View Menu</Text>
-                                    </TouchableOpacity>
                                 </View>
-
                                 {loadingAllCakes ? (
                                     <View className='w-full py-8 items-center justify-center'>
                                         <ActivityIndicator size='small' color='#8B5A3C' />
@@ -339,6 +332,12 @@ export default function Index() {
                                 ) : (
                                     <Text className='text-center text-gray-500 py-2'>No cakes available right now.</Text>
                                 )}
+                                <TouchableOpacity
+                                        onPress={() => router.push('/cakeOrders')}
+                                        className='px-3 py-4 rounded-full bg-[#8B5A3C]'
+                                    >
+                                        <Text className='text-white text-md text-center font-bold'>View Menu</Text>
+                                    </TouchableOpacity>
                             </View>
 
                             <View className='mb-10 mt-4'>

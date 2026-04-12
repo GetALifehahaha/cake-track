@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
 from django.db.models import F
-from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime)
+from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime, OrderPremadeRecipe)
 from payment.models import Payment
 from inventory.serializers import RecipeSerializer
 from inventory.models import Recipe, RecipeIngredient
@@ -24,12 +24,26 @@ class OrderImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderImage
         fields = ['id', 'image_url']
+
+
+class OrderPremadeRecipeSerializer(serializers.ModelSerializer):
+    recipe_details = RecipeSerializer(source='recipe', read_only=True)
+    cake_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderPremadeRecipe
+        fields = ['id', 'cake', 'cake_name', 'quantity', 'recipe', 'recipe_details']
+        read_only_fields = fields
+
+    def get_cake_name(self, obj):
+        return obj.cake.name if obj.cake else ''
         
         
 class OrderSerializer(serializers.ModelSerializer):
     cake_orders = CakeOrderSerializer()
     cupcake_orders = CupcakeOrderSerializer(required=False)
     recipe_details = RecipeSerializer(source='recipe', read_only=True)
+    premade_recipe_details = OrderPremadeRecipeSerializer(source='premade_recipes', many=True, read_only=True)
     
     order_images = OrderImageSerializer(many=True, read_only=True)
     
@@ -53,7 +67,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'reference_number',
             'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number',
             'hidden_by_customer', 'hidden_by_customer_at',
-            'recipe', 'recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
+            'recipe', 'recipe_details', 'premade_recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
         read_only_fields = [
             'id',
@@ -67,8 +81,8 @@ class OrderSerializer(serializers.ModelSerializer):
             'hidden_by_customer_at',
         ]
 
-    def _create_premade_recipe(self, order, premade_items):
-        ingredient_totals = {}
+    def _create_premade_recipes(self, order, premade_items):
+        generated_links = []
 
         for item in premade_items:
             cake_id = item.get('cake_id')
@@ -95,39 +109,51 @@ class OrderSerializer(serializers.ModelSerializer):
             except Cake.DoesNotExist as error:
                 raise serializers.ValidationError({'premade_items': f'Cake ID {cake_id} does not exist.'}) from error
 
+            # If a premade cake has no attached recipe, continue with order creation.
             if cake.recipe is None:
                 continue
 
-            if not hasattr(cake.recipe, 'recipe_ingredients'):
-                raise serializers.ValidationError({'premade_items': f'Recipe for Cake ID {cake_id} is invalid or incomplete.'})
-
             try:
                 recipe_ingredients_qs = cake.recipe.recipe_ingredients.select_related('ingredient').all()
-            except Exception as error:
-                raise serializers.ValidationError({'premade_items': f'Failed to read recipe ingredients for Cake ID {cake_id}.'}) from error
+            except Exception:
+                continue
 
-            for recipe_item in recipe_ingredients_qs:
-                ingredient_id = recipe_item.ingredient_id
-                amount_needed = Decimal(str(recipe_item.amount_needed)) * Decimal(str(quantity))
-                ingredient_totals[ingredient_id] = ingredient_totals.get(ingredient_id, Decimal('0')) + amount_needed
+            if not recipe_ingredients_qs.exists():
+                continue
 
-        if not ingredient_totals:
-            return None
-
-        recipe = Recipe.objects.create(
-            name=f'Temporary recipe - {order.id}',
-            instructions=f'Auto-generated from premade cakes for order {order.id}',
-            is_temporary=True,
-        )
-
-        for ingredient_id, amount_needed in ingredient_totals.items():
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient_id=ingredient_id,
-                amount_needed=amount_needed,
+            temporary_recipe = Recipe.objects.create(
+                name=f'Temporary recipe - {order.id} - {cake.name}',
+                instructions=f'Auto-generated from premade cake {cake.name} for order {order.id} (qty: {quantity}).',
+                is_temporary=True,
             )
 
-        return recipe
+            has_ingredients = False
+            for recipe_item in recipe_ingredients_qs:
+                amount_needed = Decimal(str(recipe_item.amount_needed)) * Decimal(str(quantity))
+                if amount_needed <= 0:
+                    continue
+
+                RecipeIngredient.objects.create(
+                    recipe=temporary_recipe,
+                    ingredient_id=recipe_item.ingredient_id,
+                    amount_needed=amount_needed,
+                )
+                has_ingredients = True
+
+            if not has_ingredients:
+                temporary_recipe.delete()
+                continue
+
+            generated_links.append(
+                OrderPremadeRecipe.objects.create(
+                    order=order,
+                    cake=cake,
+                    recipe=temporary_recipe,
+                    quantity=quantity,
+                )
+            )
+
+        return generated_links
 
     def _increment_cake_order_counts(self, premade_items):
         ordered_totals = {}
@@ -204,9 +230,9 @@ class OrderSerializer(serializers.ModelSerializer):
                 OrderImage.objects.create(order=order, image_url=url)
 
             if recipe is None and premade_items:
-                generated_recipe = self._create_premade_recipe(order, premade_items)
-                if generated_recipe is not None:
-                    order.recipe = generated_recipe
+                generated_recipe_links = self._create_premade_recipes(order, premade_items)
+                if len(generated_recipe_links) == 1:
+                    order.recipe = generated_recipe_links[0].recipe
                     order.save(update_fields=['recipe'])
 
             if premade_items:
