@@ -2,10 +2,10 @@ import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvo
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import React, { useState, useContext, useEffect } from 'react'
-import { Lock, Mail, Eye, EyeClosed, User2Icon, Loader2 } from 'lucide-react-native'
+import { Lock, Mail, Eye, EyeClosed, User2Icon, Loader2, Phone } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
-import { isValidEmail, hasMinCredentialLength, isPasswordSimilarToUsername } from '@/utils/validators';
+import { isValidEmail, hasMinCredentialLength, isPasswordSimilarToUsername, isValidPHPhoneNumber, formatPhoneNumber, normalizePhoneNumber } from '@/utils/validators';
 // 1. Import Google Sign-In
 // import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
@@ -20,7 +20,9 @@ const LoginSignup = ({ method }) => {
 
 	// Signup specific
 	const [firstName, setFirstName] = useState("");
+	const [middleName, setMiddleName] = useState("");
 	const [lastName, setLastName] = useState("");
+	const [phoneNumber, setPhoneNumber] = useState("");
 	const [username, setUsername] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -47,6 +49,10 @@ const LoginSignup = ({ method }) => {
 		}
 
 		return true;
+	};
+
+	const handlePhoneNumberChange = (text) => {
+		setPhoneNumber(formatPhoneNumber(text));
 	};
 
 	const submitForm = async () => {
@@ -76,13 +82,18 @@ const LoginSignup = ({ method }) => {
 				}
 
 			} else if (method === "signup") {
-				if (!firstName || !lastName || !emailAddress || !username || !password || !confirmPassword) {
+				if (!firstName || !middleName || !lastName || !emailAddress || !phoneNumber || !username || !password || !confirmPassword) {
 					showToast("Please fill in all fields", "error");
 					return;
 				}
 
 				if (!isValidEmail(emailAddress)) {
 					showToast("Please enter a valid email address", "error");
+					return;
+				}
+
+				if (!isValidPHPhoneNumber(phoneNumber)) {
+					showToast("Please enter a valid phone number", "error");
 					return;
 				}
 
@@ -95,7 +106,15 @@ const LoginSignup = ({ method }) => {
 					return;
 				}
 
-				const res = await register(username, password, firstName, lastName, emailAddress);
+				const res = await register(
+					username.trim(),
+					password,
+					firstName.trim(),
+					middleName.trim(),
+					lastName.trim(),
+					emailAddress.trim(),
+					normalizePhoneNumber(phoneNumber),
+				);
 
 				if (res.success) {
 					showToast("Signed up successfully! Login with your credentials", "success");
@@ -271,12 +290,32 @@ const LoginSignup = ({ method }) => {
 								</View>
 								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your first name' placeholderTextColor="#9ca3af" value={firstName} onChangeText={setFirstName} />
 
+								<View className='flex-row gap-2 items-center'>
+									<Mail style={{ color: "#BE9B7B" }} size={16} />
+									<Text className=''>Middle Name</Text>
+								</View>
+								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your middle name' placeholderTextColor="#9ca3af" value={middleName} onChangeText={setMiddleName} />
+
 								{/* ... rest of signup form inputs ... */}
 								<View className='flex-row gap-2 items-center'>
 									<Mail style={{ color: "#BE9B7B" }} size={16} />
 									<Text className=''>Last Name</Text>
 								</View>
 								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your last name' placeholderTextColor="#9ca3af" value={lastName} onChangeText={setLastName} />
+
+								<View className='flex-row gap-2 items-center'>
+									<Phone style={{ color: "#BE9B7B" }} size={16} />
+									<Text className=''>Phone Number</Text>
+								</View>
+								<TextInput
+									className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black'
+									placeholder='0912 345 6789'
+									placeholderTextColor="#9ca3af"
+									value={phoneNumber}
+									onChangeText={handlePhoneNumberChange}
+									keyboardType='number-pad'
+									maxLength={13}
+								/>
 
 								<View className='flex-row gap-2 items-center'>
 									<Mail style={{ color: "#BE9B7B" }} size={16} />

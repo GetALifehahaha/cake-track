@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native'
 import { Tabs } from 'expo-router'
 import React from 'react'
-import { User, Home, Cake, ShoppingBag, Info } from 'lucide-react-native'
+import { Home, Cake, ShoppingBag, Settings } from 'lucide-react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const _layout = () => {
@@ -10,8 +10,7 @@ const _layout = () => {
 		{ name: 'index', title: 'Home', icon: Home },
 		{ name: 'orders', title: 'Orders', icon: ShoppingBag },
 		{ name: 'cakes', title: 'Cakes', icon: Cake },
-		{ name: 'info', title: 'Info', icon: Info },
-		{ name: 'account', title: 'Account', icon: User },
+		{ name: 'settings', title: 'Settings', icon: Settings },
 	]
 
 	return (

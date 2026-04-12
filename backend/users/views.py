@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.decorators import action
 
-from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer, AddressSerializer, CustomTokenObtainPairSerializer
+from .serializers import UserSerializer, UserProfileSerializer, CashierCreateSerializer, ChangePasswordSerializer, OTPSerializer, UserUpdateSerializer, AddressSerializer, CustomTokenObtainPairSerializer, CustomerRegistrationSerializer
 from .models import OTP, PasswordResetToken, Address, UserProfile
 
 from .permissions import IsAdmin, IsCashier
@@ -47,14 +47,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = CustomerRegistrationSerializer
     permission_classes = [AllowAny]
 
     def get_serializer_class(self):
 
         if self.request.user.is_staff:
             return CashierCreateSerializer
-        return UserSerializer
+        return CustomerRegistrationSerializer
     
     
 class UserViewSet(viewsets.ModelViewSet):

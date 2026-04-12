@@ -187,10 +187,16 @@ export const AuthProvider = ({ children }) => {
         router.replace('/(auth)/login');
     };
 
-    const register = async (username, password, first_name, last_name, email) => {
+    const register = async (username, password, first_name, middle_name, last_name, email, phone_number) => {
         try {
             await api.post('/users/user/register/', {
-                username, password, first_name, last_name, email
+                username,
+                password,
+                first_name,
+                middle_name,
+                last_name,
+                email,
+                phone_number,
             });
             return { success: true };
         } catch (err) {

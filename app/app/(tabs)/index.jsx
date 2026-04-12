@@ -308,10 +308,6 @@ export default function Index() {
                                                 activeOpacity={0.9}
                                                 onPress={() => router.push('/cakeOrders')}
                                             >
-                                                <View className='px-3 pt-3 pb-2 bg-[#FFF7EA]'>
-                                                    <Text className='text-[10px] font-bold uppercase text-[#8B5A3C]'>Available Today</Text>
-                                                </View>
-
                                                 <View className='h-28 items-center justify-center px-3 bg-white'>
                                                     {cake.image ? (
                                                         <Image
@@ -328,9 +324,11 @@ export default function Index() {
                                                     <Text className='font-bold text-sm text-[#3E2D1E]' numberOfLines={1}>
                                                         {cake.name}
                                                     </Text>
-                                                    <Text className='text-xs text-gray-500 mt-1' numberOfLines={1}>
-                                                        {cake.base_flavor ? `Flavor: ${cake.base_flavor}` : 'Freshly baked'}
-                                                    </Text>
+                                                    {cake.base_flavor && (
+                                                        <Text className='text-xs text-gray-500 mt-1' numberOfLines={1}>
+                                                            {`Flavor: ${cake.base_flavor}`}
+                                                        </Text>
+                                                    )}
                                                     <Text className='mt-2 text-base font-extrabold text-[#8B5A3C]'>
                                                         {formatCakePrice(cake.price)}
                                                     </Text>
