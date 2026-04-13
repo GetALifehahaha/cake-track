@@ -82,7 +82,7 @@ const LoginSignup = ({ method }) => {
 				}
 
 			} else if (method === "signup") {
-				if (!firstName || !middleName || !lastName || !emailAddress || !phoneNumber || !username || !password || !confirmPassword) {
+				if (!firstName || !lastName || !emailAddress || !username || !password || !confirmPassword) {
 					showToast("Please fill in all fields", "error");
 					return;
 				}
@@ -92,7 +92,7 @@ const LoginSignup = ({ method }) => {
 					return;
 				}
 
-				if (!isValidPHPhoneNumber(phoneNumber)) {
+				if (phoneNumber.trim() && !isValidPHPhoneNumber(phoneNumber)) {
 					showToast("Please enter a valid phone number", "error");
 					return;
 				}
@@ -292,7 +292,7 @@ const LoginSignup = ({ method }) => {
 
 								<View className='flex-row gap-2 items-center'>
 									<Mail style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Middle Name</Text>
+									<Text className=''>Middle Name (Optional)</Text>
 								</View>
 								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your middle name' placeholderTextColor="#9ca3af" value={middleName} onChangeText={setMiddleName} />
 
@@ -305,7 +305,7 @@ const LoginSignup = ({ method }) => {
 
 								<View className='flex-row gap-2 items-center'>
 									<Phone style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Phone Number</Text>
+									<Text className=''>Phone Number (Optional)</Text>
 								</View>
 								<TextInput
 									className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black'

@@ -1,12 +1,11 @@
 import { View, Text, Modal, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 
-const ConfirmModal = ({ children, details, prevent, preventDetails, onConfirm, }) => {
-    // 1. Unified state name (used 'visible' for clarity)
+const ConfirmModal = ({ children, details, onConfirm }) => {
     const [visible, setVisible] = useState(false);
 
     const handleConfirm = () => {
-        onConfirm();      
+        onConfirm?.();
         setVisible(false); 
     }
 
@@ -17,6 +16,7 @@ const ConfirmModal = ({ children, details, prevent, preventDetails, onConfirm, }
             </TouchableOpacity>
 
             <Modal
+                visible={visible}
                 transparent
                 animationType="fade"
                 onRequestClose={() => setVisible(false)} 

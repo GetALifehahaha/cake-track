@@ -97,7 +97,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'password', 'is_active']
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'middle_name': {
+                'required': False,
+                'allow_null': True,
+                'blank': True
+            },
+            'phone_number': {
+                'required': False,
+                'allow_null': True,
+                'blank': True
+            },
         }
 
     def validate(self, attrs):
@@ -107,8 +117,10 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         request = self.context.get('request')
+
+        print(request.user)
         
-        if request and request.user and request.user.is_staff:
+        if request.user.is_staff:
             group_name = "cashier"
         else:
             group_name = "customer"
@@ -138,8 +150,8 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
             message='A user with this email already exists.'
         )]
     )
-    middle_name = serializers.CharField(required=True, allow_blank=False, write_only=True)
-    phone_number = serializers.CharField(required=True, allow_blank=False, write_only=True)
+    middle_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    phone_number = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = User
@@ -149,17 +161,18 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate_phone_number(self, value):
-        return normalize_ph_phone_number(value)
+        cleaned = str(value or '').strip()
+        if cleaned == '':
+            return ''
+        return normalize_ph_phone_number(cleaned)
 
     def validate(self, attrs):
         errors = {}
 
         required_fields = {
             'first_name': 'First name',
-            'middle_name': 'Middle name',
             'last_name': 'Last name',
             'email': 'Email',
-            'phone_number': 'Phone number',
         }
 
         for field_name, label in required_fields.items():
@@ -174,7 +187,7 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         middle_name = str(validated_data.pop('middle_name', '')).strip()
-        phone_number = validated_data.pop('phone_number')
+        phone_number = str(validated_data.pop('phone_number', '')).strip()
 
         validated_data['first_name'] = str(validated_data.get('first_name', '')).strip()
         validated_data['last_name'] = str(validated_data.get('last_name', '')).strip()

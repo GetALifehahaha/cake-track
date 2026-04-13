@@ -11,7 +11,6 @@ const api = axios.create({
 const PUBLIC_AUTH_ENDPOINTS = [
     'users/token/',
     'users/token/refresh/',
-    'users/user/register/',
     'users/google-auth/',
     'users/user/reactivate/',
     'users/user/activate/',

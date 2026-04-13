@@ -161,7 +161,7 @@ export default function Index() {
                                     <Text className='text-[#474747] text-3xl font-bold'>Michelle's Cake & Cafe</Text>
                                     <View className='flex-row'>
                                         <Text className='font-bold text-xl text-[#6B5235]'>Cake</Text>
-                                        <Text className='font-bold text-xl text-[#BE9B7B]'>Track</Text>
+                                        <Text className='font-bold text-xl text-[#BE9B7B]'>Track er</Text>
                                     </View>
                                 </View>
                             </View>
