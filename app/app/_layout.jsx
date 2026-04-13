@@ -13,6 +13,7 @@ import CakeTraceLoader from '@/components/atoms/CakeTraceLoader';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 
 
 // Add this near your 
@@ -71,7 +72,7 @@ const InitialLayout = () => {
   }, [updatingApp]);
 
   useEffect(() => {
-    console.log(process.env.EXPO_PUBLIC_API_URL);
+    console.log(Constants.expoConfig?.extra?.apiUrl);
 
     if (loading) return;
 

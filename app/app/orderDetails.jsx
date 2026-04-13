@@ -10,6 +10,7 @@ import { useToast } from '@/context/ToastContext';
 import api from '@/api/api';
 import ActionConfirmModal from '@/components/organisms/ActionConfirmModal';
 import { useEffect, useState } from 'react';
+import Constants from 'expo-constants';
 
 const getReferenceDigits = (value = '') => value.replace(/\D/g, '').slice(0, 15);
 
@@ -82,8 +83,8 @@ const extractDisplayImages = (order = {}) => {
 };
 
 const OrderDetails = () => {
-    const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-    const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const CLOUDINARY_UPLOAD_PRESET = (Constants.expoConfig?.extra?.cloudinaryUploadPreset || '').trim();
+    const CLOUDINARY_CLOUD_NAME = (Constants.expoConfig?.extra?.cloudinaryCloudName || '').trim();
 
     const router = useRouter();
     const params = useLocalSearchParams();

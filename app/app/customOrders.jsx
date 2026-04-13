@@ -28,13 +28,14 @@ import useOrder from '@/hooks/useOrder';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
 import { formatPhoneNumber, isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
+import Constants from 'expo-constants';
 
 // Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CustomOrders = () => {
-    const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-    const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const CLOUDINARY_UPLOAD_PRESET = (Constants.expoConfig?.extra?.cloudinaryUploadPreset || '').trim();
+    const CLOUDINARY_CLOUD_NAME = (Constants.expoConfig?.extra?.cloudinaryCloudName || '').trim();
 
     const { user, loading: userLoading } = useContext(AuthContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
