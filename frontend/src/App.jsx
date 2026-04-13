@@ -30,6 +30,7 @@ import {
 	LandingPage
 } from './pages'
 import { ProtectedRoute } from './components/organisms'
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => {
 
 	return (
 		<QueryClientProvider client={queryClient}>
+			<SpeedInsights />
 			<Routes>
 				<Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
 					<Route path='/' element={<Home />} />
