@@ -67,9 +67,11 @@ export default function useTransaction() {
                 ["products"],
                 ["products_all"],
                 ["ingredients"],
+                ["ingredients-paginated"],
                 ["ingredient-fetch-all"],
                 ["ingredient-dashboard"],
                 ["inventory-transactions"],
+                ["recipes"],
             ],
         });
 

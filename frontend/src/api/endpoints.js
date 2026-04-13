@@ -5,6 +5,8 @@ const API_ENDPOINTS = {
     USERS: "/users/",
     USERS_REGISTER: "/users/user/register/",
     USERS_ACTIVATE: "/users/user/activate/",
+    USERS_ACTIVATE_CASHIER: "/users/{id}/activate-account/",
+    USERS_DEACTIVATE_CASHIER: "/users/{id}/deactivate-account/",
     CATEGORIES: "/pos/categories/",
     DISCOUNTS: "/pos/discounts/",
     DISCOUNT_USAGE: "/pos/discount-usage/",

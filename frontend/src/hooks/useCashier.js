@@ -8,7 +8,7 @@ export default function useCashier() {
     const [searchParams] = useSearchParams();
     const apiParams = useMemo(() => Object.fromEntries(searchParams.entries()), [searchParams]);
     const cashiersQuery = useQueryFetch("cashiers", API_ENDPOINTS.USERS, apiParams);
-    const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate("cashiers");
+    const { create, update, remove, request, loading: mutateLoading, error: mutateError } = useMutate("cashiers");
 
     return {
         data: cashiersQuery.data || [],
@@ -22,6 +22,12 @@ export default function useCashier() {
         patchCashier: (id, params) => update(`${API_ENDPOINTS.USERS}${id}/`, params),
 
         deleteCashier: (id) => remove(`${API_ENDPOINTS.USERS}${id}/`),
+
+        activateCashierAccount: (id) =>
+            request("post", API_ENDPOINTS.USERS_ACTIVATE_CASHIER.replace("{id}", id)),
+
+        deactivateCashierAccount: (id) =>
+            request("post", API_ENDPOINTS.USERS_DEACTIVATE_CASHIER.replace("{id}", id)),
 
         activateAccount: (data) => create(API_ENDPOINTS.USERS_ACTIVATE, data),
 

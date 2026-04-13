@@ -26,7 +26,15 @@ const Cashier = () => {
 
     const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { data, loading, refresh, postCashier, patchCashier } = useCashier();
+    const {
+        data,
+        loading,
+        refresh,
+        postCashier,
+        patchCashier,
+        activateCashierAccount,
+        deactivateCashierAccount,
+    } = useCashier();
 
     const [showAddCashierModal, setShowAddCashierModal] = useState(false);
     const [showEditCashierModal, setShowEditCashierModal] = useState(false);
@@ -99,12 +107,27 @@ const Cashier = () => {
 
     const editCashier = async (value) => {
         try {
-            await patchCashier(prepCashier.id, value);
-            addToast('Cashier updated successfully', 'success');
+            const isStatusToggleOnly =
+                Object.keys(value || {}).length === 1 &&
+                Object.prototype.hasOwnProperty.call(value, 'is_active');
+
+            if (isStatusToggleOnly) {
+                if (value.is_active) {
+                    await activateCashierAccount(prepCashier.id);
+                    addToast('Cashier activated successfully', 'success');
+                } else {
+                    await deactivateCashierAccount(prepCashier.id);
+                    addToast('Cashier deactivated successfully', 'success');
+                }
+            } else {
+                await patchCashier(prepCashier.id, value);
+                addToast('Cashier updated successfully', 'success');
+            }
+
             refresh();
         } catch (err) {
-            addToast('Failed to update cashier', 'error');
-            console.log(err);
+            const detail = err?.response?.data?.detail;
+            addToast(detail || 'Failed to update cashier', 'error');
         } finally {
             handlePrepEditCashier(null);
             handleShowEditCashierModal();

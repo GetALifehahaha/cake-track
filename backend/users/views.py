@@ -86,6 +86,39 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], url_path='activate-account')
+    def activate_account(self, request, pk=None):
+        cashier = self.get_object()
+        profile, _ = UserProfile.objects.get_or_create(user=cashier)
+
+        cashier.is_active = True
+        cashier.save(update_fields=['is_active'])
+
+        if profile.deactivated_at is not None:
+            profile.deactivated_at = None
+            profile.save(update_fields=['deactivated_at'])
+
+        return Response(
+            {'detail': 'Cashier account activated successfully.'},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'], url_path='deactivate-account')
+    def deactivate_account(self, request, pk=None):
+        cashier = self.get_object()
+        profile, _ = UserProfile.objects.get_or_create(user=cashier)
+
+        cashier.is_active = False
+        cashier.save(update_fields=['is_active'])
+
+        profile.deactivated_at = timezone.now()
+        profile.save(update_fields=['deactivated_at'])
+
+        return Response(
+            {'detail': 'Cashier account deactivated successfully.'},
+            status=status.HTTP_200_OK,
+        )
+
     
 class UserProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
