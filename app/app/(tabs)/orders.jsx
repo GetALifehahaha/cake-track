@@ -1,4 +1,4 @@
-import { View, Text, Image, TextInput, ActivityIndicator, TouchableOpacity, ImageBackground, Animated, Easing } from 'react-native'
+import { View, Text, Image, TextInput, TouchableOpacity, ImageBackground, Animated, Easing } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Search, SlidersHorizontal, ChevronUp } from 'lucide-react-native'
@@ -8,6 +8,7 @@ import { AuthContext } from '@/context/AuthContext'
 import OrderFilter from '@/components/molecules/OrderFilter'
 import { useRouter } from 'expo-router'
 import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView'
+import CakeTraceLoader from '@/components/atoms/CakeTraceLoader'
 
 const COMPLETED_STATUSES = ['completed'];
 const ARCHIVABLE_STATUSES = ['completed', 'rejected', 'refunded', 'cancelled'];
@@ -26,6 +27,7 @@ const Orders = () => {
 	const [hasScrolledPastFirstBatch, setHasScrolledPastFirstBatch] = useState({ orders: false, acquired: false, archived: false });
 	const [scrollY, setScrollY] = useState(0);
 	const [showScrollTopFab, setShowScrollTopFab] = useState(false);
+	const [hasFinishedInitialLoad, setHasFinishedInitialLoad] = useState(false);
 	const scrollRef = useRef(null);
 	const scrollTopAnim = useRef(new Animated.Value(0)).current;
 	const router = useRouter();
@@ -126,6 +128,12 @@ const Orders = () => {
 	}, [shouldShowScrollTop, scrollTopAnim]);
 
 	useEffect(() => {
+		if (!loading) {
+			setHasFinishedInitialLoad(true);
+		}
+	}, [loading]);
+
+	useEffect(() => {
 		setVisibleCounts({ orders: PAGE_SIZE, acquired: PAGE_SIZE, archived: PAGE_SIZE });
 		setHasScrolledPastFirstBatch({ orders: false, acquired: false, archived: false });
 		setScrollY(0);
@@ -148,10 +156,12 @@ const Orders = () => {
 		)
 	}
 
-	if (loading) return (
+	const showInitialLoader = !hasFinishedInitialLoad && loading;
+
+	if (showInitialLoader) return (
 		<ImageBackground source={ordersTexture} style={{ flex: 1 }} resizeMode="cover">
-			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.85)' }}>
-				<ActivityIndicator size="large" color="#8B5A3C" />
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.48)' }}>
+				<CakeTraceLoader size={62} trackColor='transparent' />
 			</View>
 		</ImageBackground>
 	)
@@ -232,19 +242,32 @@ const Orders = () => {
 					</View>
 
 					{/* Dynamic Stats Board */}
-					<View className='grid grid-flow-row grid-rows-3 gap-2 rounded-2xl border-2 border-secondary-light bg-white h-16 items-center'>
-						<View className='px-3 border-r border-r-secondary-light items-center'>
-							<Text className='font-semibold text-xs'>Total</Text>
-							<Text className='text-lg text-gray-700'>{totalOrders}</Text>
+					<View className="w-60 max-w-sm flex-row items-center justify-between rounded-3xl border border-slate-100 bg-white p-4 shadow-xl">
+  
+					{/* Total Orders - Primary focus */}
+					<View className="flex-1 items-center border-r border-slate-100">
+						<Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</Text>
+						<Text className="text-xl font-bold text-slate-900">{totalOrders}</Text>
+					</View>
+
+					{/* Ready Orders - Success state */}
+					<View className="flex-1 items-center border-r border-slate-100">
+						<Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ready</Text>
+						<View className="flex-row items-center">
+						<View className="mr-1.5 h-2 w-2 rounded-full bg-emerald-500" />
+						<Text className="text-xl font-bold text-slate-900">{readyOrders}</Text>
 						</View>
-						<View className='px-3 border-r border-r-secondary-light items-center'>
-							<Text className='font-semibold text-xs'>Ready</Text>
-							<Text className='text-lg text-gray-700'>{readyOrders}</Text>
+					</View>
+
+					{/* Pending Orders - Warning state */}
+					<View className="flex-1 items-center">
+						<Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending</Text>
+						<View className="flex-row items-center">
+						<View className="mr-1.5 h-2 w-2 rounded-full bg-amber-500" />
+						<Text className="text-xl font-bold text-slate-900">{pendingOrders}</Text>
 						</View>
-						<View className='px-3 items-center'>
-							<Text className='font-semibold text-xs'>Pending</Text>
-							<Text className='text-lg text-gray-700'>{pendingOrders}</Text>
-						</View>
+					</View>
+
 					</View>
 				</View>
 

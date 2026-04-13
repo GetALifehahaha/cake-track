@@ -97,8 +97,7 @@ const Checkout = () => {
     }
 
     const handleContactNumber = (text) => {
-        const formatted = formatPhoneNumber(text);
-        setPhoneNumber(formatted)
+        setPhoneNumber(formatPhoneNumber(text))
     }
 
     // const handlePayViaGCash = async (orderId) => {

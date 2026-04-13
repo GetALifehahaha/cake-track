@@ -28,11 +28,8 @@ const CakeOrderCard = ({
 
     return (
         <View
-            className={`flex-row px-6 py-4 w-full items-center gap-4 ${
-                isBestSeller
-                    ? 'bg-[#FFF7EA] border-2 border-[#E6BE86] rounded-2xl mb-3 shadow-sm'
-                    : 'bg-white border-b border-b-gray-300'
-            }`}
+            className={`flex-row px-6 py-4 w-full items-center gap-4 bg-white border-b border-b-slate-200'
+            `}
         >
             <Image
                 style={{ width: 100, height: 100 }}

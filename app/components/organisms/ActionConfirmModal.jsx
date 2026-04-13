@@ -11,6 +11,7 @@ const ActionConfirmModal = ({
     onCancel,
     loading = false,
     destructive = false,
+    loader = null,
 }) => {
     const handleCancel = () => {
         if (loading) return;
@@ -49,7 +50,7 @@ const ActionConfirmModal = ({
                             className={`flex-1 items-center justify-center rounded-xl py-3 px-4 ${destructive ? 'bg-red-500' : 'bg-[#8B5A3C]'} ${loading ? 'opacity-60' : ''}`}
                         >
                             {loading ? (
-                                <ActivityIndicator size='small' color='white' />
+                                loader || <ActivityIndicator size='small' color='white' />
                             ) : (
                                 <Text className='text-white font-semibold text-base'>{confirmText}</Text>
                             )}

@@ -1,12 +1,13 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Modal } from 'react-native'
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import React, { useState, useContext, useEffect } from 'react'
-import { Lock, Mail, Eye, EyeClosed, User2Icon, Loader2, Phone } from 'lucide-react-native'
+import { Lock, Mail, Eye, EyeClosed, User2Icon, Phone } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import ActionConfirmModal from '@/components/organisms/ActionConfirmModal'
+import CakeTraceLoader from '@/components/atoms/CakeTraceLoader'
 import {
 	isValidEmail,
 	hasMinCredentialLength,
@@ -207,7 +208,7 @@ const LoginSignup = ({ method }) => {
 
 	if (authLoading) return (
 		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-			<ActivityIndicator size="large" color="#8B5A3C" />
+			<CakeTraceLoader size={94} label='Preparing something sweet...' />
 		</View>
 	)
 
@@ -309,8 +310,13 @@ const LoginSignup = ({ method }) => {
 										</View>
 
 										{loading ? (
-											<View className='p-4 rounded-full bg-secondary-strong flex-row justify-center items-center opacity-60'>
-												<Loader2 size={16} color='#fff' className='animate-spin' />
+											<View className='p-4 rounded-full bg-secondary-strong flex-row justify-center items-center opacity-60 mt-8'>
+												<CakeTraceLoader
+													size={20}
+													color='#FFFFFF'
+													trackColor='rgba(255,255,255,0.35)'
+													strokeWidth={2}
+												/>
 												<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
 											</View>
 										) : (
@@ -398,7 +404,12 @@ const LoginSignup = ({ method }) => {
 
 										{loading ? (
 											<View className='mt-1 p-4 rounded-full bg-secondary-strong flex-row justify-center items-center opacity-60'>
-												<Loader2 size={16} color='#fff' className='animate-spin' />
+												<CakeTraceLoader
+													size={20}
+													color='#FFFFFF'
+													trackColor='rgba(255,255,255,0.35)'
+													strokeWidth={2}
+												/>
 												<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
 											</View>
 										) : (
@@ -453,7 +464,12 @@ const LoginSignup = ({ method }) => {
 									disabled={reactivating}
 								>
 									{reactivating ? (
-										<ActivityIndicator size="small" color="white" />
+										<CakeTraceLoader
+											size={20}
+											color='#FFFFFF'
+											trackColor='rgba(255,255,255,0.35)'
+											strokeWidth={2}
+										/>
 									) : (
 										<Text className='font-semibold text-white'>Activate</Text>
 									)}

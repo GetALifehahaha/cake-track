@@ -18,7 +18,7 @@ const GlobalRefreshScrollView = forwardRef(({ children, onRefresh, refreshContro
                     refreshing={refreshing}
                     onRefresh={handleRefresh}
                     colors={['#8B5A3C']}
-                    tintColor="#8B5A3C"
+                    tintColor='#8B5A3C'
                 />
             )}
         >

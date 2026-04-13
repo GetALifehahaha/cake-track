@@ -3,6 +3,7 @@ import React, { useState, useContext, useEffect } from 'react'
 import { AuthContext } from '@/context/AuthContext'
 import { OpeningContext } from '@/context/OpeningContext'
 import GlobalRefreshScrollView from '@/components/organisms/GlobalRefreshScrollView';
+import CakeTraceLoader from '@/components/atoms/CakeTraceLoader';
 import Carousel from 'react-native-reanimated-carousel';
 import { Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ export default function Index() {
     const [loadingTopCakes, setLoadingTopCakes] = useState(true);
     const [allCakes, setAllCakes] = useState([]);
     const [loadingAllCakes, setLoadingAllCakes] = useState(true);
+    const [hasFinishedInitialPageLoad, setHasFinishedInitialPageLoad] = useState(false);
 
     const formatCakePrice = (value) => {
         const parsed = Number(value);
@@ -95,6 +97,12 @@ export default function Index() {
         ]);
     }, []);
 
+    useEffect(() => {
+        if (!loading && !loadingOpening) {
+            setHasFinishedInitialPageLoad(true);
+        }
+    }, [loading, loadingOpening]);
+
     const carouselItems = [
         {
             id: 1,
@@ -133,9 +141,11 @@ export default function Index() {
         { id: 5, image: require('@/assets/images/best-creations/Best Creations 5th.jpg') },
     ];
 
-    if (loading || loadingOpening) return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#8B5A3C" />
+    const showInitialPageLoader = !hasFinishedInitialPageLoad && (loading || loadingOpening);
+
+    if (showInitialPageLoader) return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF9F2' }}>
+            <CakeTraceLoader size={62} trackColor='transparent' />
         </View>
     )
 
@@ -226,7 +236,7 @@ export default function Index() {
 
                                 {loadingTopCakes ? (
                                     <View className='w-full py-8 items-center justify-center'>
-                                        <ActivityIndicator size="small" color="#8B5A3C" />
+                                        <ActivityIndicator size='small' color='#8B5A3C' />
                                     </View>
                                 ) : topCakes.length > 0 ? (
                                     <Carousel

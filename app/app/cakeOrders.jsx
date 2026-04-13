@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useState, useContext, useEffect } from 'react'
 import { ArrowLeft, Search } from 'lucide-react-native'
@@ -7,6 +7,7 @@ import CakeOrderCard from '@/components/molecules/CakeOrderCard'
 import { useCart } from '@/context/CartContext'
 import { AuthContext } from '@/context/AuthContext'
 import api from '@/api/api'
+import CakeTraceLoader from '@/components/atoms/CakeTraceLoader'
 
 const CakeOrders = () => {
 
@@ -39,8 +40,8 @@ const CakeOrders = () => {
 
 
     if (userLoading || fetchingCakes) return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#8B5A3C" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF9F2' }}>
+            <CakeTraceLoader size={62} trackColor='transparent' />
         </View>
     )
 

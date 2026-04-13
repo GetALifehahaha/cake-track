@@ -9,6 +9,7 @@ import { ToastProvider } from "@/context/ToastContext";
 import { OpeningProvider } from "@/context/OpeningContext";
 import { GlobalRefreshProvider } from "@/context/GlobalRefreshContext";
 import { AppState, View, ActivityIndicator, Modal, Text, TouchableOpacity } from "react-native";
+import CakeTraceLoader from '@/components/atoms/CakeTraceLoader';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Updates from 'expo-updates';
@@ -104,8 +105,8 @@ const InitialLayout = () => {
   }, [checkForEasUpdate]);
 
   if (loading) return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#8B5A3C" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF9F2' }}>
+      <CakeTraceLoader size={64} trackColor='transparent' />
     </View>
   )
 
@@ -216,6 +217,13 @@ const InitialLayout = () => {
         />
         <Stack.Screen
           name="termsAndConditions"
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right'
+          }}
+        />
+        <Stack.Screen
+          name="businessInformation"
           options={{
             presentation: 'card',
             animation: 'slide_from_right'

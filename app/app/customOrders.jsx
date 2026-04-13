@@ -677,7 +677,6 @@ const CustomOrders = () => {
                             <TouchableOpacity onPress={() => router.back()}><X style={{ color: '#8B5A3C' }} /></TouchableOpacity>
                         </View>
 
-                        {/* Page Content - Wrapped in a View to ensure structure */}
                         <View className='min-h-[200px]'>
                             {page === 1 && (
                                 <CakeDetailPage
@@ -993,8 +992,6 @@ const CustomOrders = () => {
                             )}
                         </View>
 
-                        {/* Navigation Footer */}
-                        {/* mt-auto pushes this to the bottom of the white section */}
                         <View className='flex-row justify-between items-center mt-auto pt-10'>
                             <TouchableOpacity onPress={() => handleChangePage('prev')} className='bg-white border-secondary-light/50 border p-4 rounded-full items-center shadow-sm'>
                                 <ArrowLeft style={{ color: '#9A8978' }} />
@@ -1004,13 +1001,13 @@ const CustomOrders = () => {
 
                             {page === maxPage ?
                                 <ConfirmModal details={"Place order? This action cannot be undone."} onConfirm={orderCake}>
-                                    <View className='bg-secondary-light px-8 py-4 rounded-2xl items-center flex-row gap-2 shadow-sm'>
+                                    <View className='bg-primary px-8 py-4 rounded-2xl items-center flex-row gap-2 shadow-sm'>
                                         <Check style={{ color: 'white' }} />
                                         <Text className='text-white font-bold'>Submit</Text>
                                     </View>
                                 </ConfirmModal>
                                 :
-                                <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-secondary-light p-4 rounded-full items-center shadow-sm'>
+                                <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-primary shadow-xl p-4 rounded-full items-center'>
                                     <ArrowRight style={{ color: 'white' }} />
                                 </TouchableOpacity>
                             }
