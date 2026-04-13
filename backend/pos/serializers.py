@@ -587,6 +587,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                     ingredient_totals=ingredient_totals,
                     purchase_date=timezone.now().date(),
                     reason=reason,
+                    exclude_expired=True,
                 )
 
             if transaction_obj.is_completed and not transaction_obj.is_void:

@@ -10,7 +10,12 @@ from django.utils import timezone
 
 from .models import (Recipe, Transaction, Ingredient, RecipeIngredient, Unit, IngredientUnitConversion, Container, Dimension)
 from .conversions import get_unit_conversion_factor
-from .services import deduct_ingredient_totals, deduct_ingredient_stock
+from .services import (
+    deduct_ingredient_totals,
+    deduct_ingredient_stock,
+    get_ingredient_available_stock,
+    get_available_stock_by_ingredient_ids,
+)
 
 MAX_DECIMAL_VALUE = Decimal('999999.99')
 MAX_INTEGER_VALUE = 999999
@@ -240,6 +245,8 @@ class TransactionCreateSerializer(serializers.Serializer):
                 raise ValidationError({
                     'transactions': f"Transaction item #{index + 1}: Amount must be greater than zero."
                 })
+
+            item['amount'] = parsed_amount
 
             if transaction_type not in ['in', 'out']:
                 raise ValidationError({
@@ -687,7 +694,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     ingredient_name = serializers.CharField(source='ingredient.name', read_only=True)
     ingredient_unit = serializers.CharField(source='ingredient.unit.abbreviation', read_only=True)
-    ingredient_stock = serializers.DecimalField(source='ingredient.total_stock', max_digits=14, decimal_places=4, read_only=True)
+    ingredient_stock = serializers.SerializerMethodField()
     
     amount_needed = serializers.DecimalField(
         max_digits=10, 
@@ -709,8 +716,19 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ['ingredient_id', 'ingredient_name', 'amount_needed', 'ingredient_unit', 'ingredient_unit_id', 'ingredient_units', 'ingredient_stock', 'is_missing', 'input_unit_id']
 
+    def _get_available_stock(self, ingredient):
+        stock_cache = self.context.setdefault('ingredient_non_expired_stock', {})
+
+        if ingredient.id not in stock_cache:
+            stock_cache[ingredient.id] = get_ingredient_available_stock(ingredient)
+
+        return stock_cache[ingredient.id]
+
     def get_is_missing(self, obj):
-        return obj.ingredient.total_stock < obj.amount_needed
+        return self._get_available_stock(obj.ingredient) < obj.amount_needed
+
+    def get_ingredient_stock(self, obj):
+        return self._get_available_stock(obj.ingredient)
 
     def get_ingredient_units(self, obj):
         base_unit = obj.ingredient.unit
@@ -868,10 +886,19 @@ class BulkRecipeCookSerializer(serializers.Serializer):
                     ingredient_totals[ing_id] = needed
 
         errors = []
+        ingredient_ids = list(ingredient_totals.keys())
+        ingredient_map = Ingredient.objects.in_bulk(ingredient_ids)
+        available_stock_map = get_available_stock_by_ingredient_ids(ingredient_ids)
+
         for ing_id, amount_needed in ingredient_totals.items():
-            ingredient = Ingredient.objects.get(id=ing_id)
-            if ingredient.total_stock < amount_needed:
-                errors.append(f"Not enough {ingredient.name}. Need {amount_needed}, Have {ingredient.total_stock}")
+            ingredient = ingredient_map.get(ing_id)
+            ingredient_name = ingredient.name if ingredient else f"Ingredient {ing_id}"
+            available_stock = available_stock_map.get(ing_id, Decimal('0'))
+
+            if available_stock < amount_needed:
+                errors.append(
+                    f"Not enough non-expired {ingredient_name}. Need {amount_needed}, Have {available_stock}"
+                )
         
         if errors:
             raise ValidationError(errors)
@@ -906,6 +933,7 @@ class BulkRecipeCookSerializer(serializers.Serializer):
                 ingredient_totals=ingredient_totals,
                 purchase_date=purchase_date,
                 reason=reason,
+                exclude_expired=True,
             )
 
         return {

@@ -151,6 +151,12 @@ const InventoryInOut = ({ onClose }) => {
 	const validateUpdate = () => {
 		if (ingredientItems.length === 0) return;
 
+		const hasNonPositiveAmount = ingredientItems.some((item) => Number(item.amount) <= 0);
+		if (hasNonPositiveAmount) {
+			addToast('Each stock-in and stock-out row requires a quantity greater than 0.', 'error');
+			return;
+		}
+
 		const hasInvalidDates = ingredientItems.some((item) => {
 			if (item.transaction_type !== 'in' || !item.purchase_date || !item.expiration_date) {
 				return false;
@@ -182,11 +188,6 @@ const InventoryInOut = ({ onClose }) => {
 			return;
 		}
 
-		if (ingredientItems.some(item => item.transaction_type === 'out' && item.amount <= 0)) {
-			addToast('Stock-out quantity cannot be 0.', 'error');
-			return;
-		}
-
 		if (ingredientItems.some(item => item.transaction_type === 'out' && item.reason.trim() === '')) {
 			addToast('Each stock-out ingredient requires its own reason.', 'error');
 			return;
@@ -202,6 +203,12 @@ const InventoryInOut = ({ onClose }) => {
 	};
 
 	const updateIngredients = async () => {
+		const hasNonPositiveAmount = ingredientItems.some((item) => Number(item.amount) <= 0);
+		if (hasNonPositiveAmount) {
+			addToast('Each stock-in and stock-out row requires a quantity greater than 0.', 'error');
+			return;
+		}
+
 		const hasMissingStockOutReason = ingredientItems.some(
 			(item) => item.transaction_type === 'out' && !String(item.reason || '').trim()
 		);

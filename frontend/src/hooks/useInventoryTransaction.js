@@ -21,6 +21,7 @@ export default function useInventoryTransaction() {
         useMutate("inventory-transactions", {
             invalidateKeys: [
                 ["ingredients"],
+                ["ingredients-paginated"],
                 ["ingredient-fetch-all"],
                 ["ingredient-dashboard"],
                 ["inventory-transactions"],
@@ -28,6 +29,14 @@ export default function useInventoryTransaction() {
                 ["products"],
                 ["products_all"],
                 ["cakes"],
+                ["orders"],
+                ["orders-dashboard"],
+                ["orders-overview"],
+                ["transactions"],
+                ["pos-dashboard"],
+                ["admin-notifications-orders-dashboard"],
+                ["admin-notifications-ingredients-all"],
+                ["admin-notifications-refund-requests"],
             ],
         });
 

@@ -158,8 +158,11 @@ class Recipe(models.Model):
         return self.name
     
     def is_available(self):
+        from .services import get_ingredient_available_stock
+
         for ing in self.recipe_ingredients.all():
-            if ing.ingredient.total_stock < ing.amount_needed:
+            available_stock = get_ingredient_available_stock(ing.ingredient)
+            if available_stock < ing.amount_needed:
                 return False
         return True
 
@@ -168,17 +171,18 @@ class Recipe(models.Model):
         Deducts ingredients for this recipe. 
         quantity: How many of this recipe are being made (default 1).
         """
-        from .services import deduct_ingredient_totals
+        from .services import deduct_ingredient_totals, get_ingredient_available_stock
 
         ingredient_totals = {}
 
         for recipe_item in self.recipe_ingredients.select_related('ingredient'):  # type: ignore
             ingredient = recipe_item.ingredient
             amount_needed = recipe_item.amount_needed * quantity
+            available_stock = get_ingredient_available_stock(ingredient)
 
-            if ingredient.total_stock < amount_needed:
+            if available_stock < amount_needed:
                 raise ValidationError(
-                    f"Not enough {ingredient.name}. Needed: {amount_needed}, Stock: {ingredient.total_stock}"
+                    f"Not enough non-expired {ingredient.name}. Needed: {amount_needed}, Available: {available_stock}"
                 )
 
             if ingredient.id in ingredient_totals:
@@ -190,6 +194,7 @@ class Recipe(models.Model):
             ingredient_totals=ingredient_totals,
             purchase_date=timezone.now().date(),
             reason=reason,
+            exclude_expired=True,
         )
                 
 
