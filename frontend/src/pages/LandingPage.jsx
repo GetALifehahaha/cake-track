@@ -75,6 +75,8 @@ const cakeShowcase = [
 	{ name: 'Mango Bravo', image: showcaseThree, label: '' },
 ]
 
+const app_url = "https://expo.dev/artifacts/eas/vEp9Y3VHV1ZkeFHg8Jkb57.apk"
+
 const LandingPage = () => {
 	return (
 		<div className='bg-accent-mute/20 w-full min-h-screen p-2'>
@@ -82,12 +84,20 @@ const LandingPage = () => {
 			<div className='rounded-xl bg-white h-full w-full shadow-sm overflow-hidden flex flex-col'>
 				<div className="relative bg-linear-140 from-[#190d06] via-[#421010] to-[#5b2006] h-[110vh] xl:h-[90vh]">
 					<div className='h-20 w-4/5 mx-auto flex items-center justify-between'>
-						<span className='flex items-center font-bold text-2xl tracking-tight '>
+						<span className='flex items-center font-bold text-2xl tracking-tight'>
 							<h1 className='text-white'>Cake</h1>
 							<h1 className='text-accent-mute'>Track</h1>
 						</span>
-
-						<button className='py-2.5 px-8 rounded-2xl border-2 border-border text-border font-semibold cursor-pointer'>Download CakeTrack</button>
+						<button
+							onClick={() => location.href = app_url}
+							className='group relative overflow-hidden py-2.5 px-8 rounded-2xl border-2 border-border text-border font-semibold cursor-pointer hover:text-accent-dark
+							before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-white/90 before:transition-all before:duration-300 hover:before:w-full'
+						>
+							<span className="relative z-10 flex items-center gap-8">
+								<Download size={18} />
+								<h5 className='hidden md:block'>Download CakeTrack</h5>
+							</span>
+						</button>
 					</div>
 
 					<Cake size={240} className='text-white/20 blur-md -skew-12 absolute bottom-9 right-20' />
@@ -95,8 +105,8 @@ const LandingPage = () => {
 
 					<div className='w-4/5 mx-auto mt-20 flex'>
 						<div className='flex-1'>
-							<h1 className='text-accent-mute text-xl font-semibold capitalize'>Welcome to CakeTrack</h1>
-							<div className='my-6 flex flex-col gap-2 font-extrabold text-6xl text-white tracking-tight'>
+							<h1 className='text-accent-mute text-xl font-semibold capitalize text-center md:text-left'>Welcome to CakeTrack</h1>
+							<div className='my-6 flex flex-col gap-2 font-extrabold text-6xl text-white tracking-tight text-center md:text-left'>
 								<h2 className='text-shadow-accent/20 text-shadow-lg'>Designed by You,</h2>
 								<h2 className='text-shadow-accent/20 text-shadow-lg'>Baked by Us</h2>
 							</div>
@@ -104,7 +114,7 @@ const LandingPage = () => {
 								Because great celebrations begin with confidence in every detail.</p>
 
 							<div className='flex gap-2 mt-4 w-5/6 mx-auto'>
-								<button className='flex-1 rounded-sm bg-accent-mute text-black font-semibold py-4.5 cursor-pointer flex flex-col shadow-accent/40 shadow-2xl hover:text-white hover:animate-pulse hover:-translate-y-0.5 hover:transition-all items-center justify-center'>
+								<button onClick={() => location.href = app_url} className='flex-1 rounded-sm bg-accent-mute text-black font-semibold py-4.5 cursor-pointer flex flex-col shadow-accent/40 shadow-2xl hover:text-white hover:animate-pulse hover:-translate-y-0.5 hover:transition-all items-center justify-center'>
 									<h5 className='text-xs text-center text-text/50'>
 										Download via
 									</h5>
@@ -260,7 +270,7 @@ const LandingPage = () => {
 									control, and a better cake-ordering journey from start to finish.
 								</p>
 							</div>
-							<button className='inline-flex items-center justify-center gap-2 self-start rounded-xl bg-accent-mute px-5 py-3 text-sm font-extrabold text-[#22120b] transition hover:-translate-y-0.5 hover:bg-[#ceb29f]'>
+							<button onClick={() => location.href = app_url} className='inline-flex items-center justify-center gap-2 self-start rounded-xl bg-accent-mute px-5 py-3 text-sm font-extrabold text-[#22120b] transition hover:-translate-y-0.5 hover:bg-[#ceb29f] cursor-pointer'>
 								Download CakeTrack
 								<ArrowRight size={16} />
 							</button>

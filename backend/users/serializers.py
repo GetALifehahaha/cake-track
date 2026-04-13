@@ -58,6 +58,10 @@ def validate_username_password_rules(
         raise serializers.ValidationError(errors)
 
 
+def normalize_phone_number(value):
+    return str(value or '').replace(' ', '').replace('-', '').strip()
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # Login should authenticate existing credentials as-is, including legacy short usernames/passwords.
@@ -152,8 +156,8 @@ class UserSerializer(serializers.ModelSerializer):
     
     def get_middle_name(self, obj):
         try:
-            return obj.profile.middle_name
-        except AttributeError:
+            return obj.profile.middle_name or ''
+        except (AttributeError, UserProfile.DoesNotExist):
             return ''
 
 
@@ -170,10 +174,12 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
             message="A user with this email already exists."
         )]
     )
+    middle_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    phone_number = serializers.CharField(required=False, allow_blank=True, max_length=20)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'username', 'password']
+        fields = ['first_name', 'middle_name', 'last_name', 'email', 'username', 'password', 'phone_number']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -182,19 +188,34 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
         validate_username_password_rules(attrs.get('username'), attrs.get('password'))
         return attrs
 
+    def validate_phone_number(self, value):
+        normalized = normalize_phone_number(value)
+        return normalized
+
     def create(self, validated_data):
+        middle_name = validated_data.pop('middle_name', '')
+        phone_number = validated_data.pop('phone_number', '')
         user = User.objects.create_user(**validated_data)
 
         customer_group, _ = Group.objects.get_or_create(name="customer")
         user.groups.add(customer_group)
 
+        UserProfile.objects.create(
+            user=user,
+            middle_name=str(middle_name or '').strip(),
+            phone_number=phone_number or None,
+        )
+
         return user
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    middle_name = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=150, write_only=True)
+    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=20, write_only=True)
+
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'username']
+        fields = ['first_name', 'middle_name', 'last_name', 'email', 'username', 'phone_number']
         
     def validate_email(self, value):
         user = self.context['request'].user
@@ -207,6 +228,35 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if User.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
+
+    def validate_phone_number(self, value):
+        normalized = normalize_phone_number(value)
+        return normalized
+
+    def update(self, instance, validated_data):
+        middle_name = validated_data.pop('middle_name', serializers.empty)
+        phone_number = validated_data.pop('phone_number', serializers.empty)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if middle_name is not serializers.empty or phone_number is not serializers.empty:
+            profile, _ = UserProfile.objects.get_or_create(user=instance)
+            updated_fields = []
+
+            if middle_name is not serializers.empty:
+                profile.middle_name = (middle_name or '').strip()
+                updated_fields.append('middle_name')
+
+            if phone_number is not serializers.empty:
+                profile.phone_number = normalize_phone_number(phone_number) or None
+                updated_fields.append('phone_number')
+
+            if updated_fields:
+                profile.save(update_fields=updated_fields)
+
+        return instance
     
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -291,11 +341,25 @@ class AddressSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     groups = serializers.StringRelatedField(many=True)
     locations = AddressSerializer(many=True, read_only=True)
+    middle_name = serializers.SerializerMethodField()
+    phone_number = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active', 'locations']
+        fields = ['id', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'phone_number', 'groups', 'is_staff', 'is_active', 'locations']
         read_only_fields = ['id', 'username', 'groups', 'is_staff']
+
+    def get_middle_name(self, obj):
+        try:
+            return obj.profile.middle_name or ''
+        except UserProfile.DoesNotExist:
+            return ''
+
+    def get_phone_number(self, obj):
+        try:
+            return obj.profile.phone_number or ''
+        except UserProfile.DoesNotExist:
+            return ''
 
 class OTPSerializer(serializers.ModelSerializer):
     class Meta:

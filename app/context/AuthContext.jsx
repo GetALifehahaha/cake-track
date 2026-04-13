@@ -75,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     const handleGuestState = () => {
         setUser(null);
         setIsAuthorized(false);
+        // Note: We do NOT redirect to login here. We let the user browse as a guest.
     };
 
     const refreshToken = async () => {
@@ -184,7 +185,7 @@ export const AuthProvider = ({ children }) => {
         await AsyncStorage.removeItem(ACCESS_TOKEN);
         await AsyncStorage.removeItem(REFRESH_TOKEN);
         handleGuestState();
-        router.replace('/(auth)/login');
+        router.replace('/login');
     };
 
     const register = async (username, password, first_name, middle_name, last_name, email, phone_number) => {
@@ -227,7 +228,7 @@ export const AuthProvider = ({ children }) => {
                         onPress: () => {
                             // Navigate to login, passing the params so Login screen knows where to go back to
                             router.push({
-                                pathname: '/(auth)/login',
+                                pathname: '/login',
                                 params: redirectParams
                             });
                         }
