@@ -23,7 +23,7 @@ const isPublicAuthEndpoint = (requestUrl = '') => {
     return PUBLIC_AUTH_ENDPOINTS.some(path => requestUrl.includes(path))
 }
 
-const PUBLIC_AUTH_PATHS = ['/login', '/forgotPassword', '/setAccount'];
+const PUBLIC_AUTH_PATHS = ['/login', '/forgotPassword', '/setAccount', '/landingPage'];
 
 const isOnPublicAuthPage = () => {
     if (typeof window === 'undefined') return false;

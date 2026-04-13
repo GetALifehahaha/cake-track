@@ -154,7 +154,7 @@ const Cashier = () => {
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
-                <Title text='Cashiers' />
+            <Title text='Cashiers' />
             <div className='border-accent-mute border rounded-lg p-4'>
                 {/* Header */}
                 <div className="flex flex-row justify-between items-center">

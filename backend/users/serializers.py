@@ -1,14 +1,13 @@
 from rest_framework import serializers, validators
 from django.contrib.auth.models import User, Group
+from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.db import transaction
 import uuid
-import re
 
 from .models import (
     OTP, 
@@ -21,47 +20,53 @@ from .services import (
     get_deletion_due_date,
     purge_expired_deactivated_accounts,
 )
-from .email_templates import send_activation_template_email
 
 MIN_CREDENTIAL_LENGTH = 8
 
 
-def validate_username_password_rules(username, password):
+def validate_username_password_rules(
+    username,
+    password,
+    *,
+    enforce_min_length=True,
+    enforce_similarity=True,
+):
     cleaned_username = str(username or '').strip()
     cleaned_password = str(password or '').strip()
     errors = {}
 
-    if len(cleaned_username) < MIN_CREDENTIAL_LENGTH:
+    has_username = username is not None
+    has_password = password is not None
+
+    if enforce_min_length and has_username and len(cleaned_username) < MIN_CREDENTIAL_LENGTH:
         errors['username'] = [f'Username must be at least {MIN_CREDENTIAL_LENGTH} characters.']
 
-    if len(cleaned_password) < MIN_CREDENTIAL_LENGTH:
+    if enforce_min_length and has_password and len(cleaned_password) < MIN_CREDENTIAL_LENGTH:
         errors['password'] = [f'Password must be at least {MIN_CREDENTIAL_LENGTH} characters.']
 
-    if cleaned_username and cleaned_password and cleaned_username.lower() == cleaned_password.lower():
+    if (
+        enforce_similarity
+        and has_username
+        and has_password
+        and cleaned_username
+        and cleaned_password
+        and cleaned_username.lower() == cleaned_password.lower()
+    ):
         errors.setdefault('password', []).append('Password should not be similar to the username.')
 
     if errors:
         raise serializers.ValidationError(errors)
 
 
-def normalize_ph_phone_number(phone_value):
-    raw_value = str(phone_value or '').strip()
-    digits = ''.join(ch for ch in raw_value if ch.isdigit())
-
-    if digits.startswith('63') and len(digits) == 12:
-        digits = f"0{digits[2:]}"
-    elif digits.startswith('9') and len(digits) == 10:
-        digits = f"0{digits}"
-
-    if not re.fullmatch(r'09\d{9}', digits):
-        raise serializers.ValidationError('Phone number must be a valid Philippine mobile number (example: 09123456789).')
-
-    return digits
-
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+        # Login should authenticate existing credentials as-is, including legacy short usernames/passwords.
+        validate_username_password_rules(
+            attrs.get('username'),
+            attrs.get('password'),
+            enforce_min_length=False,
+            enforce_similarity=False,
+        )
 
         purge_expired_deactivated_accounts()
 
@@ -97,30 +102,45 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'password', 'is_active']
         extra_kwargs = {
-            'password': {'write_only': True},
-            'middle_name': {
-                'required': False,
-                'allow_null': True,
-                'blank': True
-            },
-            'phone_number': {
-                'required': False,
-                'allow_null': True,
-                'blank': True
-            },
+            'password': {'write_only': True}
         }
 
     def validate(self, attrs):
-        validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+        if self.instance is None:
+            validate_username_password_rules(attrs.get('username'), attrs.get('password'))
+            return attrs
+
+        if 'username' in attrs:
+            validate_username_password_rules(
+                attrs.get('username'),
+                None,
+                enforce_min_length=True,
+                enforce_similarity=False,
+            )
+
+        if 'password' in attrs:
+            validate_username_password_rules(
+                None,
+                attrs.get('password'),
+                enforce_min_length=True,
+                enforce_similarity=False,
+            )
+
+        if 'username' in attrs and 'password' in attrs:
+            validate_username_password_rules(
+                attrs.get('username'),
+                attrs.get('password'),
+                enforce_min_length=False,
+                enforce_similarity=True,
+            )
+
         return attrs
         
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         request = self.context.get('request')
-
-        print(request.user)
         
-        if request.user.is_staff:
+        if request and request.user and request.user.is_staff:
             group_name = "cashier"
         else:
             group_name = "customer"
@@ -141,79 +161,40 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
         validators=[validators.UniqueValidator(
             queryset=User.objects.all(),
-            message='This username is already taken.'
+            message="This username is already taken."
         )]
     )
     email = serializers.EmailField(
         validators=[validators.UniqueValidator(
             queryset=User.objects.all(),
-            message='A user with this email already exists.'
+            message="A user with this email already exists."
         )]
     )
-    middle_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
-    phone_number = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'middle_name', 'last_name', 'username', 'email', 'phone_number', 'password']
+        fields = ['first_name', 'last_name', 'email', 'username', 'password']
         extra_kwargs = {
             'password': {'write_only': True}
         }
 
-    def validate_phone_number(self, value):
-        cleaned = str(value or '').strip()
-        if cleaned == '':
-            return ''
-        return normalize_ph_phone_number(cleaned)
-
     def validate(self, attrs):
-        errors = {}
-
-        required_fields = {
-            'first_name': 'First name',
-            'last_name': 'Last name',
-            'email': 'Email',
-        }
-
-        for field_name, label in required_fields.items():
-            if not str(attrs.get(field_name, '')).strip():
-                errors[field_name] = [f'{label} is required.']
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
         validate_username_password_rules(attrs.get('username'), attrs.get('password'))
         return attrs
 
     def create(self, validated_data):
-        middle_name = str(validated_data.pop('middle_name', '')).strip()
-        phone_number = str(validated_data.pop('phone_number', '')).strip()
+        user = User.objects.create_user(**validated_data)
 
-        validated_data['first_name'] = str(validated_data.get('first_name', '')).strip()
-        validated_data['last_name'] = str(validated_data.get('last_name', '')).strip()
-        validated_data['email'] = str(validated_data.get('email', '')).strip()
-
-        with transaction.atomic():
-            user = User.objects.create_user(**validated_data)
-
-            customer_group, _ = Group.objects.get_or_create(name='customer')
-            user.groups.add(customer_group)
-
-            profile, _ = UserProfile.objects.get_or_create(user=user)
-            profile.middle_name = middle_name
-            profile.phone_number = phone_number
-            profile.save(update_fields=['middle_name', 'phone_number'])
+        customer_group, _ = Group.objects.get_or_create(name="customer")
+        user.groups.add(customer_group)
 
         return user
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    middle_name = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
-    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, write_only=True)
-
     class Meta:
         model = User
-        fields = ['first_name', 'middle_name', 'last_name', 'email', 'username', 'phone_number']
+        fields = ['first_name', 'last_name', 'email', 'username']
         
     def validate_email(self, value):
         user = self.context['request'].user
@@ -226,34 +207,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if User.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
-
-    def validate_phone_number(self, value):
-        cleaned = str(value or '').strip()
-        if cleaned == '':
-            return ''
-        return normalize_ph_phone_number(cleaned)
-
-    def update(self, instance, validated_data):
-        middle_name = validated_data.pop('middle_name', None)
-        phone_number = validated_data.pop('phone_number', None)
-
-        updated_user = super().update(instance, validated_data)
-
-        if middle_name is not None or phone_number is not None:
-            profile, _ = UserProfile.objects.get_or_create(user=updated_user)
-            update_fields = []
-
-            if middle_name is not None:
-                profile.middle_name = str(middle_name).strip()
-                update_fields.append('middle_name')
-
-            if phone_number is not None:
-                profile.phone_number = str(phone_number).strip()
-                update_fields.append('phone_number')
-
-            profile.save(update_fields=update_fields)
-
-        return updated_user
     
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -293,31 +246,39 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        with transaction.atomic():
-            validated_data['is_active'] = False
-            middle_name = validated_data.pop('middle_name', '')
-            user = User.objects.create_user(**validated_data)
-            profile = UserProfile.objects.create(user=user, middle_name=middle_name, activation_token=str(uuid.uuid4()))
+        validated_data['is_active'] = False
+        middle_name = validated_data.pop('middle_name', '')
+        user = User.objects.create_user(**validated_data)
+        profile = UserProfile.objects.create(user=user, middle_name=middle_name, activation_token=str(uuid.uuid4()))
 
-            cashier_group, _ = Group.objects.get_or_create(name="cashier")
-            user.groups.add(cashier_group)
+        cashier_group, _ = Group.objects.get_or_create(name="cashier")
+        user.groups.add(cashier_group)
 
-            user.save()
+        user.save()
 
-            activation_link = f"{settings.FRONTEND_URL}/setAccount?token={profile.activation_token}"
+        activation_link = f"{settings.FRONTEND_URL}/setAccount?token={profile.activation_token}"
 
-            try:
-                send_activation_template_email(
-                    recipient_email=user.email,
-                    cashier_name= user.username,
-                    activation_url=activation_link,
-                )
-            except Exception:
-                raise serializers.ValidationError({
-                    'email': 'Failed to send activation email via Resend. Check template IDs and sender settings.'
-                })
+        subject = 'Activate Your Cashier Account'
+        
+        # Using html_message for a better UI
+        html_content = f"""
+            <p>Hi {user.first_name},</p>
+            <p>An admin has created a cashier account for you.</p>
+            <a href="{activation_link}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                Activate Account
+            </a>
+        """
 
-            return user
+        send_mail(
+            subject,
+            f"Activate your account: {activation_link}",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            html_message=html_content,
+            fail_silently=True
+        )
+
+        return user
     
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -328,27 +289,13 @@ class AddressSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    middle_name = serializers.SerializerMethodField()
-    phone_number = serializers.SerializerMethodField()
     groups = serializers.StringRelatedField(many=True)
     locations = AddressSerializer(many=True, read_only=True)
     
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'middle_name', 'last_name', 'email', 'phone_number', 'username', 'groups', 'is_staff', 'is_active', 'locations']
+        fields = ['id', 'first_name', 'last_name', 'email', 'username', 'groups', 'is_staff', 'is_active', 'locations']
         read_only_fields = ['id', 'username', 'groups', 'is_staff']
-
-    def get_middle_name(self, obj):
-        try:
-            return obj.profile.middle_name or ''
-        except AttributeError:
-            return ''
-
-    def get_phone_number(self, obj):
-        try:
-            return obj.profile.phone_number or ''
-        except AttributeError:
-            return ''
 
 class OTPSerializer(serializers.ModelSerializer):
     class Meta:
