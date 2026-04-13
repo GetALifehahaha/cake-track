@@ -58,6 +58,7 @@ const Home = () => {
     const [showClearCheckoutModal, setShowClearCheckoutModal] = useState(false);
     const [showVoid, setShowVoid] = useState(false);
     const [prepProduct, setPrepProduct] = useState(false);
+    const [variantInspectId, setVariantInspectId] = useState(null);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
     const [completingOrderId, setCompletingOrderId] = useState(null);
@@ -490,6 +491,7 @@ const Home = () => {
         })
 
         setPrepProduct(null)
+        setVariantInspectId(null)
         setModalFeedbackContent(null)
     }
 
@@ -512,12 +514,15 @@ const Home = () => {
 
 
     const handlePrepProduct = (product) => {
-        if (product.variants.length === 1) {
-            const singleVariant = product.variants[0];
+        const variants = Array.isArray(product?.variants) ? product.variants : [];
+
+        if (variants.length === 1) {
+            const singleVariant = variants[0];
             const maxOrderable = getVariantMaxOrderable(singleVariant);
 
             if (maxOrderable < 1) {
-                addToast('Insufficient ingredients for this variant.', 'error');
+                setPrepProduct(product);
+                setVariantInspectId(singleVariant?.id ?? null);
                 return;
             }
 
@@ -527,8 +532,16 @@ const Home = () => {
                 label: singleVariant.label,
                 price: singleVariant.price,
             }, 1)
+
+            return;
         }
-        else setPrepProduct(product)
+
+        const firstInsufficientVariant = variants.find(
+            (variant) => Boolean(variant?.isInsufficient || getVariantMaxOrderable(variant) < 1),
+        );
+
+        setPrepProduct(product)
+        setVariantInspectId(product?.isUnavailable ? firstInsufficientVariant?.id ?? null : null)
     }
 
     const toggleAllVoidItems = () => {
@@ -1082,7 +1095,15 @@ const Home = () => {
             }
 
             {prepProduct &&
-                <VariantModal product={prepProduct} onClose={() => setPrepProduct(null)} onChoose={addToCheckout} />
+                <VariantModal
+                    product={prepProduct}
+                    initialInspectVariantId={variantInspectId}
+                    onClose={() => {
+                        setPrepProduct(null);
+                        setVariantInspectId(null);
+                    }}
+                    onChoose={addToCheckout}
+                />
             }
 
             {showDiscountModal &&

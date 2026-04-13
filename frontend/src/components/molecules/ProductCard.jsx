@@ -21,8 +21,6 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
         : `₱ ${(maxPrice || minPrice || baseProductPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     
     const handleToggleClick = () => {
-        if (isPOS && isUnavailable) return;
-
         if (isArchived) {
             onToggle(product.id)
         } else {
@@ -33,7 +31,7 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
     return (
         <div onClick={handleToggleClick} 
             className={cn('relative flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 duration-200 ease-in-out min-h-60 bg-main-white border-2 border-white cursor-pointer', 
-                isPOS && isUnavailable && 'opacity-60 cursor-not-allowed',
+                isPOS && isUnavailable && 'opacity-60',
                 selected.some(select => select === product.id) && 'border-accent-mute cursor-pointer hover:shadow-black/25')}
         >
             {isUnavailable && (
