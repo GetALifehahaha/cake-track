@@ -240,8 +240,15 @@ export const CAKE_ASSETS = {
     },
   },
   accessories: {
-    tier1: require('../assets/cakes/accessories/TIER_1_CANDLE.png'),
-    tier2: require('../assets/cakes/accessories/TIER_2_CANDLE.png'),
-    tier3: require('../assets/cakes/accessories/TIER_3_CANDLE.png'),
+    round: {
+      tier1: require('../assets/cakes/accessories/TIER_1_CANDLE.png'),
+      tier2: require('../assets/cakes/accessories/TIER_2_CANDLE.png'),
+      tier3: require('../assets/cakes/accessories/TIER_3_CANDLE.png'),
+    },
+    sheet: {
+      tier1: require('../assets/cakes/accessories/TIER_1_CANDLE_SHEET.png'),
+      tier2: require('../assets/cakes/accessories/TIER_2_CANDLE_SHEET.png'),
+      tier3: require('../assets/cakes/accessories/TIER_3_CANDLE_SHEET.png'),
+    },
   },
 };
