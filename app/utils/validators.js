@@ -1,6 +1,8 @@
 const EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const PHONE_REGEX = /^(\+63\d{10}|09\d{9})$/;
 const MIN_CREDENTIAL_LENGTH = 8;
+const UPPERCASE_REGEX = /[A-Z]/;
+const LOWERCASE_REGEX = /[a-z]/;
 
 export const isValidEmail = (value = '') => {
     return EMAIL_REGEX.test(String(value).toLowerCase());
@@ -12,6 +14,14 @@ export const hasMinCredentialLength = (value = '', minLength = MIN_CREDENTIAL_LE
 
 export const isPasswordSimilarToUsername = (username = '', password = '') => {
     return String(username).trim().toLowerCase() === String(password).trim().toLowerCase();
+};
+
+export const hasUppercaseCharacter = (value = '') => {
+    return UPPERCASE_REGEX.test(String(value));
+};
+
+export const hasLowercaseCharacter = (value = '') => {
+    return LOWERCASE_REGEX.test(String(value));
 };
 
 export const normalizePhoneNumber = (value = '') => {

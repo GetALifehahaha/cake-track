@@ -232,7 +232,7 @@ const Orders = () => {
 					</View>
 
 					{/* Dynamic Stats Board */}
-					<View className='flex-row gap-2 rounded-2xl border-2 border-secondary-light bg-white h-16 items-center'>
+					<View className='grid grid-flow-row grid-rows-3 gap-2 rounded-2xl border-2 border-secondary-light bg-white h-16 items-center'>
 						<View className='px-3 border-r border-r-secondary-light items-center'>
 							<Text className='font-semibold text-xs'>Total</Text>
 							<Text className='text-lg text-gray-700'>{totalOrders}</Text>
@@ -313,7 +313,7 @@ const Orders = () => {
 								</View>
 
 								{listOrders.length > 0 ?
-									<View>
+									<View className="flex gap-4 mt-8">
 										{listOrders}
 									</View>
 									: (

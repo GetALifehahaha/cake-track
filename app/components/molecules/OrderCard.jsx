@@ -83,10 +83,10 @@ const OrderCard = ({ order, onArchive, onHide }) => {
     const cardBody = (
         <TouchableOpacity onPress={handlePress}
             activeOpacity={0.7}
-            className='bg-white p-4 rounded-xl border border-gray-200 mb-4 shadow-sm'>
-            <View className='border border-secondary-light rounded-xl p-6 bg-white flex-row gap-4 w-full items-center'>
+            className='bg-white p-4 rounded-[32px] border border-gray-200 mb-4 shadow-lg'>
+            <View className='border border-secondary-light rounded-[18px] p-6 bg-white flex-row gap-4 w-full items-center'>
                 {/* {order.isAcquired && <Checkbox />} */}
-                <View className='flex-1'>
+                <View className='flex-1 flex gap-1.5'>
                     <View className='flex-row justify-between items-center'>
                         <Text className='opacity-50 font-medium text-lg'>#{order.id}</Text>
                         <Text className={`px-2 py-1 border rounded-md overflow-hidden font-medium text-xs ${statusVariants[order.status.toLowerCase()] || "text-gray-600 bg-gray-100 border-gray-200"
@@ -96,9 +96,9 @@ const OrderCard = ({ order, onArchive, onHide }) => {
                         <Text className='font-bold text-lg'>{capitalize(order.cake_orders.occasion)}</Text>
                         <Text className='opacity-50 font-medium'>{capitalize(order.due_date)}</Text>
                     </View>
-                    <View className='p-2 bg-gray-100 flex-row gap-2 items-center'>
-                        <Cake opacity={.8} />
-                        <Text className='font-medium flex-1' numberOfLines={1} ellipsizeMode='tail'>
+                    <View className='p-2 bg-gray-100 flex-row gap-2 items-center rounded-lg'>
+                        <Cake opacity={.6} />
+                        <Text className='font-semibold flex-1 capitalize' numberOfLines={1} ellipsizeMode='tail'>
                             {capitalize(order.cake_orders.base_flavor)}
                         </Text>
                     </View>

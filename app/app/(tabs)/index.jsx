@@ -161,7 +161,7 @@ export default function Index() {
                                     <Text className='text-[#474747] text-3xl font-bold'>Michelle's Cake & Cafe</Text>
                                     <View className='flex-row'>
                                         <Text className='font-bold text-xl text-[#6B5235]'>Cake</Text>
-                                        <Text className='font-bold text-xl text-[#BE9B7B]'>Track er</Text>
+                                        <Text className='font-bold text-xl text-[#BE9B7B]'>Track</Text>
                                     </View>
                                 </View>
                             </View>
@@ -219,7 +219,7 @@ export default function Index() {
                             </View>
 
                             {/* Premade Cakes */}
-                            <View className='relative mb-4'>
+                            <View className='relative mb-4 mt-8'>
                                 <Text className='font-extrabold text-lg px-6 py-4 text-[#8B5A3C]'>
                                     Top 3 Best-Selling Cakes
                                 </Text>
@@ -278,7 +278,7 @@ export default function Index() {
                                 )}
                             </View>
 
-                            <View className='px-6 mb-8'>
+                            <View className='px-6 my-8'>
                                 <View className='flex-row items-end justify-between mb-4'>
                                     <View className='flex-1 pr-2'>
                                         <Text className='font-extrabold text-lg text-[#2F2F2F]'>All Cakes</Text>
@@ -337,7 +337,7 @@ export default function Index() {
                                     </TouchableOpacity>
                             </View>
 
-                            <View className='mb-10 mt-4'>
+                            <View className='my-10'>
                                 <View className='flex-row justify-between items-center px-6 mb-4'>
                                     <Text className='font-extrabold text-lg text-black'>Best Creations!</Text>
                                     <TouchableOpacity onPress={() => router.push('/customOrders')}>

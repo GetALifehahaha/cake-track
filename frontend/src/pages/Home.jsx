@@ -937,9 +937,9 @@ const Home = () => {
     const categoryOptions = categoryData.map((cat) => { return { key: cat.name, value: cat.id } });
 
     return (
-        <div className='flex gap-4 w-full h-screen'>
+        <div className='flex gap-4 w-full h-full min-h-0 overflow-hidden'>
             {/* Middle */}
-            <div className='flex-1 flex flex-col gap-4'>
+            <div className='flex-1 flex flex-col gap-4 min-h-0'>
                 <div className='flex flex-row gap-1 items-center'>
                     <Dropdown value={filter} selection="Filter Product" size='regular' forPageFilter={true} options={categoryOptions} onSelect={handleSetFilter} />
                     {(pendingLoading || pendingOrdersCount > 0) && (
@@ -957,14 +957,14 @@ const Home = () => {
 
                 {/* Product Section */}
                 {enrichedProductResults.length == 0 ?
-                    <div className='flex justify-center items-center h-full'>
+                    <div className='flex justify-center items-center flex-1 min-h-0'>
                         <h5 className='text-sm font-medium text-text/50'>
                             No products to show
                         </h5>
                     </div>
                     :
-                    <div className='flex items-center flex-col gap-2 h-[80vh] justify-between'>
-                        <div className='overflow-y-auto grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-wrap'>
+                    <div className='flex items-center flex-col gap-2 flex-1 min-h-0 justify-between overflow-hidden'>
+                        <div className='overflow-y-auto grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-1 min-h-0 content-start'>
                             {listProduct}
                         </div>
                         <Pagination prev={productData.previous} next={productData.next} count={productData?.count} />   
@@ -974,8 +974,8 @@ const Home = () => {
 
 
             {/* Checkout Section */}
-            <div className='basis-1/4 flex flex-col gap-4'>
-                <div className='w-full h-full bg-main-white rounded-4xl shadow-md shadow-black/25 flex flex-col'>
+            <div className='basis-1/4 flex flex-col gap-4 h-full min-h-0'>
+                <div className='w-full h-full bg-main-white rounded-4xl shadow-md shadow-black/25 flex flex-col min-h-0 overflow-hidden'>
                     <div className='flex flex-row justify-between items-center text-text px-4 py-8'>
                         <div>
                             <h5 className='font-bold text-xl'>Current Order</h5>
@@ -992,7 +992,7 @@ const Home = () => {
                             variant={(orderType == "take-out") ? 'active' : 'inactive'} size='small' text='Take Out' onClick={() => handleSetOrderType("take-out")} />
                     </div>
 
-                    <div className={cn('px-4 py-8 flex flex-col gap-4 h-[45vh] overflow-y-auto', showVoid && 'h-[50vh]')}>
+                    <div className={cn('px-4 py-8 flex flex-col gap-4 overflow-y-auto flex-1 min-h-0')}>
                         {showVoid ?
 
                             listVoidProducts
@@ -1046,7 +1046,6 @@ const Home = () => {
             </div>
 
             {/* Modals */}
-            {/* TODO: */}
             {showPaymentModal &&
                 <PaymentModal
                     totalPrice={netTotal}

@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom'
 import useQueryFetch from '@/hooks/useQueryFetch'
 import API_ENDPOINTS from '@/api/endpoints'
 import { useNavigate } from 'react-router-dom'
+import { cn } from '@/utils/cn'
 
 const Layout = () => {
 
@@ -137,25 +138,30 @@ const Layout = () => {
         };
     }, [showNotifications]);
 
+    const isPos = location.pathname === '/';
+
     return (
-        <div className='w-full h-screen bg-main flex'>
+        <div className='w-full h-screen bg-main flex overflow-hidden'>
             <Sidebar />
             
-            <div className='flex-1 p-2 bg-main-white overflow-y-auto'>
-                <div className='flex-1 flex flex-col p-6 gap-8  rounded-md bg-main shadow-md'>
+            <div className={cn('flex-1 p-2 bg-main-white min-h-0', isPos ? 'overflow-hidden' : 'overflow-y-auto')}>
+                <div className={cn(
+                    'flex flex-col p-6 gap-8 rounded-md bg-main shadow-md min-h-0',
+                    isPos ? 'h-full overflow-hidden' : 'min-h-full',
+                )}>
                     <div className='flex justify-between'>
                         <form className='basis-1/2 flex items-center gap-2' onSubmit={handleSearch}>
                             {
                                 !hideSearchbar && <>
                                     <Searchbar onChange={(value) => handleSetSearchText(value)} />
                                     {searchText.trim().length > 0 &&
-                                        <Button icon={Search} text='' variant='icon' className='rounded-2xl' onClick={handleSearch} />
+                                        <Button icon={Search} text='' variant='icon' className='rounded-2xl text-white bg-accent shadow-xl' onClick={handleSearch} />
                                     }
                                 </>
                             }
                         </form>
 
-                        <div className='flex gap-2'>
+                        <div className='flex gap-2 items-center'>
                             {isAdmin && (
                                 <div ref={notificationRef} className='relative'>
                                     <button
@@ -204,7 +210,9 @@ const Layout = () => {
                         </div>
                     </div>
 
-                    <Outlet />
+                    <div className={cn(isPos && 'flex-1 min-h-0 overflow-hidden')}>
+                        <Outlet />
+                    </div>
                 </div>
             </div>
         </div>
