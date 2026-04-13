@@ -481,3 +481,17 @@ class RefundRequestRequirementTests(TestCase):
 		self.assertTrue(self.order.cancellation_requested)
 		self.assertEqual(self.order.refund_account_name, 'Juan Dela Cruz')
 		self.assertEqual(self.order.refund_account_number, '09171234567')
+
+	def test_request_cancellation_rejects_invalid_gcash_number_format(self):
+		response = self.client.post(
+			f'/orders/orders/{self.order.id}/request-cancellation/',
+			{
+				'refund_account_name': 'Juan Dela Cruz',
+				'refund_account_number': '0917 123 45',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('error', response.data)
+		self.assertIn('4-3-4', response.data['error'])

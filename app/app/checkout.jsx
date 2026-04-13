@@ -9,7 +9,6 @@ import FormLabel from '@/components/atoms/FormLabel';
 import DatePicker from '@/components/atoms/DatePicker';
 import TimePicker from '@/components/atoms/TimePicker';
 import Checkbox from '@/components/atoms/Checkbox';
-import ConfirmModal from '@/components/organisms/ConfirmModal';
 import { AuthContext } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import useOrder from '@/hooks/useOrder';
@@ -36,6 +35,8 @@ const Checkout = () => {
     const [agreeToTOC, setAgreeToTOC] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+    const [showPaymentConfirmationModal, setShowPaymentConfirmationModal] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
     useEffect(() => {
         if (user?.phone_number && !String(phoneNumber || '').trim()) {
@@ -241,10 +242,23 @@ const Checkout = () => {
         setShowPaymentMethodModal(true);
     };
 
-    const handleSelectPaymentMethod = async (paymentMethod) => {
+    const handleSelectPaymentMethod = (paymentMethod) => {
         if (isSubmitting) return;
+        setSelectedPaymentMethod(paymentMethod);
         setShowPaymentMethodModal(false);
-        await orderCake(paymentMethod);
+        setShowPaymentConfirmationModal(true);
+    };
+
+    const handleCancelPaymentConfirmation = () => {
+        if (isSubmitting) return;
+        setShowPaymentConfirmationModal(false);
+        setShowPaymentMethodModal(true);
+    };
+
+    const confirmSelectedPaymentMethod = async () => {
+        if (isSubmitting || !selectedPaymentMethod) return;
+        setShowPaymentConfirmationModal(false);
+        await orderCake(selectedPaymentMethod);
     };
 
     const listCartItems = cart.map((item, index) =>
@@ -288,6 +302,7 @@ const Checkout = () => {
 
     const cartTotal = cart.reduce((total, item) => total + (item.price * (item.amount || 1)), 0);
     const downpayment = cartTotal * 0.15;
+    const selectedPaymentMethodLabel = selectedPaymentMethod === 'paymongo' ? 'PayMongo Checkout' : 'Reference Number';
 
     return (
         <SafeAreaView className='flex-1 bg-main-form'>
@@ -362,14 +377,12 @@ const Checkout = () => {
                 </View>
             </ScrollView>
             <View className='w-full h-40 p-6 bg-white border-y border-secondary-light'>
-                <ConfirmModal
-                    details={'Choose your preferred payment channel to proceed.'}
-                    onConfirm={openPaymentMethodModal}>
+                <TouchableOpacity onPress={openPaymentMethodModal} disabled={isSubmitting}>
                     <View className='w-full bg-secondary-light rounded-full flex-row items-center justify-center gap-3 p-4'>
                         <WalletCards size={18} color='white' />
                         <Text className='font-bold text-lg text-white'>Choose Payment Method</Text>
                     </View>
-                </ConfirmModal>
+                </TouchableOpacity>
             </View>
 
             <Modal
@@ -425,6 +438,43 @@ const Checkout = () => {
                             className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
                         >
                             <Text className='text-[#7A4520] font-semibold'>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={showPaymentConfirmationModal}
+                transparent
+                animationType='fade'
+                onRequestClose={handleCancelPaymentConfirmation}
+            >
+                <View className='flex-1 bg-black/50 justify-center items-center px-6'>
+                    <View className='bg-white w-full p-6 rounded-3xl shadow-lg border border-[#E5D3C1]'>
+                        <Text className='text-xl font-bold text-primary mb-2'>Confirm Payment Method</Text>
+                        <Text className='text-secondary-strong mb-4'>
+                            You selected {selectedPaymentMethodLabel}. Continue to place this order?
+                        </Text>
+
+                        <View className='mb-5 rounded-2xl border border-[#E5D3C1] bg-[#FAF3EC] p-4'>
+                            <Text className='text-[11px] uppercase tracking-wider text-[#8B5A3C]/70 font-semibold'>Amount Due Now</Text>
+                            <Text className='text-2xl font-extrabold text-primary mt-1'>₱ {downpayment.toFixed(2)}</Text>
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={confirmSelectedPaymentMethod}
+                            disabled={isSubmitting}
+                            className={`mb-3 rounded-xl bg-[#8B5A3C] px-4 py-4 items-center justify-center ${isSubmitting ? 'opacity-60' : ''}`}
+                        >
+                            <Text className='text-white font-bold'>Confirm and Continue</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={handleCancelPaymentConfirmation}
+                            disabled={isSubmitting}
+                            className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
+                        >
+                            <Text className='text-[#7A4520] font-semibold'>Back to Payment Methods</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

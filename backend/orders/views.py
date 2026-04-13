@@ -87,8 +87,8 @@ def _normalize_reference_number(value):
 
 def _normalize_refund_account_number(value):
     digits = ''.join(ch for ch in str(value or '') if ch.isdigit())
-    if len(digits) < 10 or len(digits) > 15:
-        raise ValidationError({"refund_account_number": "GCash account number must be 10 to 15 digits."})
+    if len(digits) != 11:
+        raise ValidationError({"refund_account_number": "GCash account number must be 11 digits in 4-3-4 format (example: 0917 123 4567)."})
     return digits
 
 class CakeOrderViewSet(viewsets.ModelViewSet):
@@ -310,7 +310,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         try:
             refund_account_number = _normalize_refund_account_number(request.data.get('refund_account_number'))
         except ValidationError:
-            return Response({"error": "GCash account number must be 10 to 15 digits."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "GCash account number must be 11 digits in 4-3-4 format (example: 0917 123 4567)."}, status=status.HTTP_400_BAD_REQUEST)
 
         order.cancellation_requested = True
         order.cancellation_requested_at = timezone.now()

@@ -23,9 +23,16 @@ const formatReferenceNumber = (value = '') => {
     return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12)}`;
 };
 
-const getGcashDigits = (value = '') => getReferenceDigits(value);
+const getGcashDigits = (value = '') => value.replace(/\D/g, '').slice(0, 11);
 
-const formatGcashNumber = (value = '') => formatReferenceNumber(value);
+const formatGcashNumber = (value = '') => {
+    const digits = getGcashDigits(value);
+
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+
+    return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+};
 
 const formatCurrency = (value = 0) => {
     const amount = Number(value || 0);
@@ -91,6 +98,7 @@ const OrderDetails = () => {
     const [refundAccountNumberInput, setRefundAccountNumberInput] = useState('');
     const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
     const [pendingCancelAction, setPendingCancelAction] = useState(null);
+    const [showCancellationRequestForm, setShowCancellationRequestForm] = useState(false);
     const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
     const [editableComments, setEditableComments] = useState('');
     const [editableImages, setEditableImages] = useState([]);
@@ -132,6 +140,7 @@ const OrderDetails = () => {
         setEditableImages(extractDisplayImages(parsedOrder));
         setRefundAccountNameInput(parsedOrder?.refund_account_name || '');
         setRefundAccountNumberInput(formatGcashNumber(parsedOrder?.refund_account_number || ''));
+        setShowCancellationRequestForm(false);
         setIsEditingOrderDetails(false);
     }, [orderDataParam]);
 
@@ -199,6 +208,7 @@ const OrderDetails = () => {
         setEditableImages(extractDisplayImages(freshOrder));
         setRefundAccountNameInput(freshOrder?.refund_account_name || '');
         setRefundAccountNumberInput(formatGcashNumber(freshOrder?.refund_account_number || ''));
+        setShowCancellationRequestForm(false);
         setIsEditingOrderDetails(false);
 
         if (freshOrder?.reference_number) {
@@ -342,6 +352,10 @@ const OrderDetails = () => {
     const totalAmountDisplay = totalAmount > 0
         ? formatCurrency(totalAmount)
         : (isPremadeOrder ? 'N/A' : 'Available after order is completed');
+    const isRefundAccountNumberComplete = /^\d{4}\s\d{3}\s\d{4}$/.test(String(refundAccountNumberInput || '').trim());
+    const canSubmitCancellationRequest = Boolean(String(refundAccountNameInput || '').trim())
+        && isRefundAccountNumberComplete
+        && !requestingCancellation;
 
     const handlePostReferenceNumber = async () => {
         if (submittingReference) return;
@@ -419,16 +433,19 @@ const OrderDetails = () => {
 
         const normalizedAccountName = String(refundAccountNameInput || '').trim();
         const normalizedAccountNumber = getGcashDigits(refundAccountNumberInput);
+        const formattedAccountNumber = formatGcashNumber(refundAccountNumberInput).trim();
 
         if (!normalizedAccountName) {
             showToast('Please provide your GCash account name for refund.', 'error');
             return;
         }
 
-        if (normalizedAccountNumber.length < 10 || normalizedAccountNumber.length > 15) {
-            showToast('GCash account number must be 10 to 15 digits.', 'error');
+        if (!/^\d{4}\s\d{3}\s\d{4}$/.test(formattedAccountNumber) || normalizedAccountNumber.length !== 11) {
+            showToast('GCash account number must follow 4 3 4 format (example: 0917 123 4567).', 'error');
             return;
         }
+
+        setRefundAccountNumberInput(formattedAccountNumber);
 
         setRequestingCancellation(true);
         try {
@@ -561,37 +578,64 @@ const OrderDetails = () => {
 
                     {(currentStatus === 'pending' || currentStatus === 'accepted') && !cancellationRequested && (
                         <View className='gap-3 p-4 bg-red-50 rounded-xl border border-red-200 w-full'>
-                            <Text className='text-red-600 font-semibold'>Refund Destination (GCash)</Text>
-                            <TextInput
-                                value={refundAccountNameInput}
-                                onChangeText={setRefundAccountNameInput}
-                                placeholder='GCash account name'
-                                editable={!requestingCancellation}
-                                className='border border-red-200 rounded-lg px-4 py-3 text-primary bg-white'
-                            />
-                            <TextInput
-                                value={refundAccountNumberInput}
-                                onChangeText={(text) => setRefundAccountNumberInput(formatGcashNumber(text))}
-                                placeholder='09XXXXXXXXX'
-                                keyboardType='number-pad'
-                                maxLength={18}
-                                editable={!requestingCancellation}
-                                className='border border-red-200 rounded-lg px-4 py-3 text-primary bg-white'
-                            />
-                            <TouchableOpacity
-                                onPress={() => openCancelConfirmation('request')}
-                                disabled={requestingCancellation}
-                                className={`flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80 ${requestingCancellation ? 'opacity-60' : ''}`}
-                            >
-                                {requestingCancellation ? (
-                                    <ActivityIndicator size="small" color="white" />
-                                ) : (
-                                    <XCircle size={20} color="white" />
-                                )}
-                                <Text className='text-white text-lg font-bold'>
-                                    {requestingCancellation ? 'Submitting Request...' : 'Request Cancellation'}
-                                </Text>
-                            </TouchableOpacity>
+                            {!showCancellationRequestForm ? (
+                                <>
+                                    <Text className='text-red-600 font-semibold'>Need to cancel this order?</Text>
+                                    <Text className='text-red-500 text-sm'>Tap below to enter your refund GCash details before submitting the request.</Text>
+                                    <TouchableOpacity
+                                        onPress={() => setShowCancellationRequestForm(true)}
+                                        disabled={requestingCancellation}
+                                        className='flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80'
+                                    >
+                                        <XCircle size={20} color='white' />
+                                        <Text className='text-white text-lg font-bold'>Request Cancellation</Text>
+                                    </TouchableOpacity>
+                                </>
+                            ) : (
+                                <>
+                                    <Text className='text-red-600 font-semibold'>Refund Destination (GCash)</Text>
+                                    <TextInput
+                                        value={refundAccountNameInput}
+                                        onChangeText={setRefundAccountNameInput}
+                                        placeholder='GCash account name'
+                                        editable={!requestingCancellation}
+                                        className='border border-red-200 rounded-lg px-4 py-3 text-primary bg-white'
+                                    />
+                                    <TextInput
+                                        value={refundAccountNumberInput}
+                                        onChangeText={(text) => setRefundAccountNumberInput(formatGcashNumber(text))}
+                                        placeholder='0917 123 4567'
+                                        keyboardType='number-pad'
+                                        maxLength={13}
+                                        editable={!requestingCancellation}
+                                        className='border border-red-200 rounded-lg px-4 py-3 text-primary bg-white'
+                                    />
+                                    <Text className='text-red-500 text-xs'>Format: 0917 123 4567</Text>
+                                    <View className='flex-row gap-2'>
+                                        <TouchableOpacity
+                                            onPress={() => setShowCancellationRequestForm(false)}
+                                            disabled={requestingCancellation}
+                                            className='flex-1 items-center justify-center p-4 bg-white border border-red-300 rounded-xl'
+                                        >
+                                            <Text className='text-red-600 text-base font-semibold'>Back</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => openCancelConfirmation('request')}
+                                            disabled={!canSubmitCancellationRequest}
+                                            className={`flex-1 flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl active:opacity-80 ${!canSubmitCancellationRequest ? 'opacity-60' : ''}`}
+                                        >
+                                            {requestingCancellation ? (
+                                                <ActivityIndicator size='small' color='white' />
+                                            ) : (
+                                                <XCircle size={20} color='white' />
+                                            )}
+                                            <Text className='text-white text-base font-bold'>
+                                                {requestingCancellation ? 'Submitting...' : 'Submit Request'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </>
+                            )}
                         </View>
                     )}
 
@@ -974,8 +1018,10 @@ const OrderDetails = () => {
             <ActionConfirmModal
                 visible={showCancelConfirmModal}
                 title={pendingCancelAction === 'request' ? 'Confirm Cancellation Request' : 'Confirm Cancellation'}
-                message='Are you sure you want to cancel this order? This cannot be undone.'
-                cancelText='No, Keep Order'
+                message={pendingCancelAction === 'request'
+                    ? 'Submit this cancellation request with the provided refund GCash details?'
+                    : 'Are you sure you want to cancel this order? This cannot be undone.'}
+                cancelText={pendingCancelAction === 'request' ? 'No, Go Back' : 'No, Keep Order'}
                 confirmText={pendingCancelAction === 'request' ? 'Yes, Request Cancellation' : 'Yes, Cancel Order'}
                 onCancel={closeCancelConfirmation}
                 onConfirm={confirmCancelAction}

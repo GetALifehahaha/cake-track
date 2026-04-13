@@ -23,7 +23,6 @@ import {
     InformationPage,
 } from '@/components/molecules/FormPages';
 import { useToast } from '@/context/ToastContext';
-import ConfirmModal from '@/components/organisms/ConfirmModal';
 import useOrder from '@/hooks/useOrder';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
@@ -71,6 +70,8 @@ const CustomOrders = () => {
     const [contactNumber, setContactNumber] = useState(formatPhoneNumber(user?.phone_number || ''));
     const [agreeToTOC, setAgreeToTOC] = useState(false);
     const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+    const [showPaymentConfirmationModal, setShowPaymentConfirmationModal] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
     // Ref to capture the cake preview as a single image
     const cakePreviewRef = useRef();
@@ -372,10 +373,23 @@ const CustomOrders = () => {
         setShowPaymentMethodModal(true);
     };
 
-    const handleSelectPaymentMethod = async (paymentMethod) => {
+    const handleSelectPaymentMethod = (paymentMethod) => {
         if (isSubmitting) return;
+        setSelectedPaymentMethod(paymentMethod);
         setShowPaymentMethodModal(false);
-        await orderCake(paymentMethod);
+        setShowPaymentConfirmationModal(true);
+    };
+
+    const handleCancelPaymentConfirmation = () => {
+        if (isSubmitting) return;
+        setShowPaymentConfirmationModal(false);
+        setShowPaymentMethodModal(true);
+    };
+
+    const confirmSelectedPaymentMethod = async () => {
+        if (isSubmitting || !selectedPaymentMethod) return;
+        setShowPaymentConfirmationModal(false);
+        await orderCake(selectedPaymentMethod);
     };
 
     const validateCurrentPage = () => {
@@ -666,6 +680,7 @@ const CustomOrders = () => {
     }
 
     const customDownpaymentAmount = 500;
+    const selectedPaymentMethodLabel = selectedPaymentMethod === 'paymongo' ? 'PayMongo Checkout' : 'Reference Number';
 
 
     return (
@@ -1044,12 +1059,12 @@ const CustomOrders = () => {
                             <Text className='text-secondary-light font-medium'>{page}/{maxPage}</Text>
 
                             {page === maxPage ?
-                                <ConfirmModal details={"Place order? This action cannot be undone."} onConfirm={openPaymentMethodModal}>
+                                <TouchableOpacity onPress={openPaymentMethodModal} disabled={isSubmitting}>
                                     <View className='bg-secondary-light px-8 py-4 rounded-2xl items-center flex-row gap-2 shadow-sm'>
                                         <Check style={{ color: 'white' }} />
                                         <Text className='text-white font-bold'>Choose Payment Method</Text>
                                     </View>
-                                </ConfirmModal>
+                                </TouchableOpacity>
                                 :
                                 <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-primary shadow-xl p-4 rounded-full items-center'>
                                     <ArrowRight style={{ color: 'white' }} />
@@ -1112,6 +1127,43 @@ const CustomOrders = () => {
                                 className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
                             >
                                 <Text className='text-[#7A4520] font-semibold'>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal
+                    visible={showPaymentConfirmationModal}
+                    transparent
+                    animationType='fade'
+                    onRequestClose={handleCancelPaymentConfirmation}
+                >
+                    <View className='flex-1 bg-black/50 justify-center items-center px-6'>
+                        <View className='bg-white w-full p-6 rounded-3xl shadow-lg border border-[#E5D3C1]'>
+                            <Text className='text-xl font-bold text-primary mb-2'>Confirm Payment Method</Text>
+                            <Text className='text-secondary-strong mb-4'>
+                                You selected {selectedPaymentMethodLabel}. Continue to place this order?
+                            </Text>
+
+                            <View className='mb-5 rounded-2xl border border-[#E5D3C1] bg-[#FAF3EC] p-4'>
+                                <Text className='text-[11px] uppercase tracking-wider text-[#8B5A3C]/70 font-semibold'>Amount Due Now</Text>
+                                <Text className='text-2xl font-extrabold text-primary mt-1'>₱ {customDownpaymentAmount.toFixed(2)}</Text>
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={confirmSelectedPaymentMethod}
+                                disabled={isSubmitting}
+                                className={`mb-3 rounded-xl bg-[#8B5A3C] px-4 py-4 items-center justify-center ${isSubmitting ? 'opacity-60' : ''}`}
+                            >
+                                <Text className='text-white font-bold'>Confirm and Continue</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={handleCancelPaymentConfirmation}
+                                disabled={isSubmitting}
+                                className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
+                            >
+                                <Text className='text-[#7A4520] font-semibold'>Back to Payment Methods</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
