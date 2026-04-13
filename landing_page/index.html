@@ -3,82 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cake Track</title>
+    <title>Document</title>
     <link rel="stylesheet" href="output.css">
 </head>
-<body class="w-full min-h-screen bg-lp-bg">
-    <header class="w-full bg-lp-bg-2 sticky top-0 z-50 border-b border-gray-200">
-    <div class="max-w-7xl mx-auto flex items-center justify-between p-4 px-6 md:px-8">
-        <div class="flex font-extrabold text-2xl tracking-tight">
-            <span class="text-lp-text">Cake</span><span class="text-lp-text-dark">Track</span>
-        </div>
-        <button class="bg-lp-text-dark hover:opacity-90 transition-opacity duration-200 text-white text-sm font-semibold py-2.5 px-5 rounded-full cursor-pointer shadow-sm">
-            Download CakeTrack
-        </button>
-    </div>
-</header>
+<body class="font-google relative"> 
+    <!-- BG DESIGNS -->
+    <!-- <div class="w-80 h-80 rounded-4xl bg-accent/10 absolute -z-100 blur animate-pulse"></div> -->
 
-<main class="w-full max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-24">
-    <div class="flex flex-col md:flex-row justify-between items-center gap-12 bg-lp-bg-2 rounded-3xl p-8 md:p-16 shadow-sm">
-        
-        <div class="flex-1 flex flex-col justify-center items-center md:items-start text-center md:text-left gap-6">
-            <div class="space-y-2">
-                <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900">Designed by you,</h1>
-                <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-lp-text-dark">Baked by us.</h1>
+    <!-- Navbar -->
+    <div class="flex bg-accent/20 w-full h-16 items-center justify-between px-24">
+        <div class="flex items-center gap-0.5 font-bold text-lg ">
+            <h1 class="text-accent text-shadow-accent/20 text-shadow-sm">Cake</h1>
+            <h1 class="text-accent-dark text-shadow-accent/20 text-shadow-sm">Track</h1>
+        </div>
+
+        <button class="p-2.5 px-6 rounded-sm bg-gradient-to-tr from-accent to-accent-dark text-main shadow-accent shadow-sm cursor-pointer text-xs tracker-wide font-semibold">Download App</button>
+    </div>
+
+    <!-- Body -->
+    <div class="bg-missing-fill/20 w-full h-screen flex items-center justify-center pt-24">
+        <div class="flex-1 px-20 h-screen">
+            <div class="bg-accent/5 h-4/5 w-full flex flex-col justify-center rounded-4xl items-start text-left px-8">
+                <h1 class="font-extrabold text-6xl text-accent-dark tracking-tight">Designed by you,</h1>
+                <h1 class="font-extrabold text-6xl text-accent-dark tracking-tight">Baked by us.</h1>
+                <h5 class="my-4 font-base text-base text-accent-dark/50 -line-height-2">Deliciously Crafted, Perfectly Sweet. Order premade cakes, or build your own custom one. Have a taste of fine pastry.</h5>
+                <button class="p-2.5 px-6 rounded-md bg-accent-dark text-main shadow-accent shadow-sm cursor-pointer text-lg tracker-wide font-semibold hover:bg-gradient-to-br hover:from-accent-dark hover:to-accent/20 transition">Download CakeTrack!</button>
+
+                <div class="font-semibold text-xs tracking-tight text-accent-dark/50 mt-4 flex gap-8 uppercase">
+                    <div class="animate-pulse flex gap-2 items-center">
+                        <div class="h-2 w-2 rounded-full bg-accent-dark"></div>
+                        <h5>Android</h5>
+                    </div>
+                    <div class="animate-pulse flex gap-2 items-center">
+                        <div class="h-2 w-2 rounded-full bg-accent-dark"></div>
+                        <h5>React Native</h5>
+                    </div>
+                    <div class="animate-pulse flex gap-2 items-center">
+                        <div class="h-2 w-2 rounded-full bg-accent-dark"></div>
+                        <h5>React</h5>
+                    </div>
+                </div>
             </div>
-            <p class="text-lg md:text-xl font-medium text-gray-600 animate-pulse">Deliciously Crafted, Perfectly Sweet</p>
-            <button class="mt-4 bg-lp-text-dark hover:-translate-y-0.5 transition-transform duration-200 text-white text-base font-semibold py-4 px-8 rounded-2xl shadow-lg">
-                Download the App Here
-            </button>
         </div>
-
-        <div class="flex-1 w-full min-h-[300px] md:min-h-[400px] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl hidden md:block border border-gray-100 shadow-inner">
+        <div class="flex-1 px-20 h-full  flex justify-end">
+            <div class="bg-accent-dark h-4/5 w-90 rounded-t-4xl rounded-b-lg relative">
+                <div class="bg-red-400 h-3/5 w-50 rounded-t-4xl rounded-b-lg absolute -bottom-10 -left-40">
+                </div>
+                <div class="bg-red-400 w-16 h-16 rounded-full absolute -top-4 -right-4">
+                    <div class="bg-red-400 w-4 h-4 rounded-full absolute -top-4 -right-4">
+                    </div>
+                </div>
             </div>
-
-    </div>
-</main>
-
-    <section class="w-full max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-24">
-    <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
-        <p class="text-sm font-bold tracking-widest text-lp-text uppercase">We got you!</p>
-        <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900">Premade Cakes?</h2>
-        <p class="text-lg text-gray-600 font-medium">Order from a myriad of cake selections prepared and designed with art.</p>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 items-start pb-12">
-        
-        <div class="relative w-full aspect-[3/4] rounded-3xl overflow-hidden bg-gray-200 shadow-md lg:translate-y-12 transition-transform duration-300 hover:scale-[1.03] hover:shadow-xl hover:z-10 cursor-pointer">
-            <div class="absolute inset-0 bg-[url('./assets/images/cake-1.jpeg')] bg-cover bg-center"></div>
-        </div>
-        
-        <div class="relative w-full aspect-[3/4] rounded-3xl overflow-hidden bg-gray-200 shadow-md transition-transform duration-300 hover:scale-[1.03] hover:shadow-xl hover:z-10 cursor-pointer">
-            <div class="absolute inset-0 bg-[url('./assets/images/cake-2.jpeg')] bg-cover bg-center"></div>
-        </div>
-
-        <div class="relative w-full aspect-[3/4] rounded-3xl overflow-hidden bg-gray-200 shadow-md lg:translate-y-12 transition-transform duration-300 hover:scale-[1.03] hover:shadow-xl hover:z-10 cursor-pointer">
-            <div class="absolute inset-0 bg-[url('./assets/images/cake-3.jpeg')] bg-cover bg-center"></div>
-        </div>
-
-        <div class="relative w-full aspect-[3/4] rounded-3xl overflow-hidden bg-gray-200 shadow-md transition-transform duration-300 hover:scale-[1.03] hover:shadow-xl hover:z-10 cursor-pointer">
-            <div class="absolute inset-0 bg-[url('./assets/images/cake-4.jpeg')] bg-cover bg-center"></div>
-        </div>
-
-    </div>
-</section>
-
-    <div class="w-full h-screen bg-gray-400 flex md:flex-row flex-col justify-between items-center gap-4 p-4">
-        <div class="flex-1 bg-white h-full">
-            
-        </div>
-        <div class="flex-1">
-            <h1>Or <strong>build</strong> your own cakes</h1>
         </div>
     </div>
 
-    <div class="h-80 w-full bg-gray-100">
-
+    <!--  -->
+    <div class="w-full py-8 bg-accent-dark text-white shadow-sm flex flex-col items-center gap-4 relative">
+        <div class="bg-accent w-8 h-8 rounded-full absolute right-20 top-5">
+            <div class="bg-accent w-4 h-4 rounded-full absolute -left-5 -bottom-5 blur animate-pulse">
+            </div>
+        </div>
+        <h1 class="uppercase font-semibold tracking-wide">Order Cakes</h1>
+        <h5 class="font-medium text-2xl text-missing-fill">Choose from a myriad of selected delights!</h5>
+        <div class="bg-accent w-8 h-8 rounded-full absolute left-20 bottom-5">
+            <div class="bg-accent w-4 h-4 rounded-full absolute -top-5 -bottom-5 blur animate-pulse">
+            </div>
+        </div>
     </div>
-    <div class="h-40 w-full bg-gray-200">
+
+    <div class="flex justify-center gap-4 w-full h-80 mt-2 border-t-4 border-t-accent-dark px-24 py-16">
+        <div class="rounded-2xl h-120 flex-1 bg-accent-dark/10">
+        </div>
+        <div class="rounded-2xl h-120 flex-1 bg-accent-dark/10 translate-y-10">
+        </div>
+        <div class="rounded-2xl h-120 flex-1 bg-accent-dark/10">
+        </div>
+        <div class="rounded-2xl h-120 flex-1 bg-accent-dark/10 translate-y-10">
+        </div>
+    </div>
+
+    <div class="h-80">
 
     </div>
 </body>

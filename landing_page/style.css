@@ -1,4 +1,14 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:opsz,GRAD@17..18,-4&family=Raleway:ital,wght@0,100..900;1,100..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+
+.google-sans {
+  font-family: "Google Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "GRAD" -4;
+}
 
 @theme {
   --color-main: #F9F9F9;
@@ -53,4 +63,6 @@
   --color-lp-bg-2: #f1eeec;
   --color-lp-text-dark: #53311f;
   --color-lp-text: #b18053;
+
+  --font-google: "Google Sans", sans-serif;
 }

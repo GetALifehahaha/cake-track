@@ -93,7 +93,7 @@ const OrderCard = ({ order, onArchive, onHide }) => {
                             }`}>{capitalize(order.status)}</Text>
                     </View>
                     <View className='flex-row justify-between items-center'>
-                        <Text className='font-bold text-lg'>{capitalize(order.cake_orders.occasion)}</Text>
+                        <Text className='font-bold text-lg w-40 justify-content'>{capitalize(order.cake_orders.occasion)}</Text>
                         <Text className='opacity-50 font-medium'>{capitalize(order.due_date)}</Text>
                     </View>
                     <View className='p-2 bg-gray-100 flex-row gap-2 items-center rounded-lg'>
