@@ -11,27 +11,37 @@ const FILTER_OPTIONS = [
     { label: 'Refunded', value: 'refunded' },
 ];
 
+const MAX_FILTERS = 3;
+
 const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
     const [selected, setSelected] = useState([]);
+    const [limitMessage, setLimitMessage] = useState('');
 
     // Sync state with props when modal opens
     useEffect(() => {
         if (show) {
-            // If activeFilters is passed, use it; otherwise default to empty
-            setSelected(activeFilters);
+            setSelected((activeFilters || []).slice(0, MAX_FILTERS));
+            setLimitMessage('');
         }
     }, [show, activeFilters]);
 
     const toggleSelection = (value) => {
         if (selected.includes(value)) {
             setSelected(selected.filter(item => item !== value));
+            setLimitMessage('');
         } else {
+            if (selected.length >= MAX_FILTERS) {
+                setLimitMessage(`You can only select up to ${MAX_FILTERS} filters.`);
+                return;
+            }
             setSelected([...selected, value]);
+            setLimitMessage('');
         }
     };
 
     const handleClear = () => {
         onChoose([]);
+        setLimitMessage('');
         onClose();
     };
 
@@ -69,9 +79,15 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                             {/* Filter Options (Checkboxes) */}
                             <View className='flex-col gap-3 mb-8'>
                                 <Text className="text-gray-500 font-semibold mb-2">Status</Text>
+                                {limitMessage ? (
+                                    <Text className="text-xs text-red-500 -mt-1 mb-2">{limitMessage}</Text>
+                                ) : null}
                                 {FILTER_OPTIONS.map((option) => {
                                     // Define the specific text color based on the status value
                                     let statusColor = 'text-gray-600'; // Default fallback
+
+                                    const isSelected = selected.includes(option.value);
+                                    const isDisabled = !isSelected && selected.length >= MAX_FILTERS;
 
                                     switch (option.value) {
                                         case 'unpaid':
@@ -100,7 +116,7 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                                         <TouchableOpacity
                                             key={option.value}
                                             onPress={() => toggleSelection(option.value)}
-                                            className="flex-row items-center justify-between py-2"
+                                            className={`flex-row items-center justify-between py-2 ${isDisabled ? 'opacity-50' : ''}`}
                                         >
                                             {/* Text now always uses the statusColor */}
                                             <Text className={`text-xl font-bold ${statusColor}`}>
@@ -108,8 +124,8 @@ const OrderFilter = ({ show, activeFilters, onChoose, onClose }) => {
                                             </Text>
 
                                             {/* Checkbox remains the same (logic for checkbox fill usually needs isSelected) */}
-                                            <View className={`w-6 h-6 rounded-md border items-center justify-center ${selected.includes(option.value) ? 'bg-secondary-strong border-secondary-strong' : 'border-gray-300 bg-white'}`}>
-                                                {selected.includes(option.value) && <Check size={16} color="white" />}
+                                            <View className={`w-6 h-6 rounded-md border items-center justify-center ${isSelected ? 'bg-secondary-strong border-secondary-strong' : 'border-gray-300 bg-white'}`}>
+                                                {isSelected && <Check size={16} color="white" />}
                                             </View>
                                         </TouchableOpacity>
                                     );

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Info, RefreshCw } from 'lucide-react';
 import useDashboard from '@/hooks/useDashboard';
-import Loading from '@/components/molecules/Loading';
 import { DashboardChart, DownloadReportModal } from '@/components/organisms';
-import { Button, Label, Dropdown } from "@/components/atoms";
+import { Button, Label } from "@/components/atoms";
 import { useSearchParams } from "react-router-dom";
 import { DatePicker } from "@/components/molecules";
 import { formatDateForAPI } from "@/utils/date";
@@ -49,11 +48,76 @@ const Reports = () => {
     if (error) return <h5>Error...</h5>;
 
 
-    const downloadCSV = (selected) => {
-        const today = new Date().toISOString().split("T")[0];
-        let csvContent = "data:text/csv;charset=utf-8,";
+    const toNumber = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
 
-        // --- POS Dashboard Metrics ---
+    const formatNumber = (value, minimumFractionDigits = 0, maximumFractionDigits = minimumFractionDigits) => {
+        return toNumber(value).toLocaleString('en-PH', {
+            minimumFractionDigits,
+            maximumFractionDigits,
+        });
+    };
+
+    const formatDateOnly = (value) => {
+        if (!value) return '-';
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return String(value).split('T')[0] || String(value);
+        }
+
+        return parsed.toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+    };
+
+    const formatTopProductCell = (product) => {
+        if (!product || typeof product !== 'object') return '-';
+        const name = product.product__name || 'Unknown Product';
+        const count = formatNumber(product.total_sold);
+        return `${name} (${count})`;
+    };
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const buildTable = (headers, rows) => {
+        const safeHeaders = headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('');
+
+        const safeRows = rows.length > 0
+            ? rows.map((row) => (
+                `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`
+            )).join('')
+            : `<tr><td colspan="${headers.length}" class="empty-row">No data available.</td></tr>`;
+
+        return `
+            <table class="report-table">
+                <thead>
+                    <tr>${safeHeaders}</tr>
+                </thead>
+                <tbody>
+                    ${safeRows}
+                </tbody>
+            </table>
+        `;
+    };
+
+    const downloadExcelReport = (selected) => {
+        const pos = posDashboardData || {};
+        const orders = ordersDashboardData || {};
+        const selectedSet = new Set(selected);
+        const today = new Date().toISOString().split('T')[0];
+
+        const sections = [];
+
         if (selected.some(key => [
             'voided_transactions',
             'total_transactions',
@@ -61,98 +125,244 @@ const Reports = () => {
             'avg_daily_orders',
             'total_revenue'
         ].includes(key))) {
-            csvContent += "POS Dashboard Metrics\n";
-            csvContent += "Metric,Value\n";
+            const posRows = [];
 
-            if (selected.includes('total_transactions'))
-                csvContent += `Total Successful Transactions,${posDashboardData.total_successful_transactions}\n`;
+            if (selectedSet.has('total_transactions')) {
+                posRows.push(['Total Successful Transactions', formatNumber(pos.total_successful_transactions)]);
+            }
 
-            if (selected.includes('products_sold'))
-                csvContent += `Total Products Sold,${posDashboardData.total_products_sold}\n`;
+            if (selectedSet.has('products_sold')) {
+                posRows.push(['Total Products Sold', formatNumber(pos.total_products_sold)]);
+            }
 
-            if (selected.includes('avg_daily_orders'))
-                csvContent += `Average Daily Transactions,${posDashboardData.avg_daily_transactions}\n`;
+            if (selectedSet.has('avg_daily_orders')) {
+                posRows.push(['Average Daily Transactions', formatNumber(pos.avg_daily_transactions, 2, 2)]);
+            }
 
-            if (selected.includes('voided_transactions'))
-                csvContent += `Total Voided Transactions,${posDashboardData.total_void_amount}\n`;
+            if (selectedSet.has('voided_transactions')) {
+                posRows.push(['Total Voided Transactions', formatNumber(pos.total_void_amount)]);
+            }
 
-            if (selected.includes('total_revenue'))
-                csvContent += `Total Revenue,${posDashboardData.total_revenue_generated}\n`;
+            if (selectedSet.has('total_revenue')) {
+                posRows.push(['Total Revenue', formatNumber(pos.total_revenue_generated, 2, 2)]);
+            }
 
-            csvContent += "\n";
-        }
-
-        // --- Cashier Performance ---
-        if (selected.includes('cashier_data')) {
-            csvContent += "Cashier Performance\n";
-            csvContent += "Name,Daily Revenue,Weekly Revenue,Monthly Revenue,Total Revenue\n";
-            posDashboardData.cashier_performance.forEach(c => {
-                csvContent += `${c.name},${c.daily_revenue.toFixed(2)},${c.weekly_revenue.toFixed(2)},${c.monthly_revenue.toFixed(2)},${c.total_revenue.toFixed(2)}\n`;
+            sections.push({
+                title: 'POS Dashboard Metrics',
+                table: buildTable(['Metric', 'Value'], posRows),
             });
-            csvContent += "\n";
         }
 
-        // --- Top Selling Products ---
-        if (selected.includes('top_selling_products')) {
-            csvContent += "Top Selling Products\n";
-            csvContent += "Product Name,Total Sold\n";
-            posDashboardData.top_selling_products.forEach(p => {
-                csvContent += `${p.product__name},${p.total_sold}\n`;
+        if (selectedSet.has('cashier_data')) {
+            const cashierRows = (pos.cashier_performance || []).map((cashier) => [
+                cashier.name || '-',
+                formatNumber(cashier.daily_revenue, 2, 2),
+                formatNumber(cashier.weekly_revenue, 2, 2),
+                formatNumber(cashier.monthly_revenue, 2, 2),
+                formatNumber(cashier.total_revenue, 2, 2),
+            ]);
+
+            sections.push({
+                title: 'Cashier Performance',
+                table: buildTable(['Name', 'Daily Revenue', 'Weekly Revenue', 'Monthly Revenue', 'Total Revenue'], cashierRows),
             });
-            csvContent += "\n";
         }
 
-        // --- Sales Trend ---
-        if (selected.includes('products_sold_trend')) {
-            csvContent += "Sales Trend\n";
-            csvContent += "Date,Items Sold\n";
-            posDashboardData.sales_trend.forEach(t => {
-                csvContent += `${t.period},${t.amount}\n`;
+        if (selectedSet.has('top_selling_products')) {
+            const productRows = (pos.top_selling_products || []).map((product) => [
+                product.product__name || '-',
+                formatNumber(product.total_sold),
+            ]);
+
+            sections.push({
+                title: 'Top Selling Products',
+                table: buildTable(['Product Name', 'Total Sold'], productRows),
             });
-            csvContent += "\n";
         }
 
-        // --- Revenue Trend ---
-        if (selected.includes('revenue_trend')) {
-            csvContent += "Revenue Trend\n";
-            csvContent += "Date,Revenue\n";
-            posDashboardData.revenue_trend.forEach(t => {
-                csvContent += `${t.period},${t.amount}\n`;
+        if (selectedSet.has('least_selling_products')) {
+            const leastRows = (pos.least_selling_products || []).map((product) => [
+                product.product__name || '-',
+                formatNumber(product.total_sold),
+            ]);
+
+            sections.push({
+                title: 'Least Selling Products',
+                table: buildTable(['Product Name', 'Total Sold'], leastRows),
             });
-            csvContent += "\n";
         }
 
-        // --- Orders Dashboard ---
+        if (selectedSet.has('products_sold_trend')) {
+            const trendRows = (pos.sales_trend || []).map((trendItem) => {
+                const topProducts = Array.isArray(trendItem.top_products) ? trendItem.top_products : [];
+
+                return [
+                    formatDateOnly(trendItem.period),
+                    formatNumber(trendItem.amount),
+                    formatTopProductCell(topProducts[0]),
+                    formatTopProductCell(topProducts[1]),
+                    formatTopProductCell(topProducts[2]),
+                ];
+            });
+
+            sections.push({
+                title: 'Products Sold Trend',
+                table: buildTable(['Date', 'Items Sold', 'Top 1 Product', 'Top 2 Product', 'Top 3 Product'], trendRows),
+            });
+        }
+
+        if (selectedSet.has('revenue_trend')) {
+            const revenueRows = (pos.revenue_trend || []).map((trendItem) => [
+                formatDateOnly(trendItem.period),
+                formatNumber(trendItem.amount, 2, 2),
+            ]);
+
+            sections.push({
+                title: 'Revenue Trend',
+                table: buildTable(['Date', 'Revenue'], revenueRows),
+            });
+        }
+
         if (selected.some(key => ['total_orders', 'pending', 'completed', 'rejected', 'order_total_revenue'].includes(key))) {
-            csvContent += "Orders Dashboard\n";
-            csvContent += "Metric,Value\n";
+            const orderRows = [];
 
-            if (selected.includes('total_orders'))
-                csvContent += `Total Orders,${ordersDashboardData.total_orders}\n`;
+            if (selectedSet.has('total_orders')) {
+                orderRows.push(['Total Orders', formatNumber(orders.total_orders)]);
+            }
 
-            if (selected.includes('pending'))
-                csvContent += `Pending Orders,${ordersDashboardData.pending_orders}\n`;
+            if (selectedSet.has('pending')) {
+                orderRows.push(['Pending Orders', formatNumber(orders.pending_orders)]);
+            }
 
-            if (selected.includes('completed'))
-                csvContent += `Completed Orders,${ordersDashboardData.completed_orders}\n`;
+            if (selectedSet.has('completed')) {
+                orderRows.push(['Completed Orders', formatNumber(orders.completed_orders)]);
+            }
 
-            if (selected.includes('rejected'))
-                csvContent += `Rejected Orders,${ordersDashboardData.rejected_orders}\n`;
+            if (selectedSet.has('rejected')) {
+                orderRows.push(['Rejected Orders', formatNumber(orders.rejected_orders)]);
+            }
 
-            if (selected.includes('order_total_revenue'))
-                csvContent += `Total Revenue Generated,${ordersDashboardData.total_revenue_generated}\n`;
+            if (selectedSet.has('order_total_revenue')) {
+                orderRows.push(['Total Revenue Generated', formatNumber(orders.total_revenue_generated, 2, 2)]);
+            }
 
-            csvContent += "\n";
+            sections.push({
+                title: 'Orders Dashboard',
+                table: buildTable(['Metric', 'Value'], orderRows),
+            });
         }
 
-        // Download CSV
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Dashboard_Report_${today}.csv`);
+        const sectionHtml = sections.length > 0
+            ? sections.map((section) => `
+                <section class="report-section">
+                    <h2>${escapeHtml(section.title)}</h2>
+                    ${section.table}
+                </section>
+            `).join('')
+            : `
+                <section class="report-section">
+                    <h2>No Selected Data</h2>
+                    <p class="empty-row">No report sections were selected.</p>
+                </section>
+            `;
+
+        const htmlContent = `
+            <html>
+                <head>
+                    <meta charset="UTF-8" />
+                    <style>
+                        body {
+                            font-family: Segoe UI, Tahoma, sans-serif;
+                            background: #f8fafc;
+                            color: #0f172a;
+                            margin: 0;
+                            padding: 24px;
+                        }
+
+                        .wrapper {
+                            background: #ffffff;
+                            border: 1px solid #cbd5e1;
+                            border-radius: 12px;
+                            padding: 20px;
+                        }
+
+                        h1 {
+                            margin: 0 0 4px 0;
+                            font-size: 24px;
+                            color: #0f172a;
+                        }
+
+                        .subtitle {
+                            margin: 0;
+                            color: #475569;
+                            font-size: 12px;
+                        }
+
+                        .report-section {
+                            margin-top: 20px;
+                        }
+
+                        .report-section h2 {
+                            margin: 0;
+                            padding: 8px 12px;
+                            border-radius: 8px;
+                            background: #e2e8f0;
+                            color: #1e293b;
+                            font-size: 14px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.04em;
+                        }
+
+                        .report-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 8px;
+                            background: #ffffff;
+                        }
+
+                        .report-table th {
+                            text-align: left;
+                            padding: 8px 10px;
+                            border: 1px solid #cbd5e1;
+                            background: #f1f5f9;
+                            color: #1e293b;
+                            font-size: 12px;
+                        }
+
+                        .report-table td {
+                            padding: 8px 10px;
+                            border: 1px solid #e2e8f0;
+                            font-size: 12px;
+                        }
+
+                        .empty-row {
+                            color: #64748b;
+                            text-align: center;
+                            font-style: italic;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="wrapper">
+                        <h1>Cake Track Report</h1>
+                        ${sectionHtml}
+                    </div>
+                </body>
+            </html>
+        `;
+
+        const blob = new Blob(['\ufeff', htmlContent], {
+            type: 'application/vnd.ms-excel;charset=utf-8;',
+        });
+
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `CakeTrack_Report_${today}.xls`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
     };
 
     // FILTERS AND PARAMETERS
@@ -438,7 +648,7 @@ const Reports = () => {
             </div>
 
             {downloadModal &&
-                <DownloadReportModal onClose={() => setDownloadModal(false)} onConfirm={downloadCSV} />
+                <DownloadReportModal onClose={() => setDownloadModal(false)} onConfirm={downloadExcelReport} />
             }
 
             {showTopSellingModal && (

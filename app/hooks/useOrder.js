@@ -9,20 +9,20 @@ export default function useOrder(options = {}) {
     const queryParams = useMemo(() => {
         const trimmed = String(searchQuery || '').trim();
         if (!trimmed) return {};
-        return { search: trimmed };
+        return { q: trimmed };
     }, [searchQuery]);
 
     // --- 2. GET: Fetch Orders ---
     const ordersQuery = useQuery({
         // queryKey: ['orders', apiParams], 
         // queryFn: () => OrderApi(apiParams),
-        queryKey: ['orders', 'my-orders', queryParams.search || ''],
+        queryKey: ['orders', 'my-orders', queryParams.q || ''],
         queryFn: () => OrderApi(queryParams, null, 'GET_ALL_PAGES'),
         placeholderData: (previousData) => previousData,
     });
 
     const archivedOrdersQuery = useQuery({
-        queryKey: ['orders', 'archived', queryParams.search || ''],
+        queryKey: ['orders', 'archived', queryParams.q || ''],
         queryFn: () => OrderApi(queryParams, null, 'GET_ARCHIVED_ALL_PAGES'),
         enabled: shouldIncludeArchivedOrders,
         placeholderData: (previousData) => previousData,

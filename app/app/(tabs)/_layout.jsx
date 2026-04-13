@@ -2,9 +2,10 @@ import { View, Text } from 'react-native'
 import { Tabs } from 'expo-router'
 import React from 'react'
 import { Home, Cake, ShoppingBag, Settings } from 'lucide-react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const _layout = () => {
+	const insets = useSafeAreaInsets();
 
 	const TABS = [
 		{ name: 'index', title: 'Home', icon: Home },
@@ -14,13 +15,21 @@ const _layout = () => {
 	]
 
 	return (
-		<SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: '#fff' }}>
+		<SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: '#fff' }}>
 			<Tabs
 				screenOptions={{
 					headerShown: false,
 					tabBarShowLabel: true,
 					tabBarStyle: {
 						backgroundColor: '#fff',
+						height: 58 + Math.max(insets.bottom, 8),
+						paddingTop: 8,
+						paddingBottom: Math.max(insets.bottom, 8),
+						borderTopWidth: 1,
+						borderTopColor: '#ececec',
+					},
+					tabBarItemStyle: {
+						paddingVertical: 2,
 					},
 					tabBarActiveTintColor: '#8B5A3C',
 					tabBarInactiveTintColor: '#99A1AF'

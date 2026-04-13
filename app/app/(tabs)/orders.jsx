@@ -43,7 +43,7 @@ const Orders = () => {
 	};
 
 	const handleFilterChoose = (selectedStatuses) => {
-		setFilters(selectedStatuses);
+		setFilters(Array.isArray(selectedStatuses) ? selectedStatuses.slice(0, 3) : []);
 	};
 
 	const handleArchiveOrder = async (orderId) => {
@@ -55,8 +55,10 @@ const Orders = () => {
 		}
 	};
 
-	const applySearchQuery = () => {
-		setSearchQuery(searchInput.trim());
+	const applySearchQuery = (inputValue = searchInput) => {
+		const nextValue = String(inputValue ?? '');
+		setSearchInput(nextValue);
+		setSearchQuery(nextValue.trim());
 	};
 
 	const handleTabChange = (tabName) => {
@@ -282,7 +284,7 @@ const Orders = () => {
 					<View className='flex px-6'>
 						<View className='w-full flex-row items-center gap-2 bg-white shadow-md py-3 pl-4 pr-2 rounded-full border border-gray-200 mb-3'>
 							<TouchableOpacity
-								onPress={applySearchQuery}
+								onPress={() => applySearchQuery(searchInput)}
 								className='h-9 w-9 rounded-full items-center justify-center bg-[#f7f2eb]'
 							>
 								<Search opacity={0.7} color="#8B5A3C" size={18} />
@@ -291,7 +293,9 @@ const Orders = () => {
 								className='flex-1 px-1 text-[15px]'
 								value={searchInput}
 								onChangeText={setSearchInput}
-								onSubmitEditing={applySearchQuery}
+								onSubmitEditing={({ nativeEvent }) => applySearchQuery(nativeEvent?.text)}
+								onEndEditing={({ nativeEvent }) => applySearchQuery(nativeEvent?.text)}
+								blurOnSubmit
 								returnKeyType='search'
 								placeholder='Search order ID, occasion, or flavor'
 								placeholderTextColor="#9ca3af"

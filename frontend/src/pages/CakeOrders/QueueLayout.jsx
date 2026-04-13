@@ -14,7 +14,7 @@ const Queue = () => {
 		{ label: "Overview", path: '', icon: LayoutGrid },
 		{ label: "Pending", path: '/pending', icon: Clock4 },
 		{ label: "Accepted", path: '/accepted', icon: CheckCircle },
-		{ label: "Ready for Pickup", path: '/ready', icon: SmileIcon },
+		{ label: "Ready", path: '/ready', icon: SmileIcon },
 		{ label: "Completed", path: '/completed', icon: ClipboardCheck },
 		{ label: "Rejected", path: '/rejected', icon: XCircle },
 		{ label: "Refunded", path: '/refunded', icon: XCircle },

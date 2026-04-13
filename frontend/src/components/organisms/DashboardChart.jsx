@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
-import { CartesianGrid, Dot, Line, LineChart, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { cn } from "@/lib/utils"
 
 import {
@@ -20,9 +20,9 @@ import {
 
 import { Button } from "@/components/atoms"
 
-const DashboardChart = ({ salesData, revenueData }) => {
+const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const [frequency, setFrequency] = useState("daily")
+	const [frequency, setFrequency] = useState(searchParams.get("frequency") || "daily")
 
 	const handleFrequency = (value) => {
 		setFrequency(value)
@@ -30,9 +30,11 @@ const DashboardChart = ({ salesData, revenueData }) => {
 
 	useEffect(() => {
 		const params = new URLSearchParams(searchParams);
-		params.set('frequency', frequency);
-		setSearchParams(params);
-	}, [frequency])
+		if ((params.get("frequency") || "daily") !== frequency) {
+			params.set("frequency", frequency);
+			setSearchParams(params);
+		}
+	}, [frequency, searchParams, setSearchParams])
 
 	const formatXAxis = (value) => {
 		const d = new Date(value);
@@ -140,7 +142,7 @@ const DashboardChart = ({ salesData, revenueData }) => {
 
 				<CardContent>
 					<ChartContainer>
-						<LineChart
+						<AreaChart
 							accessibilityLayer
 							data={salesData}
 							margin={{
@@ -149,6 +151,13 @@ const DashboardChart = ({ salesData, revenueData }) => {
 								right: 24,
 							}}
 						>
+							<defs>
+								<linearGradient id="salesAreaFill" x1="0" y1="0" x2="0" y2="1">
+									<stop offset="5%" stopColor="var(--color-accent-mute)" stopOpacity={0.35} />
+									<stop offset="95%" stopColor="var(--color-accent-mute)" stopOpacity={0.03} />
+								</linearGradient>
+							</defs>
+
 							<CartesianGrid vertical={true} />
 							<XAxis
 								dataKey="period"
@@ -163,22 +172,15 @@ const DashboardChart = ({ salesData, revenueData }) => {
 								content={<SalesTrendTooltip />}
 							/>
 
-							<Line
+							<Area
 								dataKey="amount"
-								type="natural"
+								type="monotone"
+									strokeWidth={2.2}
+									fill="url(#salesAreaFill)"
+									activeDot={{ r: 4 }}
 								stroke="var(--color-accent-mute)"
-								strokeWidth={2}
-								dot={({ payload, ...props }) => (
-									<Dot
-										r={5}
-										cx={props.cx}
-										cy={props.cy}
-										fill={payload.fill}
-										stroke={payload.fill}
-									/>
-								)}
 							/>
-						</LineChart>
+						</AreaChart>
 					</ChartContainer>
 				</CardContent>
 
@@ -198,7 +200,7 @@ const DashboardChart = ({ salesData, revenueData }) => {
 
 				<CardContent>
 					<ChartContainer>
-						<LineChart
+						<AreaChart
 							accessibilityLayer
 							data={revenueData}
 							margin={{
@@ -207,6 +209,13 @@ const DashboardChart = ({ salesData, revenueData }) => {
 								right: 24,
 							}}
 						>
+							<defs>
+								<linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
+									<stop offset="5%" stopColor="var(--color-accent-mute)" stopOpacity={0.35} />
+									<stop offset="95%" stopColor="var(--color-accent-mute)" stopOpacity={0.03} />
+								</linearGradient>
+							</defs>
+
 							<CartesianGrid vertical={true} />
 							<XAxis
 								dataKey="period"
@@ -221,22 +230,15 @@ const DashboardChart = ({ salesData, revenueData }) => {
 								content={<RevenueTrendTooltip />}
 							/>
 
-							<Line
+							<Area
 								dataKey="amount"
-								type="natural"
+								type="monotone"
+								strokeWidth={2.2}
+								fill="url(#revenueAreaFill)"
+								activeDot={{ r: 4 }}
 								stroke="var(--color-accent-mute)"
-								strokeWidth={2}
-								dot={({ payload, ...props }) => (
-									<Dot
-										r={5}
-										cx={props.cx}
-										cy={props.cy}
-										fill={payload.fill}
-										stroke={payload.fill}
-									/>
-								)}
 							/>
-						</LineChart>
+						</AreaChart>
 					</ChartContainer>
 				</CardContent>
 
