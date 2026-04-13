@@ -214,6 +214,9 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const referenceNumber = formatReferenceNumber(orderSnapshot?.reference_number || latestPayment?.reference_number);
     const refundReferenceNumber = formatReferenceNumber(orderSnapshot?.refund_reference_number);
     const showRefundReferenceRow = Boolean(orderSnapshot?.refund_reference_number);
+    const refundAccountName = orderSnapshot?.refund_account_name || 'N/A';
+    const refundAccountNumber = formatReferenceNumber(orderSnapshot?.refund_account_number);
+    const showRefundAccountRows = Boolean(orderSnapshot?.refund_account_name || orderSnapshot?.refund_account_number);
     const formattedDeliveryDate = formatDeliveryDate(orderSnapshot?.due_date);
     const formattedDeliveryTime = orderSnapshot?.pickup_time ? parseTimeString(orderSnapshot.pickup_time) : 'N/A';
 
@@ -553,6 +556,12 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                     <DetailRow label='Reference Number' value={referenceNumber} />
                     {showRefundReferenceRow && (
                         <DetailRow label='Refund Reference Number' value={refundReferenceNumber} />
+                    )}
+                    {showRefundAccountRows && (
+                        <DetailRow label='Refund GCash Account Name' value={refundAccountName} />
+                    )}
+                    {showRefundAccountRows && (
+                        <DetailRow label='Refund GCash Account Number' value={refundAccountNumber} />
                     )}
                     <DetailRow label='Downpayment Amount' value={downpaymentAmountDisplay} isLast={!showTotalAmountRow} />
                     {showTotalAmountRow && (

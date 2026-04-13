@@ -84,6 +84,13 @@ def _normalize_reference_number(value):
         raise ValidationError({"reference_number": "Reference number must be 13 to 15 digits."})
     return digits
 
+
+def _normalize_refund_account_number(value):
+    digits = ''.join(ch for ch in str(value or '') if ch.isdigit())
+    if len(digits) < 10 or len(digits) > 15:
+        raise ValidationError({"refund_account_number": "GCash account number must be 10 to 15 digits."})
+    return digits
+
 class CakeOrderViewSet(viewsets.ModelViewSet):
     queryset = CakeOrder.objects.all()
     serializer_class = CakeOrderSerializer
@@ -265,7 +272,18 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.cancellation_requested = False
         order.cancellation_requested_at = None
         order.refund_reference_number = None
-        order.save(update_fields=['status', 'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number'])
+        order.refund_account_name = None
+        order.refund_account_number = None
+        order.save(
+            update_fields=[
+                'status',
+                'cancellation_requested',
+                'cancellation_requested_at',
+                'refund_reference_number',
+                'refund_account_name',
+                'refund_account_number',
+            ]
+        )
         return Response({"message": "Order cancelled successfully."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='request-cancellation')
@@ -285,9 +303,27 @@ class OrderViewSet(viewsets.ModelViewSet):
         if order.cancellation_requested:
             return Response({"message": "Cancellation request is already submitted."}, status=status.HTTP_200_OK)
 
+        refund_account_name = str(request.data.get('refund_account_name') or '').strip()
+        if not refund_account_name:
+            return Response({"error": "GCash account name is required for refund requests."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            refund_account_number = _normalize_refund_account_number(request.data.get('refund_account_number'))
+        except ValidationError:
+            return Response({"error": "GCash account number must be 10 to 15 digits."}, status=status.HTTP_400_BAD_REQUEST)
+
         order.cancellation_requested = True
         order.cancellation_requested_at = timezone.now()
-        order.save(update_fields=['cancellation_requested', 'cancellation_requested_at'])
+        order.refund_account_name = refund_account_name
+        order.refund_account_number = refund_account_number
+        order.save(
+            update_fields=[
+                'cancellation_requested',
+                'cancellation_requested_at',
+                'refund_account_name',
+                'refund_account_number',
+            ]
+        )
         return Response({"message": "Cancellation request submitted successfully."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='refund')
@@ -351,6 +387,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         if order.status not in ['unpaid', 'pending', 'accepted']:
             return Response({"error": "Order details can only be updated while order is unpaid, pending, or accepted."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if order.customer_adjustment_used:
+            return Response({"error": "Order details can only be adjusted once."}, status=status.HTTP_400_BAD_REQUEST)
+
+        adjustment_deadline = order.created_at + timedelta(days=3)
+        if timezone.now() > adjustment_deadline:
+            return Response({"error": "Order details can only be adjusted within 3 days after ordering."}, status=status.HTTP_400_BAD_REQUEST)
+
         occasion = ((order.cake_orders.occasion if order.cake_orders else '') or '').strip().lower()
         if occasion == 'pre-made':
             return Response({"error": "Pre-made orders cannot be edited."}, status=status.HTTP_400_BAD_REQUEST)
@@ -372,6 +415,12 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(order, data=payload, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        order.customer_adjustment_used = True
+        order.customer_adjustment_used_at = timezone.now()
+        order.save(update_fields=['customer_adjustment_used', 'customer_adjustment_used_at'])
+
+        serializer = self.get_serializer(order)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

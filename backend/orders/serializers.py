@@ -1,11 +1,23 @@
 from rest_framework import serializers
+from calendar import monthrange
+from datetime import date, timedelta
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 from .models import (Order, CakeOrder, CupcakeOrder, OrderImage, Cake, BlockedDate, OpeningTime, OrderPremadeRecipe)
 from payment.models import Payment
 from inventory.serializers import RecipeSerializer
 from inventory.models import Recipe, RecipeIngredient
 from decimal import Decimal
+
+
+def _add_months(base_date, months):
+    month_index = base_date.month - 1 + months
+    year = base_date.year + (month_index // 12)
+    month = (month_index % 12) + 1
+    day = min(base_date.day, monthrange(year, month)[1])
+    return date(year, month, day)
 
         
 class CakeOrderSerializer(serializers.ModelSerializer):
@@ -68,7 +80,8 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'customer', 'customer_first_name', 'customer_last_name', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
             'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'payment_method', 'reference_number',
-            'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number',
+            'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number', 'refund_account_name', 'refund_account_number',
+            'customer_adjustment_used', 'customer_adjustment_used_at',
             'hidden_by_customer', 'hidden_by_customer_at',
             'recipe', 'recipe_details', 'premade_recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
         ]
@@ -80,6 +93,10 @@ class OrderSerializer(serializers.ModelSerializer):
             'cancellation_requested',
             'cancellation_requested_at',
             'refund_reference_number',
+            'refund_account_name',
+            'refund_account_number',
+            'customer_adjustment_used',
+            'customer_adjustment_used_at',
             'hidden_by_customer',
             'hidden_by_customer_at',
         ]
@@ -90,10 +107,62 @@ class OrderSerializer(serializers.ModelSerializer):
 
         digits = ''.join(ch for ch in str(value) if ch.isdigit())
 
-        if len(digits) < 13 or len(digits) > 15:
-            raise serializers.ValidationError('Reference number must be 13 to 15 digits.')
+        if len(digits) < 8 or len(digits) > 15:
+            raise serializers.ValidationError('Reference number must be 8 to 15 digits.')
+
+        duplicate_qs = Order.objects.filter(reference_number=digits)
+        if self.instance is not None:
+            duplicate_qs = duplicate_qs.exclude(pk=self.instance.pk)
+
+        if duplicate_qs.exists():
+            raise serializers.ValidationError('Reference number has already been used. Please provide a different one.')
 
         return digits
+
+    def validate(self, attrs):
+        due_date = attrs.get('due_date')
+        is_create = self.instance is None
+        is_due_date_being_updated = 'due_date' in attrs
+
+        if due_date and (is_create or is_due_date_being_updated):
+            max_due_date = _add_months(timezone.localdate(), 3)
+            if due_date > max_due_date:
+                raise serializers.ValidationError(
+                    {
+                        'due_date': f'Pickup date cannot be more than 3 months from today ({max_due_date.isoformat()}).'
+                    }
+                )
+
+        request = self.context.get('request')
+        if (
+            is_create
+            and request
+            and request.user
+            and request.user.is_authenticated
+            and not request.user.is_staff
+            and not settings.ALLOW_MULTIPLE_ORDER
+        ):
+            one_hour_ago = timezone.now() - timedelta(hours=1)
+            latest_recent_order = (
+                Order.objects
+                .filter(customer=request.user, created_at__gte=one_hour_ago)
+                .only('created_at')
+                .order_by('-created_at')
+                .first()
+            )
+            if latest_recent_order:
+                available_at = latest_recent_order.created_at + timedelta(hours=1)
+                remaining_seconds = max(0, int((available_at - timezone.now()).total_seconds()))
+                remaining_minutes = max(1, (remaining_seconds + 59) // 60)
+                raise serializers.ValidationError(
+                    {
+                        'non_field_errors': [
+                            f'You can place only one order every hour. Please try again in about {remaining_minutes} minute(s).'
+                        ]
+                    }
+                )
+
+        return attrs
 
     def _create_premade_recipes(self, order, premade_items):
         generated_links = []

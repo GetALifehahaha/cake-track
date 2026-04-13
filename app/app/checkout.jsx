@@ -16,6 +16,7 @@ import useOrder from '@/hooks/useOrder';
 import api from '@/api/api';
 import { locationStore } from '@/utils/locationStore';
 import { formatPhoneNumber, isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
+import { extractApiErrorMessage } from '@/utils/apiErrors';
 
 const Checkout = () => {
 
@@ -222,12 +223,13 @@ const Checkout = () => {
 
         } catch (error) {
             console.error("Order Submission Error:", error.response?.data || error);
+            const orderErrorMessage = extractApiErrorMessage(error, 'Failed to place order. Please try again.');
 
             if (paymentMethod === 'paymongo' && newOrderId) {
                 showToast('Order placed, but PayMongo checkout failed. You can retry from Orders.', 'error');
                 router.replace('/(tabs)/orders');
             } else {
-                showToast('Failed to place order. Please try again.', 'error');
+                showToast(orderErrorMessage, 'error');
             }
         } finally {
             setIsSubmitting(false);
@@ -361,12 +363,10 @@ const Checkout = () => {
             </ScrollView>
             <View className='w-full h-40 p-6 bg-white border-y border-secondary-light'>
                 <ConfirmModal
-                    details={`You are about to pay ₱ ${downpayment.toFixed(2)} as downpayment (15%).`}
+                    details={'Choose your preferred payment channel to proceed.'}
                     onConfirm={openPaymentMethodModal}>
-                    <View className='w-full bg-secondary-light rounded-full flex-row items-center gap-4 p-4'>
-                        <View className='bg-white rounded-full h-8 px-4 items-center justify-center'>
-                            <Text className='font-semibold text-secondary-strong'>₱ {downpayment.toFixed(2)}</Text>
-                        </View>
+                    <View className='w-full bg-secondary-light rounded-full flex-row items-center justify-center gap-3 p-4'>
+                        <WalletCards size={18} color='white' />
                         <Text className='font-bold text-lg text-white'>Choose Payment Method</Text>
                     </View>
                 </ConfirmModal>
@@ -379,9 +379,15 @@ const Checkout = () => {
                 onRequestClose={() => setShowPaymentMethodModal(false)}
             >
                 <View className='flex-1 bg-black/50 justify-center items-center px-6'>
-                    <View className='bg-white w-full p-6 rounded-2xl shadow-lg'>
+                    <View className='bg-white w-full p-6 rounded-3xl shadow-lg border border-[#E5D3C1]'>
                         <Text className='text-xl font-bold mb-1 text-primary'>Select Payment Method</Text>
                         <Text className='text-secondary-strong mb-4'>Choose how you want to settle your downpayment.</Text>
+
+                        <View className='mb-4 rounded-2xl border border-[#E5D3C1] bg-[#FAF3EC] p-4'>
+                            <Text className='text-[11px] uppercase tracking-wider text-[#8B5A3C]/70 font-semibold'>Amount Due Now</Text>
+                            <Text className='text-3xl font-extrabold text-primary mt-1'>₱ {downpayment.toFixed(2)}</Text>
+                            <Text className='text-secondary-light text-xs mt-1'>Downpayment (15% of total order amount)</Text>
+                        </View>
 
                         <TouchableOpacity
                             onPress={() => handleSelectPaymentMethod('reference_number')}
@@ -393,8 +399,9 @@ const Checkout = () => {
                             </View>
                             <View className='flex-1'>
                                 <Text className='text-primary font-bold'>Reference Number</Text>
-                                <Text className='text-secondary-light text-xs'>Pay to store GCash and submit your reference number.</Text>
+                                <Text className='text-secondary-light text-xs'>Pay to store GCash, then submit your reference number in Orders.</Text>
                             </View>
+                            <Text className='text-[#8B5A3C] text-xs font-semibold'>Pay ₱ {downpayment.toFixed(2)}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -409,6 +416,7 @@ const Checkout = () => {
                                 <Text className='text-white font-bold'>PayMongo Checkout</Text>
                                 <Text className='text-white/80 text-xs'>Pay online securely via GCash through PayMongo.</Text>
                             </View>
+                            <Text className='text-white text-xs font-semibold'>Pay ₱ {downpayment.toFixed(2)}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity

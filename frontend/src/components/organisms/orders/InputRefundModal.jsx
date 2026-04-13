@@ -17,6 +17,10 @@ const formatReferenceNumber = (value = '') => {
 const InputRefundModal = ({ order, onConfirm, onReject }) => {
     const [refundReferenceNumber, setRefundReferenceNumber] = useState('');
     const [feedback, setFeedback] = useState(null);
+    const refundAccountName = order?.refund_account_name || 'N/A';
+    const refundAccountNumber = order?.refund_account_number
+        ? formatReferenceNumber(order.refund_account_number)
+        : 'N/A';
 
     const handleConfirm = () => {
         const normalizedReference = getReferenceDigits(refundReferenceNumber);
@@ -42,6 +46,12 @@ const InputRefundModal = ({ order, onConfirm, onReject }) => {
             className='min-w-[36vw]'
         >
             <div className='flex flex-col gap-4'>
+                <div className='rounded-lg border border-main-dark/20 bg-main p-4'>
+                    <h5 className='text-sm font-medium text-text/80'>Customer Refund GCash Details</h5>
+                    <p className='text-sm text-text mt-2'>Name: {refundAccountName}</p>
+                    <p className='text-sm text-text'>Number: {refundAccountNumber}</p>
+                </div>
+
                 <div className='flex flex-col gap-2'>
                     <h5 className='text-sm font-medium text-text/80'>Refund Reference Number</h5>
                     <input

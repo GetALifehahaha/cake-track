@@ -1,12 +1,12 @@
 from decimal import Decimal
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from orders.models import Order
+from orders.models import Order, CakeOrder
 from orders.views import _get_remaining_payment_amount
 from payment.models import Payment
 
@@ -238,3 +238,246 @@ class ReferenceNumberPaymentTests(TestCase):
 		payment = Payment.objects.get(orders=self.order, payment_type='downpayment', status='success')
 		self.assertEqual(payment.amount, Decimal('150.00'))
 		self.assertEqual(payment.gateway_transaction_id, '1234567890123')
+
+	def test_reference_submission_accepts_8_digit_reference(self):
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{
+				'status': 'pending',
+				'reference_number': '1234 5678',
+				'payment_method': 'reference_number',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.reference_number, '12345678')
+
+	def test_reference_submission_rejects_duplicate_reference_number(self):
+		Order.objects.create(
+			customer=self.customer,
+			full_name='Existing Reference Owner',
+			email='existing-reference@example.com',
+			phone_number='09189998888',
+			address='Reference Street 2',
+			due_date=date.today(),
+			pickup_time=time(9, 30),
+			status='pending',
+			reference_number='87654321',
+		)
+
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{
+				'status': 'pending',
+				'reference_number': '87654321',
+				'payment_method': 'reference_number',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('reference_number', response.data)
+
+
+class OrderCreationRestrictionTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.customer = User.objects.create_user(username='customer_limits', password='secret123')
+		self.client.force_authenticate(user=self.customer)
+
+	def _build_payload(self, due_date_value):
+		return {
+			'full_name': 'Limits Customer',
+			'email': 'limits@example.com',
+			'phone_number': '09155554444',
+			'address': 'Limits Street',
+			'due_date': due_date_value.isoformat(),
+			'pickup_time': '11:00:00',
+			'comments': 'Test order',
+			'payment_method': 'reference_number',
+			'cake_orders': {
+				'occasion': 'birthday',
+				'shape': 'round',
+				'cake_tier': 1,
+				'base_flavor': 'vanilla',
+				'filling': 'chocolate',
+				'coating_color': 'white',
+			},
+		}
+
+	def test_due_date_more_than_3_months_is_rejected(self):
+		payload = self._build_payload(timezone.localdate() + timedelta(days=130))
+
+		response = self.client.post('/orders/orders/', payload, format='json')
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('due_date', response.data)
+
+	@override_settings(ALLOW_MULTIPLE_ORDER=False)
+	def test_second_order_within_one_hour_is_rejected_when_multiple_disallowed(self):
+		Order.objects.create(
+			customer=self.customer,
+			full_name='Existing Order',
+			email='existing@example.com',
+			phone_number='09100000000',
+			address='Existing Street',
+			due_date=timezone.localdate(),
+			pickup_time=time(10, 0),
+			status='unpaid',
+		)
+
+		payload = self._build_payload(timezone.localdate() + timedelta(days=1))
+		response = self.client.post('/orders/orders/', payload, format='json')
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('non_field_errors', response.data)
+
+	@override_settings(ALLOW_MULTIPLE_ORDER=False)
+	def test_second_order_after_one_hour_is_allowed_when_multiple_disallowed(self):
+		existing_order = Order.objects.create(
+			customer=self.customer,
+			full_name='Older Existing Order',
+			email='older-existing@example.com',
+			phone_number='09112223333',
+			address='Older Existing Street',
+			due_date=timezone.localdate(),
+			pickup_time=time(10, 0),
+			status='unpaid',
+		)
+		existing_order.created_at = timezone.now() - timedelta(hours=2)
+		existing_order.save(update_fields=['created_at'])
+
+		payload = self._build_payload(timezone.localdate() + timedelta(days=1))
+		response = self.client.post('/orders/orders/', payload, format='json')
+
+		self.assertEqual(response.status_code, 201)
+
+	@override_settings(ALLOW_MULTIPLE_ORDER=True)
+	def test_second_order_within_one_hour_is_allowed_when_multiple_enabled(self):
+		Order.objects.create(
+			customer=self.customer,
+			full_name='Existing Allowed',
+			email='existing-allowed@example.com',
+			phone_number='09110000000',
+			address='Allowed Street',
+			due_date=timezone.localdate(),
+			pickup_time=time(10, 0),
+			status='unpaid',
+		)
+
+		payload = self._build_payload(timezone.localdate() + timedelta(days=1))
+		response = self.client.post('/orders/orders/', payload, format='json')
+
+		self.assertEqual(response.status_code, 201)
+
+
+class CustomerAdjustmentRestrictionTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.customer = User.objects.create_user(username='customer_adjustment', password='secret123')
+		self.client.force_authenticate(user=self.customer)
+		self.order = Order.objects.create(
+			customer=self.customer,
+			full_name='Adjustment Customer',
+			email='adjustment@example.com',
+			phone_number='09122220000',
+			address='Adjustment Street',
+			due_date=timezone.localdate(),
+			pickup_time=time(9, 0),
+			status='pending',
+		)
+		CakeOrder.objects.create(
+			order=self.order,
+			occasion='birthday',
+			shape='round',
+			cake_tier=1,
+			base_flavor='vanilla',
+			filling='chocolate',
+			coating_color='white',
+		)
+
+	def test_first_adjustment_within_3_days_succeeds_and_locks_future_edits(self):
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/customer-update-details/',
+			{'comments': 'Updated details', 'uploaded_images': []},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+
+		self.order.refresh_from_db()
+		self.assertTrue(self.order.customer_adjustment_used)
+		self.assertIsNotNone(self.order.customer_adjustment_used_at)
+
+	def test_second_adjustment_is_rejected(self):
+		first_response = self.client.patch(
+			f'/orders/orders/{self.order.id}/customer-update-details/',
+			{'comments': 'First update', 'uploaded_images': []},
+			format='json',
+		)
+		self.assertEqual(first_response.status_code, 200)
+
+		second_response = self.client.patch(
+			f'/orders/orders/{self.order.id}/customer-update-details/',
+			{'comments': 'Second update', 'uploaded_images': []},
+			format='json',
+		)
+
+		self.assertEqual(second_response.status_code, 400)
+		self.assertIn('error', second_response.data)
+
+	def test_adjustment_after_3_days_is_rejected(self):
+		self.order.created_at = timezone.now() - timedelta(days=4)
+		self.order.save(update_fields=['created_at'])
+
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/customer-update-details/',
+			{'comments': 'Late update', 'uploaded_images': []},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('error', response.data)
+
+
+class RefundRequestRequirementTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.customer = User.objects.create_user(username='customer_refund_req', password='secret123')
+		self.client.force_authenticate(user=self.customer)
+		self.order = Order.objects.create(
+			customer=self.customer,
+			full_name='Refund Customer',
+			email='refund@example.com',
+			phone_number='09133330000',
+			address='Refund Street',
+			due_date=timezone.localdate(),
+			pickup_time=time(14, 0),
+			status='pending',
+			reference_number='1234567890123',
+		)
+
+	def test_request_cancellation_requires_gcash_details(self):
+		response = self.client.post(f'/orders/orders/{self.order.id}/request-cancellation/', {}, format='json')
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('error', response.data)
+
+	def test_request_cancellation_persists_gcash_details(self):
+		response = self.client.post(
+			f'/orders/orders/{self.order.id}/request-cancellation/',
+			{
+				'refund_account_name': 'Juan Dela Cruz',
+				'refund_account_number': '0917 123 4567',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+
+		self.order.refresh_from_db()
+		self.assertTrue(self.order.cancellation_requested)
+		self.assertEqual(self.order.refund_account_name, 'Juan Dela Cruz')
+		self.assertEqual(self.order.refund_account_number, '09171234567')

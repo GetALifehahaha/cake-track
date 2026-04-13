@@ -5,6 +5,7 @@ import { Cake, Mail, NotepadText, CakeIcon, ArrowLeft, XCircle } from 'lucide-re
 import * as ImagePicker from 'expo-image-picker';
 import { capitalize } from '@/utils/capitalize';
 import { parseTimeString } from '@/utils/time';
+import { extractApiErrorMessage } from '@/utils/apiErrors';
 import { useToast } from '@/context/ToastContext';
 import api from '@/api/api';
 import ActionConfirmModal from '@/components/organisms/ActionConfirmModal';
@@ -21,6 +22,10 @@ const formatReferenceNumber = (value = '') => {
 
     return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12)}`;
 };
+
+const getGcashDigits = (value = '') => getReferenceDigits(value);
+
+const formatGcashNumber = (value = '') => formatReferenceNumber(value);
 
 const formatCurrency = (value = 0) => {
     const amount = Number(value || 0);
@@ -82,6 +87,8 @@ const OrderDetails = () => {
     const [submittingReference, setSubmittingReference] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [requestingCancellation, setRequestingCancellation] = useState(false);
+    const [refundAccountNameInput, setRefundAccountNameInput] = useState('');
+    const [refundAccountNumberInput, setRefundAccountNumberInput] = useState('');
     const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
     const [pendingCancelAction, setPendingCancelAction] = useState(null);
     const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
@@ -112,6 +119,8 @@ const OrderDetails = () => {
         order_images = [],
         reference_number: existingReferenceNumber,
         refund_reference_number: refundReferenceNumber,
+        refund_account_name: refundAccountName,
+        refund_account_number: refundAccountNumber,
         cancellation_requested: cancellationRequested,
     } = orderData;
 
@@ -121,6 +130,8 @@ const OrderDetails = () => {
         setOrderStatus(null);
         setEditableComments(parsedOrder?.comments || '');
         setEditableImages(extractDisplayImages(parsedOrder));
+        setRefundAccountNameInput(parsedOrder?.refund_account_name || '');
+        setRefundAccountNumberInput(formatGcashNumber(parsedOrder?.refund_account_number || ''));
         setIsEditingOrderDetails(false);
     }, [orderDataParam]);
 
@@ -149,7 +160,17 @@ const OrderDetails = () => {
         message = "",
     } = cake_orders || {};
     const isPremadeOrder = String(occasion || '').toLowerCase() === 'pre-made';
-    const canCustomerEditOrderDetails = !isPremadeOrder && ['unpaid', 'pending', 'accepted'].includes(String(currentStatus || '').toLowerCase());
+    const createdAtTimestamp = orderData?.created_at ? new Date(orderData.created_at).getTime() : null;
+    const adjustmentWindowEnd = Number.isFinite(createdAtTimestamp)
+        ? new Date(createdAtTimestamp + (3 * 24 * 60 * 60 * 1000))
+        : null;
+    const isAdjustmentWindowOpen = adjustmentWindowEnd ? new Date() <= adjustmentWindowEnd : true;
+    const canCustomerEditOrderDetails = (
+        !isPremadeOrder
+        && ['unpaid', 'pending', 'accepted'].includes(String(currentStatus || '').toLowerCase())
+        && !orderData?.customer_adjustment_used
+        && isAdjustmentWindowOpen
+    );
     const payments = orderData?.payments || [];
     const paymentMethodRaw = orderData?.payment_method;
     const paymentMethodLabel = formatPaymentMethodLabel(paymentMethodRaw);
@@ -176,6 +197,8 @@ const OrderDetails = () => {
         setOrderStatus(freshOrder?.status ?? null);
         setEditableComments(freshOrder?.comments || '');
         setEditableImages(extractDisplayImages(freshOrder));
+        setRefundAccountNameInput(freshOrder?.refund_account_name || '');
+        setRefundAccountNumberInput(formatGcashNumber(freshOrder?.refund_account_number || ''));
         setIsEditingOrderDetails(false);
 
         if (freshOrder?.reference_number) {
@@ -295,13 +318,16 @@ const OrderDetails = () => {
     };
 
     const referenceDigitsCount = getReferenceDigits(referenceNumber).length;
-    const isReferenceNumberComplete = referenceDigitsCount >= 13 && referenceDigitsCount <= 15;
+    const isReferenceNumberComplete = referenceDigitsCount >= 8 && referenceDigitsCount <= 15;
     const displayedReferenceNumber = existingReferenceNumber
         ? formatReferenceNumber(existingReferenceNumber)
         : 'No reference number yet';
     const displayedRefundReferenceNumber = refundReferenceNumber
         ? formatReferenceNumber(refundReferenceNumber)
         : 'No refund reference number yet';
+    const displayedRefundAccountNumber = refundAccountNumber
+        ? formatGcashNumber(refundAccountNumber)
+        : 'No GCash account number yet';
     const totalAmount = Number(orderData?.total_price || 0);
     const expectedDownpayment = isPremadeOrder ? totalAmount * 0.15 : 500;
     const boundedDownpayment = totalAmount > 0
@@ -321,8 +347,8 @@ const OrderDetails = () => {
         if (submittingReference) return;
 
         const normalizedReference = getReferenceDigits(referenceNumber);
-        if (normalizedReference.length < 13 || normalizedReference.length > 15) {
-            showToast('Reference number must be 13 to 15 digits', 'error');
+        if (normalizedReference.length < 8 || normalizedReference.length > 15) {
+            showToast('Reference number must be 8 to 15 digits.', 'error');
             return;
         }
 
@@ -338,7 +364,7 @@ const OrderDetails = () => {
             showToast('Reference number submitted successfully.', 'success');
         } catch (error) {
             console.error('Reference Number Error:', error.response?.data || error.message);
-            showToast(error.response?.data?.error || 'Failed to update order', 'error');
+            showToast(extractApiErrorMessage(error, 'Failed to update order.'), 'error');
         } finally {
             setSubmittingReference(false);
         }
@@ -391,9 +417,25 @@ const OrderDetails = () => {
     const handleRequestCancellation = async () => {
         if (requestingCancellation) return;
 
+        const normalizedAccountName = String(refundAccountNameInput || '').trim();
+        const normalizedAccountNumber = getGcashDigits(refundAccountNumberInput);
+
+        if (!normalizedAccountName) {
+            showToast('Please provide your GCash account name for refund.', 'error');
+            return;
+        }
+
+        if (normalizedAccountNumber.length < 10 || normalizedAccountNumber.length > 15) {
+            showToast('GCash account number must be 10 to 15 digits.', 'error');
+            return;
+        }
+
         setRequestingCancellation(true);
         try {
-            await api.post(`/orders/orders/${orderData.id}/request-cancellation/`);
+            await api.post(`/orders/orders/${orderData.id}/request-cancellation/`, {
+                refund_account_name: normalizedAccountName,
+                refund_account_number: normalizedAccountNumber,
+            });
             await reloadOrderDetails();
             showToast('Cancellation request submitted. Please wait for admin refund processing.', 'success');
         } catch (error) {
@@ -518,26 +560,47 @@ const OrderDetails = () => {
                     )}
 
                     {(currentStatus === 'pending' || currentStatus === 'accepted') && !cancellationRequested && (
-                        <TouchableOpacity
-                            onPress={() => openCancelConfirmation('request')}
-                            disabled={requestingCancellation}
-                            className={`flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80 ${requestingCancellation ? 'opacity-60' : ''}`}
-                        >
-                            {requestingCancellation ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <XCircle size={20} color="white" />
-                            )}
-                            <Text className='text-white text-lg font-bold'>
-                                {requestingCancellation ? 'Submitting Request...' : 'Request Cancellation'}
-                            </Text>
-                        </TouchableOpacity>
+                        <View className='gap-3 p-4 bg-red-50 rounded-xl border border-red-200 w-full'>
+                            <Text className='text-red-600 font-semibold'>Refund Destination (GCash)</Text>
+                            <TextInput
+                                value={refundAccountNameInput}
+                                onChangeText={setRefundAccountNameInput}
+                                placeholder='GCash account name'
+                                editable={!requestingCancellation}
+                                className='border border-red-200 rounded-lg px-4 py-3 text-primary bg-white'
+                            />
+                            <TextInput
+                                value={refundAccountNumberInput}
+                                onChangeText={(text) => setRefundAccountNumberInput(formatGcashNumber(text))}
+                                placeholder='09XXXXXXXXX'
+                                keyboardType='number-pad'
+                                maxLength={18}
+                                editable={!requestingCancellation}
+                                className='border border-red-200 rounded-lg px-4 py-3 text-primary bg-white'
+                            />
+                            <TouchableOpacity
+                                onPress={() => openCancelConfirmation('request')}
+                                disabled={requestingCancellation}
+                                className={`flex-row items-center justify-center gap-2 p-4 bg-red-500 rounded-xl w-full active:opacity-80 ${requestingCancellation ? 'opacity-60' : ''}`}
+                            >
+                                {requestingCancellation ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <XCircle size={20} color="white" />
+                                )}
+                                <Text className='text-white text-lg font-bold'>
+                                    {requestingCancellation ? 'Submitting Request...' : 'Request Cancellation'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     )}
 
                     {(currentStatus === 'pending' || currentStatus === 'accepted') && cancellationRequested && (
                         <View className='gap-1 p-4 bg-red-50 rounded-xl border border-red-200 w-full'>
                             <Text className='text-red-600 font-semibold'>Cancellation Requested</Text>
                             <Text className='text-red-500 text-sm'>Waiting for admin refund and cancellation confirmation.</Text>
+                            <Text className='text-red-500 text-sm'>GCash Name: {refundAccountName || 'N/A'}</Text>
+                            <Text className='text-red-500 text-sm'>GCash Number: {displayedRefundAccountNumber}</Text>
                         </View>
                     )}
 
@@ -569,6 +632,19 @@ const OrderDetails = () => {
                             <View>
                                 <Text className='text-gray-300'>Refund Reference Number</Text>
                                 <Text className='text-primary text-lg font-semibold'>{displayedRefundReferenceNumber}</Text>
+                            </View>
+                        </View>
+                    )}
+
+                    {(currentStatus === 'cancelled' || currentStatus === 'refunded' || cancellationRequested) && (refundAccountName || refundAccountNumber) && (
+                        <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                            <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
+                                <NotepadText style={{ color: '#A67C52' }} />
+                            </View>
+                            <View>
+                                <Text className='text-gray-300'>Refund GCash Account</Text>
+                                <Text className='text-primary text-lg font-semibold'>{refundAccountName || 'N/A'}</Text>
+                                <Text className='text-primary text-lg font-semibold'>{displayedRefundAccountNumber}</Text>
                             </View>
                         </View>
                     )}
@@ -798,6 +874,12 @@ const OrderDetails = () => {
                                         </View>
                                     </View>
                                 )}
+                            </View>
+                        )}
+
+                        {!canCustomerEditOrderDetails && !isPremadeOrder && ['unpaid', 'pending', 'accepted'].includes(String(currentStatus || '').toLowerCase()) && (
+                            <View className='gap-1 p-3 border border-[#E8D9C8] rounded-xl bg-[#FDF8F3]'>
+                                <Text className='text-[#8B5A3C] text-sm'>Order details can only be adjusted once within 3 days after ordering.</Text>
                             </View>
                         )}
 

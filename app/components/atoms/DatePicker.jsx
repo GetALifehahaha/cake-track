@@ -7,7 +7,7 @@ import { useOpening } from '@/context/OpeningContext';
 import { useToast } from '@/context/ToastContext';
 
 
-const DatePicker = ({ onSelectDate }) => {
+const DatePicker = ({ onSelectDate, maxMonthsAhead = 3 }) => {
 
     const [open, setOpen] = useState(false);
     const [date, setDate] = useState(null);
@@ -17,6 +17,8 @@ const DatePicker = ({ onSelectDate }) => {
     const todayDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
     const minimumPickupDate = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    const maxDate = new Date(today.getFullYear(), today.getMonth() + maxMonthsAhead, today.getDate());
+    const maximumPickupDate = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, '0')}-${String(maxDate.getDate()).padStart(2, '0')}`;
 
     // Build markedDates map for disabled days
     const buildDisabledMap = () => {
@@ -103,6 +105,11 @@ const DatePicker = ({ onSelectDate }) => {
                                     return;
                                 }
 
+                                if (day.dateString > maximumPickupDate) {
+                                    showToast?.('Pickup date cannot be more than 3 months from today.', 'error');
+                                    return;
+                                }
+
                                 // Prevent selecting blocked dates
                                 const selected = new Date(day.dateString);
                                 if (isDateBlocked && isDateBlocked(selected)) {
@@ -118,6 +125,7 @@ const DatePicker = ({ onSelectDate }) => {
                                 [date]: { selected: true, selectedColor: '#BE9B7B' },
                             }}
                             minDate={minimumPickupDate}
+                            maxDate={maximumPickupDate}
                             // 1. Custom arrow rendering to add the border
                             renderArrow={(direction) => (
                                 <View style={{
