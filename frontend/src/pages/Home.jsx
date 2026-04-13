@@ -26,6 +26,7 @@ const Home = () => {
     const {
         postTransaction,
         completeTransaction,
+        completeTransactionsBatch,
         pendingData,
         pendingLoading,
         refreshPending,
@@ -614,21 +615,9 @@ const Home = () => {
         try {
             setCompletingAllOrders(true);
 
-            let succeeded = 0;
-            let failed = 0;
-            let firstError = null;
-
-            for (const orderId of orderIds) {
-                try {
-                    await completeTransaction(orderId);
-                    succeeded += 1;
-                } catch (error) {
-                    failed += 1;
-                    if (!firstError) {
-                        firstError = error;
-                    }
-                }
-            }
+            const response = await completeTransactionsBatch(orderIds);
+            const succeeded = Array.isArray(response?.completed_ids) ? response.completed_ids.length : 0;
+            const failed = Array.isArray(response?.errors) ? response.errors.length : 0;
 
             if (succeeded > 0) {
                 await refreshProducts();
@@ -639,7 +628,7 @@ const Home = () => {
             }
 
             if (failed > 0) {
-                const detail = firstError?.response?.data?.detail || `${failed} order(s) could not be completed`;
+                const detail = response?.errors?.[0] || `${failed} order(s) could not be completed`;
                 addToast(detail, 'error');
             }
 

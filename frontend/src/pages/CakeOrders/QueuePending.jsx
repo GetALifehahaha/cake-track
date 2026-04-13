@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-import { Ellipsis, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Ellipsis } from 'lucide-react'
 import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal, InputRefundModal } from '../../components/organisms';
 import { DatePicker, Pagination } from '@/components/molecules';
 import { Button } from '@/components/atoms';
-import Loading from '@/components/molecules/Loading';
+import { QueuePendingSkeleton } from '@/components/molecules/Skeletons';
 import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
@@ -25,8 +25,11 @@ const QueuePending = () => {
 	const [prepRejectId, setPrepRejectId] = useState(null);
 	const [prepRejectAll, setPrepRejectAll] = useState(false);
 	const [refundTarget, setRefundTarget] = useState(null);
+	const hasCancellationFilter = searchParams.get('cancellation_requested') === 'true';
+	const hasActiveFilters = Boolean(selectedDate) || hasCancellationFilter;
+	const orderItems = Array.isArray(data?.results) ? data.results : [];
 
-	if (loading) return <Loading />
+	if (loading) return <QueuePendingSkeleton />
 
 	const handleSetDateFilter = (date) => {
 		const newParams = Object.fromEntries(searchParams.entries());
@@ -38,6 +41,14 @@ const QueuePending = () => {
 		}
 
 		setSearchParams(newParams)
+	}
+
+	const clearAllFilters = () => {
+		const newParams = Object.fromEntries(searchParams.entries());
+		delete newParams.due_date;
+		delete newParams.cancellation_requested;
+		delete newParams.page;
+		setSearchParams(newParams);
 	}
 
 	const acceptOrder = async () => {
@@ -67,7 +78,7 @@ const QueuePending = () => {
 	}
 
 	const acceptAllOrder = async () => {
-		const orderIds = data?.results?.map(order => order.id) || [];
+		const orderIds = orderItems.map(order => order.id);
 
 		if (orderIds.length === 0) return;
 
@@ -94,7 +105,7 @@ const QueuePending = () => {
 	}
 
 	const rejectAllOrder = async (rejectReason) => {
-		const orderIds = data?.results?.map(order => order.id) || [];
+		const orderIds = orderItems.map(order => order.id);
 
 		if (orderIds.length === 0) return;
 
@@ -102,7 +113,7 @@ const QueuePending = () => {
 			await batchUpdateOrders({ order_ids: orderIds, status: "rejected", "reject_reason": rejectReason });
 
 			addToast("Orders rejected successfully", "success");
-			prepRejectAll(false);
+			setPrepRejectAll(false);
 		} catch (err) {
 			addToast(`Error: ${err}`, "error")
 		}
@@ -120,7 +131,13 @@ const QueuePending = () => {
 		}
 	}
 
-	const listOrder = data.results.map((cake, index) =>
+	const listOrder = orderItems.map((cake, index) => {
+		const customerName = [cake.customer_first_name, cake.customer_last_name]
+			.filter(Boolean)
+			.join(' ')
+			.trim() || cake.full_name || 'Unknown Customer';
+
+		return (
 		<div
 			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60 h-fit'
 			onClick={() => setShowOptions(cake.id)}
@@ -158,7 +175,7 @@ const QueuePending = () => {
 					size={16}
 				/>
 			</div>
-			<h5 className='text-accent-text text-xs'>{cake.client}</h5>
+			<h5 className='text-accent-text text-xs'>{customerName}</h5>
 
 			{/* Cake Details */}
 			<div className='flex mt-4'>
@@ -190,7 +207,7 @@ const QueuePending = () => {
 				</span>
 			)}
 		</div>
-	)
+	)})
 
 	return (
 		<div className='flex flex-col min-h-140'>
@@ -198,10 +215,17 @@ const QueuePending = () => {
 				<span className='w-60'>
 					<DatePicker className='bg-main-white cursor-pointer' selected={selectedDate} onSelect={handleSetDateFilter} />
 				</span>
-				{selectedDate &&
+				{hasActiveFilters && (
+					<Button
+						variant='modalOutline'
+						size='small'
+						text='Clear All'
+						onClick={clearAllFilters}
+					/>
+				)}
+				<div className='flex-1' />
+				{orderItems.length > 0 && (
 					<>
-						<X size={18} className='text-text/50 cursor-pointer' onClick={() => handleSetDateFilter(false)} />
-						<div className='flex-1' />
 						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
 							<h5 className='px-4 py-1 rounded-sm bg-accent text-white font-semibold cursor-pointer'>Accept All</h5>
 						</ConfirmationModalWrapper>
@@ -209,14 +233,14 @@ const QueuePending = () => {
 							<h5 className='px-4 py-1 rounded-sm bg-error text-white font-semibold cursor-pointer'>Reject All</h5>
 						</ConfirmationModalWrapper>
 					</>
-				}
+				)}
 			</div>
-			{data.results.length > 0 ?
+			{orderItems.length > 0 ?
 				<div className='grid grid-cols-4 gap-4 mt-8 min-h-100'>
 					{listOrder}
 				</div>
 				:
-				<div className='flex w-full h-full justify-center items-center'>
+				<div className='flex-1 flex w-full h-full justify-center items-center'>
 					<h5 className='text-accent-text/75 font-semibold'>No orders</h5>
 				</div>
 			}

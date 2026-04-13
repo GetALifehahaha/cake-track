@@ -187,6 +187,11 @@ const Reports = () => {
         }
     };
 
+    const clearAllFilters = () => {
+        setStartDate(null);
+        setEndDate(null);
+    };
+
     // MAPS
 
     const topSellingProducts = (posDashboardData.top_selling_products || []).slice(0, 5).map((item, index) => (
@@ -257,6 +262,15 @@ const Reports = () => {
                     </div>
                 </div>
                 <div className='ml-auto flex items-center gap-2'>
+                    {(startDate || endDate) && (
+                        <Button
+                            text='Clear All'
+                            size='small'
+                            variant='modalOutline'
+                            onClick={clearAllFilters}
+                            className='rounded-sm py-2.5 px-4 h-fit'
+                        />
+                    )}
                     <button
                         type='button'
                         onClick={handleRefreshReports}

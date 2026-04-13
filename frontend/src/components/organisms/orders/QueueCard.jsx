@@ -9,6 +9,10 @@ const QueueCard = ({ order, onShowDetails }) => {
 	const [showOptions, setShowOptions] = useState(false);
 
 	const capitalize = (str) => str[0].toUpperCase() + str.slice(1)
+	const customerName = [order?.customer_first_name, order?.customer_last_name]
+		.filter(Boolean)
+		.join(' ')
+		.trim() || order?.full_name || order?.client || 'Unknown Customer';
 
 	return (
 		<div
@@ -41,7 +45,7 @@ const QueueCard = ({ order, onShowDetails }) => {
 					size={16}
 				/>
 			</div>
-			<h5 className='text-accent-text text-xs'>{order.client}</h5>
+			<h5 className='text-accent-text text-xs'>{customerName}</h5>
 
 			{/* Cake Details */}
 			<div className='flex mt-4'>

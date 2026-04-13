@@ -34,6 +34,7 @@ const Inventory = () => {
     const [showContainersModal, setShowContainersModal] = useState(false);
     const [showStockOutAllConfirmationModal, setShowStockOutAllConfirmationModal] = useState(false);
     const [showTransactionHistoryModal, setShowTransactionHistoryModal] = useState(false);
+    const currentFilter = searchParams.get('filter');
 
 
     if (ingredientLoading) return <InventorySkeleton />
@@ -248,6 +249,9 @@ const Inventory = () => {
                     <Title variant='block' text='Inventory Overview' />
 
                     <div className='flex flex-row items-center gap-2'>
+                        {currentFilter &&
+                            <Button variant='modalOutline' size='small' text='Clear All' onClick={() => setFilter(null)} className='shadow-sm bg-white text-text' />
+                        }
                         {ingredientDashboard.summary.expired_count > 0 &&
                             <Button variant='modalOutline' size='small' text='Stock Out Expired Ingredients' icon={Trash} onClick={toggleStockOutAllConfirmationModal} className='shadow-sm' />
                         }

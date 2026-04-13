@@ -27,6 +27,7 @@ const API_ENDPOINTS = {
     RECIPES: "/inventory/recipes/",
     SIZES: "/pos/sizes/",
     TRANSACTIONS: "/pos/transactions/",
+    TRANSACTIONS_BATCH_COMPLETE: "/pos/transactions/batch-complete/",
     TRANSACTIONS_REGISTER_MONEY: "/pos/transactions/register-money/",
     TRANSACTIONS_SET_STARTING_MONEY: "/pos/transactions/set-starting-money/",
     TRANSACTIONS_DEDUCTIONS: "/pos/transactions/deductions/",

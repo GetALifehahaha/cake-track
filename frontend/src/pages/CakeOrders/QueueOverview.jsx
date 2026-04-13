@@ -6,10 +6,10 @@ import { ConfirmationModal, ConfirmationModalWrapper, InputRejectModalWrapper } 
 import useOrder from '@/hooks/useOrders'
 import useQueryFetch from '@/hooks/useQueryFetch'
 import API_ENDPOINTS from '@/api/endpoints'
-import Loading from '@/components/molecules/Loading'
 import { useToast } from '@/context/ToastContext'
 import useIngredient from '@/hooks/useIngredient'
 import { capitalize } from '@/utils/capitalize'
+import { QueueOverviewSkeleton } from '@/components/molecules/Skeletons'
 
 const QueueOverview = () => {
 
@@ -26,7 +26,7 @@ const QueueOverview = () => {
 
 	const [removeId, setRemoveId] = useState(null);
 
-	if (overviewQuery.isPending || ingredientLoading) return <Loading />
+	if (overviewQuery.isPending || ingredientLoading) return <QueueOverviewSkeleton />
 	if (overviewQuery.error || ingredientError) return <h5>Error</h5>
 
 	const acceptedOrdersHeaders = [

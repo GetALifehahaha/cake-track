@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
-import { Ellipsis, X } from 'lucide-react';
+import { Ellipsis } from 'lucide-react';
 import { DatePicker, Pagination } from '@/components/molecules';
+import { Button } from '@/components/atoms';
 import { OrderDetails } from '../../components/organisms';
-import Loading from '@/components/molecules/Loading';
 import useOrder from '@/hooks/useOrders';
 import { useSearchParams } from 'react-router-dom';
 import { formatDateForAPI } from '@/utils/date';
 import { capitalize } from '@/utils/capitalize';
 import { formatCasing } from '@/utils/formatCasing';
+import { QueueUnpaidSkeleton } from '@/components/molecules/Skeletons';
 
 const QueueUnpaid = () => {
 
@@ -16,8 +17,11 @@ const QueueUnpaid = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const currentDateParams = searchParams.get('due_date')
 	const selectedDate = currentDateParams ? new Date(currentDateParams) : null
+	const hasCancellationFilter = searchParams.get('cancellation_requested') === 'true';
+	const hasActiveFilters = Boolean(selectedDate) || hasCancellationFilter;
+	const orderItems = Array.isArray(data?.results) ? data.results : [];
 
-	if (loading) return <Loading />
+	if (loading) return <QueueUnpaidSkeleton />
 
 	const handleSetDateFilter = (date) => {
 		const newParams = Object.fromEntries(searchParams.entries());
@@ -31,7 +35,15 @@ const QueueUnpaid = () => {
 		setSearchParams(newParams)
 	}
 
-	const listOrder = data.results?.map((order, index) =>
+	const clearAllFilters = () => {
+		const newParams = Object.fromEntries(searchParams.entries());
+		delete newParams.due_date;
+		delete newParams.cancellation_requested;
+		delete newParams.page;
+		setSearchParams(newParams);
+	}
+
+	const listOrder = orderItems.map((order, index) =>
 		<div
 			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60'
 			key={index}
@@ -89,11 +101,16 @@ const QueueUnpaid = () => {
 				<span className='w-60'>
 					<DatePicker className='bg-main-white cursor-pointer' selected={selectedDate} onSelect={handleSetDateFilter} />
 				</span>
-				{selectedDate &&
-					<X size={18} className='text-text/50 cursor-pointer' onClick={() => handleSetDateFilter(false)} />
-				}
+				{hasActiveFilters && (
+					<Button
+						variant='modalOutline'
+						size='small'
+						text='Clear All'
+						onClick={clearAllFilters}
+					/>
+				)}
 			</div>
-			{data.results?.length > 0 ?
+			{orderItems.length > 0 ?
 				<div className='grid grid-cols-5 gap-4 mt-8'>
 					{listOrder}
 				</div>

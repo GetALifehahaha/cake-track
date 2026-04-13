@@ -1,15 +1,15 @@
 import React from 'react';
-import Loading from '@/components/molecules/Loading';
 import usePayments from '@/hooks/usePayments';
 import { formatDateForDisplay } from '@/utils/date';
 import { Title } from '@/components/atoms';
 import { Pagination } from '@/components/molecules';
+import { QueueHistorySkeleton } from '@/components/molecules/Skeletons';
 
 const QueueHistory = () => {
     const { data, loading, error } = usePayments();
     const paymentResults = data?.results || [];
 
-    if (loading) return <Loading />;
+    if (loading) return <QueueHistorySkeleton />;
     if (error) return <h5>Error loading payment history</h5>;
 
     const listHistory = paymentResults.map((payment, index) => (

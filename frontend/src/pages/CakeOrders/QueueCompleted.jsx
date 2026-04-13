@@ -3,18 +3,19 @@ import { Title } from '../../components/atoms'
 import useOrder from '@/hooks/useOrders';
 import { formatDateForDisplay } from '@/utils/date';
 import { capitalize } from '@/utils/capitalize';
-import Loading from '@/components/molecules/Loading';
 import { Pagination } from '@/components/molecules';
 import { OrderDetails } from '@/components/organisms';
+import { QueueCompletedSkeleton } from '@/components/molecules/Skeletons';
 
-const QueueReady = () => {
+const QueueCompleted = () => {
 
 	const { data, loading } = useOrder();
 	const [orderDetails, setOrderDetails] = useState(null);
+	const orderItems = Array.isArray(data?.results) ? data.results : [];
 
-	if (loading) return <Loading />
+	if (loading) return <QueueCompletedSkeleton />
 
-	const listCompletedTransactions = data.results.map((item, index) =>
+	const listCompletedTransactions = orderItems.map((item, index) =>
 		<div className='flex w-full text-sm py-2 border-b-2 border-b-main-dark items-center cursor-pointer hover:bg-main/40' key={index} onClick={() => setOrderDetails(item)}>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.id}</h5>
 			<h5 className={`text-text font-medium text-center py-0.5 flex-1`}>{item.full_name}</h5>
@@ -50,4 +51,4 @@ const QueueReady = () => {
 	)
 }
 
-export default QueueReady
+export default QueueCompleted

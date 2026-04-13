@@ -20,6 +20,7 @@ export default function useOrder() {
         const raw = {
             status: currentFilter,
             created_at: currentParams.due_date,
+            cancellation_requested: currentParams.cancellation_requested,
             q: currentParams.q,
             page: currentParams.page
         };
@@ -27,7 +28,7 @@ export default function useOrder() {
         return Object.fromEntries(
             Object.entries(raw).filter(([, v]) => v && v !== 'null' && v !== 'undefined')
         );
-    }, [currentFilter, currentParams.due_date, currentParams.q, currentParams.page]);
+    }, [currentFilter, currentParams.cancellation_requested, currentParams.due_date, currentParams.q, currentParams.page]);
 
     const ordersQuery = useQueryFetch('orders', API_ENDPOINTS.ORDERS, apiParams);
     const { create, update, remove, loading: mutateLoading, error: mutateError } = useMutate(
@@ -43,6 +44,7 @@ export default function useOrder() {
                 ['ingredient-dashboard'],
                 ['admin-notifications-orders-dashboard'],
                 ['admin-notifications-ingredients-all'],
+                ['admin-notifications-refund-requests'],
                 ['inventory-transactions'],
                 ['recipes'],
             ],

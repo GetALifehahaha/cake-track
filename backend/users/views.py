@@ -324,6 +324,16 @@ class ChangePasswordViaToken(viewsets.ModelViewSet):
 
             if token.user != user:
                 return Response({'type': 'error', 'label': 'Token Mismatch', 'details': 'This token does not belong to the specified user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if user.check_password(password):
+                return Response(
+                    {
+                        'type': 'error',
+                        'label': 'Same Password Not Allowed',
+                        'details': 'New password must be different from your current password.',
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             
             user.set_password(password)
             user.save()

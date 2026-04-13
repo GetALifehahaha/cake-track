@@ -8,14 +8,12 @@ import { useToast } from '@/context/ToastContext';
 import Loading from '@/components/molecules/Loading';
 import { CakesSkeleton } from '@/components/molecules/Skeletons';
 import { useSearchParams } from 'react-router-dom';
+import { buildOrderingParam, parseOrderingParam, sortDirectionOptions } from '@/utils/sorting';
 
 const cakeSortOptions = [
-    { key: 'Name: A to Z', value: 'name' },
-    { key: 'Name: Z to A', value: '-name' },
-    { key: 'Price: Low to High', value: 'price' },
-    { key: 'Price: High to Low', value: '-price' },
-    { key: 'Created: Oldest First', value: 'created_at' },
-    { key: 'Created: Newest First', value: '-created_at' },
+    { key: 'Name', value: 'name' },
+    { key: 'Price', value: 'price' },
+    { key: 'Created Date', value: 'created_at' },
 ];
 
 const Cakes = () => {
@@ -36,7 +34,8 @@ const Cakes = () => {
     const [showEditCakeModal, setShowEditCakeModal] = useState(false);
     const [showArchivedModal, setShowArchivedModal] = useState(false);
 
-    const selectedOrdering = searchParams.get('ordering') || null;
+    const { sortField: selectedSortField, sortDirection: selectedSortDirection } = parseOrderingParam(searchParams.get('ordering'));
+    const hasActiveFilters = Boolean(selectedSortField);
 
     if (loading) return <CakesSkeleton />;
     if (error) return <h5>Error loading cake data</h5>;
@@ -121,11 +120,34 @@ const Cakes = () => {
                             size='full'
                             variant='white'
                             selection='Default'
-                            value={selectedOrdering}
+                            value={selectedSortField}
                             options={cakeSortOptions}
-                            onSelect={(value) => updateQueryParams({ ordering: value })}
+                            onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(value, selectedSortDirection) })}
                         />
                     </div>
+
+                    {selectedSortField && (
+                        <div className='w-44'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Direction</h5>
+                            <Dropdown
+                                size='full'
+                                variant='white'
+                                selection='Ascending'
+                                value={selectedSortDirection}
+                                options={sortDirectionOptions}
+                                onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(selectedSortField, value) })}
+                            />
+                        </div>
+                    )}
+
+                    {hasActiveFilters && (
+                        <Button
+                            variant='modalOutline'
+                            size='small'
+                            text='Clear All'
+                            onClick={clearSorting}
+                        />
+                    )}
                 </div>
                 
                 <div className='flex items-center gap-2'>

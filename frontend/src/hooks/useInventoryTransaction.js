@@ -1,11 +1,21 @@
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import API_ENDPOINTS from "@/api/endpoints";
 import useMutate from "./useMutate";
 import useQueryFetch from "./useQueryFetch";
 
 export default function useInventoryTransaction() {
+    const [searchParams] = useSearchParams();
+    const transactionHistoryPage = searchParams.get('transaction_history_page') || '1';
+    const apiParams = useMemo(
+        () => ({ page: transactionHistoryPage }),
+        [transactionHistoryPage],
+    );
+
     const inventoryTransactionQuery = useQueryFetch(
-        "inventory-transactions",
+        ["inventory-transactions", transactionHistoryPage],
         API_ENDPOINTS.INVENTORY_TRANSACTIONS,
+        apiParams,
     );
     const { create, update, remove, loading: mutateLoading, error: mutateError, response } =
         useMutate("inventory-transactions", {

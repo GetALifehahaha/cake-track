@@ -54,6 +54,7 @@ const Transactions = () => {
             : searchParams.get('is_void') === 'false'
                 ? 'success'
                 : null;
+    const hasActiveFilters = Boolean(selectedDate || selectedCashier || selectedStatus);
 
     const [cashierOptionsCache, setCashierOptionsCache] = useState({});
 
@@ -295,10 +296,10 @@ const Transactions = () => {
             <div className='px-4 py-2.5 rounded-xl border-2 border-border'>
                 <div className='flex items-center gap-4 flex-wrap'>
                     <div className='p-2.5 px-8 rounded-lg bg-accent-dark/80 border border-border flex items-center gap-12'>
-                        <h5 className='text-white/ font-medium text-md'>
+                        <h5 className='text-white/80 font-medium text-md'>
                             Today's Revenue: <strong className='ml-2 text-white p-2'>₱ {(data.daily_total_revenue).toFixed(2)}</strong>
                         </h5>
-                        <h5 className='text-white/ font-medium text-md'>
+                        <h5 className='text-white/80 font-medium text-md'>
                             Register Money: <strong className='ml-2 text-white'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
                         </h5>
                     </div>
@@ -357,6 +358,15 @@ const Transactions = () => {
                                 )}
                             </div>
                         </div>
+
+                        {hasActiveFilters && (
+                            <Button
+                                variant='modalOutline'
+                                size='small'
+                                text='Clear All'
+                                onClick={clearFilters}
+                            />
+                        )}
                     </div>
                 </div>
 
@@ -470,14 +480,14 @@ const Transactions = () => {
                             {registerTransactionItems.map((entry) => (
                                 <div key={entry.id} className='grid grid-cols-4 gap-2 border border-border rounded-lg px-3 py-2'>
                                     <div className='flex flex-col'>
-                                        <h5 className={`text-sm font-medium ${entry.entry_type === 'addition' ? 'text-success' : 'text-error'}`}>
+                                        <h5 className={`text-sm font-semibold ${entry.entry_type === 'addition' ? 'text-success' : 'text-error'}`}>
                                             {entry.entry_type === 'addition' ? 'Addition' : 'Deduction'}
                                         </h5>
                                         {entry.entry_type === 'deduction' && entry.note && (
-                                            <h5 className='text-xs text-text/60 mt-0.5'>Reason: {entry.note}</h5>
+                                            <h5 className='text-sm text-text/60 mt-0. 5 p-2 rounded-md border border-border mt-2 mr-2'>{entry.note}</h5>
                                         )}
                                     </div>
-                                    <h5 className='text-sm text-text'>
+                                    <h5 className='text-sm font-medium text-text'>
                                         {entry?.cashier?.first_name} {entry?.cashier?.last_name}
                                     </h5>
                                     <h5 className='text-sm text-text'>₱ {formatToDecimal(entry.amount || 0)}</h5>
@@ -492,6 +502,7 @@ const Transactions = () => {
                             count={registerTransactions?.count}
                             pageParam='register_page'
                         />
+                        <div className='h-2' />
                     </div>
                 </ModalBody>
             )}

@@ -336,56 +336,112 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='batch-update')
     def batch_update(self, request):
-        updated_count = 0
-        errors = []
-        
+        if not request.user.is_staff:
+            return Response({"error": "Only admins can batch update orders."}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = OrderBatchUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        ids = serializer.validated_data['order_ids'] #type: ignore
-        new_status = serializer.validated_data['status'] #type: ignore
-        reason = serializer.validated_data.get('reject_reason', '') #type: ignore
-        
-        orders_to_update = self.get_queryset().filter(id__in=ids)
-        
-        for order in orders_to_update:
-            
-            if order.status != "pending":
-                errors.append(f"Order {order.id} is not pending.") #type: ignore
+
+        ids = serializer.validated_data['order_ids'] # type: ignore
+        new_status = serializer.validated_data['status'] # type: ignore
+        reason = serializer.validated_data.get('reject_reason', '') # type: ignore
+
+        transition_requirements = {
+            'accepted': {'pending'},
+            'rejected': {'pending'},
+            'ready': {'accepted'},
+            'completed': {'ready'},
+        }
+        allowed_previous = transition_requirements[new_status]
+
+        unique_ids = []
+        seen = set()
+        for order_id in ids:
+            if order_id in seen:
+                continue
+            seen.add(order_id)
+            unique_ids.append(order_id)
+
+        orders_by_id = {
+            order.id: order
+            for order in Order.objects.filter(id__in=unique_ids).select_related('customer')
+        }
+
+        valid_orders = []
+        errors = []
+        expected_text = '/'.join(sorted(allowed_previous))
+
+        for order_id in unique_ids:
+            order = orders_by_id.get(order_id)
+
+            if order is None:
+                errors.append(f"Order {order_id} does not exist.")
                 continue
 
-            if new_status == "ready" and order.ingredients_deducted_at is None:
+            if order.status not in allowed_previous:
+                errors.append(f"Order {order.id} is not {expected_text}.")
+                continue
+
+            if new_status == 'ready' and order.ingredients_deducted_at is None:
                 errors.append(f"Order {order.id} cannot be marked ready until ingredients are deducted.")
                 continue
 
-            order.status = new_status
-            if new_status == "rejected":
-                order.reject_reason = reason
-            else:
-                order.reject_reason = ''
-            
-            order.save()
+            valid_orders.append(order)
 
-            if new_status == "completed":
+        valid_order_ids = [order.id for order in valid_orders]
+
+        if valid_order_ids:
+            now = timezone.now()
+            if new_status == 'rejected':
+                Order.objects.filter(id__in=valid_order_ids).update(
+                    status='rejected',
+                    reject_reason=reason,
+                    updated_at=now,
+                )
+            else:
+                Order.objects.filter(id__in=valid_order_ids).update(
+                    status=new_status,
+                    reject_reason='',
+                    updated_at=now,
+                )
+
+            if new_status == 'completed':
                 from payment.models import Payment
 
-                existing_full = Payment.objects.filter(orders=order, payment_type='full_payment', status='success').exists()
-                if not existing_full:
-                    full_payment_amount = _get_remaining_payment_amount(order)
-
-                    Payment.objects.create(
-                        payer=order.customer,
-                        orders=order,
-                        amount=full_payment_amount,
-                        status='success',
+                existing_full_payment_ids = set(
+                    Payment.objects.filter(
+                        orders_id__in=valid_order_ids,
                         payment_type='full_payment',
+                        status='success',
+                    ).values_list('orders_id', flat=True)
+                )
+
+                payments_to_create = []
+                for order in valid_orders:
+                    if order.id in existing_full_payment_ids:
+                        continue
+
+                    payments_to_create.append(
+                        Payment(
+                            payer=order.customer,
+                            orders=order,
+                            amount=_get_remaining_payment_amount(order),
+                            status='success',
+                            payment_type='full_payment',
+                        )
                     )
 
-            updated_count += 1
-        
-        return Response({
-            "message": f"Succesfully updated {updated_count} orders.", "errors": errors
-        }, status=status.HTTP_200_OK
+                if payments_to_create:
+                    Payment.objects.bulk_create(payments_to_create)
+
+        updated_count = len(valid_order_ids)
+        return Response(
+            {
+                "message": f"Successfully updated {updated_count} orders.",
+                "updated_count": updated_count,
+                "errors": errors,
+            },
+            status=status.HTTP_200_OK,
         )
 
     @action(detail=True, methods=['post'], url_path='deduct-ingredients')

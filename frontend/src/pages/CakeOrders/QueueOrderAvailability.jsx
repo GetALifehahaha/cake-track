@@ -9,8 +9,8 @@ import { isDatePast } from '@/utils/isDatePast'
 import { formatDisplayDate } from '@/utils/formatDisplayDate'
 import useOrder from '@/hooks/useOrders'
 import useOperatingHours from '@/hooks/useOperatingHours'
-import Loading from '@/components/molecules/Loading'
 import { useSearchParams } from 'react-router-dom'
+import { QueueOrderAvailabilitySkeleton } from '@/components/molecules/Skeletons'
 
 const QueueOrderAvailability = () => {
 	const { addToast } = useToast()
@@ -121,7 +121,7 @@ const QueueOrderAvailability = () => {
 		setSelectedDates([])
 	}
 
-	if (blockedDatesLoading || hoursLoading) return <Loading />
+	if (blockedDatesLoading || hoursLoading) return <QueueOrderAvailabilitySkeleton />
 	if (blockedDatesError) return <h5>Error...</h5>
 
 	return (

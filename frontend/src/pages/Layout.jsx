@@ -47,11 +47,23 @@ const Layout = () => {
         }
     );
 
+    const refundRequestsQuery = useQueryFetch(
+        ['admin-notifications-refund-requests'],
+        API_ENDPOINTS.ORDERS,
+        { cancellation_requested: 'true', page_size: 1 },
+        {
+            enabled: isAdmin,
+            staleTime: 60 * 1000,
+            refetchInterval: isAdmin ? 15 * 60 * 1000 : false,
+        }
+    );
+
     const pendingOrdersCount = Number(ordersDashboardQuery.data?.pending_orders || 0);
     const ingredientList = ingredientAllQuery.data || [];
     const lowStockCount = ingredientList.filter(item => Number(item.total_stock || 0) > 0 && Number(item.total_stock || 0) < Number(item.low_amount || 0)).length;
     const outOfStockCount = ingredientList.filter(item => Number(item.total_stock || 0) <= 0).length;
-    const totalNotificationCount = pendingOrdersCount + lowStockCount + outOfStockCount;
+    const refundRequestsCount = Number(refundRequestsQuery.data?.count || 0);
+    const totalNotificationCount = pendingOrdersCount + refundRequestsCount + lowStockCount + outOfStockCount;
 
     const notifications = [
         {
@@ -67,6 +79,13 @@ const Layout = () => {
             details: lowStockCount > 0 ? `${lowStockCount} item${lowStockCount > 1 ? 's' : ''} below threshold` : 'No low stock items',
             count: lowStockCount,
             onClick: () => navigate('/inventory?filter=available'),
+        },
+        {
+            id: 'refund-requests',
+            label: 'Refund Requests',
+            details: refundRequestsCount > 0 ? `${refundRequestsCount} refund request${refundRequestsCount > 1 ? 's' : ''} pending` : 'No refund requests',
+            count: refundRequestsCount,
+            onClick: () => navigate('/queue/pending?cancellation_requested=true'),
         },
         {
             id: 'inventory-out',

@@ -10,12 +10,11 @@ import ViewRecipeModal from '@/components/organisms/recipe/ViewRecipeModal';
 import { RecipeSkeleton } from '@/components/molecules/Skeletons';
 import { formatQty, getBestDisplay } from '@/utils/recipeUnits';
 import { useSearchParams } from 'react-router-dom';
+import { buildOrderingParam, parseOrderingParam, sortDirectionOptions } from '@/utils/sorting';
 
 const recipeSortOptions = [
-    { key: 'Name: A to Z', value: 'name' },
-    { key: 'Name: Z to A', value: '-name' },
-    { key: 'Created: Oldest First', value: 'id' },
-    { key: 'Created: Newest First', value: '-id' },
+    { key: 'Name', value: 'name' },
+    { key: 'Created Date', value: 'id' },
 ];
 
 const Recipe = () => {
@@ -29,7 +28,8 @@ const Recipe = () => {
     const [viewRecipe, setViewRecipe] = useState(null);
     const [showEditRecipe, setShowEditRecipe] = useState(null);
 
-    const selectedOrdering = searchParams.get('ordering') || null;
+    const { sortField: selectedSortField, sortDirection: selectedSortDirection } = parseOrderingParam(searchParams.get('ordering'));
+    const hasActiveFilters = Boolean(selectedSortField);
 
     if (loading) return <RecipeSkeleton />
     if (error) return <h5>Error...</h5>
@@ -170,11 +170,34 @@ const Recipe = () => {
                                 size='full'
                                 variant='white'
                                 selection='Default'
-                                value={selectedOrdering}
+                                value={selectedSortField}
                                 options={recipeSortOptions}
-                                onSelect={(value) => updateQueryParams({ ordering: value })}
+                                onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(value, selectedSortDirection) })}
                             />
                         </div>
+
+                        {selectedSortField && (
+                            <div className='w-44'>
+                                <h5 className='text-xs font-semibold text-text/50 mb-1'>Direction</h5>
+                                <Dropdown
+                                    size='full'
+                                    variant='white'
+                                    selection='Ascending'
+                                    value={selectedSortDirection}
+                                    options={sortDirectionOptions}
+                                    onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(selectedSortField, value) })}
+                                />
+                            </div>
+                        )}
+
+                        {hasActiveFilters && (
+                            <Button
+                                variant='modalOutline'
+                                size='small'
+                                text='Clear All'
+                                onClick={clearSorting}
+                            />
+                        )}
                     </div>
 
                     <Button text='Add Recipe' icon={Plus} variant='block' onClick={handleSetShowAddRecipe} />

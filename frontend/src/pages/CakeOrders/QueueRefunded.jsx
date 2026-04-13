@@ -3,15 +3,15 @@ import { Title } from '../../components/atoms';
 import useOrder from '@/hooks/useOrders';
 import { formatDateForDisplay } from '@/utils/date';
 import { capitalize } from '@/utils/capitalize';
-import Loading from '@/components/molecules/Loading';
 import { Pagination } from '@/components/molecules';
 import { OrderDetails } from '@/components/organisms';
+import { QueueRefundedSkeleton } from '@/components/molecules/Skeletons';
 
 const QueueRefunded = () => {
     const { data, loading } = useOrder();
     const [orderDetails, setOrderDetails] = useState(null);
 
-    if (loading) return <Loading />;
+    if (loading) return <QueueRefundedSkeleton />;
 
     const refundedTransactions = data.results || [];
 

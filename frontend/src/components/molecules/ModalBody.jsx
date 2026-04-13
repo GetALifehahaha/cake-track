@@ -19,7 +19,7 @@ const ModalBody = ({ children, className, title="Modal", onClose, subtitle='' })
       )}
     >
       <div className={cn(
-        'p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] max-w-[90vw] max-h-[80vh] flex flex-col gap-10',
+    'p-6 bg-main-white rounded-xl shadow-md shadow-black/25 min-w-[30vw] max-w-[90vw] max-h-[80vh] flex flex-col gap-6 overflow-hidden',
         !closing ? 'animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-150' : 'animate-out fade-out zoom-out-95 slide-out-to-bottom-3 duration-150 fill-mode-forwards',
         className
       )}>

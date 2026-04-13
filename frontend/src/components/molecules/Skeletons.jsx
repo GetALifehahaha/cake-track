@@ -283,6 +283,8 @@ export const QueueCompletedSkeleton = () => (
 );
 
 export const QueueRejectedSkeleton = QueueCompletedSkeleton;
+export const QueueRefundedSkeleton = QueueCompletedSkeleton;
+export const QueueHistorySkeleton = QueueCompletedSkeleton;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QueueOrderAvailability Skeleton
@@ -482,6 +484,8 @@ export const QueuePendingSkeleton = () => (
     </div>
   </div>
 );
+
+export const QueueUnpaidSkeleton = QueuePendingSkeleton;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Transactions Skeleton

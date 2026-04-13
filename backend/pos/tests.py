@@ -429,6 +429,34 @@ class TransactionCompletionActionTests(APITestCase):
         response = self.client.post(f"/pos/transactions/{self.pending_transaction.id}/complete/", {}, format='json')
         self.assertEqual(response.status_code, 400)
 
+    def test_batch_complete_completes_multiple_transactions(self):
+        another_transaction = Transaction.objects.create(
+            cashier=self.cashier,
+            payment_method='cash',
+            order_type='dine-in',
+            gross_total=Decimal('120.00'),
+            discount_amount=Decimal('0.00'),
+            net_total=Decimal('120.00'),
+            paid_amount=Decimal('0.00'),
+            change=Decimal('0.00'),
+            is_completed=False,
+        )
+
+        response = self.client.post(
+            '/pos/transactions/batch-complete/',
+            {'transaction_ids': [self.pending_transaction.id, another_transaction.id]},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data.get('completed_ids', [])), 2)
+
+        self.pending_transaction.refresh_from_db()
+        another_transaction.refresh_from_db()
+
+        self.assertTrue(self.pending_transaction.is_completed)
+        self.assertTrue(another_transaction.is_completed)
+
 
 class RegisterMoneyFlowTests(APITestCase):
     def setUp(self):

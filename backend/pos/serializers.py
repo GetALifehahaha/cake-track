@@ -642,6 +642,33 @@ class TransactionCompleteSerializer(serializers.Serializer):
         return locked_instance
 
 
+class TransactionBatchCompleteSerializer(serializers.Serializer):
+    transaction_ids = serializers.ListField(
+        child=serializers.CharField(),
+        allow_empty=False,
+    )
+
+    def validate_transaction_ids(self, value):
+        unique_ids = []
+        seen = set()
+
+        for transaction_id in value:
+            cleaned_id = str(transaction_id or '').strip()
+            if not cleaned_id:
+                raise serializers.ValidationError('Transaction IDs cannot be blank.')
+
+            if cleaned_id in seen:
+                continue
+
+            seen.add(cleaned_id)
+            unique_ids.append(cleaned_id)
+
+        if not unique_ids:
+            raise serializers.ValidationError('Provide at least one transaction ID.')
+
+        return unique_ids
+
+
 class RegisterMoneySerializer(serializers.ModelSerializer):
     cashier = UserSerializer(read_only=True)
     total_deductions = serializers.SerializerMethodField()

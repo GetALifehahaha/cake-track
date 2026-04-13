@@ -44,6 +44,8 @@ class OrderSerializer(serializers.ModelSerializer):
     cupcake_orders = CupcakeOrderSerializer(required=False)
     recipe_details = RecipeSerializer(source='recipe', read_only=True)
     premade_recipe_details = OrderPremadeRecipeSerializer(source='premade_recipes', many=True, read_only=True)
+    customer_first_name = serializers.CharField(source='customer.first_name', read_only=True)
+    customer_last_name = serializers.CharField(source='customer.last_name', read_only=True)
     
     order_images = OrderImageSerializer(many=True, read_only=True)
     
@@ -62,7 +64,7 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'customer', 'comments', 'image', 'order_images', 'uploaded_images', 
+            'id', 'customer', 'customer_first_name', 'customer_last_name', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
             'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'reference_number',
             'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number',
@@ -264,10 +266,30 @@ class OrderBatchUpdateSerializer(serializers.Serializer):
     )
     
     # prepare the new statuses
-    status = serializers.ChoiceField(choices=['accepted', 'rejected'])
+    status = serializers.ChoiceField(choices=['accepted', 'rejected', 'ready', 'completed'])
     
     # reason if new status is request
     reject_reason = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_order_ids(self, value):
+        normalized_ids = []
+        seen = set()
+
+        for order_id in value:
+            cleaned_id = str(order_id or '').strip()
+            if not cleaned_id:
+                raise serializers.ValidationError("Order IDs cannot be blank.")
+
+            if cleaned_id in seen:
+                continue
+
+            seen.add(cleaned_id)
+            normalized_ids.append(cleaned_id)
+
+        if not normalized_ids:
+            raise serializers.ValidationError("Provide at least one order ID.")
+
+        return normalized_ids
     
     def validate(self, data):
         if data['status'] == "rejected":
@@ -276,7 +298,7 @@ class OrderBatchUpdateSerializer(serializers.Serializer):
                     'reject_reason': "This field is required when rejecting orders"
                 })
                 
-        if data['status'] == "accepted":
+        if data['status'] in ["accepted", "ready", "completed"]:
             data['reject_reason'] = ""
             
         return data

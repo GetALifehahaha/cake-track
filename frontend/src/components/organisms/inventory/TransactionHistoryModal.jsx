@@ -8,14 +8,15 @@ import { formatQty } from '@/utils/formatQty';
 
 const TransactionHistoryModal = ({ onClose }) => {
     const { inventoryTransactionData: transactions, inventoryTransactionLoading: loading, inventoryTransactionError: error } = useInventoryTransaction();
+    const transactionItems = Array.isArray(transactions?.results) ? transactions.results : [];
 
     if (loading) return <Loading />;
     if (error) return <div className='p-6 text-error'>Failed to load transaction history.</div>;
 
     return (
-        <ModalBody title='Transaction History' onClose={onClose} className='w-[80vw] h-[80vh]'>
-            <div className='flex flex-col flex-1 gap-2'>
-                <div className='flex-1 p-6 overflow-auto max-h-[50vh]'>
+        <ModalBody title='Transaction History' onClose={onClose} className='w-[80vw] max-w-[1100px]'>
+            <div className='flex flex-col flex-1 min-h-0 gap-3'>
+                <div className='flex-1 overflow-auto min-h-0 pr-1'>
                     <div className='p-2 py-3 bg-accent-mute rounded-t-lg flex flex-row items-center text-white text-sm text-center'>
                         <h5 className='flex-1 text-left px-2 font-semibold'>Date</h5>
                         <h5 className='flex-1 text-left px-2 font-semibold'>Ingredient</h5>
@@ -25,7 +26,7 @@ const TransactionHistoryModal = ({ onClose }) => {
                         <h5 className='flex-1 text-left px-2 font-semibold'>Expiry Date</h5>
                     </div>
                     <div className='flex-col gap-2 '>
-                        {transactions?.results?.map((tx) => (
+                        {transactionItems.map((tx) => (
                             <div key={tx.id} className='flex flex-col border-b border-b-border'>
                                 <div className='flex flex-row items-center hover:-translate-x-1 transition'>
                                     <h5 className='flex-1 px-2 py-3 text-left text-sm'>
@@ -59,12 +60,21 @@ const TransactionHistoryModal = ({ onClose }) => {
                                 )}
                             </div>
                         ))}
+                        {transactionItems.length === 0 && (
+                            <div className='p-8 text-sm text-text/60 text-center'>No transaction history found.</div>
+                        )}
                     </div>
                 </div>
 
-                <Pagination next={transactions.next} prev={transactions.prev} count={transactions?.count} />
+                <Pagination
+                    next={transactions?.next}
+                    prev={transactions?.previous}
+                    count={transactions?.count}
+                    pageParam='transaction_history_page'
+                    pageSize={20}
+                />
             </div>
-            <div className='flex justify-end px-6 py-4 border-t border-border/50 bg-gray-50'>
+            <div className='flex justify-end pt-2 border-t border-border/50'>
                 <Button variant='modalOutline' text='Close' onClick={onClose} />
             </div>
         </ModalBody>

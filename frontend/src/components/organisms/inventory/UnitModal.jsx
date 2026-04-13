@@ -134,8 +134,8 @@ const UnitModal = ({ onClose }) => {
     };
 
     return (
-        <ModalBody className='w-[70vw]' title='Manage Containers' subtitle='Create reusable labels like Bottle, Cup, or Piece for ingredient mappings.' onClose={onClose}>
-            <div className='flex flex-col gap-4 w-full'>
+        <ModalBody className='w-[70vw] max-w-[1000px]' title='Manage Containers' subtitle='Create reusable labels like Bottle, Cup, or Piece for ingredient mappings.' onClose={onClose}>
+            <div className='flex flex-col gap-4 w-full min-h-0'>
                 <div className='border border-border rounded-xl p-4 bg-main-white'>
                     <h5 className='text-sm font-semibold text-text mb-3'>Add Container</h5>
                     <div className='grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2'>
@@ -163,12 +163,12 @@ const UnitModal = ({ onClose }) => {
                     </div>
                 </div>
 
-                <div className='border border-border rounded-xl bg-main-white overflow-hidden'>
+                <div className='border border-border rounded-xl bg-main-white flex-1 min-h-0 max-h-[42vh] overflow-y-auto'>
                     <div className='px-4 py-3 border-b border-border bg-main'>
                         <h5 className='text-sm font-semibold text-text'>Available Containers ({containerData.length})</h5>
                     </div>
 
-                    <div className='max-h-[42vh] overflow-y-auto'>
+                    <div className=''>
                         {containerData.length === 0 && (
                             <div className='p-6 text-sm text-text/60 text-center'>No containers yet. Create one above to get started.</div>
                         )}
@@ -219,7 +219,7 @@ const UnitModal = ({ onClose }) => {
                 )}
             </div>
 
-            <div className='flex justify-end mt-4'>
+            <div className='flex justify-end pt-2 border-t border-border/50'>
                 <Button text='Close' variant='modalOutline' onClick={onClose} />
             </div>
         </ModalBody>

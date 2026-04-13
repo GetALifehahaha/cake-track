@@ -9,6 +9,7 @@ import { useToast } from '@/context/ToastContext';
 import clsx from 'clsx';
 import { CashierSkeleton } from '@/components/molecules/Skeletons';
 import { useSearchParams } from 'react-router-dom';
+import { buildOrderingParam, parseOrderingParam, sortDirectionOptions } from '@/utils/sorting';
 
 const cashierStatusOptions = [
     { key: 'Active', value: 'true' },
@@ -16,12 +17,9 @@ const cashierStatusOptions = [
 ];
 
 const cashierSortOptions = [
-    { key: 'Full Name: A to Z', value: 'first_name,last_name' },
-    { key: 'Full Name: Z to A', value: '-first_name,-last_name' },
-    { key: 'Username: A to Z', value: 'username' },
-    { key: 'Username: Z to A', value: '-username' },
-    { key: 'Email: A to Z', value: 'email' },
-    { key: 'Email: Z to A', value: '-email' },
+    { key: 'Full Name', value: 'first_name,last_name' },
+    { key: 'Username', value: 'username' },
+    { key: 'Email', value: 'email' },
 ];
 
 const Cashier = () => {
@@ -35,7 +33,8 @@ const Cashier = () => {
     const [prepCashier, setPrepCashier] = useState(null)
 
     const selectedStatus = searchParams.get('is_active') || null;
-    const selectedOrdering = searchParams.get('ordering') || null;
+    const { sortField: selectedSortField, sortDirection: selectedSortDirection } = parseOrderingParam(searchParams.get('ordering'));
+    const hasActiveFilters = Boolean(selectedStatus || selectedSortField);
 
     if (loading) return <CashierSkeleton />
 
@@ -132,7 +131,7 @@ const Cashier = () => {
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>
-                <Title text='Recipes' />
+                <Title text='Cashiers' />
             <div className='border-accent-mute border rounded-lg p-4'>
                 {/* Header */}
                 <div className="flex flex-row justify-between items-center">
@@ -156,11 +155,34 @@ const Cashier = () => {
                                 size='full'
                                 variant='white'
                                 selection='Default'
-                                value={selectedOrdering}
+                                value={selectedSortField}
                                 options={cashierSortOptions}
-                                onSelect={(value) => updateQueryParams({ ordering: value })}
+                                onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(value, selectedSortDirection) })}
                             />
                         </div>
+
+                        {selectedSortField && (
+                            <div className='w-44'>
+                                <h5 className='text-xs font-semibold text-text/50 mb-1'>Direction</h5>
+                                <Dropdown
+                                    size='full'
+                                    variant='white'
+                                    selection='Ascending'
+                                    value={selectedSortDirection}
+                                    options={sortDirectionOptions}
+                                    onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(selectedSortField, value) })}
+                                />
+                            </div>
+                        )}
+
+                        {hasActiveFilters && (
+                            <Button
+                                variant='modalOutline'
+                                size='small'
+                                text='Clear All'
+                                onClick={clearFiltersAndSorting}
+                            />
+                        )}
 
                         <Button variant='block' size='small' text='Add Cashier' icon={Plus} onClick={handleShowAddCashierModal} className='ml-auto' />
                     </div>

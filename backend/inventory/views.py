@@ -61,10 +61,16 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
     pagination_class = None
 
+class TransactionHistoryPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all().order_by('-created_at', '-id')
     permission_classes = [permissions.DjangoModelPermissions, IsAdmin]
+    pagination_class = TransactionHistoryPagination
     
     def get_serializer_class(self):
         if (self.action == "create"):

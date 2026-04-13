@@ -9,6 +9,7 @@ import qrcode
 
 # Create your views here.
 from django.db.models import Sum, Count, F, DateTimeField, Case, When, Value, FloatField, ExpressionWrapper
+from django.db import transaction as db_transaction
 from django.db.models.functions import TruncDate, Lower
 from django.utils import timezone
 from datetime import timedelta
@@ -34,6 +35,8 @@ from .serializers import (DiscountSerializer,
                           ProductSerializer, 
                           TransactionCreateSerializer, 
                           TransactionCompleteSerializer,
+                          TransactionBatchCompleteSerializer,
+                          _apply_completed_transaction_to_register,
                           GCashInitiateSerializer,
                           GCashVerifySerializer,
                           RegisterMoneySerializer,
@@ -377,6 +380,87 @@ class TransactionViewSet(viewsets.ModelViewSet):
         payload = output_serializer.data
         payload['register_money_summary'] = self._build_register_summary(request.user)
         return Response(payload, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='batch-complete', url_name='batch-complete')
+    def batch_complete(self, request):
+        serializer = TransactionBatchCompleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        transaction_ids = serializer.validated_data['transaction_ids']
+        errors = []
+        candidate_ids = []
+
+        queryset = self.get_queryset().filter(id__in=transaction_ids)
+        transactions_by_id = {tx.id: tx for tx in queryset}
+
+        for transaction_id in transaction_ids:
+            transaction_instance = transactions_by_id.get(transaction_id)
+            if transaction_instance is None:
+                errors.append(f"Transaction {transaction_id} does not exist.")
+                continue
+
+            if transaction_instance.is_void:
+                errors.append(f"Transaction {transaction_id} is void and cannot be completed.")
+                continue
+
+            if transaction_instance.is_completed:
+                errors.append(f"Transaction {transaction_id} is already completed.")
+                continue
+
+            candidate_ids.append(transaction_id)
+
+        completed_ids = []
+
+        if candidate_ids:
+            with db_transaction.atomic():
+                locked_transactions = list(
+                    Transaction.objects.select_for_update().filter(id__in=candidate_ids)
+                )
+                locked_by_id = {tx.id: tx for tx in locked_transactions}
+
+                to_update = []
+                now = timezone.now()
+                for transaction_id in candidate_ids:
+                    tx = locked_by_id.get(transaction_id)
+                    if tx is None:
+                        errors.append(f"Transaction {transaction_id} could not be locked for completion.")
+                        continue
+
+                    if tx.is_void:
+                        errors.append(f"Transaction {transaction_id} became void and cannot be completed.")
+                        continue
+
+                    if tx.is_completed:
+                        errors.append(f"Transaction {transaction_id} is already completed.")
+                        continue
+
+                    tx.is_completed = True
+                    tx.completed_at = now
+
+                    if not tx.sequence_date or not tx.sequence_number:
+                        tx._assign_sequence()
+
+                    to_update.append(tx)
+
+                if to_update:
+                    Transaction.objects.bulk_update(
+                        to_update,
+                        ['is_completed', 'completed_at', 'sequence_date', 'sequence_number'],
+                    )
+                    completed_ids = [tx.id for tx in to_update]
+
+                    for tx in to_update:
+                        _apply_completed_transaction_to_register(tx)
+
+        return Response(
+            {
+                'message': f"Completed {len(completed_ids)} transaction(s).",
+                'completed_ids': completed_ids,
+                'errors': errors,
+                'register_money_summary': self._build_register_summary(request.user),
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['post'], url_path='gcash-initiate')
     def gcash_initiate(self, request):

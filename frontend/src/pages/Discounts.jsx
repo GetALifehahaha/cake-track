@@ -10,6 +10,7 @@ import { AddDiscountModal, EditDiscountModal } from '../components/organisms';
 import { DiscountsSkeleton } from '@/components/molecules/Skeletons';
 import { cn } from '@/utils/cn';
 import { useSearchParams } from 'react-router-dom';
+import { buildOrderingParam, parseOrderingParam, sortDirectionOptions } from '@/utils/sorting';
 
 const discountTypeOptions = [
     { key: 'Percentage', value: 'percentage' },
@@ -33,16 +34,11 @@ const discountUsageTypeOptions = [
 ];
 
 const discountSortOptions = [
-    { key: 'Name: A to Z', value: 'name' },
-    { key: 'Name: Z to A', value: '-name' },
-    { key: 'Value: Low to High', value: 'value' },
-    { key: 'Value: High to Low', value: '-value' },
-    { key: 'Usage %: Low to High', value: 'usage_percentage' },
-    { key: 'Usage %: High to Low', value: '-usage_percentage' },
-    { key: 'Usage: Low to High', value: 'used_count' },
-    { key: 'Usage: High to Low', value: '-used_count' },
-    { key: 'Created: Oldest First', value: 'id' },
-    { key: 'Created: Newest First', value: '-id' },
+    { key: 'Name', value: 'name' },
+    { key: 'Value', value: 'value' },
+    { key: 'Usage %', value: 'usage_percentage' },
+    { key: 'Usage Count', value: 'used_count' },
+    { key: 'Created Date', value: 'id' },
 ];
 
 const Discounts = () => {
@@ -63,7 +59,10 @@ const Discounts = () => {
     const selectedScope = searchParams.get('scope') || null;
     const selectedUsageType = searchParams.get('usage_type') || null;
     const selectedStatus = searchParams.get('active') || null;
-    const selectedSorting = searchParams.get('ordering') || null;
+    const { sortField: selectedSortField, sortDirection: selectedSortDirection } = parseOrderingParam(searchParams.get('ordering'));
+    const hasActiveFilters = Boolean(
+        selectedType || selectedScope || selectedUsageType || selectedStatus || selectedSortField,
+    );
 
     const updateQueryParams = (updates) => {
         const params = new URLSearchParams(searchParams);
@@ -201,11 +200,35 @@ const Discounts = () => {
                             size='full'
                             variant='white'
                             selection='Default'
-                            value={selectedSorting}
+                            value={selectedSortField}
                             options={discountSortOptions}
-                            onSelect={(value) => updateQueryParams({ ordering: value })}
+                            onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(value, selectedSortDirection) })}
                         />
                     </div>
+
+                    {selectedSortField && (
+                        <div className='min-w-44'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Direction</h5>
+                            <Dropdown
+                                size='full'
+                                variant='white'
+                                selection='Ascending'
+                                value={selectedSortDirection}
+                                options={sortDirectionOptions}
+                                onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(selectedSortField, value) })}
+                                allowNone={false}
+                            />
+                        </div>
+                    )}
+
+                    {hasActiveFilters && (
+                        <Button
+                            variant='modalOutline'
+                            size='small'
+                            text='Clear All'
+                            onClick={clearFiltersAndSorting}
+                        />
+                    )}
                 </div>
             </div>
 

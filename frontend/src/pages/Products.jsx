@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { Title, Dropdown, Button } from '../components/atoms';
 import { Pagination, ProductCard } from '../components/molecules';
-import { Archive, Plus, Settings, Minus } from 'lucide-react';
+import { Archive, Plus, Settings } from 'lucide-react';
 import { AddProductModal, ArchivedModal, CategoryModal, EditProductModal, ProductsSkeletonLoading } from '../components/organisms';
 import useProduct from '@/hooks/useProduct'
 import useCategory from '@/hooks/useCategory';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
-import Loading from '@/components/molecules/Loading';
+import { buildOrderingParam, parseOrderingParam, sortDirectionOptions } from '@/utils/sorting';
 
 const productSortOptions = [
-    { key: 'Name: A to Z', value: 'name' },
-    { key: 'Name: Z to A', value: '-name' },
-    { key: 'Created: Oldest First', value: 'created_at' },
-    { key: 'Created: Newest First', value: '-created_at' },
+    { key: 'Name', value: 'name' },
+    { key: 'Created Date', value: 'created_at' },
 ];
 
 const Products = () => {
@@ -24,7 +22,8 @@ const Products = () => {
     const [prepEditProduct, setPrepEditProduct] = useState(null);
 
     const selectedCategory = searchParams.get('categories__name') || null;
-    const selectedOrdering = searchParams.get('ordering') || null;
+    const { sortField: selectedSortField, sortDirection: selectedSortDirection } = parseOrderingParam(searchParams.get('ordering'));
+    const hasActiveFilters = Boolean(selectedCategory || selectedSortField);
 
     const [showAddProductModal, setShowAddProductModal] = useState(false);
     const [showEditProductModal, setShowEditProductModal] = useState(false);
@@ -156,12 +155,36 @@ const Products = () => {
                         <Dropdown
                             size='full'
                             variant='white'
-                            value={selectedOrdering}
+                            value={selectedSortField}
                             selection='Default'
-                            onSelect={(value) => updateQueryParams({ ordering: value })}
+                            onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(value, selectedSortDirection) })}
                             options={productSortOptions}
                         />
                     </div>
+
+                    {selectedSortField && (
+                        <div className='w-44'>
+                            <h5 className='text-xs font-semibold text-text/50 mb-1'>Direction</h5>
+                            <Dropdown
+                                size='full'
+                                variant='white'
+                                value={selectedSortDirection}
+                                selection='Ascending'
+                                onSelect={(value) => updateQueryParams({ ordering: buildOrderingParam(selectedSortField, value) })}
+                                options={sortDirectionOptions}
+                                allowNone={false}
+                            />
+                        </div>
+                    )}
+
+                    {hasActiveFilters && (
+                        <Button
+                            variant='modalOutline'
+                            size='small'
+                            text='Clear All'
+                            onClick={clearFiltersAndSorting}
+                        />
+                    )}
 
                 </div>
                 <div className='flex items-center gap-4'>

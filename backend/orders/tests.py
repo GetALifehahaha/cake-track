@@ -97,3 +97,101 @@ class ReadyStatusGuardTests(TestCase):
 
 		self.order.refresh_from_db()
 		self.assertEqual(self.order.status, 'ready')
+
+
+class OrderBatchUpdateTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.admin = User.objects.create_user(username='admin_batch', password='secret123', is_staff=True)
+		self.customer = User.objects.create_user(username='customer_batch', password='secret123')
+		self.client.force_authenticate(user=self.admin)
+
+		self.accepted_ready = Order.objects.create(
+			customer=self.customer,
+			full_name='Accepted Ready',
+			email='accepted-ready@example.com',
+			phone_number='09123456780',
+			address='Accepted Address',
+			due_date=date.today(),
+			pickup_time=time(10, 0),
+			status='accepted',
+			ingredients_deducted_at=timezone.now(),
+			total_price=Decimal('500.00'),
+		)
+
+		self.accepted_not_ready = Order.objects.create(
+			customer=self.customer,
+			full_name='Accepted Not Ready',
+			email='accepted-not-ready@example.com',
+			phone_number='09123456781',
+			address='Accepted Address 2',
+			due_date=date.today(),
+			pickup_time=time(11, 0),
+			status='accepted',
+			total_price=Decimal('600.00'),
+		)
+
+	def test_batch_update_ready_requires_ingredients(self):
+		response = self.client.post(
+			'/orders/orders/batch-update/',
+			{
+				'order_ids': [self.accepted_ready.id, self.accepted_not_ready.id],
+				'status': 'ready',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data.get('updated_count'), 1)
+		self.assertTrue(response.data.get('errors'))
+
+		self.accepted_ready.refresh_from_db()
+		self.accepted_not_ready.refresh_from_db()
+
+		self.assertEqual(self.accepted_ready.status, 'ready')
+		self.assertEqual(self.accepted_not_ready.status, 'accepted')
+
+	def test_batch_update_completed_creates_full_payment_once(self):
+		self.accepted_ready.status = 'ready'
+		self.accepted_ready.save(update_fields=['status'])
+
+		response = self.client.post(
+			'/orders/orders/batch-update/',
+			{
+				'order_ids': [self.accepted_ready.id],
+				'status': 'completed',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data.get('updated_count'), 1)
+
+		self.accepted_ready.refresh_from_db()
+		self.assertEqual(self.accepted_ready.status, 'completed')
+
+		payments = Payment.objects.filter(orders=self.accepted_ready, payment_type='full_payment', status='success')
+		self.assertEqual(payments.count(), 1)
+
+	def test_batch_update_completed_only_allows_ready_for_pickup(self):
+		self.accepted_ready.status = 'ready'
+		self.accepted_ready.save(update_fields=['status'])
+
+		response = self.client.post(
+			'/orders/orders/batch-update/',
+			{
+				'order_ids': [self.accepted_ready.id, self.accepted_not_ready.id],
+				'status': 'completed',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data.get('updated_count'), 1)
+		self.assertTrue(response.data.get('errors'))
+
+		self.accepted_ready.refresh_from_db()
+		self.accepted_not_ready.refresh_from_db()
+
+		self.assertEqual(self.accepted_ready.status, 'completed')
+		self.assertEqual(self.accepted_not_ready.status, 'accepted')

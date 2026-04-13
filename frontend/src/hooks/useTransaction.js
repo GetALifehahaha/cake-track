@@ -86,6 +86,8 @@ export default function useTransaction() {
         postTransaction,
         patchTransaction: (id, data) => update(`${API_ENDPOINTS.TRANSACTIONS}${id}/`, data),
         completeTransaction: (id) => request("post", `${API_ENDPOINTS.TRANSACTIONS}${id}/complete/`),
+        completeTransactionsBatch: (transactionIds) =>
+            request("post", API_ENDPOINTS.TRANSACTIONS_BATCH_COMPLETE, { transaction_ids: transactionIds }),
         setStartingMoney: (amount) =>
             request("post", API_ENDPOINTS.TRANSACTIONS_SET_STARTING_MONEY, { amount }),
         postDeduction: (payload) =>
