@@ -195,3 +195,46 @@ class OrderBatchUpdateTests(TestCase):
 
 		self.assertEqual(self.accepted_ready.status, 'completed')
 		self.assertEqual(self.accepted_not_ready.status, 'accepted')
+
+
+class ReferenceNumberPaymentTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.customer = User.objects.create_user(username='customer_ref', password='secret123')
+		self.client.force_authenticate(user=self.customer)
+		self.order = Order.objects.create(
+			customer=self.customer,
+			full_name='Reference Customer',
+			email='reference@example.com',
+			phone_number='09122223333',
+			address='Reference Street',
+			due_date=date.today(),
+			pickup_time=time(12, 0),
+			status='unpaid',
+			total_price=Decimal('1000.00'),
+		)
+
+	def test_order_defaults_to_reference_payment_method(self):
+		self.assertEqual(self.order.payment_method, 'reference_number')
+
+	def test_reference_submission_creates_downpayment_record(self):
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{
+				'status': 'pending',
+				'reference_number': '1234 5678 9012 3',
+				'payment_method': 'reference_number',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.status, 'pending')
+		self.assertEqual(self.order.payment_method, 'reference_number')
+		self.assertEqual(self.order.reference_number, '1234567890123')
+
+		payment = Payment.objects.get(orders=self.order, payment_type='downpayment', status='success')
+		self.assertEqual(payment.amount, Decimal('150.00'))
+		self.assertEqual(payment.gateway_transaction_id, '1234567890123')

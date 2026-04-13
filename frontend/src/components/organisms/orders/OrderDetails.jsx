@@ -83,6 +83,15 @@ const formatReferenceNumber = (value) => {
 
 const formatCurrency = (value) => `₱ ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const formatPaymentMethod = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+
+    if (normalized === 'paymongo') return 'PayMongo';
+    if (normalized === 'reference_number') return 'Reference Number';
+
+    return 'Reference Number';
+};
+
 const formatDeliveryDate = (value) => {
     if (!value) return 'N/A';
     const date = new Date(value);
@@ -177,6 +186,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const payments = orderSnapshot?.payments || [];
     const latestPayment = payments.length ? payments[payments.length - 1] : null;
     const paymentStatus = latestPayment?.status || 'unpaid';
+    const paymentMethod = formatPaymentMethod(orderSnapshot?.payment_method || latestPayment?.order_payment_method);
     const orderOccasion = orderSnapshot?.cake_orders?.occasion;
     const isPremadeOrder = String(orderOccasion || '').toLowerCase() === 'pre-made';
     const totalAmount = Number(orderSnapshot?.total_price || 0);
@@ -538,6 +548,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
             <div className='border border-border rounded-2xl p-6 bg-main'>
                 <h4 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-4'>Payment</h4>
                 <div className='space-y-3'>
+                    <DetailRow label='Payment Method' value={paymentMethod} />
                     <DetailRow label='Payment' value={capitalizeSnakeCase(paymentStatus)} />
                     <DetailRow label='Reference Number' value={referenceNumber} />
                     {showRefundReferenceRow && (

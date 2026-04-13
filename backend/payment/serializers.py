@@ -11,12 +11,13 @@ class PaymentSerializer(serializers.ModelSerializer):
     payer_username = serializers.CharField(source="payer.username", read_only=True)
     order_id = serializers.PrimaryKeyRelatedField(source="orders", read_only=True)
     order_status = serializers.CharField(source='orders.status', read_only=True)
+    order_payment_method = serializers.CharField(source='orders.payment_method', read_only=True)
     
     class Meta:
         model = Payment
         fields = [
             'id', 'payer', 'payer_username', 'order_id', 
-            'amount', 'status', 'payment_type', 'order_status', 'gateway_transaction_id', 'created_at'
+            'amount', 'status', 'payment_type', 'order_status', 'order_payment_method', 'gateway_transaction_id', 'created_at'
         ]
         read_only_fields = fields
         

@@ -40,6 +40,15 @@ const formatEnumLabel = (value = '') => {
         .join(' ');
 };
 
+const formatPaymentMethodLabel = (value = '') => {
+    const normalized = String(value || '').trim().toLowerCase();
+
+    if (normalized === 'paymongo') return 'PayMongo';
+    if (normalized === 'reference_number') return 'Reference Number';
+
+    return 'Reference Number';
+};
+
 const parseOrderDataParam = (orderDataParam) => {
     if (!orderDataParam) return {};
 
@@ -80,6 +89,7 @@ const OrderDetails = () => {
     const [editableImages, setEditableImages] = useState([]);
     const [savingOrderDetails, setSavingOrderDetails] = useState(false);
     const [pickingImages, setPickingImages] = useState(false);
+    const [processingPaymongo, setProcessingPaymongo] = useState(false);
     const [orderStatus, setOrderStatus] = useState(null);
     const { width } = Dimensions.get('window');
     const imageSize = (width - 32 - 16) / 3;
@@ -141,6 +151,9 @@ const OrderDetails = () => {
     const isPremadeOrder = String(occasion || '').toLowerCase() === 'pre-made';
     const canCustomerEditOrderDetails = !isPremadeOrder && ['unpaid', 'pending', 'accepted'].includes(String(currentStatus || '').toLowerCase());
     const payments = orderData?.payments || [];
+    const paymentMethodRaw = orderData?.payment_method;
+    const paymentMethodLabel = formatPaymentMethodLabel(paymentMethodRaw);
+    const isPayMongoMethod = String(paymentMethodRaw || '').toLowerCase() === 'paymongo';
     const successfulPayments = payments.filter((payment) => {
         const status = String(payment?.status || '').toLowerCase();
         return status === 'success' || status === 'completed' || status === 'paid';
@@ -318,6 +331,7 @@ const OrderDetails = () => {
             await api.patch(`/orders/orders/${orderData.id}/`, {
                 reference_number: normalizedReference,
                 status: 'pending',
+                payment_method: 'reference_number',
             });
 
             await reloadOrderDetails();
@@ -327,6 +341,35 @@ const OrderDetails = () => {
             showToast(error.response?.data?.error || 'Failed to update order', 'error');
         } finally {
             setSubmittingReference(false);
+        }
+    };
+
+    const handlePayWithPayMongo = async () => {
+        if (processingPaymongo) return;
+
+        setProcessingPaymongo(true);
+        try {
+            const response = await api.post('/payment/repay/', { order_id: orderData.id });
+            const checkoutUrl = response?.data?.checkout_url;
+
+            if (!checkoutUrl) {
+                throw new Error('Checkout URL was not returned by PayMongo endpoint.');
+            }
+
+            showToast('Redirecting to PayMongo checkout...', 'info');
+
+            router.push({
+                pathname: '/paymentScreen',
+                params: {
+                    checkoutUrl,
+                    orderId: orderData.id,
+                },
+            });
+        } catch (error) {
+            console.error('PayMongo Initiation Error:', error.response?.data || error.message);
+            showToast(error.response?.data?.error || 'Failed to initiate PayMongo payment.', 'error');
+        } finally {
+            setProcessingPaymongo(false);
         }
     };
 
@@ -411,7 +454,7 @@ const OrderDetails = () => {
                     </View>
 
                     {/* Reference Number Submission for Unpaid Orders */}
-                    {currentStatus === 'unpaid' && (
+                    {currentStatus === 'unpaid' && !isPayMongoMethod && (
                         <View className='gap-3 p-4 bg-white rounded-xl border border-orange-200 w-full'>
                             <Text className='text-primary font-semibold'>Payment Reference Number</Text>
                             <TextInput
@@ -433,6 +476,25 @@ const OrderDetails = () => {
                                 )}
                                 <Text className='text-white text-lg font-bold'>
                                     {submittingReference ? 'Submitting...' : 'Submit Reference Number'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {currentStatus === 'unpaid' && isPayMongoMethod && (
+                        <View className='gap-3 p-4 bg-white rounded-xl border border-[#DAB48E] w-full'>
+                            <Text className='text-primary font-semibold'>PayMongo Payment</Text>
+                            <Text className='text-secondary-light text-sm'>Continue your payment securely via PayMongo checkout.</Text>
+                            <TouchableOpacity
+                                onPress={handlePayWithPayMongo}
+                                disabled={processingPaymongo}
+                                className={`flex-row items-center justify-center gap-2 p-4 bg-[#8B5A3C] rounded-xl w-full active:opacity-80 ${processingPaymongo ? 'opacity-60' : ''}`}
+                            >
+                                {processingPaymongo && (
+                                    <ActivityIndicator size='small' color='white' />
+                                )}
+                                <Text className='text-white text-lg font-bold'>
+                                    {processingPaymongo ? 'Redirecting...' : 'Pay with PayMongo'}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -478,6 +540,16 @@ const OrderDetails = () => {
                             <Text className='text-red-500 text-sm'>Waiting for admin refund and cancellation confirmation.</Text>
                         </View>
                     )}
+
+                    <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
+                        <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>
+                            <NotepadText style={{ color: '#A67C52' }} />
+                        </View>
+                        <View>
+                            <Text className='text-gray-300'>Payment Method</Text>
+                            <Text className='text-primary text-lg font-semibold'>{paymentMethodLabel}</Text>
+                        </View>
+                    </View>
 
                     <View className='flex-row gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
                         <View className='bg-gray-100 t w-12 h-12 rounded-full items-center justify-center'>

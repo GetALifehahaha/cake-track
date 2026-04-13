@@ -1,12 +1,12 @@
 import './global.css';
 import { useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, Animated, Modal } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
+import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText, WalletCards, Link2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { CAKE_ASSETS as cakeImages } from './cakeImages';
 import { locationStore } from '@/utils/locationStore';
@@ -69,6 +69,7 @@ const CustomOrders = () => {
     const [email, setEmail] = useState(user?.email || '');
     const [contactNumber, setContactNumber] = useState(formatPhoneNumber(user?.phone_number || ''));
     const [agreeToTOC, setAgreeToTOC] = useState(false);
+    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
 
     // Ref to capture the cake preview as a single image
     const cakePreviewRef = useRef();
@@ -226,7 +227,24 @@ const CustomOrders = () => {
         );
     }
 
-    const orderCake = async () => {
+    const startPayMongoCheckout = async (orderId) => {
+        const response = await api.post('/payment/initiate/', { order_id: orderId });
+        const checkoutUrl = response?.data?.checkout_url;
+
+        if (!checkoutUrl) {
+            throw new Error('Checkout URL was not returned by PayMongo initiate endpoint.');
+        }
+
+        router.replace({
+            pathname: '/paymentScreen',
+            params: {
+                checkoutUrl,
+                orderId,
+            },
+        });
+    };
+
+    const orderCake = async (paymentMethod = 'reference_number') => {
         let capturedCakeUri = null;
         if (!personallyDesign && customLayers.length > 0 && cakePreviewRef.current) {
             try {
@@ -240,6 +258,7 @@ const CustomOrders = () => {
         }
 
         setIsSubmitting(true); 
+        let newOrderId = null;
 
         try {
             let uploadedImageUrls = [];
@@ -302,34 +321,60 @@ const CustomOrders = () => {
                 }),
                 comments: comments,
                 image: uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null,
-                uploaded_images: uploadedImageUrls
+                uploaded_images: uploadedImageUrls,
+                payment_method: paymentMethod,
             };
 
             const response = await postOrder(payload);
 
-            const newOrderId = response?.id || response?.data?.id;
+            newOrderId = response?.id || response?.data?.id;
 
-            if (newOrderId) {
-                router.replace({
-                    pathname: '/gcashInformation',
-                    params: {
-                        amount: '500.00',
-                        paymentType: 'custom',
-                        orderId: newOrderId,
-                    },
-                });
+            if (paymentMethod === 'paymongo') {
+                if (!newOrderId) {
+                    throw new Error('Order ID missing after order creation.');
+                }
+
+                await startPayMongoCheckout(newOrderId);
             } else {
-                showToast("Order placed, but ID missing. Check Order History.");
-                router.push('/orderSuccess');
+                if (newOrderId) {
+                    router.replace({
+                        pathname: '/gcashInformation',
+                        params: {
+                            amount: '500.00',
+                            paymentType: 'custom',
+                            orderId: newOrderId,
+                        },
+                    });
+                } else {
+                    showToast('Order placed, but ID missing. Check Order History.');
+                    router.push('/orderSuccess');
+                }
             }
 
         } catch (err) {
             console.error(err);
-            showToast("Failed to place order. Please try again.", "error")
+
+            if (paymentMethod === 'paymongo' && newOrderId) {
+                showToast('Order placed, but PayMongo checkout failed. You can retry from Orders.', 'error');
+                router.replace('/(tabs)/orders');
+            } else {
+                showToast('Failed to place order. Please try again.', 'error');
+            }
         } finally {
             setIsSubmitting(false); 
         }
-    }
+    };
+
+    const openPaymentMethodModal = () => {
+        if (!validateCurrentPage()) return;
+        setShowPaymentMethodModal(true);
+    };
+
+    const handleSelectPaymentMethod = async (paymentMethod) => {
+        if (isSubmitting) return;
+        setShowPaymentMethodModal(false);
+        await orderCake(paymentMethod);
+    };
 
     const validateCurrentPage = () => {
         switch (page) {
@@ -1000,10 +1045,10 @@ const CustomOrders = () => {
                             <Text className='text-secondary-light font-medium'>{page}/{maxPage}</Text>
 
                             {page === maxPage ?
-                                <ConfirmModal details={"Place order? This action cannot be undone."} onConfirm={orderCake}>
-                                    <View className='bg-primary px-8 py-4 rounded-2xl items-center flex-row gap-2 shadow-sm'>
+                                <ConfirmModal details={"Place order? This action cannot be undone."} onConfirm={openPaymentMethodModal}>
+                                    <View className=' px-8 py-4 rounded-2xl items-center flex-row gap-2 shadow-sm'>
                                         <Check style={{ color: 'white' }} />
-                                        <Text className='text-white font-bold'>Submit</Text>
+                                        <Text className='text-white font-bold'>Choose Payment Method</Text>
                                     </View>
                                 </ConfirmModal>
                                 :
@@ -1014,6 +1059,56 @@ const CustomOrders = () => {
                         </View>
                     </View>
                 </ScrollView>
+
+                <Modal
+                    visible={showPaymentMethodModal}
+                    transparent
+                    animationType='fade'
+                    onRequestClose={() => setShowPaymentMethodModal(false)}
+                >
+                    <View className='flex-1 bg-black/50 justify-center items-center px-6'>
+                        <View className='bg-white w-full p-6 rounded-2xl shadow-lg'>
+                            <Text className='text-xl font-bold mb-1 text-primary'>Select Payment Method</Text>
+                            <Text className='text-secondary-strong mb-4'>Choose how you want to settle your downpayment.</Text>
+
+                            <TouchableOpacity
+                                onPress={() => handleSelectPaymentMethod('reference_number')}
+                                disabled={isSubmitting}
+                                className={`mb-3 rounded-xl border border-[#D6B89F] bg-white px-4 py-4 flex-row items-center gap-3 ${isSubmitting ? 'opacity-60' : ''}`}
+                            >
+                                <View className='h-10 w-10 rounded-full bg-[#F3E6D7] items-center justify-center'>
+                                    <WalletCards size={18} color='#8B5A3C' />
+                                </View>
+                                <View className='flex-1'>
+                                    <Text className='text-primary font-bold'>Reference Number</Text>
+                                    <Text className='text-secondary-light text-xs'>Pay to store GCash and submit your reference number.</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => handleSelectPaymentMethod('paymongo')}
+                                disabled={isSubmitting}
+                                className={`mb-4 rounded-xl bg-[#8B5A3C] px-4 py-4 flex-row items-center gap-3 ${isSubmitting ? 'opacity-60' : ''}`}
+                            >
+                                <View className='h-10 w-10 rounded-full bg-white/20 items-center justify-center'>
+                                    <Link2 size={18} color='white' />
+                                </View>
+                                <View className='flex-1'>
+                                    <Text className='text-white font-bold'>PayMongo Checkout</Text>
+                                    <Text className='text-white/80 text-xs'>Pay online securely via GCash through PayMongo.</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setShowPaymentMethodModal(false)}
+                                disabled={isSubmitting}
+                                className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
+                            >
+                                <Text className='text-[#7A4520] font-semibold'>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
             </KeyboardAvoidingView >
         </SafeAreaView >
     )

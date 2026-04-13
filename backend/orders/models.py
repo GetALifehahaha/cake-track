@@ -26,6 +26,11 @@ class Order(models.Model):
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('reference_number', 'Reference Number'),
+        ('paymongo', 'PayMongo'),
+    ]
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,6 +40,7 @@ class Order(models.Model):
     
     reject_reason = models.TextField(null=True, blank=True)
     payment_source_id = models.CharField(max_length=255, blank=True, null=True)
+    payment_method = models.CharField(max_length=30, choices=PAYMENT_METHOD_CHOICES, default='reference_number')
     reference_number = models.CharField(max_length=15, blank=True, null=True)
     cancellation_requested = models.BooleanField(default=False)
     cancellation_requested_at = models.DateTimeField(null=True, blank=True)

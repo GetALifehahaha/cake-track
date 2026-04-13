@@ -53,11 +53,29 @@ def _get_remaining_payment_amount(order):
         status='success',
     ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
 
+    # Backward compatibility for legacy reference-number payments
+    # created before downpayment Payment records existed.
+    if paid_downpayment <= 0 and order.reference_number and order.payment_method == 'reference_number':
+        expected_downpayment = total_price * Decimal('0.15')
+        paid_downpayment = min(expected_downpayment, total_price)
+
     remaining_amount = total_price - Decimal(paid_downpayment)
     if remaining_amount < 0:
         return Decimal('0.00')
 
     return remaining_amount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+def _get_order_downpayment_amount(order):
+    total_price = Decimal(order.total_price or 0)
+    if total_price <= 0:
+        return Decimal('500.00')
+
+    downpayment = total_price * Decimal('0.15')
+    if downpayment > total_price:
+        downpayment = total_price
+
+    return downpayment.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
 def _normalize_reference_number(value):
@@ -190,6 +208,29 @@ class OrderViewSet(viewsets.ModelViewSet):
             instance.save(update_fields=["total_price"])
                 
         updated_order = serializer.save()
+
+        if old_status == 'unpaid' and new_status == 'pending':
+            from payment.models import Payment
+
+            has_successful_downpayment = Payment.objects.filter(
+                orders=updated_order,
+                payment_type='downpayment',
+                status='success',
+            ).exists()
+
+            if (
+                updated_order.payment_method == 'reference_number'
+                and updated_order.reference_number
+                and not has_successful_downpayment
+            ):
+                Payment.objects.create(
+                    payer=updated_order.customer,
+                    orders=updated_order,
+                    amount=_get_order_downpayment_amount(updated_order),
+                    status='success',
+                    payment_type='downpayment',
+                    gateway_transaction_id=updated_order.reference_number,
+                )
 
         if old_status != "completed" and new_status == "completed":
             from payment.models import Payment

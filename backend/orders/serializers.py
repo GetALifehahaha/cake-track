@@ -42,6 +42,7 @@ class OrderPremadeRecipeSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     cake_orders = CakeOrderSerializer()
     cupcake_orders = CupcakeOrderSerializer(required=False)
+    reference_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=32)
     recipe_details = RecipeSerializer(source='recipe', read_only=True)
     premade_recipe_details = OrderPremadeRecipeSerializer(source='premade_recipes', many=True, read_only=True)
     customer_first_name = serializers.CharField(source='customer.first_name', read_only=True)
@@ -66,7 +67,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'customer_first_name', 'customer_last_name', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'reference_number',
+            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'payment_method', 'reference_number',
             'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number',
             'hidden_by_customer', 'hidden_by_customer_at',
             'recipe', 'recipe_details', 'premade_recipe_details', 'premade_items', 'total_price', 'ingredients_deducted_at', 'payments'
@@ -82,6 +83,17 @@ class OrderSerializer(serializers.ModelSerializer):
             'hidden_by_customer',
             'hidden_by_customer_at',
         ]
+
+    def validate_reference_number(self, value):
+        if value in (None, ''):
+            return None
+
+        digits = ''.join(ch for ch in str(value) if ch.isdigit())
+
+        if len(digits) < 13 or len(digits) > 15:
+            raise serializers.ValidationError('Reference number must be 13 to 15 digits.')
+
+        return digits
 
     def _create_premade_recipes(self, order, premade_items):
         generated_links = []

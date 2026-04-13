@@ -87,7 +87,8 @@ class InitiatePaymentView(APIView):
             # CRITICAL FIX: Save the Source ID to the Order
             # This allows the Webhook to find this order later!
             order.payment_source_id = source_data['id']
-            order.save()
+            order.payment_method = 'paymongo'
+            order.save(update_fields=['payment_source_id', 'payment_method'])
             
             checkout_url = source_data['attributes']['redirect']['checkout_url']
             
@@ -186,7 +187,8 @@ class PayMongoWebhookView(APIView):
 
             # 5. Update Order Status regardless of capture outcome
             order.status = 'pending'
-            order.save()
+            order.payment_method = 'paymongo'
+            order.save(update_fields=['status', 'payment_method'])
 
         return HttpResponse(status=200)
 
@@ -217,7 +219,8 @@ class PayMongoWebhookView(APIView):
                 # Keep order status as 'unpaid'
                 order.status = 'unpaid'
                 order.payment_source_id = None  # Clear old source so repay can work
-                order.save()
+                order.payment_method = 'paymongo'
+                order.save(update_fields=['status', 'payment_source_id', 'payment_method'])
 
         return HttpResponse(status=200)
 
@@ -295,7 +298,8 @@ class VerifyPaymentView(APIView):
                 )
 
                 order.status = 'pending'
-                order.save()
+                order.payment_method = 'paymongo'
+                order.save(update_fields=['status', 'payment_method'])
 
             return Response({"status": "pending", "verified": True})
 
@@ -313,7 +317,8 @@ class VerifyPaymentView(APIView):
                     )
                 if order.status == 'unpaid':
                     order.status = 'pending'
-                    order.save()
+                    order.payment_method = 'paymongo'
+                    order.save(update_fields=['status', 'payment_method'])
 
             return Response({"status": order.status, "verified": True})
 
@@ -376,7 +381,8 @@ class RepayOrderView(APIView):
             )
             
             order.payment_source_id = source_data['id']
-            order.save()
+            order.payment_method = 'paymongo'
+            order.save(update_fields=['payment_source_id', 'payment_method'])
             
             checkout_url = source_data['attributes']['redirect']['checkout_url']
             
