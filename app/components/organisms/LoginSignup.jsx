@@ -1,10 +1,13 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Modal } from 'react-native'
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import React, { useState, useContext, useEffect } from 'react'
-import { Lock, Mail, Eye, EyeClosed, User2Icon, Loader2 } from 'lucide-react-native'
+import { Lock, Mail, Eye, EyeClosed, User2Icon, Phone } from 'lucide-react-native'
 import { AuthContext } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
+import ActionConfirmModal from '@/components/organisms/ActionConfirmModal'
+import CakeTraceLoader from '@/components/atoms/CakeTraceLoader'
 import {
 	isValidEmail,
 	hasMinCredentialLength,
@@ -12,6 +15,8 @@ import {
 	isValidPHPhoneNumber,
 	formatPhoneNumber,
 	normalizePhoneNumber,
+	hasUppercaseCharacter,
+	hasLowercaseCharacter,
 } from '@/utils/validators';
 // 1. Import Google Sign-In
 // import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
@@ -24,6 +29,7 @@ const LoginSignup = ({ method }) => {
 	const [emailAddress, setEmailAddress] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 	// Signup specific
 	const [firstName, setFirstName] = useState("");
@@ -35,11 +41,12 @@ const LoginSignup = ({ method }) => {
 
 	const [loading, setLoading] = useState(false);
 	const [reactivating, setReactivating] = useState(false);
+	const [showSignupConfirmModal, setShowSignupConfirmModal] = useState(false);
 	const [showReactivateModal, setShowReactivateModal] = useState(false);
 	const [reactivatePromptText, setReactivatePromptText] = useState('');
 	const [deactivatedUsername, setDeactivatedUsername] = useState('');
 
-	const validateCredentialRules = () => {
+	const validateSignupCredentialRules = () => {
 		if (!hasMinCredentialLength(username)) {
 			showToast("Username must be at least 8 characters", "error");
 			return false;
@@ -47,6 +54,16 @@ const LoginSignup = ({ method }) => {
 
 		if (!hasMinCredentialLength(password)) {
 			showToast("Password must be at least 8 characters", "error");
+			return false;
+		}
+
+		if (!hasMinCredentialLength(confirmPassword)) {
+			showToast("Confirm password must be at least 8 characters", "error");
+			return false;
+		}
+
+		if (!hasLowercaseCharacter(password) || !hasUppercaseCharacter(password)) {
+			showToast("Password must contain at least 1 lowercase and 1 uppercase character", "error");
 			return false;
 		}
 
@@ -62,75 +79,50 @@ const LoginSignup = ({ method }) => {
 		setPhoneNumber(formatPhoneNumber(text));
 	};
 
-	const submitForm = async () => {
+	const validateSignupForm = () => {
+		if (!firstName || !lastName || !emailAddress || !username || !password || !confirmPassword) {
+			showToast("Please fill in all fields", "error");
+			return false;
+		}
+
+		if (!isValidEmail(emailAddress)) {
+			showToast("Please enter a valid email address", "error");
+			return false;
+		}
+
+		if (phoneNumber.trim() && !isValidPHPhoneNumber(phoneNumber)) {
+			showToast("Please enter a valid phone number", "error");
+			return false;
+		}
+
+		if (password !== confirmPassword) {
+			showToast("Passwords do not match", "error");
+			return false;
+		}
+
+		return validateSignupCredentialRules();
+	};
+
+	const handleLoginSubmit = async () => {
 		try {
 			setLoading(true);
-			if (method === "login") {
-				if (!username || !password) {
-					showToast("Please fill in all fields", "error");
-					return;
-				}
 
-				if (!validateCredentialRules()) {
-					return;
-				}
+			if (!username || !password) {
+				showToast("Please fill in all fields", "error");
+				return;
+			}
 
-				const res = await login(username, password)
+			const res = await login(username.trim(), password)
 
-				if (res.success) {
-					showToast("Logged in successfully!", "success");
-					router.replace('/(tabs)/');
-				} else if (res.deactivated) {
-					setDeactivatedUsername(res.username || username);
-					setReactivatePromptText('');
-					setShowReactivateModal(true);
-				} else if (res.error) {
-					showToast(res.error, "error");
-				}
-
-			} else if (method === "signup") {
-				if (!firstName || !lastName || !emailAddress || !username || !password || !confirmPassword) {
-					showToast("Please fill in all fields", "error");
-					return;
-				}
-
-				if (!isValidEmail(emailAddress)) {
-					showToast("Please enter a valid email address", "error");
-					return;
-				}
-
-				if (password !== confirmPassword) {
-					showToast("Passwords do not match", "error");
-					return;
-				}
-
-				if (phoneNumber.trim() && !isValidPHPhoneNumber(phoneNumber)) {
-					showToast("Please enter a valid phone number", "error");
-					return;
-				}
-
-				if (!validateCredentialRules()) {
-					return;
-				}
-
-				const res = await register(
-					username,
-					password,
-					firstName,
-					middleName,
-					lastName,
-					emailAddress,
-					normalizePhoneNumber(phoneNumber),
-				);
-
-				if (res.success) {
-					showToast("Signed up successfully! Login with your credentials", "success");
-					router.replace('/login');
-				}
-
-				if (res.error) {
-					showToast(res.error, "error");
-				}
+			if (res.success) {
+				showToast("Logged in successfully!", "success");
+				router.replace('/(tabs)/');
+			} else if (res.deactivated) {
+				setDeactivatedUsername(res.username || username);
+				setReactivatePromptText('');
+				setShowReactivateModal(true);
+			} else if (res.error) {
+				showToast(res.error, "error");
 			}
 
 
@@ -141,6 +133,49 @@ const LoginSignup = ({ method }) => {
 			setLoading(false);
 		}
 	}
+
+	const submitSignup = async () => {
+		try {
+			setLoading(true);
+
+			if (!validateSignupForm()) {
+				setShowSignupConfirmModal(false);
+				return;
+			}
+
+			const res = await register(
+				username.trim(),
+				password,
+				firstName.trim(),
+				middleName.trim(),
+				lastName.trim(),
+				emailAddress.trim(),
+				normalizePhoneNumber(phoneNumber),
+			);
+
+			if (res.success) {
+				setShowSignupConfirmModal(false);
+				showToast("Signed up successfully! Login with your credentials", "success");
+				router.replace('/(auth)/login');
+			}
+
+			if (res.error) {
+				showToast(res.error, "error");
+			}
+		} catch (error) {
+			showToast(error.message || "Signup failed", "error");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleSignupPress = () => {
+		if (!validateSignupForm()) {
+			return;
+		}
+
+		setShowSignupConfirmModal(true);
+	};
 
 	const handleReactivate = async () => {
 		const targetUsername = deactivatedUsername || username;
@@ -173,259 +208,289 @@ const LoginSignup = ({ method }) => {
 
 	if (authLoading) return (
 		<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-			<ActivityIndicator size="large" color="#8B5A3C" />
+			<CakeTraceLoader size={94} label='Preparing something sweet...' />
 		</View>
 	)
 
+	const isSignup = method === 'signup';
+	const usernameHasMinLength = hasMinCredentialLength(username);
+	const passwordHasMinLength = hasMinCredentialLength(password);
+	const passwordHasUpper = hasUppercaseCharacter(password);
+	const passwordHasLower = hasLowercaseCharacter(password);
+	const passwordNotSimilar = !isPasswordSimilarToUsername(username, password);
+	const confirmHasMinLength = hasMinCredentialLength(confirmPassword);
+	const confirmMatchesPassword = confirmPassword.length > 0 && confirmPassword === password;
+	const passwordIsStrict = passwordHasMinLength && passwordHasUpper && passwordHasLower && passwordNotSimilar;
+
 	return (
-		<SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
-			<KeyboardAvoidingView
-				style={{ flex: 1 }}
-				behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-				keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-			>
-				<ScrollView
+		<LinearGradient
+			colors={isSignup ? ['#FFF2E6', '#FFD8C8', '#FFE7F2'] : ['#F7F2ED', '#F2ECE7', '#EEE7E2']}
+			start={{ x: 0, y: 0 }}
+			end={{ x: 1, y: 1 }}
+			style={{ flex: 1 }}
+		>
+			<SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+				<KeyboardAvoidingView
 					style={{ flex: 1 }}
-					contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
-					keyboardShouldPersistTaps="handled"
-					showsVerticalScrollIndicator={false}
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
 				>
-					<View className='w-full items-center my-8 gap-4'>
-						<Image className='w-20 h-20 rounded-full' source={require('@/assets/images/logo.jpg')} />
-						<TouchableOpacity className='absolute top-4 right-4 p-4 rounded-m w-fit mx-auto mb-4' onPress={() => router.replace('(tabs)/')}>
-							<Text className='text-center font-semibold text-secondary-light'>BACK</Text>
-						</TouchableOpacity>
-						<Text className='text-xl font-bold text-primary'>
-							Michelle's Cakes & Cafe
-						</Text>
-						<Text className='text-md font-medium text-gray-600'>
-							Order your perfect custom cake
-						</Text>
-					</View>
+					<ScrollView
+						style={{ flex: 1 }}
+						contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 18, paddingBottom: 32, paddingTop: 6 }}
+						keyboardShouldPersistTaps="handled"
+						showsVerticalScrollIndicator={false}
+					>
+						<View className='w-full self-center max-w-[560px]'>
+							<View className='w-full items-center my-5 gap-2'>
+								<TouchableOpacity
+									className='self-end px-4 py-2 rounded-full bg-white/85 border border-[#e8d6c7]'
+									onPress={() => router.replace('/(tabs)/')}
+								>
+									<Text className='text-center text-[11px] font-semibold text-secondary-light'>BACK TO APP</Text>
+								</TouchableOpacity>
 
-					<View className='bg-white border border-gray-300 w-[90vw] self-center rounded-2xl mb-10'>
-						{/* Tabs */}
-						<View className='flex-row border-b border-gray-500'>
-							<TouchableOpacity className={`flex-1 p-6 ${method === "login" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('(auth)/login')}>
-								<Text className={`text-lg font-medium text-center ${method === "login" ? 'text-secondary-strong' : 'text-gray-300'}`}>
-									Login
+								<Image className='w-20 h-20 rounded-full border-4 border-white/80' source={require('@/assets/images/logo.jpg')} />
+								<Text className='text-2xl font-bold text-primary text-center'>Michelle's Cakes & Cafe</Text>
+								<Text className='text-sm font-medium text-[#6f665f] text-center'>
+									{isSignup ? 'Create your account and start customizing cakes.' : 'Welcome back. Login to continue your orders.'}
 								</Text>
-							</TouchableOpacity>
-							<TouchableOpacity className={`flex-1 p-6 ${method === "signup" ? 'border-b-2 border-secondary-light' : ''}`} onPress={() => router.replace('(auth)/signup')}>
-								<Text className={`text-lg font-medium text-center ${method === "signup" ? 'text-secondary-strong' : 'text-gray-300'}`}>
-									Sign Up
-								</Text>
-							</TouchableOpacity>
-						</View>
+							</View>
 
-						{/* LOGIN FORM */}
-						{method === "login" &&
-							<View className='p-6 gap-2'>
-								<Text className='text-center text-black font-semibold'>
-									Welcome back! Please login to continue
-								</Text>
+							<View className='bg-white/95 border border-[#eadbcf] rounded-[34px] px-4 py-5 mb-4 shadow-sm'>
+								<View className='flex-row bg-[#f5ede6] p-1.5 rounded-full mb-6'>
+									<TouchableOpacity
+										className={`flex-1 py-3 rounded-full ${method === 'login' ? 'bg-[#8B5A3C]' : 'bg-transparent'}`}
+										onPress={() => router.replace('/(auth)/login')}
+									>
+										<Text className={`text-center font-semibold ${method === 'login' ? 'text-white' : 'text-[#8a7a6e]'}`}>Login</Text>
+									</TouchableOpacity>
 
-								<View className='h-0.5 w-full bg-gray-300 my-8' />
-
-								<View className='flex-row gap-2 items-center'>
-									<User2Icon style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Username</Text>
-								</View>
-								<TextInput
-									className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black'
-									placeholder='Enter your username'
-									placeholderTextColor="#9ca3af"
-									autoCapitalize="none"
-									value={username}
-									onChangeText={setUsername}
-								/>
-
-								<View className='flex-row gap-2 items-center'>
-									<Lock style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Password</Text>
-								</View>
-
-								<View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
-									<TextInput className='flex-1 text-black' placeholder="Enter password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
-										value={password} onChangeText={setPassword} />
-									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-										{showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />}
+									<TouchableOpacity
+										className={`flex-1 py-3 rounded-full ${method === 'signup' ? 'bg-[#8B5A3C]' : 'bg-transparent'}`}
+										onPress={() => router.replace('/(auth)/signup')}
+									>
+										<Text className={`text-center font-semibold ${method === 'signup' ? 'text-white' : 'text-[#8a7a6e]'}`}>Sign Up</Text>
 									</TouchableOpacity>
 								</View>
 
-								{loading ?
-									<View className='p-4 rounded-md bg-secondary-strong flex-row justify-center items-center opacity-50'>
-										<Loader2 size={16} color="#fff" className="animate-spin" />
-										<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
+								{method === 'login' && (
+									<View className='gap-4'>
+										<View>
+											<Text className='text-[13px] font-semibold text-[#7A4A2A] mb-1 ml-1'>Username</Text>
+											<View className='flex-row items-center rounded-full border border-[#DEC7B3] bg-white px-4'>
+												<User2Icon style={{ color: '#BE9B7B' }} size={16} />
+												<TextInput
+													className='flex-1 py-3.5 ml-2 text-black'
+													placeholder='Enter your username'
+													placeholderTextColor='#9ca3af'
+													autoCapitalize='none'
+													value={username}
+													onChangeText={setUsername}
+												/>
+											</View>
+										</View>
+
+										<View>
+											<Text className='text-[13px] font-semibold text-[#7A4A2A] mb-1 ml-1'>Password</Text>
+											<View className='flex-row items-center rounded-full border border-[#DEC7B3] bg-white px-4'>
+												<Lock style={{ color: '#BE9B7B' }} size={16} />
+												<TextInput
+													className='flex-1 py-3.5 ml-2 text-black'
+													placeholder='Enter password'
+													placeholderTextColor='#9ca3af'
+													secureTextEntry={!showPassword}
+													value={password}
+													onChangeText={setPassword}
+												/>
+												<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+													{showPassword ? <Eye style={{ color: 'gray' }} size={18} /> : <EyeClosed style={{ color: 'gray' }} size={18} />}
+												</TouchableOpacity>
+											</View>
+										</View>
+
+										{loading ? (
+											<View className='p-4 rounded-full bg-secondary-strong flex-row justify-center items-center opacity-60 mt-8'>
+												<CakeTraceLoader
+													size={20}
+													color='#FFFFFF'
+													trackColor='rgba(255,255,255,0.35)'
+													strokeWidth={2}
+												/>
+												<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
+											</View>
+										) : (
+											<TouchableOpacity className='p-4 rounded-full bg-secondary-strong mt-8' onPress={handleLoginSubmit}>
+												<Text className='text-center font-semibold text-white'>LOGIN</Text>
+											</TouchableOpacity>
+										)}
+
+										<TouchableOpacity className='mt-1' onPress={() => router.push('/(auth)/forgotPassword')}>
+											<Text className='text-center text-secondary-light font-medium'>Forgot Password?</Text>
+										</TouchableOpacity>
 									</View>
-									:
-									<TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
-										<Text className='text-center font-semibold text-white'>LOGIN</Text>
-									</TouchableOpacity>
-								}
+								)}
 
-								<TouchableOpacity className='mt-3' onPress={() => router.push('/(auth)/forgotPassword')}>
-									<Text className='text-center text-secondary-light font-medium'>Forgot Password?</Text>
+								{method === 'signup' && (
+									<View className='gap-5'>
+										<Text className='text-center text-black font-semibold text-base mb-1'>Create an account to start ordering!</Text>
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] ml-1 -mb-2'>First Name</Text>
+										<TextInput className='px-4 py-3.5 border border-[#DEC7B3] rounded-full text-black bg-white' placeholder='Enter your first name' placeholderTextColor='#9ca3af' value={firstName} onChangeText={setFirstName} />
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] ml-1 -mb-2'>Middle Name (Optional)</Text>
+										<TextInput className='px-4 py-3.5 border border-[#DEC7B3] rounded-full text-black bg-white' placeholder='Enter your middle name' placeholderTextColor='#9ca3af' value={middleName} onChangeText={setMiddleName} />
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] ml-1 -mb-2'>Last Name</Text>
+										<TextInput className='px-4 py-3.5 border border-[#DEC7B3] rounded-full text-black bg-white' placeholder='Enter your last name' placeholderTextColor='#9ca3af' value={lastName} onChangeText={setLastName} />
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] -mb-2 ml-1'>Phone Number (Optional)</Text>
+										<TextInput
+											className='px-4 py-3.5 border border-[#DEC7B3] rounded-full text-black bg-white'
+											placeholder='0912 345 6789'
+											placeholderTextColor='#9ca3af'
+											value={phoneNumber}
+											onChangeText={handlePhoneNumberChange}
+											keyboardType='number-pad'
+											maxLength={13}
+										/>
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] -mb-2 ml-1'>Email Address</Text>
+										<TextInput className='px-4 py-3.5 border border-[#DEC7B3] rounded-full text-black bg-white' placeholder='Enter your email address' placeholderTextColor='#9ca3af' value={emailAddress} onChangeText={setEmailAddress} autoCapitalize='none' />
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] -mb-2 ml-1'>Username</Text>
+										<TextInput className='px-4 py-3.5 border border-[#DEC7B3] rounded-full text-black bg-white' placeholder='Enter your username' placeholderTextColor='#9ca3af' value={username} onChangeText={setUsername} autoCapitalize='none' />
+										<Text className={`text-[10px] ml-2 -mt-4 ${username.length === 0 ? 'text-[#8d7a6c]' : usernameHasMinLength ? 'text-green-700' : 'text-red-500'}`}>
+											Username at least 8 characters.
+										</Text>
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] -mb-2 ml-1 mt-1'>Password</Text>
+										<View className='flex-row items-center rounded-full border border-[#DEC7B3] bg-white px-4'>
+											<Lock style={{ color: '#BE9B7B' }} size={16} />
+											<TextInput
+												className='flex-1 py-3.5 ml-2 text-black'
+												placeholder='Enter password'
+												placeholderTextColor='#9ca3af'
+												secureTextEntry={!showPassword}
+												value={password}
+												onChangeText={setPassword}
+											/>
+											<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+												{showPassword ? <Eye style={{ color: 'gray' }} size={18} /> : <EyeClosed style={{ color: 'gray' }} size={18} />}
+											</TouchableOpacity>
+										</View>
+										<Text className={`text-[10px] ml-2 -mt-4 ${password.length === 0 ? 'text-[#8d7a6c]' : passwordIsStrict ? 'text-green-700' : 'text-red-500'}`}>
+											Password should have at least 8 characters, 1 lowercase, 1 uppercase.
+										</Text>
+
+										<Text className='text-[13px] font-semibold text-[#7A4A2A] -mb-2 ml-1 mt-1'>Confirm Password</Text>
+										<View className='flex-row items-center rounded-full border border-[#DEC7B3] bg-white px-4'>
+											<Lock style={{ color: '#BE9B7B' }} size={16} />
+											<TextInput
+												className='flex-1 py-3.5 ml-2 text-black'
+												placeholder='Re-enter your password'
+												placeholderTextColor='#9ca3af'
+												secureTextEntry={!showConfirmPassword}
+												value={confirmPassword}
+												onChangeText={setConfirmPassword}
+											/>
+											<TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+												{showConfirmPassword ? <Eye style={{ color: 'gray' }} size={18} /> : <EyeClosed style={{ color: 'gray' }} size={18} />}
+											</TouchableOpacity>
+										</View>
+										<Text className={`text-[10px] ml-2 -mt-4 ${confirmPassword.length === 0 ? 'text-[#8d7a6c]' : (confirmHasMinLength && confirmMatchesPassword) ? 'text-green-700' : 'text-red-500'}`}>
+											Confirm password should match password
+										</Text>
+
+										{loading ? (
+											<View className='mt-1 p-4 rounded-full bg-secondary-strong flex-row justify-center items-center opacity-60'>
+												<CakeTraceLoader
+													size={20}
+													color='#FFFFFF'
+													trackColor='rgba(255,255,255,0.35)'
+													strokeWidth={2}
+												/>
+												<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
+											</View>
+										) : (
+											<TouchableOpacity className='mt-1 p-4 rounded-full bg-secondary-strong' onPress={handleSignupPress}>
+												<Text className='text-center font-semibold text-white'>SIGN UP</Text>
+											</TouchableOpacity>
+										)}
+									</View>
+								)}
+							</View>
+						</View>
+					</ScrollView>
+				</KeyboardAvoidingView>
+
+				<Modal
+					visible={showReactivateModal}
+					transparent
+					animationType="fade"
+					onRequestClose={() => setShowReactivateModal(false)}
+				>
+					<View className='flex-1 bg-black/50 items-center justify-center px-6'>
+						<View className='w-full max-w-[420px] rounded-2xl bg-white p-5 border border-gray-200'>
+							<Text className='text-lg font-bold text-primary'>Account Inactive</Text>
+							<Text className='mt-2 text-gray-700'>
+								This account is no longer active. Do you want to activate it again?
+							</Text>
+							<Text className='mt-3 text-xs text-gray-600'>
+								Type activate {deactivatedUsername || username} to continue.
+							</Text>
+
+							<TextInput
+								className='mt-2 px-3 py-3 rounded-lg border border-gray-300 text-black'
+								placeholder={`activate ${deactivatedUsername || username}`}
+								placeholderTextColor="#9ca3af"
+								autoCapitalize='none'
+								value={reactivatePromptText}
+								onChangeText={setReactivatePromptText}
+							/>
+
+							<View className='mt-4 flex-row gap-3'>
+								<TouchableOpacity
+									className='flex-1 items-center justify-center rounded-lg border border-gray-300 py-3'
+									onPress={() => setShowReactivateModal(false)}
+									disabled={reactivating}
+								>
+									<Text className='font-semibold text-gray-700'>Back</Text>
+								</TouchableOpacity>
+
+								<TouchableOpacity
+									className='flex-1 items-center justify-center rounded-lg bg-primary py-3'
+									onPress={handleReactivate}
+									disabled={reactivating}
+								>
+									{reactivating ? (
+										<CakeTraceLoader
+											size={20}
+											color='#FFFFFF'
+											trackColor='rgba(255,255,255,0.35)'
+											strokeWidth={2}
+										/>
+									) : (
+										<Text className='font-semibold text-white'>Activate</Text>
+									)}
 								</TouchableOpacity>
 							</View>
-						}
-
-						{/* SIGNUP FORM */}
-						{method === "signup" &&
-							<View className='p-6 gap-2'>
-								<Text className='text-center text-black font-semibold'>
-									Create an account to start ordering!
-								</Text>
-
-								{/* 6. GOOGLE LOGIN BUTTON (Signup) */}
-								{/* <TouchableOpacity 
-                  onPress={handleGoogleSignIn}
-                  className="bg-white border border-gray-300 flex-row items-center justify-center p-3 rounded-md mt-4 shadow-sm"
-                >
-                  <Image 
-                    source={{ uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png" }} 
-                    style={{ width: 20, height: 20, marginRight: 10 }} 
-                  />
-                  <Text className="text-gray-700 font-semibold">Sign up with Google</Text>
-                </TouchableOpacity> */}
-
-								<View className='h-0.5 w-full bg-gray-300 my-8' />
-
-								<View className='flex-row gap-2 items-center'>
-									<Mail style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>First Name</Text>
-								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your first name' placeholderTextColor="#9ca3af" value={firstName} onChangeText={setFirstName} />
-
-								<View className='flex-row gap-2 items-center'>
-									<Mail style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Middle Name (Optional)</Text>
-								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your middle name' placeholderTextColor="#9ca3af" value={middleName} onChangeText={setMiddleName} />
-
-								{/* ... rest of signup form inputs ... */}
-								<View className='flex-row gap-2 items-center'>
-									<Mail style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Last Name</Text>
-								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your last name' placeholderTextColor="#9ca3af" value={lastName} onChangeText={setLastName} />
-
-								<View className='flex-row gap-2 items-center'>
-									<Mail style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Email Address</Text>
-								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your email address' placeholderTextColor="#9ca3af" value={emailAddress} onChangeText={setEmailAddress} autoCapitalize="none" />
-
-								<View className='flex-row gap-2 items-center'>
-									<Mail style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Phone Number (Optional)</Text>
-								</View>
-								<TextInput
-									className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black'
-									placeholder='0912 345 6789'
-									placeholderTextColor="#9ca3af"
-									value={phoneNumber}
-									onChangeText={handlePhoneNumberChange}
-									keyboardType='number-pad'
-									maxLength={18}
-								/>
-
-								<View className='flex-row gap-2 items-center'>
-									<User2Icon style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Username</Text>
-								</View>
-								<TextInput className='px-2 py-4 mb-4 border border-secondary-light rounded-md text-black' placeholder='Enter your username' placeholderTextColor="#9ca3af" value={username} onChangeText={setUsername} autoCapitalize="none" />
-
-								<View className='flex-row gap-2 items-center'>
-									<Lock style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Password</Text>
-								</View>
-								<View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
-									<TextInput className='flex-1 text-black' placeholder="Enter password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
-										value={password} onChangeText={setPassword} />
-									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-										{showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />}
-									</TouchableOpacity>
-								</View>
-
-								<View className='flex-row gap-2 items-center'>
-									<Lock style={{ color: "#BE9B7B" }} size={16} />
-									<Text className=''>Confirm Password</Text>
-								</View>
-								<View className='px-2 py-1 mb-4 border border-secondary-light rounded-md flex-row gap-2 items-center'>
-									<TextInput className='flex-1 text-black' placeholder="Re-enter your password" placeholderTextColor="#9ca3af" secureTextEntry={!showPassword}
-										value={confirmPassword} onChangeText={setConfirmPassword} />
-									<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-										{showPassword ? <Eye style={{ color: 'gray' }} /> : <EyeClosed style={{ color: 'gray' }} />}
-									</TouchableOpacity>
-								</View>
-
-								{loading ?
-									<View className='p-4 rounded-md bg-secondary-strong flex-row justify-center items-center opacity-50'>
-										<Loader2 size={16} color="#fff" className="animate-spin" />
-										<Text className='text-center font-semibold text-white ml-2'>Processing...</Text>
-									</View>
-									:
-									<TouchableOpacity className='p-4 rounded-md bg-secondary-strong ' onPress={submitForm}>
-										<Text className='text-center font-semibold text-white'>SIGN UP</Text>
-									</TouchableOpacity>
-								}
-							</View>
-						}
-					</View>
-				</ScrollView>
-			</KeyboardAvoidingView>
-
-			<Modal
-				visible={showReactivateModal}
-				transparent
-				animationType="fade"
-				onRequestClose={() => setShowReactivateModal(false)}
-			>
-				<View className='flex-1 bg-black/50 items-center justify-center px-6'>
-					<View className='w-full max-w-[420px] rounded-2xl bg-white p-5 border border-gray-200'>
-						<Text className='text-lg font-bold text-primary'>Account Inactive</Text>
-						<Text className='mt-2 text-gray-700'>
-							This account is no longer active. Do you want to activate it again?
-						</Text>
-						<Text className='mt-3 text-xs text-gray-600'>
-							Type activate {deactivatedUsername || username} to continue.
-						</Text>
-
-						<TextInput
-							className='mt-2 px-3 py-3 rounded-lg border border-gray-300 text-black'
-							placeholder={`activate ${deactivatedUsername || username}`}
-							placeholderTextColor="#9ca3af"
-							autoCapitalize='none'
-							value={reactivatePromptText}
-							onChangeText={setReactivatePromptText}
-						/>
-
-						<View className='mt-4 flex-row gap-3'>
-							<TouchableOpacity
-								className='flex-1 items-center justify-center rounded-lg border border-gray-300 py-3'
-								onPress={() => setShowReactivateModal(false)}
-								disabled={reactivating}
-							>
-								<Text className='font-semibold text-gray-700'>Back</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								className='flex-1 items-center justify-center rounded-lg bg-primary py-3'
-								onPress={handleReactivate}
-								disabled={reactivating}
-							>
-								{reactivating ? (
-									<ActivityIndicator size="small" color="white" />
-								) : (
-									<Text className='font-semibold text-white'>Activate</Text>
-								)}
-							</TouchableOpacity>
 						</View>
 					</View>
-				</View>
-			</Modal>
-		</SafeAreaView>
+				</Modal>
+
+				<ActionConfirmModal
+					visible={showSignupConfirmModal}
+					title='Confirm Sign Up'
+					message='Create your account using the details you entered?'
+					confirmText='Create Account'
+					cancelText='Review Details'
+					onConfirm={submitSignup}
+					onCancel={() => setShowSignupConfirmModal(false)}
+					loading={loading}
+				/>
+			</SafeAreaView>
+		</LinearGradient>
 	)
 }
 

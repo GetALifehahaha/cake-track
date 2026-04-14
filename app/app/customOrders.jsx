@@ -1,12 +1,12 @@
 import './global.css';
 import { useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, Image, ScrollView, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, Animated, Modal } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import React from 'react'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText } from 'lucide-react-native';
+import { X, ArrowLeft, ArrowRight, Check, Cake, MessageCircle, MessageSquare, Mail, CakeIcon, NotepadText, WalletCards, Link2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { CAKE_ASSETS as cakeImages } from './cakeImages';
 import { locationStore } from '@/utils/locationStore';
@@ -23,19 +23,17 @@ import {
     InformationPage,
 } from '@/components/molecules/FormPages';
 import { useToast } from '@/context/ToastContext';
-import ConfirmModal from '@/components/organisms/ConfirmModal';
 import useOrder from '@/hooks/useOrder';
 import { AuthContext } from '@/context/AuthContext';
 import api from '@/api/api';
 import { formatPhoneNumber, isValidEmail, isValidPHPhoneNumber } from '@/utils/validators';
-import Constants from 'expo-constants';
+import { extractApiErrorMessage } from '@/utils/apiErrors';
 
-// Get screen height to set static sizes that won't shrink when keyboard opens
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CustomOrders = () => {
-    const CLOUDINARY_UPLOAD_PRESET = (Constants.expoConfig?.extra?.cloudinaryUploadPreset || '').trim();
-    const CLOUDINARY_CLOUD_NAME = (Constants.expoConfig?.extra?.cloudinaryCloudName || '').trim();
+    const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME
 
     const { user, loading: userLoading } = useContext(AuthContext);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,11 +67,16 @@ const CustomOrders = () => {
     const [fullName, setFullName] = useState(`${user?.first_name || ''} ${user?.last_name || ''}`);
     const [address, setAddress] = useState('');
     const [email, setEmail] = useState(user?.email || '');
-    const [contactNumber, setContactNumber] = useState('');
+    const [contactNumber, setContactNumber] = useState(formatPhoneNumber(user?.phone_number || ''));
     const [agreeToTOC, setAgreeToTOC] = useState(false);
+    const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+    const [showPaymentConfirmationModal, setShowPaymentConfirmationModal] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
     // Ref to capture the cake preview as a single image
     const cakePreviewRef = useRef();
+    const previewScaleX = useRef(new Animated.Value(1)).current;
+    const previewScaleY = useRef(new Animated.Value(1)).current;
 
     const pageTitles = [
         'Cake Details',
@@ -90,20 +93,17 @@ const CustomOrders = () => {
     ]
 
 
-    // Map dropdown values to cakeImages asset keys based on tier
-    // Handles inconsistency: round tier1 uses 'straw', but tier2-3 use 'strawberry'
     const getFillingKey = (fillingValue, shape, tier) => {
         if (fillingValue === 'strawberry' && shape === 'round' && tier > 1) {
             return 'strawberry';
         } else if (fillingValue === 'strawberry' && shape === 'round' && tier === 1) {
             return 'straw';
         } else if (fillingValue === 'strawberry') {
-            return 'straw'; // sheet uses 'straw' for all tiers
+            return 'straw'; 
         }
-        return fillingValue; // choco and vanilla are consistent
+        return fillingValue; 
     };
 
-    // Listen for address selected from locationPicker (via locationStore)
     useFocusEffect(
         useCallback(() => {
             const addr = locationStore.consumeAddress();
@@ -113,12 +113,17 @@ const CustomOrders = () => {
         }, [])
     );
 
-    // Set vanilla as default filling when tier is selected
     useEffect(() => {
         if (tier && !filling) {
             setFilling('vanilla');
         }
     }, [tier]);
+
+    useEffect(() => {
+        if (user?.phone_number && !String(contactNumber || '').trim()) {
+            setContactNumber(formatPhoneNumber(String(user.phone_number)));
+        }
+    }, [user?.phone_number, contactNumber]);
 
     useEffect(() => {
         if (!shape || !tier || shape === 'other') {
@@ -132,17 +137,14 @@ const CustomOrders = () => {
             return;
         }
 
-        const tierKey = `tier${tier}`; // e.g. 'tier1', 'tier2', 'tier3'
+        const tierKey = `tier${tier}`; 
         let newLayers = [];
 
-        // --- BASE FLAVOR PREVIEW FIX ---
         if (page === 2 || page === 3) {
-            // Use selected base flavor for preview, fallback to yellow
             const baseKey = baseFlavor || 'yellow';
             const base = assets.bases?.[tierKey]?.[baseKey];
             if (base) newLayers.push(base);
 
-            // Page 3 only: show filling on top of base
             if (page === 3 && filling) {
                 const fillKey = getFillingKey(filling, shape, tier);
                 const fill = assets.fillings?.[tierKey]?.[fillKey];
@@ -150,14 +152,11 @@ const CustomOrders = () => {
             }
 
         } else if (page >= 4) {
-            // Page 4+: Coating color replaces yellow. Fillings are hidden by coating.
             const activeCoating = coatingColor || 'yellow';
             const base = assets.bases?.[tierKey]?.[activeCoating];
             if (base) newLayers.push(base);
 
-            // --- PIPINGS/DRIPS LOGIC FIX ---
             if (border && borderColor) {
-                // Try both pipings and drips for both shapes
                 if (border === 'piping' && assets.pipings?.[tierKey]?.[borderColor]) {
                     newLayers.push(assets.pipings[tierKey][borderColor]);
                 } else if (border === 'drip' && assets.drips?.[tierKey]?.[borderColor]) {
@@ -165,23 +164,55 @@ const CustomOrders = () => {
                 }
             }
 
-            // 3. Sprinkles — variant matches the border type (drip or pipe)
             if (page >= 5 && toppings === 'sprinkles') {
                 const sprinkleVariant = border === 'drip' ? 'drip' : 'pipe';
                 const sprinkle = assets.sprinkles?.[sprinkleVariant]?.[tierKey];
                 if (sprinkle) newLayers.push(sprinkle);
             }
 
-            // --- CANDLE ADD-ON FIX ---
-            if (page >= 6 && addOn === 'candle') {
-                const accessoryShapeKey = shape === 'sheet' ? 'sheet' : 'round';
-                const candle = cakeImages.accessories?.[accessoryShapeKey]?.[tierKey];
+            if (page >= 5 && addOn === 'candle') {
+                const candle = cakeImages.accessories?.[tierKey];
                 if (candle) newLayers.push(candle);
             }
         }
 
         setCustomLayers(newLayers);
     }, [page, shape, tier, baseFlavor, filling, coatingColor, border, borderColor, toppings, addOn]);
+
+    useEffect(() => {
+        if (personallyDesign || shape === 'other' || customLayers.length === 0) {
+            return;
+        }
+
+        Animated.sequence([
+            Animated.parallel([
+                Animated.timing(previewScaleX, {
+                    toValue: 1.07,
+                    duration: 120,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(previewScaleY, {
+                    toValue: 0.93,
+                    duration: 120,
+                    useNativeDriver: true,
+                }),
+            ]),
+            Animated.parallel([
+                Animated.spring(previewScaleX, {
+                    toValue: 1,
+                    speed: 14,
+                    bounciness: 9,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(previewScaleY, {
+                    toValue: 1,
+                    speed: 14,
+                    bounciness: 9,
+                    useNativeDriver: true,
+                }),
+            ]),
+        ]).start();
+    }, [customLayers, personallyDesign, shape, previewScaleX, previewScaleY]);
 
 
 
@@ -193,15 +224,29 @@ const CustomOrders = () => {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#8B5A3C" />
-                {/* Optional: Add text so the user knows why it's taking time */}
                 {isSubmitting && <Text className="text-secondary-light mt-2">Processing Order...</Text>}
             </View>
         );
     }
 
-    const orderCake = async () => {
-        // Capture the cake preview BEFORE showing the loading spinner,
-        // because setIsSubmitting unmounts the preview View
+    const startPayMongoCheckout = async (orderId) => {
+        const response = await api.post('/payment/initiate/', { order_id: orderId });
+        const checkoutUrl = response?.data?.checkout_url;
+
+        if (!checkoutUrl) {
+            throw new Error('Checkout URL was not returned by PayMongo initiate endpoint.');
+        }
+
+        router.replace({
+            pathname: '/paymentScreen',
+            params: {
+                checkoutUrl,
+                orderId,
+            },
+        });
+    };
+
+    const orderCake = async (paymentMethod = 'reference_number') => {
         let capturedCakeUri = null;
         if (!personallyDesign && customLayers.length > 0 && cakePreviewRef.current) {
             try {
@@ -214,25 +259,23 @@ const CustomOrders = () => {
             }
         }
 
-        setIsSubmitting(true); // Start loading spinner
+        setIsSubmitting(true); 
+        let newOrderId = null;
 
         try {
             let uploadedImageUrls = [];
 
             let imagesToUpload = [...images];
 
-            // Prepend the captured cake preview so it becomes the main/first image
             if (capturedCakeUri) {
                 imagesToUpload.unshift(capturedCakeUri);
             }
 
-            // 1. Upload Image if it exists
             if (imagesToUpload.length > 0) {
                 const uploadPromises = imagesToUpload.map(uri => uploadToCloudinary(uri));
                 uploadedImageUrls = await Promise.all(uploadPromises);
             }
 
-            // 2. Prepare Payload (Use uploadedImageUrl instead of local 'image')
             const cakeData = personallyDesign ? {
                 occasion: occasion === "other" ? specifyOccasion : occasion,
                 shape: "Custom Request",
@@ -261,7 +304,6 @@ const CustomOrders = () => {
                 message: messageType === "none" ? "" : message,
             };
 
-            // Format dates for Django (YYYY-MM-DD and HH:MM:SS)
             const formattedDate = dueDate instanceof Date ? dueDate.toISOString().split('T')[0] : dueDate;
             const formattedTime = pickupTime instanceof Date ? pickupTime.toTimeString().split(' ')[0] : pickupTime;
 
@@ -281,37 +323,75 @@ const CustomOrders = () => {
                 }),
                 comments: comments,
                 image: uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null,
-                uploaded_images: uploadedImageUrls // <--- SEND THE CLOUDINARY URL HERE
+                uploaded_images: uploadedImageUrls,
+                payment_method: paymentMethod,
             };
 
-            // 3. Post to Backend
             const response = await postOrder(payload);
 
-            const newOrderId = response?.id || response?.data?.id;
+            newOrderId = response?.id || response?.data?.id;
 
-            if (newOrderId) {
-                router.replace({
-                    pathname: '/gcashInformation',
-                    params: {
-                        amount: '500.00',
-                        paymentType: 'custom',
-                    },
-                });
+            if (paymentMethod === 'paymongo') {
+                if (!newOrderId) {
+                    throw new Error('Order ID missing after order creation.');
+                }
+
+                await startPayMongoCheckout(newOrderId);
             } else {
-                // Fallback if no ID returned (shouldn't happen if backend is 200 OK)
-                showToast("Order placed, but ID missing. Check Order History.");
-                router.push('/orderSuccess');
+                if (newOrderId) {
+                    router.replace({
+                        pathname: '/gcashInformation',
+                        params: {
+                            amount: '500.00',
+                            paymentType: 'custom',
+                            orderId: newOrderId,
+                        },
+                    });
+                } else {
+                    showToast('Order placed, but ID missing. Check Order History.');
+                    router.push('/orderSuccess');
+                }
             }
 
         } catch (err) {
             console.error(err);
-            showToast("Failed to place order. Please try again.", "error")
-        } finally {
-            setIsSubmitting(false); // Stop loading spinner
-        }
-    }
+            const orderErrorMessage = extractApiErrorMessage(err, 'Failed to place order. Please try again.');
 
-    // --- Validation Logic ---
+            if (paymentMethod === 'paymongo' && newOrderId) {
+                showToast('Order placed, but PayMongo checkout failed. You can retry from Orders.', 'error');
+                router.replace('/(tabs)/orders');
+            } else {
+                showToast(orderErrorMessage, 'error');
+            }
+        } finally {
+            setIsSubmitting(false); 
+        }
+    };
+
+    const openPaymentMethodModal = () => {
+        if (!validateCurrentPage()) return;
+        setShowPaymentMethodModal(true);
+    };
+
+    const handleSelectPaymentMethod = (paymentMethod) => {
+        if (isSubmitting) return;
+        setSelectedPaymentMethod(paymentMethod);
+        setShowPaymentMethodModal(false);
+        setShowPaymentConfirmationModal(true);
+    };
+
+    const handleCancelPaymentConfirmation = () => {
+        if (isSubmitting) return;
+        setShowPaymentConfirmationModal(false);
+        setShowPaymentMethodModal(true);
+    };
+
+    const confirmSelectedPaymentMethod = async () => {
+        if (isSubmitting || !selectedPaymentMethod) return;
+        setShowPaymentConfirmationModal(false);
+        await orderCake(selectedPaymentMethod);
+    };
+
     const validateCurrentPage = () => {
         switch (page) {
             case 1: // Cake Details
@@ -354,9 +434,25 @@ const CustomOrders = () => {
                     showToast("Please select a coating color", 'error');
                     return false;
                 }
+                if (!border) {
+                    showToast("Please select a border style", 'error');
+                    return false;
+                }
+                if (!borderColor) {
+                    showToast("Please select a border color", 'error');
+                    return false;
+                }
                 return true;
 
             case 5: // Add-ons
+                if (!toppings) {
+                    showToast("Please select a toppings option", 'error');
+                    return false;
+                }
+                if (!addOn) {
+                    showToast("Please select an add-on option", 'error');
+                    return false;
+                }
                 return true;
 
             case 6: // Message
@@ -392,7 +488,6 @@ const CustomOrders = () => {
                     showToast("Please select a pickup time for your order", 'error');
                     return false;
                 }
-                // If personally designing, force them to add a comment describing the cake
                 if (personallyDesign && (!comments || comments.trim() === "")) {
                     showToast("Please describe your custom design in the comments", 'error');
                     return false;
@@ -400,7 +495,6 @@ const CustomOrders = () => {
                 return true;
 
             case 9: // Image
-                // NEW: If personally designing, an image reference is required
                 if (personallyDesign && images.length === 0) {
                     showToast("Please upload a reference image for your custom design", 'error');
                     return false;
@@ -445,14 +539,10 @@ const CustomOrders = () => {
         }
     };
 
-    // --- FIX 2: Updated Logic to Skip Pages 4 and 5 if personallyDesign is true ---
     const handleChangePage = (direction) => {
         if (direction === 'next' && page < maxPage) {
             if (validateCurrentPage()) {
-                // --- NEW LOGIC: Personally Design Flow ---
                 if (personallyDesign && page === 1) {
-                    // Skip Pages 2-7 (Form, Flavors, Coating, Addons, Message, Cupcakes)
-                    // Jump straight to Page 8 (Comments/Due Date)
                     setPage(8);
                 }
                 else {
@@ -460,9 +550,7 @@ const CustomOrders = () => {
                 }
             }
         } else if (direction === 'prev' && page > 1) {
-            // --- NEW LOGIC: Back Button for Personally Design ---
             if (personallyDesign && page === 8) {
-                // If on Comments page and it's a personal design, go back to Page 1
                 setPage(1);
             } else {
                 setPage(page - 1);
@@ -475,7 +563,6 @@ const CustomOrders = () => {
     }
 
     const pickImage = async () => {
-        // Limit total images to 6
         if (images.length >= 5) {
             showToast("Maximum 6 images allowed", "error");
             return;
@@ -489,13 +576,12 @@ const CustomOrders = () => {
 
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsMultipleSelection: true, // Allow selecting multiple
-            selectionLimit: 5 - images.length, // Dynamic limit
+            allowsMultipleSelection: true,
+            selectionLimit: 5 - images.length, 
             quality: 1,
         });
 
         if (!result.canceled) {
-            // Append new images to existing list
             const newUris = result.assets.map(asset => asset.uri);
             setImages([...images, ...newUris]);
         }
@@ -504,14 +590,12 @@ const CustomOrders = () => {
     const uploadToCloudinary = async (imageUri) => {
         if (!imageUri) return null;
 
-        // Extract the file name and type from the URI
         const filename = imageUri.split('/').pop();
         const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : `image/jpeg`;
 
         const formData = new FormData();
 
-        // REACT NATIVE SPECIFIC: formatting the file object
         formData.append("file", {
             uri: imageUri,
             name: filename,
@@ -526,8 +610,6 @@ const CustomOrders = () => {
                 {
                     method: "POST",
                     body: formData,
-                    // Note: Do NOT set 'Content-Type': 'multipart/form-data' header manually. 
-                    // Fetch does this automatically with the correct boundary.
                 }
             );
 
@@ -590,34 +672,36 @@ const CustomOrders = () => {
 
     function formatText(str) {
         return str
-            .split('_')                 // ["On", "both"]
+            .split('_')                 
             .map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             )
-            .join(' ');                 // "On Both"
+            .join(' ');               
     }
+
+    const customDownpaymentAmount = 500;
+    const selectedPaymentMethodLabel = selectedPaymentMethod === 'paymongo' ? 'PayMongo Checkout' : 'Reference Number';
 
 
     return (
         <SafeAreaView className='flex-1 bg-[#8B5A3C]'>
-            {/* 1. Behavior: 'padding' is best for iOS. Android often handles this automatically.
-               If you see double spacing on Android, change it to undefined for Platform.OS === 'android' 
-            */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
                 <ScrollView
                     className="flex-1"
-                    // 2. This ensures the white background stretches to the bottom even if content is short
+  
                     contentContainerStyle={{ flexGrow: 1 }}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* IMAGE CONTAINER */}
                     <View style={{ height: SCREEN_HEIGHT * 0.35 }} className="w-full items-center justify-center p-4">
-                        <View className='aspect-square h-[90%] bg-[#f7e8e1fe] rounded-lg justify-center items-center shadow-sm'>
+                        <View className='aspect-square h-[90%] border-8 border-white rounded-[40px] justify-center items-center shadow-sm relative'>
+                            <View className='absolute h-4 w-4/5 bg-white rounded-2xl -z-10 bottom-8'></View>
+                            <View className='absolute h-2 w-4/5 bg-white/20 rounded-2xl -z-10 bottom-14'></View>
+                            <View className='absolute h-4 w-4/5 bg-white rounded-2xl -z-10 top-8'></View>
                             {personallyDesign ? (
                                 <View className="items-center">
                                     <Text className='text-sm font-semibold text-gray-300'>CUSTOM DESIGN</Text>
@@ -627,20 +711,23 @@ const CustomOrders = () => {
                                 shape === "other" ? (
                                     <Text className='text-sm font-semibold text-gray-300'>NO PREVIEW</Text>
                                 ) : customLayers.length > 0 ? (
-                                    <View ref={cakePreviewRef} collapsable={false} style={{ width: 300, height: 300 }}>
-                                        {customLayers.map((layerSource, index) => (
-                                            <Image
-                                                key={index}
-                                                source={layerSource}
-                                                style={{ width: '100%', height: '100%', position: 'absolute' }}
-                                                resizeMode="contain"
-                                            />
-                                        ))}
-                                    </View>
+                                    <Animated.View style={{ transform: [{ scaleX: previewScaleX }, { scaleY: previewScaleY }] }}>
+                                        <View ref={cakePreviewRef} collapsable={false} style={{ width: 300, height: 300 }}>
+                                            {customLayers.map((layerSource, index) => (
+                                                <Image
+                                                    key={index}
+                                                    source={layerSource}
+                                                    style={{ width: '100%', height: '100%', position: 'absolute' }}
+                                                    resizeMode="contain"
+                                                />
+                                            ))}
+                                        </View>
+                                    </Animated.View>
                                 ) : (
                                     <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
                                 )
                             )}
+                            
                         </View>
                     </View>
 
@@ -654,7 +741,6 @@ const CustomOrders = () => {
                             <TouchableOpacity onPress={() => router.back()}><X style={{ color: '#8B5A3C' }} /></TouchableOpacity>
                         </View>
 
-                        {/* Page Content - Wrapped in a View to ensure structure */}
                         <View className='min-h-[200px]'>
                             {page === 1 && (
                                 <CakeDetailPage
@@ -961,17 +1047,10 @@ const CustomOrders = () => {
                                         </View>
                                     </View>
 
-                                    <View className='flex-1 justify-start items-start gap-4 w-full'>
-                                        <View className='flex-col gap-2 p-4 bg-white rounded-xl border border-secondary-light w-full'>
-                                            <Text className='font-semibold text-secondary-light text-center'>You will be asked to pay ₱ 500.00 as a downpayment</Text>
-                                        </View>
-                                    </View>
                                 </View>
                             )}
                         </View>
 
-                        {/* Navigation Footer */}
-                        {/* mt-auto pushes this to the bottom of the white section */}
                         <View className='flex-row justify-between items-center mt-auto pt-10'>
                             <TouchableOpacity onPress={() => handleChangePage('prev')} className='bg-white border-secondary-light/50 border p-4 rounded-full items-center shadow-sm'>
                                 <ArrowLeft style={{ color: '#9A8978' }} />
@@ -980,20 +1059,115 @@ const CustomOrders = () => {
                             <Text className='text-secondary-light font-medium'>{page}/{maxPage}</Text>
 
                             {page === maxPage ?
-                                <ConfirmModal details={"Place order? This action cannot be undone."} onConfirm={orderCake}>
+                                <TouchableOpacity onPress={openPaymentMethodModal} disabled={isSubmitting}>
                                     <View className='bg-secondary-light px-8 py-4 rounded-2xl items-center flex-row gap-2 shadow-sm'>
                                         <Check style={{ color: 'white' }} />
-                                        <Text className='text-white font-bold'>Submit</Text>
+                                        <Text className='text-white font-bold'>Choose Payment Method</Text>
                                     </View>
-                                </ConfirmModal>
+                                </TouchableOpacity>
                                 :
-                                <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-secondary-light p-4 rounded-full items-center shadow-sm'>
+                                <TouchableOpacity onPress={() => handleChangePage('next')} className='bg-primary shadow-xl p-4 rounded-full items-center'>
                                     <ArrowRight style={{ color: 'white' }} />
                                 </TouchableOpacity>
                             }
                         </View>
                     </View>
                 </ScrollView>
+
+                <Modal
+                    visible={showPaymentMethodModal}
+                    transparent
+                    animationType='fade'
+                    onRequestClose={() => setShowPaymentMethodModal(false)}
+                >
+                    <View className='flex-1 bg-black/50 justify-center items-center px-6'>
+                        <View className='bg-white w-full p-6 rounded-3xl shadow-lg border border-[#E5D3C1]'>
+                            <Text className='text-xl font-bold mb-1 text-primary'>Select Payment Method</Text>
+                            <Text className='text-secondary-strong mb-4'>Choose how you want to settle your downpayment.</Text>
+
+                            <View className='mb-4 rounded-2xl border border-[#E5D3C1] bg-[#FAF3EC] p-4'>
+                                <Text className='text-[11px] uppercase tracking-wider text-[#8B5A3C]/70 font-semibold'>Amount Due Now</Text>
+                                <Text className='text-3xl font-extrabold text-primary mt-1'>₱ {customDownpaymentAmount.toFixed(2)}</Text>
+                                <Text className='text-secondary-light text-xs mt-1'>Custom-order fixed downpayment</Text>
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={() => handleSelectPaymentMethod('reference_number')}
+                                disabled={isSubmitting}
+                                className={`mb-3 rounded-xl border border-[#D6B89F] bg-white px-4 py-4 flex-row items-center gap-3 ${isSubmitting ? 'opacity-60' : ''}`}
+                            >
+                                <View className='h-10 w-10 rounded-full bg-[#F3E6D7] items-center justify-center'>
+                                    <WalletCards size={18} color='#8B5A3C' />
+                                </View>
+                                <View className='flex-1'>
+                                    <Text className='text-primary font-bold'>Reference Number</Text>
+                                    <Text className='text-secondary-light text-xs'>Pay to store GCash, then submit your reference number in Orders.</Text>
+                                </View>
+                                <Text className='text-[#8B5A3C] text-xs font-semibold'>Pay ₱ {customDownpaymentAmount.toFixed(2)}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => handleSelectPaymentMethod('paymongo')}
+                                disabled={isSubmitting}
+                                className={`mb-4 rounded-xl bg-[#8B5A3C] px-4 py-4 flex-row items-center gap-3 ${isSubmitting ? 'opacity-60' : ''}`}
+                            >
+                                <View className='h-10 w-10 rounded-full bg-white/20 items-center justify-center'>
+                                    <Link2 size={18} color='white' />
+                                </View>
+                                <View className='flex-1'>
+                                    <Text className='text-white font-bold'>PayMongo Checkout</Text>
+                                    <Text className='text-white/80 text-xs'>Pay online securely via GCash through PayMongo.</Text>
+                                </View>
+                                <Text className='text-white text-xs font-semibold'>Pay ₱ {customDownpaymentAmount.toFixed(2)}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setShowPaymentMethodModal(false)}
+                                disabled={isSubmitting}
+                                className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
+                            >
+                                <Text className='text-[#7A4520] font-semibold'>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                <Modal
+                    visible={showPaymentConfirmationModal}
+                    transparent
+                    animationType='fade'
+                    onRequestClose={handleCancelPaymentConfirmation}
+                >
+                    <View className='flex-1 bg-black/50 justify-center items-center px-6'>
+                        <View className='bg-white w-full p-6 rounded-3xl shadow-lg border border-[#E5D3C1]'>
+                            <Text className='text-xl font-bold text-primary mb-2'>Confirm Payment Method</Text>
+                            <Text className='text-secondary-strong mb-4'>
+                                You selected {selectedPaymentMethodLabel}. Continue to place this order?
+                            </Text>
+
+                            <View className='mb-5 rounded-2xl border border-[#E5D3C1] bg-[#FAF3EC] p-4'>
+                                <Text className='text-[11px] uppercase tracking-wider text-[#8B5A3C]/70 font-semibold'>Amount Due Now</Text>
+                                <Text className='text-2xl font-extrabold text-primary mt-1'>₱ {customDownpaymentAmount.toFixed(2)}</Text>
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={confirmSelectedPaymentMethod}
+                                disabled={isSubmitting}
+                                className={`mb-3 rounded-xl bg-[#8B5A3C] px-4 py-4 items-center justify-center ${isSubmitting ? 'opacity-60' : ''}`}
+                            >
+                                <Text className='text-white font-bold'>Confirm and Continue</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={handleCancelPaymentConfirmation}
+                                disabled={isSubmitting}
+                                className='items-center justify-center rounded-xl border border-[#D6B89F] px-4 py-3'
+                            >
+                                <Text className='text-[#7A4520] font-semibold'>Back to Payment Methods</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
             </KeyboardAvoidingView >
         </SafeAreaView >
     )
