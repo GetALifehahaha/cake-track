@@ -403,15 +403,6 @@ const CustomOrders = () => {
                     showToast("Please enter your special occasion", 'error');
                     return false;
                 }
-
-                if (!border) {
-                    showToast("Please select a border style", 'error');
-                    return false;
-                }
-                if (!borderColor) {
-                    showToast("Please select a border color", 'error');
-                    return false;
-                }
                 return true;
 
             case 2: // Form (Shape & Tier)
