@@ -171,7 +171,8 @@ const CustomOrders = () => {
             }
 
             if (page >= 5 && addOn === 'candle') {
-                const candle = cakeImages.accessories?.[tierKey];
+                const accessoryShapeKey = shape === 'sheet' ? 'sheet' : 'round';
+                const candle = cakeImages.accessories?.[accessoryShapeKey]?.[tierKey];
                 if (candle) newLayers.push(candle);
             }
         }
@@ -400,6 +401,15 @@ const CustomOrders = () => {
                     return false;
                 } else if (occasion === "other" && !specifyOccasion) {
                     showToast("Please enter your special occasion", 'error');
+                    return false;
+                }
+
+                if (!border) {
+                    showToast("Please select a border style", 'error');
+                    return false;
+                }
+                if (!borderColor) {
+                    showToast("Please select a border color", 'error');
                     return false;
                 }
                 return true;
