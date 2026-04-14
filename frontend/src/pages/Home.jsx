@@ -16,6 +16,43 @@ import useBusinessDetails from '@/hooks/useBusinessDetails'
 import api from '@/api/api'
 import API_ENDPOINTS from '@/api/endpoints'
 
+const getApiErrorMessage = (error, fallback = 'Transaction failure') => {
+    const responseData = error?.response?.data;
+
+    if (!responseData) return fallback;
+    if (typeof responseData === 'string' && responseData.trim()) return responseData;
+
+    if (typeof responseData?.detail === 'string' && responseData.detail.trim()) {
+        return responseData.detail;
+    }
+
+    if (Array.isArray(responseData?.detail) && responseData.detail.length > 0) {
+        return String(responseData.detail[0]);
+    }
+
+    if (Array.isArray(responseData?.transaction_items) && responseData.transaction_items.length > 0) {
+        return String(responseData.transaction_items[0]);
+    }
+
+    if (Array.isArray(responseData?.non_field_errors) && responseData.non_field_errors.length > 0) {
+        return String(responseData.non_field_errors[0]);
+    }
+
+    if (typeof responseData === 'object') {
+        for (const value of Object.values(responseData)) {
+            if (Array.isArray(value) && value.length > 0) {
+                return String(value[0]);
+            }
+
+            if (typeof value === 'string' && value.trim()) {
+                return value;
+            }
+        }
+    }
+
+    return fallback;
+};
+
 const Home = () => {
 
     const { addToast } = useToast();
@@ -31,7 +68,6 @@ const Home = () => {
         pendingLoading,
         refreshPending,
         loading: transactionLoading,
-        error: transactionError,
         registerMoney,
         refreshRegisterMoney,
     } = useTransaction();
@@ -465,7 +501,6 @@ const Home = () => {
     if (productLoading || categoryLoading || transactionLoading || discountLoading || businessLoading) return <HomeSkeleton />
     if (productError) return <h5>Error</h5>
     if (categoryError) return <h5>Error</h5>
-    if (transactionError) return <h5>Error</h5>
     if (discountError) return <h5>Error</h5>
     if (businessError) return <h5>Error</h5>
 
@@ -609,7 +644,7 @@ const Home = () => {
             addToast('Order marked as completed', 'success');
             refreshPending();
         } catch (error) {
-            const detail = error?.response?.data?.detail || 'Failed to complete order';
+            const detail = getApiErrorMessage(error, 'Failed to complete order');
             addToast(detail, 'error');
         } finally {
             setCompletingOrderId(null);
@@ -657,7 +692,12 @@ const Home = () => {
     const completePayment = async (payload) => {
         setPaymentLoading(true);
 
-        if (payload) {
+        if (!payload) {
+            setPaymentLoading(false);
+            return;
+        }
+
+        try {
             const { sanitized: sanitizedCheckoutProducts, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
 
             if (removedCount > 0) {
@@ -671,7 +711,6 @@ const Home = () => {
             const submittedCustomerName =
                 typeof payload === 'object' ? payload?.customerName : (customerName?.trim() || null);
 
-            // Validation
             if (!sanitizedCheckoutProducts || sanitizedCheckoutProducts.length === 0) {
                 setModalFeedbackContent({ type: "error", label: "No Items", details: "Add at least one product before completing a transaction." });
                 setShowModalFeedback(true);
@@ -803,10 +842,20 @@ const Home = () => {
             removeAllProducts();
 
             addToast("Transaction successful")
+            setShowPaymentModal(false);
+            setModalFeedbackContent(null);
+        } catch (error) {
+            const detail = getApiErrorMessage(error, 'Transaction failure');
+            setModalFeedbackContent({
+                type: 'error',
+                label: 'Transaction Failed',
+                details: detail,
+            });
+            setShowModalFeedback(true);
+            addToast(detail, 'error');
+        } finally {
+            setPaymentLoading(false)
         }
-        setShowPaymentModal(false);
-        setModalFeedbackContent(null);
-        setPaymentLoading(false)
     }
 
     const removeAllProducts = () => {
@@ -818,56 +867,67 @@ const Home = () => {
     }
 
     const voidPayment = async () => {
-        const { sanitized: sanitizedCheckoutProducts, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
+        try {
+            const { sanitized: sanitizedCheckoutProducts, removedCount } = await sanitizeCheckoutProducts(checkoutProducts, { notify: true });
 
-        if (removedCount > 0) {
-            setCheckoutProducts(sanitizedCheckoutProducts);
-            setVoidProducts((current) => current.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id)));
-        }
+            if (removedCount > 0) {
+                setCheckoutProducts(sanitizedCheckoutProducts);
+                setVoidProducts((current) => current.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id)));
+            }
 
-        const sanitizedVoidProducts = voidProducts.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id));
+            const sanitizedVoidProducts = voidProducts.filter((item) => sanitizedCheckoutProducts.some((validItem) => validItem.variant_id === item.variant_id));
 
-        if (!sanitizedVoidProducts || sanitizedVoidProducts.length === 0) {
-            setModalFeedbackContent({ type: "error", label: "No Items", details: "Select at least one item to void." });
+            if (!sanitizedVoidProducts || sanitizedVoidProducts.length === 0) {
+                setModalFeedbackContent({ type: "error", label: "No Items", details: "Select at least one item to void." });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            const invalidVoidItem = sanitizedVoidProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
+            if (invalidVoidItem) {
+                setModalFeedbackContent({ type: "error", label: "Invalid Item", details: `Item "${invalidVoidItem.name || 'Unknown'}" is missing required details and cannot be voided.` });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            if (!orderType) {
+                setModalFeedbackContent({ type: "error", label: "Missing Order Type", details: "Order type is missing. Cannot process the void." });
+                setShowModalFeedback(true);
+                return;
+            }
+
+            const voidProductsPayload = sanitizedVoidProducts.map(p => ({
+                product: p.id,
+                product_variant: p.variant_id,
+                quantity: p.amount,
+            }))
+
+            await postTransaction({
+                is_void: true,
+                is_completed: true,
+                payment_method: "cash",
+                transaction_items: voidProductsPayload,
+                paid_amount: 0,
+                order_type: orderType,
+            })
+
+            setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
+            setVoidProducts([]);
+            addToast("Transction voided successfully");
+            setAccessCode('');
+            localStorage.removeItem('cart');
+
+            setShowClearCheckoutModal(false);
+        } catch (error) {
+            const detail = getApiErrorMessage(error, 'Failed to void transaction.');
+            setModalFeedbackContent({
+                type: 'error',
+                label: 'Void Failed',
+                details: detail,
+            });
             setShowModalFeedback(true);
-            return;
+            addToast(detail, 'error');
         }
-
-        const invalidVoidItem = sanitizedVoidProducts.find(p => !p.id || !p.variant_id || !p.amount || p.amount <= 0);
-        if (invalidVoidItem) {
-            setModalFeedbackContent({ type: "error", label: "Invalid Item", details: `Item "${invalidVoidItem.name || 'Unknown'}" is missing required details and cannot be voided.` });
-            setShowModalFeedback(true);
-            return;
-        }
-
-        if (!orderType) {
-            setModalFeedbackContent({ type: "error", label: "Missing Order Type", details: "Order type is missing. Cannot process the void." });
-            setShowModalFeedback(true);
-            return;
-        }
-
-        const voidProductsPayload = sanitizedVoidProducts.map(p => ({
-            product: p.id,
-            product_variant: p.variant_id,
-            quantity: p.amount,
-        }))
-
-        await postTransaction({
-            is_void: true,
-            is_completed: true,
-            payment_method: "cash",
-            transaction_items: voidProductsPayload,
-            paid_amount: 0,
-            order_type: orderType,
-        })
-
-        setCheckoutProducts(cp => cp.filter(p => !itemInVoid(p.variant_id)));
-        setVoidProducts([]);
-        addToast("Transction voided successfully");
-        setAccessCode('');
-        localStorage.removeItem('cart');
-
-        setShowClearCheckoutModal(false);
     }
 
 

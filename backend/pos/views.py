@@ -313,7 +313,16 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        transaction = serializer.save()
+
+        try:
+            transaction = serializer.save()
+        except ValidationError as error:
+            error_payload = getattr(error, 'detail', None)
+            if isinstance(error_payload, dict):
+                error_code = str(error_payload.get('error_code', ''))
+                if error_code == 'insufficient_ingredient_stock':
+                    return Response(error_payload, status=status.HTTP_409_CONFLICT)
+            raise
 
         output_serializer = TransactionSerializer(transaction, context=self.get_serializer_context())
         headers = self.get_success_headers(output_serializer.data)

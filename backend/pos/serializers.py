@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from users.serializers import UserSerializer
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Sum
@@ -417,21 +417,38 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 amount_needed = Decimal(str(recipe_item.amount_needed)) * quantity
                 ingredient_totals[ingredient_id] = ingredient_totals.get(ingredient_id, Decimal('0')) + amount_needed
 
-        if not is_void and ingredient_totals:
-            stock_errors = []
-
-            for ingredient_id, amount_needed in ingredient_totals.items():
-                ingredient = Ingredient.objects.get(id=ingredient_id)
-
-                if ingredient.total_stock < amount_needed:
-                    stock_errors.append(
-                        f"Not enough {ingredient.name}. Need {amount_needed}, Have {ingredient.total_stock}"
-                    )
-
-            if stock_errors:
-                raise ValidationError({"transaction_items": stock_errors})
-
         with transaction.atomic():
+            locked_ingredients = {}
+
+            if not is_void and ingredient_totals:
+                ingredient_ids = sorted(int(ingredient_id) for ingredient_id in ingredient_totals.keys())
+                locked_ingredients = {
+                    ingredient.id: ingredient
+                    for ingredient in Ingredient.objects.select_for_update().filter(id__in=ingredient_ids).order_by('id')
+                }
+
+                stock_errors = []
+
+                for ingredient_id in ingredient_ids:
+                    ingredient = locked_ingredients.get(ingredient_id)
+                    amount_needed = Decimal(str(ingredient_totals.get(ingredient_id, Decimal('0'))))
+
+                    if ingredient is None:
+                        stock_errors.append(f"Ingredient #{ingredient_id} no longer exists.")
+                        continue
+
+                    if ingredient.total_stock < amount_needed:
+                        stock_errors.append(
+                            f"Not enough {ingredient.name}. Need {amount_needed}, Have {ingredient.total_stock}"
+                        )
+
+                if stock_errors:
+                    raise ValidationError({
+                        'detail': 'Insufficient ingredient stock for one or more items.',
+                        'error_code': 'insufficient_ingredient_stock',
+                        'transaction_items': stock_errors,
+                    })
+
             gross_total = sum(
                 Decimal(str(item['product_variant'].price)) * item['quantity'] 
                 for item in items_data
@@ -582,13 +599,40 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
                 if recipe_names:
                     reason_parts.insert(0, f"Recipes: {', '.join(sorted(recipe_names))}")
                 reason = " | ".join(reason_parts)
-                
-                deduct_ingredient_totals(
-                    ingredient_totals=ingredient_totals,
-                    purchase_date=timezone.now().date(),
-                    reason=reason,
-                    exclude_expired=True,
-                )
+
+                try:
+                    deduct_ingredient_totals(
+                        ingredient_totals=ingredient_totals,
+                        purchase_date=timezone.now().date(),
+                        reason=reason,
+                        exclude_expired=True,
+                        locked_ingredients=locked_ingredients,
+                    )
+                except ValidationError as error:
+                    error_detail = getattr(error, 'detail', None)
+                    stock_errors = []
+
+                    if isinstance(error_detail, dict):
+                        transaction_item_errors = error_detail.get('transaction_items')
+                        if isinstance(transaction_item_errors, list):
+                            stock_errors = [str(item) for item in transaction_item_errors if str(item)]
+
+                        detail_value = error_detail.get('detail')
+                        if not stock_errors and detail_value:
+                            stock_errors = [str(detail_value)]
+                    elif isinstance(error_detail, list):
+                        stock_errors = [str(item) for item in error_detail if str(item)]
+                    elif error_detail:
+                        stock_errors = [str(error_detail)]
+
+                    if not stock_errors:
+                        stock_errors = ['One or more ingredients are no longer available.']
+
+                    raise ValidationError({
+                        'detail': 'Insufficient ingredient stock for one or more items.',
+                        'error_code': 'insufficient_ingredient_stock',
+                        'transaction_items': stock_errors,
+                    })
 
             if transaction_obj.is_completed and not transaction_obj.is_void:
                 _apply_completed_transaction_to_register(transaction_obj)

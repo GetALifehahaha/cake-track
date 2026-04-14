@@ -61,20 +61,30 @@ def deduct_ingredient_stock(
     purchase_date=None,
     reason=None,
     exclude_expired=False,
+    locked_ingredient=None,
 ):
-    if amount <= Decimal('0'):
-        raise ValidationError(f"Amount to deduct must be greater than zero for {ingredient.name}.")
+    ingredient_obj = locked_ingredient or ingredient
+    if transaction.get_connection().in_atomic_block and locked_ingredient is None:
+        ingredient_obj = Ingredient.objects.select_for_update().get(id=ingredient.id)
 
-    out_count = Decimal(str(amount))
+    if amount <= Decimal('0'):
+        raise ValidationError(f"Amount to deduct must be greater than zero for {ingredient_obj.name}.")
+
+    requested_amount = Decimal(str(amount))
+    out_count = requested_amount
     total_cost = Decimal('0.00')
+    in_atomic_block = transaction.get_connection().in_atomic_block
 
     if exclude_expired:
-        batches = get_available_batches_queryset(ingredient)
+        batches = get_available_batches_queryset(ingredient_obj)
     else:
-        batches = ingredient.transactions.filter(
+        batches = ingredient_obj.transactions.filter(
             transaction_type='in',
             remaining_amount__gt=0,
         ).order_by('expiration_date', 'purchase_date', 'id')
+
+    if in_atomic_block:
+        batches = batches.select_for_update()
 
     for batch in batches:
         if out_count <= 0:
@@ -95,13 +105,18 @@ def deduct_ingredient_stock(
         total_cost += deducted_amount * batch_price
 
     if out_count > 0:
-        if exclude_expired:
-            raise ValidationError(f"Not enough non-expired stock for: {ingredient.name}")
-
-        raise ValidationError(f"Not enough stock for: {ingredient.name}")
+        available_amount = requested_amount - out_count
+        stock_label = 'non-expired stock' if exclude_expired else 'stock'
+        raise ValidationError({
+            'detail': 'Insufficient ingredient stock for one or more items.',
+            'error_code': 'insufficient_ingredient_stock',
+            'transaction_items': [
+                f"Not enough {stock_label} for: {ingredient_obj.name}. Need {requested_amount}, Have {available_amount}"
+            ],
+        })
 
     transaction_object = Transaction.objects.create(
-        ingredient=ingredient,
+        ingredient=ingredient_obj,
         amount=amount,
         remaining_amount=Decimal('0'),
         transaction_type='out',
@@ -110,10 +125,10 @@ def deduct_ingredient_stock(
         cost_amount=total_cost,
     )
 
-    ingredient.total_stock -= amount
-    if ingredient.total_stock < Decimal('0'):
-        ingredient.total_stock = Decimal('0')
-    ingredient.save(update_fields=['total_stock'])
+    ingredient_obj.total_stock -= amount
+    if ingredient_obj.total_stock < Decimal('0'):
+        ingredient_obj.total_stock = Decimal('0')
+    ingredient_obj.save(update_fields=['total_stock'])
 
     return transaction_object
 
@@ -123,12 +138,33 @@ def deduct_ingredient_totals(
     purchase_date=None,
     reason=None,
     exclude_expired=False,
+    locked_ingredients=None,
 ):
     created_transactions = []
+    locked_ingredients_map = dict(locked_ingredients or {})
 
     with transaction.atomic():
-        for ingredient_id, amount in ingredient_totals.items():
-            ingredient = Ingredient.objects.get(id=ingredient_id)
+        ingredient_ids = sorted(int(ingredient_id) for ingredient_id in ingredient_totals.keys())
+        missing_ids = [
+            ingredient_id for ingredient_id in ingredient_ids
+            if ingredient_id not in locked_ingredients_map
+        ]
+
+        if missing_ids:
+            for ingredient in Ingredient.objects.select_for_update().filter(id__in=missing_ids).order_by('id'):
+                locked_ingredients_map[ingredient.id] = ingredient
+
+        for ingredient_id in ingredient_ids:
+            amount = ingredient_totals.get(ingredient_id)
+            ingredient = locked_ingredients_map.get(ingredient_id)
+
+            if ingredient is None:
+                raise ValidationError({
+                    'detail': 'Insufficient ingredient stock for one or more items.',
+                    'error_code': 'insufficient_ingredient_stock',
+                    'transaction_items': [f'Ingredient #{ingredient_id} no longer exists.'],
+                })
+
             created_transactions.append(
                 deduct_ingredient_stock(
                     ingredient=ingredient,
@@ -136,6 +172,7 @@ def deduct_ingredient_totals(
                     purchase_date=purchase_date,
                     reason=reason,
                     exclude_expired=exclude_expired,
+                    locked_ingredient=ingredient,
                 )
             )
 

@@ -381,6 +381,81 @@ class TransactionCreationTests(TestCase):
         self.assertEqual(flour.total_stock, Decimal('196'))  # 200 - (2 * 2)
 
 
+class TransactionStockValidationApiTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.cashier = User.objects.create_user(username="cashier_stock", password="password123")
+        self.client.force_authenticate(user=self.cashier)
+
+        self.mass_unit = Unit.objects.create(
+            name='Kilogram',
+            abbreviation='kg',
+            dimension='mass',
+            multiplier_to_reference=Decimal('1000'),
+        )
+        self.ingredient = Ingredient.objects.create(
+            name='Heavy Cream',
+            total_stock=Decimal('5'),
+            unit=self.mass_unit,
+        )
+        InventoryTransaction.objects.create(
+            ingredient=self.ingredient,
+            amount=Decimal('5'),
+            remaining_amount=Decimal('5'),
+            transaction_type='in',
+            purchase_date=timezone.now().date(),
+            unit_purchase_price=Decimal('120.00'),
+        )
+
+        self.recipe = Recipe.objects.create(name='Cream Slice', is_temporary=False)
+        RecipeIngredient.objects.create(
+            recipe=self.recipe,
+            ingredient=self.ingredient,
+            amount_needed=Decimal('5'),
+        )
+
+        self.category = Category.objects.create(name='Desserts Stock')
+        self.product = Product.objects.create(name='Cream Slice')
+        self.product.categories.add(self.category)
+        self.variant = ProductVariant.objects.create(
+            product=self.product,
+            label='Single',
+            price=Decimal('250.00'),
+            has_recipe=True,
+            recipe=self.recipe,
+        )
+
+    def _payload(self):
+        return {
+            'payment_method': 'cash',
+            'paid_amount': '300.00',
+            'order_type': 'dine-in',
+            'is_completed': False,
+            'transaction_items': [
+                {
+                    'product': self.product.id,
+                    'product_variant': self.variant.id,
+                    'quantity': 1,
+                }
+            ]
+        }
+
+    def test_second_transaction_returns_structured_insufficient_stock_error(self):
+        first_response = self.client.post('/pos/transactions/', self._payload(), format='json')
+        self.assertEqual(first_response.status_code, 201)
+
+        second_response = self.client.post('/pos/transactions/', self._payload(), format='json')
+        self.assertEqual(second_response.status_code, 409)
+        self.assertEqual(second_response.data.get('error_code'), 'insufficient_ingredient_stock')
+        self.assertEqual(
+            second_response.data.get('detail'),
+            'Insufficient ingredient stock for one or more items.',
+        )
+
+        transaction_item_errors = second_response.data.get('transaction_items')
+        self.assertTrue(isinstance(transaction_item_errors, list) and len(transaction_item_errors) > 0)
+
+
 class TransactionCompletionActionTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
