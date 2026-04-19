@@ -210,7 +210,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const showTotalAmountRow = isPremadeOrder || totalAmount > 0;
     const totalAmountDisplay = totalAmount > 0
         ? formatCurrency(totalAmount)
-        : (isPremadeOrder ? 'N/A' : 'Available after order is completed');
+        : (isPremadeOrder ? 'N/A' : 'Set during admin acceptance/negotiation');
     const referenceNumber = formatReferenceNumber(orderSnapshot?.reference_number || latestPayment?.reference_number);
     const refundReferenceNumber = formatReferenceNumber(orderSnapshot?.refund_reference_number);
     const showRefundReferenceRow = Boolean(orderSnapshot?.refund_reference_number);
@@ -751,146 +751,146 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 </>
             ) : (
                 <>
-            <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
+                    <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
 
-                <div className='ml-auto flex items-center gap-2'>
-                    <h5 className='text-sm font-semibold '>Load exiting recipe</h5>
-                    <div className='w-48'>
-                        <Button
-                            variant='modalOutline'
-                            size='full'
-                            text={selectedRecipeId ? recipeData?.results?.find(r => String(r.id) === String(selectedRecipeId))?.name || 'Select recipe' : 'Select recipe'}
-                            onClick={() => {
-                                if (hasDeducted) return;
-                                setShowRecipeSelectionModal(true);
-                            }}
-                            className='justify-center truncate'
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className='flex flex-1 overflow-hidden bg-main/50'>
-                <div className='basis-1/4 border-r border-border flex flex-col'>
-                    <div className='px-4 py-3 border-b border-border'>
-                        <h4 className='font-semibold text-sm text-text'>Available Ingredients</h4>
-                    </div>
-                    <div className='p-3'>
-                        <div className='relative'>
-                            <Search size={16} className='absolute left-3 top-2.5 text-text/50' />
-                            <input
-                                type='text'
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                disabled={hasDeducted}
-                                placeholder='Search an ingredient...'
-                                className='w-full pl-9 pr-3 py-2 text-sm bg-main-white border border-border rounded-lg focus:outline-none'
-                            />
+                        <div className='ml-auto flex items-center gap-2'>
+                            <h5 className='text-sm font-semibold '>Load exiting recipe</h5>
+                            <div className='w-48'>
+                                <Button
+                                    variant='modalOutline'
+                                    size='full'
+                                    text={selectedRecipeId ? recipeData?.results?.find(r => String(r.id) === String(selectedRecipeId))?.name || 'Select recipe' : 'Select recipe'}
+                                    onClick={() => {
+                                        if (hasDeducted) return;
+                                        setShowRecipeSelectionModal(true);
+                                    }}
+                                    className='justify-center truncate'
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className='flex-1 overflow-y-auto px-3 pb-3 space-y-2'>
-                        {filteredIngredients.map(ingredient => (
-                            <button
-                                key={ingredient.id}
-                                type='button'
-                                onClick={() => !hasDeducted && addIngredient(ingredient)}
-                                disabled={hasDeducted}
-                                className='w-full text-left p-3 rounded-lg border border-border bg-main-white hover:border-accent transition-colors'
-                            >
-                                <h5 className='text-sm font-semibold text-text'>{ingredient.name}</h5>
-                                <p className='text-[11px] text-text/60'>Stock: {formatQty(ingredient.total_stock)} {ingredient?.unit?.abbreviation}</p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className='flex-1 flex flex-col'>
-                    <div className='px-4 py-3 border-b border-border bg-main-white'>
-                        <h4 className='font-semibold text-sm text-text'>Transaction Items ({selectedIngredients.length})</h4>
-                    </div>
-
-                    <div className='flex-1 overflow-y-auto'>
-                        {selectedIngredients.length === 0 ? (
-                            <div className='h-full flex items-center justify-center text-text/50'>
-                                <div className='text-center'>
-                                    <ShoppingBag size={26} className='mx-auto mb-3 opacity-40' />
-                                    <h5 className='text-sm font-semibold text-text/60'>No ingredients added yet</h5>
-                                    <p className='text-xs mt-1'>Click an ingredient from the left panel, or load a recipe above.</p>
+                    <div className='flex flex-1 overflow-hidden bg-main/50'>
+                        <div className='basis-1/4 border-r border-border flex flex-col'>
+                            <div className='px-4 py-3 border-b border-border'>
+                                <h4 className='font-semibold text-sm text-text'>Available Ingredients</h4>
+                            </div>
+                            <div className='p-3'>
+                                <div className='relative'>
+                                    <Search size={16} className='absolute left-3 top-2.5 text-text/50' />
+                                    <input
+                                        type='text'
+                                        value={search}
+                                        onChange={(event) => setSearch(event.target.value)}
+                                        disabled={hasDeducted}
+                                        placeholder='Search an ingredient...'
+                                        className='w-full pl-9 pr-3 py-2 text-sm bg-main-white border border-border rounded-lg focus:outline-none'
+                                    />
                                 </div>
                             </div>
-                        ) : (
-                            <table className='w-full text-sm'>
-                                <thead className='bg-main-white sticky top-0 z-10'>
-                                    <tr className='text-left text-text/60 text-[11px] uppercase'>
-                                        <th className='px-4 py-2'>Ingredient</th>
-                                        <th className='px-4 py-2'>Amount</th>
-                                        <th className='px-4 py-2'>Unit</th>
-                                        <th className='px-4 py-2'>In Stock</th>
-                                        <th className='px-4 py-2'>Status</th>
-                                        <th className='px-4 py-2' />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedIngredients.map(item => {
-                                        const amountNeeded = getAmountNeededInBaseUnit(item);
-                                        const stock = Number(item.ingredient_stock || 0);
-                                        const isMissing = amountNeeded > 0 && stock < amountNeeded;
 
-                                        return (
-                                            <tr key={item.ingredient_id} className='border-t border-border'>
-                                                <td className='px-4 py-2'>
-                                                    <h5 className='font-semibold text-text'>{item.ingredient_name}</h5>
-                                                    <p className='text-[11px] text-text/60'>Stock: {formatQty(item.ingredient_stock)} {item.ingredient_unit}</p>
-                                                </td>
-                                                <td className='px-4 py-2'>
-                                                    <input
-                                                        type='text'
-                                                        value={item.amount_needed}
-                                                        onChange={(event) => updateAmount(item.ingredient_id, event.target.value)}
-                                                        disabled={hasDeducted}
-                                                        className='w-16 px-2 py-1 border border-border rounded bg-main-white focus:outline-none'
-                                                    />
-                                                </td>
-                                                <td className='px-4 py-2'>
-                                                    <div className='w-24'>
-                                                        {hasDeducted ? (
-                                                            <div className='px-2 py-1 border border-border rounded bg-main text-xs text-text/70'>
-                                                                {item.display_unit_label || 'Unit'}
-                                                            </div>
-                                                        ) : (
-                                                            <Dropdown
-                                                                size='full'
-                                                                variant='modal'
-                                                                value={item.display_unit_id}
-                                                                selection={item.display_unit_label || 'Unit'}
-                                                                options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
-                                                                onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
-                                                                allowNone={false}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
-                                                <td className='px-4 py-2'>
-                                                    <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
-                                                        {isMissing ? 'Low' : 'OK'}
-                                                    </span>
-                                                </td>
-                                                <td className='px-4 py-2'>
-                                                    <button onClick={() => !hasDeducted && removeIngredient(item.ingredient_id)} disabled={hasDeducted} className='text-text/60 hover:text-error disabled:opacity-40 disabled:cursor-not-allowed'>
-                                                        <X size={16} />
-                                                    </button>
-                                                </td>
+                            <div className='flex-1 overflow-y-auto px-3 pb-3 space-y-2'>
+                                {filteredIngredients.map(ingredient => (
+                                    <button
+                                        key={ingredient.id}
+                                        type='button'
+                                        onClick={() => !hasDeducted && addIngredient(ingredient)}
+                                        disabled={hasDeducted}
+                                        className='w-full text-left p-3 rounded-lg border border-border bg-main-white hover:border-accent transition-colors'
+                                    >
+                                        <h5 className='text-sm font-semibold text-text'>{ingredient.name}</h5>
+                                        <p className='text-[11px] text-text/60'>Stock: {formatQty(ingredient.total_stock)} {ingredient?.unit?.abbreviation}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className='flex-1 flex flex-col'>
+                            <div className='px-4 py-3 border-b border-border bg-main-white'>
+                                <h4 className='font-semibold text-sm text-text'>Transaction Items ({selectedIngredients.length})</h4>
+                            </div>
+
+                            <div className='flex-1 overflow-y-auto'>
+                                {selectedIngredients.length === 0 ? (
+                                    <div className='h-full flex items-center justify-center text-text/50'>
+                                        <div className='text-center'>
+                                            <ShoppingBag size={26} className='mx-auto mb-3 opacity-40' />
+                                            <h5 className='text-sm font-semibold text-text/60'>No ingredients added yet</h5>
+                                            <p className='text-xs mt-1'>Click an ingredient from the left panel, or load a recipe above.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <table className='w-full text-sm'>
+                                        <thead className='bg-main-white sticky top-0 z-10'>
+                                            <tr className='text-left text-text/60 text-[11px] uppercase'>
+                                                <th className='px-4 py-2'>Ingredient</th>
+                                                <th className='px-4 py-2'>Amount</th>
+                                                <th className='px-4 py-2'>Unit</th>
+                                                <th className='px-4 py-2'>In Stock</th>
+                                                <th className='px-4 py-2'>Status</th>
+                                                <th className='px-4 py-2' />
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        )}
+                                        </thead>
+                                        <tbody>
+                                            {selectedIngredients.map(item => {
+                                                const amountNeeded = getAmountNeededInBaseUnit(item);
+                                                const stock = Number(item.ingredient_stock || 0);
+                                                const isMissing = amountNeeded > 0 && stock < amountNeeded;
+
+                                                return (
+                                                    <tr key={item.ingredient_id} className='border-t border-border'>
+                                                        <td className='px-4 py-2'>
+                                                            <h5 className='font-semibold text-text'>{item.ingredient_name}</h5>
+                                                            <p className='text-[11px] text-text/60'>Stock: {formatQty(item.ingredient_stock)} {item.ingredient_unit}</p>
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <input
+                                                                type='text'
+                                                                value={item.amount_needed}
+                                                                onChange={(event) => updateAmount(item.ingredient_id, event.target.value)}
+                                                                disabled={hasDeducted}
+                                                                className='w-16 px-2 py-1 border border-border rounded bg-main-white focus:outline-none'
+                                                            />
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <div className='w-24'>
+                                                                {hasDeducted ? (
+                                                                    <div className='px-2 py-1 border border-border rounded bg-main text-xs text-text/70'>
+                                                                        {item.display_unit_label || 'Unit'}
+                                                                    </div>
+                                                                ) : (
+                                                                    <Dropdown
+                                                                        size='full'
+                                                                        variant='modal'
+                                                                        value={item.display_unit_id}
+                                                                        selection={item.display_unit_label || 'Unit'}
+                                                                        options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
+                                                                        onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
+                                                                        allowNone={false}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
+                                                        <td className='px-4 py-2'>
+                                                            <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
+                                                                {isMissing ? 'Low' : 'OK'}
+                                                            </span>
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <button onClick={() => !hasDeducted && removeIngredient(item.ingredient_id)} disabled={hasDeducted} className='text-text/60 hover:text-error disabled:opacity-40 disabled:cursor-not-allowed'>
+                                                                <X size={16} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
                 </>
             )}
         </div>

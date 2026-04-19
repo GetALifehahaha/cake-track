@@ -7,7 +7,7 @@ import { cn } from '@/utils/cn';
 
 const CompletePaymentModal = ({ order, onConfirm, onClose }) => {
 
-    const isPremade = order.recipe !== null && order.total_price !== null;
+    const isPremade = String(order?.cake_orders?.occasion || '').toLowerCase() === 'pre-made';
 
     // For premade: remaining is total - 15% downpayment (or recorded downpayment if present)
     // For custom: remaining is total - 500 downpayment (or recorded downpayment if present)
@@ -17,7 +17,7 @@ const CompletePaymentModal = ({ order, onConfirm, onClose }) => {
     });
     const recordedDownpayment = normalizedPayments.find(payment => String(payment?.payment_type || '').toLowerCase() === 'downpayment');
 
-    const [totalPrice, setTotalPrice] = useState(isPremade ? Number(order.total_price) : 0);
+    const [totalPrice, setTotalPrice] = useState(Number(order?.total_price || 0));
     const [amountReceived, setAmountReceived] = useState(0);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -122,10 +122,10 @@ const CompletePaymentModal = ({ order, onConfirm, onClose }) => {
                     <X size={16} className='text-text cursor-pointer' onClick={handleClose} />
                 </div>
 
-                {/* For custom orders: total price input */}
+                {/* For custom orders: allow setting/updating total price before completion */}
                 {!isPremade && (
                     <div className='flex flex-col gap-2'>
-                        <Label variant='small' text='Enter Total Price' />
+                        <Label variant='small' text='Set Total Price' />
                         <input
                             type='text'
                             placeholder='0.00'

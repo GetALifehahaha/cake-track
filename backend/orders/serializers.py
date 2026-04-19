@@ -79,7 +79,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'customer', 'customer_first_name', 'customer_last_name', 'comments', 'image', 'order_images', 'uploaded_images', 
             'created_at', 'status', 'reject_reason', 'cake_orders', 'cupcake_orders', 
-            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'payment_method', 'reference_number',
+            'updated_at', 'due_date', 'pickup_time', 'full_name', 'email', 'phone_number', 'address', 'payment_method', 'fulfillment_method', 'reference_number',
             'cancellation_requested', 'cancellation_requested_at', 'refund_reference_number', 'refund_account_name', 'refund_account_number',
             'customer_adjustment_used', 'customer_adjustment_used_at',
             'hidden_by_customer', 'hidden_by_customer_at',
@@ -134,6 +134,40 @@ class OrderSerializer(serializers.ModelSerializer):
                 )
 
         request = self.context.get('request')
+        is_staff_request = (
+            request is None
+            or (
+                request
+                and request.user
+                and request.user.is_authenticated
+                and request.user.is_staff
+            )
+        )
+
+        if not is_create:
+            if 'total_price' in attrs:
+                total_price = attrs.get('total_price')
+                if total_price is None or Decimal(str(total_price)) <= 0:
+                    raise serializers.ValidationError({'total_price': 'Total price must be greater than 0.'})
+
+                if not is_staff_request:
+                    raise serializers.ValidationError({'total_price': 'Only admins can set or update total price.'})
+
+            current_status = self.instance.status
+            next_status = attrs.get('status', current_status)
+            is_accept_transition = current_status == 'pending' and next_status == 'accepted'
+
+            if is_accept_transition:
+                if not is_staff_request:
+                    raise serializers.ValidationError({'status': 'Only admins can accept orders.'})
+
+                effective_total_price = attrs.get('total_price', self.instance.total_price)
+                if effective_total_price is None:
+                    raise serializers.ValidationError({'total_price': 'Total price is required when accepting an order.'})
+
+                if Decimal(str(effective_total_price)) <= 0:
+                    raise serializers.ValidationError({'total_price': 'Total price must be greater than 0.'})
+
         if (
             is_create
             and request
@@ -373,6 +407,11 @@ class OrderBatchUpdateSerializer(serializers.Serializer):
         return normalized_ids
     
     def validate(self, data):
+        if data['status'] == 'accepted':
+            raise serializers.ValidationError({
+                'status': 'Batch accept is disabled. Accept orders one-by-one to set the negotiated total price.'
+            })
+
         if data['status'] == "rejected":
             if not data.get('reject_reason'):
                 raise serializers.ValidationError({

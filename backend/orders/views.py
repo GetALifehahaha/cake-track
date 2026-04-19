@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from decimal import Decimal, ROUND_HALF_UP
-from django.db import models, transaction
+from django.db import models, transaction, OperationalError
 from django.utils import timezone
 from datetime import timedelta
 
@@ -157,6 +157,18 @@ class OrderViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except OperationalError as exc:
+            if 'database is locked' not in str(exc).lower():
+                raise
+
+            return Response(
+                {'error': 'Database is busy. Please try placing your order again in a few seconds.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
     @action(detail=False, methods=['get'], url_path='my-orders', pagination_class=None)
     def my_orders(self, request):
         if request.user.is_staff:
@@ -209,11 +221,6 @@ class OrderViewSet(viewsets.ModelViewSet):
         if new_status == "ready" and instance.ingredients_deducted_at is None:
             raise ValidationError({"status": "Ingredients must be deducted before marking this order as ready for pickup."})
 
-        # If completing a custom order, allow setting total_price from the request
-        if new_status == "completed" and self.request.data.get("total_price") is not None:
-            instance.total_price = Decimal(str(self.request.data["total_price"]))
-            instance.save(update_fields=["total_price"])
-                
         updated_order = serializer.save()
 
         if old_status == 'unpaid' and new_status == 'pending':

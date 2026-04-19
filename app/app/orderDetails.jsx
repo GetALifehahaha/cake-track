@@ -352,7 +352,7 @@ const OrderDetails = () => {
     const showTotalAmount = isPremadeOrder || totalAmount > 0;
     const totalAmountDisplay = totalAmount > 0
         ? formatCurrency(totalAmount)
-        : (isPremadeOrder ? 'N/A' : 'Available after order is completed');
+        : (isPremadeOrder ? 'N/A' : 'Set during admin acceptance/negotiation');
     const isRefundAccountNumberComplete = /^\d{4}\s\d{3}\s\d{4}$/.test(String(refundAccountNumberInput || '').trim());
     const canSubmitCancellationRequest = Boolean(String(refundAccountNameInput || '').trim())
         && isRefundAccountNumberComplete

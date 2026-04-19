@@ -130,6 +130,11 @@ DATABASES = {
     )
 }
 
+if DATABASES['default'].get('ENGINE') == 'django.db.backends.sqlite3':
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS'].setdefault('timeout', config('SQLITE_TIMEOUT', default=20, cast=int))
+    DATABASES['default']['CONN_MAX_AGE'] = 0
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

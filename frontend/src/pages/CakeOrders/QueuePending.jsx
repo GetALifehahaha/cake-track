@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Ellipsis } from 'lucide-react'
-import { ConfirmationModal, ConfirmationModalWrapper, OrderDetails, InputRejectModal, InputRefundModal } from '../../components/organisms';
+import { ConfirmationModalWrapper, OrderDetails, InputAcceptPriceModal, InputRejectModal, InputRefundModal } from '../../components/organisms';
 import { DatePicker, Pagination } from '@/components/molecules';
 import { Button } from '@/components/atoms';
 import { QueuePendingSkeleton } from '@/components/molecules/Skeletons';
@@ -28,6 +28,26 @@ const QueuePending = () => {
 	const hasCancellationFilter = searchParams.get('cancellation_requested') === 'true';
 	const hasActiveFilters = Boolean(selectedDate) || hasCancellationFilter;
 	const orderItems = Array.isArray(data?.results) ? data.results : [];
+	const acceptTargetOrder = orderItems.find(order => order.id === prepAcceptId) || null;
+
+	const getErrorMessage = (error, fallback = 'Something went wrong.') => {
+		const responseData = error?.response?.data;
+
+		if (!responseData) return fallback;
+		if (typeof responseData === 'string') return responseData;
+
+		if (Array.isArray(responseData)) {
+			return responseData[0] || fallback;
+		}
+
+		if (typeof responseData === 'object') {
+			const firstValue = Object.values(responseData)[0];
+			if (Array.isArray(firstValue)) return firstValue[0] || fallback;
+			if (typeof firstValue === 'string') return firstValue;
+		}
+
+		return fallback;
+	}
 
 	if (loading) return <QueuePendingSkeleton />
 
@@ -51,16 +71,16 @@ const QueuePending = () => {
 		setSearchParams(newParams);
 	}
 
-	const acceptOrder = async () => {
+	const acceptOrder = async (totalPrice) => {
 		if (prepAcceptId == null) return;
 
 		try {
-			await patchOrder(prepAcceptId, { status: "accepted" });
+			await patchOrder(prepAcceptId, { status: "accepted", total_price: totalPrice });
 
 			addToast("Order accepted successfully");
 			setPrepAcceptId(null);
-		} catch {
-			addToast("Failed to accept order.", "error")
+		} catch (err) {
+			addToast(getErrorMessage(err, "Failed to accept order."), "error")
 		}
 	}
 
@@ -75,20 +95,6 @@ const QueuePending = () => {
 		if (!orderDetails) setShowOrderDetails(false);
 
 		setShowOrderDetails(!showOrderDetails)
-	}
-
-	const acceptAllOrder = async () => {
-		const orderIds = orderItems.map(order => order.id);
-
-		if (orderIds.length === 0) return;
-
-		try {
-			await batchUpdateOrders({ order_ids: orderIds, status: "accepted" });
-
-			addToast("Orders accepted successfully", "success")
-		} catch (err) {
-			addToast(`Error: ${err}`, "error")
-		}
 	}
 
 	const rejectOrder = async (rejectReason) => {
@@ -138,76 +144,77 @@ const QueuePending = () => {
 			.trim() || cake.full_name || 'Unknown Customer';
 
 		return (
-		<div
-			className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60 h-fit'
-			onClick={() => setShowOptions(cake.id)}
-			key={index}
-		>
-			{showOptions === cake.id &&
-				<div
-					className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
-					onClick={(e) => { e.stopPropagation(); setShowOptions(null) }}
-				>
-					<Button variant='success' text='ACCEPT' onClick={(e) => { e.stopPropagation(); setPrepAcceptId(cake.id) }} />
-					<Button variant='error' text='DECLINE' onClick={(e) => { e.stopPropagation(); setPrepRejectId(cake.id) }} />
-					{cake.cancellation_requested && (
-						<Button
-							variant='error'
-							text='REFUND'
-							onClick={(e) => {
-								e.stopPropagation();
-								setRefundTarget(cake);
-								setShowOptions(null);
-							}}
-						/>
-					)}
+			<div
+				className='rounded-lg border border-border p-6 bg-main-white relative hover:shadow-md cursor-pointer min-h-60 h-fit'
+				onClick={() => setShowOptions(cake.id)}
+				key={index}
+			>
+				{showOptions === cake.id &&
+					<div
+						className='absolute top-0 left-0 w-full h-full bg-black/50 backdrop-blur-sm flex flex-col justify-center items-center gap-6 z-10'
+						onClick={(e) => { e.stopPropagation(); setShowOptions(null) }}
+					>
+						<Button variant='success' text='ACCEPT' onClick={(e) => { e.stopPropagation(); setPrepAcceptId(cake.id); setShowOptions(null); }} />
+						<Button variant='error' text='DECLINE' onClick={(e) => { e.stopPropagation(); setPrepRejectId(cake.id) }} />
+						{cake.cancellation_requested && (
+							<Button
+								variant='error'
+								text='REFUND'
+								onClick={(e) => {
+									e.stopPropagation();
+									setRefundTarget(cake);
+									setShowOptions(null);
+								}}
+							/>
+						)}
+					</div>
+				}
+
+				<div className='flex justify-between items-center'>
+					<h5 className='text-black text-sm font-semibold'>Order {cake.id}</h5>
+					<Ellipsis
+						onClick={(e) => {
+							e.stopPropagation();
+							handleSetOrderDetails(cake);
+						}}
+						className='cursor-pointer'
+						size={16}
+					/>
 				</div>
-			}
+				<h5 className='text-accent-text text-xs'>{customerName}</h5>
 
-			<div className='flex justify-between items-center'>
-				<h5 className='text-black text-sm font-semibold'>Order {cake.id}</h5>
-				<Ellipsis
-					onClick={(e) => {
-						e.stopPropagation();
-						handleSetOrderDetails(cake);
-					}}
-					className='cursor-pointer'
-					size={16}
-				/>
-			</div>
-			<h5 className='text-accent-text text-xs'>{customerName}</h5>
-
-			{/* Cake Details */}
-			<div className='flex mt-4'>
-				<div className='flex flex-col gap-0.5'>
-					<h5 className='font-bold text-md'>{capitalize(cake.cake_orders.occasion)}</h5>
-					<h5 className='text-xs text-accent-text'>Flavor: <strong>{capitalize(cake.cake_orders.base_flavor)}</strong></h5>
-					<h5 className='text-xs text-accent-text'>Filling: <strong>{capitalize(cake.cake_orders.filling)}</strong></h5>
-					<h5 className='text-xs text-accent-text'>Shape: <strong>{capitalize(cake.cake_orders.shape)}</strong></h5>
-					<h5 className='text-xs text-accent-text'>Inscription: <strong>{formatCasing(cake.cake_orders.message_type)}</strong></h5>
-				</div>
-			</div>
-
-			{/* Cupcake if there's any */}
-			{cake.cupcake_orders &&
-				<div className='flex mt-2 mb-4'>
-					<h5 className='basis-1/5 text-center font-bold text-md'>
-						{cake.cupcake_orders.amount}x
-					</h5>
+				{/* Cake Details */}
+				<div className='flex mt-4'>
 					<div className='flex flex-col gap-0.5'>
-						<h5 className='font-bold text-md'>Cupcakes</h5>
-						<h5 className='text-xs text-accent-text capitalize'>Frosting Color: <strong>{cake.cupcake_orders.frosting}</strong></h5>
+						<h5 className='font-bold text-md'>{capitalize(cake.cake_orders.occasion)}</h5>
+						<h5 className='text-xs text-accent-text'>Flavor: <strong>{capitalize(cake.cake_orders.base_flavor)}</strong></h5>
+						<h5 className='text-xs text-accent-text'>Filling: <strong>{capitalize(cake.cake_orders.filling)}</strong></h5>
+						<h5 className='text-xs text-accent-text'>Shape: <strong>{capitalize(cake.cake_orders.shape)}</strong></h5>
+						<h5 className='text-xs text-accent-text'>Inscription: <strong>{formatCasing(cake.cake_orders.message_type)}</strong></h5>
 					</div>
 				</div>
-			}
 
-			{cake.cancellation_requested && showOptions !== cake.id && (
-				<span className='absolute bottom-3 right-3 px-2 py-1 rounded-full bg-error text-white text-[10px] font-semibold leading-none'>
-					Refund Requested
-				</span>
-			)}
-		</div>
-	)})
+				{/* Cupcake if there's any */}
+				{cake.cupcake_orders &&
+					<div className='flex mt-2 mb-4'>
+						<h5 className='basis-1/5 text-center font-bold text-md'>
+							{cake.cupcake_orders.amount}x
+						</h5>
+						<div className='flex flex-col gap-0.5'>
+							<h5 className='font-bold text-md'>Cupcakes</h5>
+							<h5 className='text-xs text-accent-text capitalize'>Frosting Color: <strong>{cake.cupcake_orders.frosting}</strong></h5>
+						</div>
+					</div>
+				}
+
+				{cake.cancellation_requested && showOptions !== cake.id && (
+					<span className='absolute bottom-3 right-3 px-2 py-1 rounded-full bg-error text-white text-[10px] font-semibold leading-none'>
+						Refund Requested
+					</span>
+				)}
+			</div>
+		)
+	})
 
 	return (
 		<div className='flex flex-col min-h-140'>
@@ -226,9 +233,6 @@ const QueuePending = () => {
 				<div className='flex-1' />
 				{orderItems.length > 0 && (
 					<>
-						<ConfirmationModalWrapper title={'Accept ALL orders'} content={"Are you sure you want to accept ALL orders?"} onConfirm={acceptAllOrder}>
-							<h5 className='px-4 py-1 rounded-sm bg-accent text-white font-semibold cursor-pointer'>Accept All</h5>
-						</ConfirmationModalWrapper>
 						<ConfirmationModalWrapper title={'Reject ALL orders'} content={"Are you sure you want to reject ALL orders?"} onConfirm={() => setPrepRejectAll(true)}>
 							<h5 className='px-4 py-1 rounded-sm bg-error text-white font-semibold cursor-pointer'>Reject All</h5>
 						</ConfirmationModalWrapper>
@@ -252,7 +256,11 @@ const QueuePending = () => {
 			}
 
 			{prepAcceptId &&
-				<ConfirmationModal title={"Accept Order?"} content={"Are you sure you want to accept this order?"} onConfirm={acceptOrder} onReject={() => setPrepAcceptId(null)} />
+				<InputAcceptPriceModal
+					order={acceptTargetOrder}
+					onConfirm={acceptOrder}
+					onReject={() => setPrepAcceptId(null)}
+				/>
 			}
 
 			{prepRejectId &&
