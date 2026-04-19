@@ -83,6 +83,20 @@ const formatReferenceNumber = (value) => {
 
 const formatCurrency = (value) => `₱ ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const formatMoneyInput = (value = '') => {
+    const normalized = String(value).replace(/[^\d.]/g, '');
+
+    if (normalized.split('.').length > 2) {
+        return normalized.slice(0, -1);
+    }
+
+    if (!/^\d*\.?\d{0,2}$/.test(normalized)) {
+        return normalized.slice(0, -1);
+    }
+
+    return normalized.slice(0, 13);
+};
+
 const formatPaymentMethod = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
 
@@ -150,10 +164,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [deducting, setDeducting] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
+    const [editingTotalPrice, setEditingTotalPrice] = useState(false);
+    const [totalPriceDraft, setTotalPriceDraft] = useState('');
+    const [savingTotalPrice, setSavingTotalPrice] = useState(false);
 
     useEffect(() => {
         setOrderSnapshot(orderDetails);
         setCurrentStep(1);
+        const initialTotalPrice = Number(orderDetails?.total_price || 0);
+        setTotalPriceDraft(initialTotalPrice > 0 ? String(initialTotalPrice.toFixed(2)) : '');
+        setEditingTotalPrice(false);
         const initialPremadeRecipes = Array.isArray(orderDetails?.premade_recipe_details)
             ? orderDetails.premade_recipe_details
             : [];
@@ -343,6 +363,63 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         }
 
         return true;
+    };
+
+    const getErrorMessage = (error, fallback = 'Failed to update total price.') => {
+        const responseData = error?.response?.data;
+
+        if (!responseData) return fallback;
+        if (typeof responseData === 'string') return responseData;
+
+        if (Array.isArray(responseData)) {
+            return responseData[0] || fallback;
+        }
+
+        if (typeof responseData === 'object') {
+            const firstValue = Object.values(responseData)[0];
+            if (Array.isArray(firstValue)) return firstValue[0] || fallback;
+            if (typeof firstValue === 'string') return firstValue;
+        }
+
+        return fallback;
+    };
+
+    const startEditingTotalPrice = () => {
+        const latestTotalPrice = Number(orderSnapshot?.total_price || 0);
+        setTotalPriceDraft(latestTotalPrice > 0 ? String(latestTotalPrice.toFixed(2)) : '');
+        setEditingTotalPrice(true);
+    };
+
+    const cancelEditingTotalPrice = () => {
+        setEditingTotalPrice(false);
+        const latestTotalPrice = Number(orderSnapshot?.total_price || 0);
+        setTotalPriceDraft(latestTotalPrice > 0 ? String(latestTotalPrice.toFixed(2)) : '');
+    };
+
+    const saveAcceptedTotalPrice = async () => {
+        const parsedPrice = Number(totalPriceDraft || 0);
+        if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+            addToast('Please enter a valid total price greater than 0.', 'error');
+            return;
+        }
+
+        try {
+            setSavingTotalPrice(true);
+            const patchedOrder = await patchOrder(orderSnapshot.id, { total_price: parsedPrice });
+
+            setOrderSnapshot(prev => ({
+                ...prev,
+                ...(patchedOrder || {}),
+                total_price: patchedOrder?.total_price ?? parsedPrice,
+            }));
+            setTotalPriceDraft(String(parsedPrice.toFixed(2)));
+            setEditingTotalPrice(false);
+            addToast('Total price updated successfully.', 'success');
+        } catch (error) {
+            addToast(getErrorMessage(error), 'error');
+        } finally {
+            setSavingTotalPrice(false);
+        }
     };
 
     const saveOrderRecipe = async () => {
@@ -568,6 +645,52 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                         <DetailRow label='Total Amount' value={totalAmountDisplay} isLast />
                     )}
                 </div>
+
+                {isAccepted && !isPremadeOrder && (
+                    <div className='mt-4 pt-4 border-t border-border'>
+                        <h5 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-2'>Accepted Price Adjustment</h5>
+
+                        {editingTotalPrice ? (
+                            <div className='flex flex-wrap items-center gap-2'>
+                                <input
+                                    type='text'
+                                    value={totalPriceDraft}
+                                    onChange={(event) => setTotalPriceDraft(formatMoneyInput(event.target.value))}
+                                    placeholder='0.00'
+                                    disabled={savingTotalPrice}
+                                    className='w-40 px-3 py-2 text-sm border border-border rounded-lg bg-main-white focus:outline-none ml-auto'
+                                />
+                                <button
+                                    type='button'
+                                    onClick={saveAcceptedTotalPrice}
+                                    disabled={savingTotalPrice}
+                                    className='px-4 py-2 rounded-lg bg-accent-text text-main-white text-sm font-semibold disabled:opacity-50'
+                                >
+                                    {savingTotalPrice ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    type='button'
+                                    onClick={cancelEditingTotalPrice}
+                                    disabled={savingTotalPrice}
+                                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold text-text/70 bg-main-white disabled:opacity-50'
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <div className='flex flex-wrap items-center justify-between gap-2'>
+                                <p className='text-xs text-text/60'>Negotiated price can still be adjusted while this order is accepted.</p>
+                                <button
+                                    type='button'
+                                    onClick={startEditingTotalPrice}
+                                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold text-text bg-main-white hover:bg-main'
+                                >
+                                    Edit Price
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {isCancellationRequested && (
