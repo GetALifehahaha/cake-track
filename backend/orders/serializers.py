@@ -430,6 +430,9 @@ class DashboardSerializer(serializers.Serializer):
     completed_orders = serializers.IntegerField()
     rejected_orders = serializers.IntegerField()
     total_revenue_generated = serializers.FloatField()
+    revenue_trend = serializers.ListField(
+        child=serializers.DictField()
+    )
  
 
 class CakeSerializer(serializers.ModelSerializer):

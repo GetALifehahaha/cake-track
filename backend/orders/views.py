@@ -624,12 +624,14 @@ class OrderOverviewViewSet(viewsets.ViewSet):
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
 from datetime import datetime
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, Coalesce
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 class DashboardView(APIView):
     def get(self, request):
+        frequency = request.query_params.get('frequency', 'daily')
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
 
@@ -655,6 +657,30 @@ class DashboardView(APIView):
             return Response({"detail": "start_date cannot be after end_date."}, status=400)
 
         completed_orders = orders.filter(status="completed")
+
+        if frequency == "monthly":
+            trend_trunc = TruncMonth('created_at')
+        elif frequency == "weekly":
+            trend_trunc = TruncWeek('created_at')
+        else:
+            trend_trunc = TruncDay('created_at')
+
+        revenue_trend_qs = (
+            completed_orders
+            .annotate(period=trend_trunc)
+            .values('period')
+            .annotate(amount=Coalesce(models.Sum('total_price'), Decimal('0.00')))
+            .order_by('period')
+        )
+
+        revenue_trend = [
+            {
+                'period': item['period'],
+                'amount': float(item['amount']),
+            }
+            for item in revenue_trend_qs
+        ]
+
         total_revenue_generated = completed_orders.aggregate(
             total=models.Sum('total_price')
         )['total'] or Decimal('0.00')
@@ -665,6 +691,7 @@ class DashboardView(APIView):
             "completed_orders": completed_orders.count(),
             "rejected_orders": orders.filter(status="rejected").count(),
             "total_revenue_generated": round(float(total_revenue_generated), 2),
+            "revenue_trend": revenue_trend,
         }
 
         serializer = DashboardSerializer(data)

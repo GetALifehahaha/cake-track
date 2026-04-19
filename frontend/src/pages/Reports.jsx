@@ -282,6 +282,18 @@ const Reports = () => {
             });
         }
 
+        if (selectedSet.has('cake_revenue_trend')) {
+            const cakeRevenueRows = (orders.revenue_trend || []).map((trendItem) => [
+                formatDateOnly(trendItem.period),
+                formatNumber(trendItem.amount, 2, 2),
+            ]);
+
+            sections.push({
+                title: 'Cake Revenue Trend',
+                table: buildTable(['Date', 'Revenue'], cakeRevenueRows),
+            });
+        }
+
         if (selected.some(key => ['total_orders', 'pending', 'completed', 'rejected', 'order_total_revenue'].includes(key))) {
             const orderRows = [];
 
@@ -794,7 +806,11 @@ const Reports = () => {
                 </div>
 
                 <div className='flex-1'>
-                    <DashboardChart salesData={posDashboardData.sales_trend} revenueData={posDashboardData.revenue_trend} />
+                    <DashboardChart
+                        salesData={posDashboardData.sales_trend}
+                        revenueData={posDashboardData.revenue_trend}
+                        cakeRevenueData={ordersDashboardData.revenue_trend}
+                    />
                 </div>
             </div>
 

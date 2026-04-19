@@ -21,6 +21,7 @@ const DownloadReportModal = ({ onConfirm, onClose }) => {
 
         products_sold_trend: false,
         revenue_trend: false,
+        cake_revenue_trend: false,
         top_selling_products: false,
         least_selling_products: false,
 
@@ -44,6 +45,7 @@ const DownloadReportModal = ({ onConfirm, onClose }) => {
         order_total_revenue: 'Cake Order Revenue',
         products_sold_trend: 'Products Sold Trend',
         revenue_trend: 'Revenue Trend',
+        cake_revenue_trend: 'Cake Revenue Trend',
         top_selling_products: 'Top Selling Products',
         least_selling_products: 'Least Selling Products',
         cashier_data: 'Cashier Data',
@@ -53,7 +55,7 @@ const DownloadReportModal = ({ onConfirm, onClose }) => {
         sales_data: ['voided_transactions', 'total_transactions', 'products_sold', 'avg_daily_orders', 'total_revenue'],
         revenue_summary: ['combined_revenue', 'total_discount_amount'],
         order_status: ['total_orders', 'pending', 'completed', 'rejected', 'order_total_revenue'],
-        products_data: ['products_sold_trend', 'revenue_trend', 'top_selling_products', 'least_selling_products'],
+        products_data: ['products_sold_trend', 'revenue_trend', 'cake_revenue_trend', 'top_selling_products', 'least_selling_products'],
         cashier_data: ['cashier_data'],
     };
 

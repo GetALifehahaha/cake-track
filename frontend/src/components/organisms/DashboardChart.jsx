@@ -20,7 +20,7 @@ import {
 
 import { Button } from "@/components/atoms"
 
-const DashboardChart = ({ salesData = [], revenueData = [] }) => {
+const DashboardChart = ({ salesData = [], revenueData = [], cakeRevenueData = [] }) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [frequency, setFrequency] = useState(searchParams.get("frequency") || "daily")
 
@@ -56,8 +56,17 @@ const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 
 	const formatTooltipDate = (value) => {
 		if (!value) return "";
-		const date = new Date(value);
-		if (Number.isNaN(date.getTime())) return String(value);
+
+		const raw = String(value);
+		const dateOnly = raw.includes("T") ? raw.split("T")[0] : raw;
+		const date = new Date(dateOnly);
+
+		if (Number.isNaN(date.getTime())) {
+			const fallback = new Date(raw);
+			if (Number.isNaN(fallback.getTime())) return dateOnly;
+			return fallback.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+		}
+
 		return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 	};
 
@@ -87,7 +96,7 @@ const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 		);
 	};
 
-	const RevenueTrendTooltip = ({ active, payload }) => {
+	const RevenueTrendTooltip = ({ active, payload, metricLabel = "Revenue" }) => {
 		if (!active || !payload?.length) return null;
 		const point = payload[0]?.payload || {};
 		const revenue = Number(point.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -96,16 +105,17 @@ const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 			<div className="border-border/50 bg-background grid min-w-56 items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
 				<div className="grid gap-1">
 					<span className="text-muted-foreground">Date: <strong>{formatTooltipDate(point.period)}</strong></span>
-					<span className="text-muted-foreground">Revenue: <strong>₱{revenue}</strong></span>
+					<span className="text-muted-foreground">{metricLabel}: <strong>₱{revenue}</strong></span>
 				</div>
 			</div>
 		);
 	};
 
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-			{/* Products Sold Trend */}
-			<Card className="border-none bg-main-white shadow-md">
+		<div className="flex flex-col gap-4">
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+				{/* Products Sold Trend */}
+				<Card className="border-none bg-main-white shadow-md">
 				<CardHeader className="flex flex-row justify-between items-center">
 					<CardTitle>Products Sold Trend</CardTitle>
 
@@ -189,10 +199,10 @@ const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 						Products Sold
 					</div>
 				</CardFooter>
-			</Card>
+				</Card>
 
-			{/* Revenue Trend */}
-			<Card className="border-none bg-main-white shadow-md">
+				{/* Revenue Trend */}
+				<Card className="border-none bg-main-white shadow-md">
 				<CardHeader className="flex flex-row justify-between items-center">
 					<CardTitle>Revenue Trend</CardTitle>
 					<span className="text-xs font-semibold text-accent-mute capitalize">{frequency}</span>
@@ -227,7 +237,7 @@ const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 
 							<ChartTooltip
 								cursor={false}
-								content={<RevenueTrendTooltip />}
+								content={<RevenueTrendTooltip metricLabel="Revenue" />}
 							/>
 
 							<Area
@@ -245,6 +255,65 @@ const DashboardChart = ({ salesData = [], revenueData = [] }) => {
 				<CardFooter className="flex-col items-start gap-2 text-sm">
 					<div className="flex gap-2 leading-none font-semibold text-center mx-auto text-accent-text">
 						Revenue (₱)
+					</div>
+				</CardFooter>
+				</Card>
+			</div>
+
+			{/* Cake Revenue Trend */}
+			<Card className="border-none bg-main-white shadow-md">
+				<CardHeader className="flex flex-row justify-between items-center">
+					<CardTitle>Cake Revenue Trend</CardTitle>
+					<span className="text-xs font-semibold text-accent-mute capitalize">{frequency}</span>
+				</CardHeader>
+
+				<CardContent>
+					<ChartContainer className="aspect-32/9">
+						<AreaChart
+							accessibilityLayer
+							data={cakeRevenueData}
+							margin={{
+								top: 24,
+								left: 24,
+								right: 24,
+							}}
+						>
+							<defs>
+								<linearGradient id="cakeRevenueAreaFill" x1="0" y1="0" x2="0" y2="1">
+									<stop offset="5%" stopColor="var(--color-accent-mute)" stopOpacity={0.35} />
+									<stop offset="95%" stopColor="var(--color-accent-mute)" stopOpacity={0.03} />
+								</linearGradient>
+							</defs>
+
+							<CartesianGrid vertical={true} />
+							<XAxis
+								dataKey="period"
+								tickFormatter={formatXAxis}
+								tick={{ fontSize: 12 }}
+								axisLine={false}
+								tickLine={false}
+							/>
+
+							<ChartTooltip
+								cursor={false}
+								content={<RevenueTrendTooltip metricLabel="Cake Revenue" />}
+							/>
+
+							<Area
+								dataKey="amount"
+								type="monotone"
+								strokeWidth={2.2}
+								fill="url(#cakeRevenueAreaFill)"
+								activeDot={{ r: 4 }}
+								stroke="var(--color-accent-mute)"
+							/>
+						</AreaChart>
+					</ChartContainer>
+				</CardContent>
+
+				<CardFooter className="flex-col items-start gap-2 text-sm">
+					<div className="flex gap-2 leading-none font-semibold text-center mx-auto text-accent-text">
+						Cake Revenue (₱)
 					</div>
 				</CardFooter>
 			</Card>
