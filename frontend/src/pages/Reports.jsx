@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Info, RefreshCw } from 'lucide-react';
 import useDashboard from '@/hooks/useDashboard';
+import useCategory from '@/hooks/useCategory';
 import { DashboardChart, DownloadReportModal } from '@/components/organisms';
-import { Button, Label } from "@/components/atoms";
+import { Button, Dropdown, Label } from "@/components/atoms";
 import { useSearchParams } from "react-router-dom";
 import { DatePicker } from "@/components/molecules";
 import { formatDateForAPI } from "@/utils/date";
@@ -22,6 +23,7 @@ const Reports = () => {
         error,
         refreshReports,
     } = useDashboard();
+    const { categoryData } = useCategory();
 
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -31,18 +33,28 @@ const Reports = () => {
     const [downloadModal, setDownloadModal] = useState(false);
     const [showTopSellingModal, setShowTopSellingModal] = useState(false);
     const [showLeastSellingModal, setShowLeastSellingModal] = useState(false);
+    const [topSellingCategoryFilter, setTopSellingCategoryFilter] = useState(() => searchParams.get('top_selling_category') || null);
+    const [leastSellingCategoryFilter, setLeastSellingCategoryFilter] = useState(() => searchParams.get('least_selling_category') || null);
 
     useEffect(() => {
-        const params = new URLSearchParams(searchParams);
+        setSearchParams((prevParams) => {
+            const params = new URLSearchParams(prevParams);
 
-        if (startDate == null) params.delete('start_date');
-        else params.set('start_date', formatDateForAPI(startDate));
+            if (startDate == null) params.delete('start_date');
+            else params.set('start_date', formatDateForAPI(startDate));
 
-        if (endDate == null) params.delete('end_date');
-        else params.set('end_date', formatDateForAPI(endDate));
+            if (endDate == null) params.delete('end_date');
+            else params.set('end_date', formatDateForAPI(endDate));
 
-        setSearchParams(params);
-    }, [startDate, endDate])
+            if (topSellingCategoryFilter == null) params.delete('top_selling_category');
+            else params.set('top_selling_category', topSellingCategoryFilter);
+
+            if (leastSellingCategoryFilter == null) params.delete('least_selling_category');
+            else params.set('least_selling_category', leastSellingCategoryFilter);
+
+            return params;
+        });
+    }, [startDate, endDate, topSellingCategoryFilter, leastSellingCategoryFilter, setSearchParams])
 
     if (loading) return <ReportsSkeleton />;
     if (error) return <h5>Error...</h5>;
@@ -81,6 +93,20 @@ const Reports = () => {
         const count = formatNumber(product.total_sold);
         return `${name} (${count})`;
     };
+
+    const getProductCategoryNames = (product) => {
+        const categories = Array.isArray(product?.product_categories)
+            ? product.product_categories.filter(Boolean)
+            : [];
+
+        return categories.length > 0 ? categories : ['Uncategorized'];
+    };
+
+    const formatProductCategories = (product) => {
+        return getProductCategoryNames(product).join(', ');
+    };
+
+    const combinedSalesRevenue = toNumber(posDashboardData?.total_revenue_generated) + toNumber(ordersDashboardData?.total_revenue_generated);
 
     const escapeHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -171,24 +197,26 @@ const Reports = () => {
         if (selectedSet.has('top_selling_products')) {
             const productRows = (pos.top_selling_products || []).map((product) => [
                 product.product__name || '-',
+                formatProductCategories(product),
                 formatNumber(product.total_sold),
             ]);
 
             sections.push({
                 title: 'Top Selling Products',
-                table: buildTable(['Product Name', 'Total Sold'], productRows),
+                table: buildTable(['Product Name', 'Categories', 'Total Sold'], productRows),
             });
         }
 
         if (selectedSet.has('least_selling_products')) {
             const leastRows = (pos.least_selling_products || []).map((product) => [
                 product.product__name || '-',
+                formatProductCategories(product),
                 formatNumber(product.total_sold),
             ]);
 
             sections.push({
                 title: 'Least Selling Products',
-                table: buildTable(['Product Name', 'Total Sold'], leastRows),
+                table: buildTable(['Product Name', 'Categories', 'Total Sold'], leastRows),
             });
         }
 
@@ -402,23 +430,31 @@ const Reports = () => {
         setEndDate(null);
     };
 
+    const rankingCategoryOptions = (categoryData || [])
+        .map((category) => category?.name)
+        .filter(Boolean)
+        .sort((a, b) => String(a).localeCompare(String(b)))
+        .map((categoryName) => ({ key: categoryName, value: categoryName }));
+
     // MAPS
 
-    const topSellingProducts = (posDashboardData.top_selling_products || []).slice(0, 5).map((item, index) => (
+    const topSellingProductCards = (posDashboardData.top_selling_products || []).slice(0, 5).map((item, index) => (
         <div className='flex gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
             <div className='w-8 h-8 font-semibold rounded-full aspect-square flex justify-center items-center bg-accent-mute text-white '><h5>{index + 1}</h5></div>
             <div className='text-sm'>
                 <h5 className='font-semibold'>{item.product__name}</h5>
+                <h5 className='text-xs text-text/70'>{formatProductCategories(item)}</h5>
                 <h5 className='text-xs text-text-light'>{item.total_sold} units sold</h5>
             </div>
         </div>
     ));
 
-    const leastSellingProducts = (posDashboardData.least_selling_products || []).slice(0, 5).map((item, index) => (
+    const leastSellingProductCards = (posDashboardData.least_selling_products || []).slice(0, 5).map((item, index) => (
         <div className='flex gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
             <div className='w-8 h-8 font-semibold rounded-full aspect-square flex justify-center items-center bg-main-dark text-white '><h5>{index + 1}</h5></div>
             <div className='text-sm'>
                 <h5 className='font-semibold'>{item.product__name}</h5>
+                <h5 className='text-xs text-text/70'>{formatProductCategories(item)}</h5>
                 <h5 className='text-xs text-text-light'>{item.total_sold} units sold</h5>
             </div>
         </div>
@@ -590,6 +626,13 @@ const Reports = () => {
                 </div>
             </div>
 
+            <div className='flex justify-end -mt-1'>
+                <div className='w-full md:w-1/3 rounded-xl p-4 bg-accent shadow-lg shadow-accent-mute/35 border text-right border-main-white/20'>
+                    <h5 className='text-sm font-bold text-main-white'>Combined Revenue</h5>
+                    <h5 className='text-3xl font-extrabold mt-2 text-main-white'>₱ {combinedSalesRevenue.toFixed(2)}</h5>
+                </div>
+            </div>
+
             <div className='flex flex-col gap-4'>
                 <div className='flex items-center justify-between'>
                     <Label variant="small" text="Product Ranking Data" />
@@ -599,34 +642,60 @@ const Reports = () => {
                     <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full'>
                         <div className='flex items-center justify-between'>
                             <h5 className='font-semibold'>Top 5 Best Selling Products</h5>
-                            <button
-                                type='button'
-                                onClick={() => setShowTopSellingModal(true)}
-                                className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
-                                aria-label='View top 10 best selling products'
-                            >
-                                <Info size={16} />
-                            </button>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-44'>
+                                    <Dropdown
+                                        size='full'
+                                        variant='white'
+                                        selection='All categories'
+                                        value={topSellingCategoryFilter}
+                                        options={rankingCategoryOptions}
+                                        onSelect={setTopSellingCategoryFilter}
+                                        removeText='All categories'
+                                    />
+                                </div>
+                                <button
+                                    type='button'
+                                    onClick={() => setShowTopSellingModal(true)}
+                                    className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
+                                    aria-label='View top 10 best selling products'
+                                >
+                                    <Info size={16} />
+                                </button>
+                            </div>
                         </div>
                         <div className="py-2 px-1 flex flex-col gap-2 min-h-60">
-                            {topSellingProducts.length > 0 ? topSellingProducts : <h5 className='text-sm text-text/60'>No product sales data yet.</h5>}
+                            {topSellingProductCards.length > 0 ? topSellingProductCards : <h5 className='text-sm text-text/60'>No product sales data for this category.</h5>}
                         </div>
                     </div>
 
                     <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full'>
                         <div className='flex items-center justify-between'>
                             <h5 className='font-semibold'>Top 5 Least Selling Products</h5>
-                            <button
-                                type='button'
-                                onClick={() => setShowLeastSellingModal(true)}
-                                className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
-                                aria-label='View top 10 least selling products'
-                            >
-                                <Info size={16} />
-                            </button>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-44'>
+                                    <Dropdown
+                                        size='full'
+                                        variant='white'
+                                        selection='All categories'
+                                        value={leastSellingCategoryFilter}
+                                        options={rankingCategoryOptions}
+                                        onSelect={setLeastSellingCategoryFilter}
+                                        removeText='All categories'
+                                    />
+                                </div>
+                                <button
+                                    type='button'
+                                    onClick={() => setShowLeastSellingModal(true)}
+                                    className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
+                                    aria-label='View top 10 least selling products'
+                                >
+                                    <Info size={16} />
+                                </button>
+                            </div>
                         </div>
                         <div className="py-2 px-1 flex flex-col gap-2 min-h-60">
-                            {leastSellingProducts.length > 0 ? leastSellingProducts : <h5 className='text-sm text-text/60'>No product sales data yet.</h5>}
+                            {leastSellingProductCards.length > 0 ? leastSellingProductCards : <h5 className='text-sm text-text/60'>No product sales data for this category.</h5>}
                         </div>
                     </div>
                 </div>
@@ -655,11 +724,17 @@ const Reports = () => {
                 <Modal title='Top 10 Best Selling Products' onClose={() => setShowTopSellingModal(false)} className='w-[520px]'>
                     <div className='flex flex-col gap-2 max-h-[70vh] overflow-y-auto pr-1'>
                         {(posDashboardData.top_selling_products || []).map((product, index) => (
-                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white'>
-                                <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
-                                <h5 className='text-text/70 font-semibold'>{product.total_sold}</h5>
+                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white gap-2'>
+                                <div>
+                                    <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
+                                    <h5 className='text-xs text-text/70'>{formatProductCategories(product)}</h5>
+                                </div>
+                                <h5 className='text-text/70 font-semibold whitespace-nowrap'>{product.total_sold}</h5>
                             </div>
                         ))}
+                        {(posDashboardData.top_selling_products || []).length === 0 && (
+                            <h5 className='text-sm text-text/60 text-center py-6'>No products found for this category.</h5>
+                        )}
                     </div>
 
                     <div className='flex justify-end'>
@@ -672,11 +747,17 @@ const Reports = () => {
                 <Modal title='Top 10 Least Selling Products' onClose={() => setShowLeastSellingModal(false)} className='w-[520px]'>
                     <div className='flex flex-col gap-2 max-h-[70vh] overflow-y-auto pr-1'>
                         {(posDashboardData.least_selling_products || []).map((product, index) => (
-                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white'>
-                                <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
-                                <h5 className='text-text/70 font-semibold'>{product.total_sold}</h5>
+                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white gap-2'>
+                                <div>
+                                    <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
+                                    <h5 className='text-xs text-text/70'>{formatProductCategories(product)}</h5>
+                                </div>
+                                <h5 className='text-text/70 font-semibold whitespace-nowrap'>{product.total_sold}</h5>
                             </div>
                         ))}
+                        {(posDashboardData.least_selling_products || []).length === 0 && (
+                            <h5 className='text-sm text-text/60 text-center py-6'>No products found for this category.</h5>
+                        )}
                     </div>
 
                     <div className='flex justify-end'>

@@ -1159,7 +1159,7 @@ const Home = () => {
             {showFloatMoneyPrompt && (
                 <Modal onClose={() => setShowFloatMoneyPrompt(false)} title='Set Float Money'>
                     <div className='flex flex-col gap-4'>
-                        <h5 className='text-text/75 font-medium'>Set your opening float money for this first login.</h5>
+                        <h5 className='text-text/75 font-medium'>Set your opening float money.</h5>
 
                         <input
                             value={floatMoneyInput}

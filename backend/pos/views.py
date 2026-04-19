@@ -812,6 +812,8 @@ class DashboardAnalyticsView(APIView):
         frequency = request.query_params.get('frequency', 'daily')
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
+        top_selling_category = (request.query_params.get('top_selling_category') or '').strip()
+        least_selling_category = (request.query_params.get('least_selling_category') or '').strip()
 
         all_transactions = Transaction.objects.all()
         
@@ -890,21 +892,49 @@ class DashboardAnalyticsView(APIView):
         total_combined_revenue = Decimal(str(total_revenue_generated)) + Decimal(str(order_paid_revenue))
         total_profit = total_combined_revenue - Decimal(str(total_capital))
 
-        top_products = (
-            TransactionItem.objects
-            .filter(transaction__in=valid_transactions)
-            .values('product__name')
+        top_products_base = TransactionItem.objects.filter(transaction__in=valid_transactions)
+        if top_selling_category:
+            top_products_base = top_products_base.filter(
+                product__categories__name__iexact=top_selling_category,
+            ).distinct()
+
+        top_products_qs = (
+            top_products_base
+            .values('product_id', 'product__name')
             .annotate(total_sold=Sum('quantity'))
             .order_by('-total_sold', 'product__name')
         )[:10]
 
-        least_products = (
-            TransactionItem.objects
-            .filter(transaction__in=valid_transactions)
-            .values('product__name')
+        least_products_base = TransactionItem.objects.filter(transaction__in=valid_transactions)
+        if least_selling_category:
+            least_products_base = least_products_base.filter(
+                product__categories__name__iexact=least_selling_category,
+            ).distinct()
+
+        least_products_qs = (
+            least_products_base
+            .values('product_id', 'product__name')
             .annotate(total_sold=Sum('quantity'))
             .order_by('total_sold', 'product__name')[:10]
         )
+
+        def _attach_product_categories(product_rows_qs):
+            product_rows = list(product_rows_qs)
+            product_ids = [row.get('product_id') for row in product_rows if row.get('product_id') is not None]
+
+            products_by_id = {
+                product.id: product
+                for product in Product.objects.filter(id__in=product_ids).prefetch_related('categories')
+            }
+
+            for row in product_rows:
+                product = products_by_id.get(row.get('product_id'))
+                row['product_categories'] = [category.name for category in product.categories.all()] if product else []
+
+            return product_rows
+
+        top_products = _attach_product_categories(top_products_qs)
+        least_products = _attach_product_categories(least_products_qs)
 
         # 5️⃣ Sales Trend
         if frequency == "monthly":
@@ -1049,8 +1079,8 @@ class DashboardAnalyticsView(APIView):
             "total_combined_revenue": round(total_combined_revenue, 2),
             "total_capital": round(total_capital, 2),
             "total_profit": round(total_profit, 2),
-            "top_selling_products": list(top_products),
-            "least_selling_products": list(least_products),
+            "top_selling_products": top_products,
+            "least_selling_products": least_products,
             "sales_trend": formatted_trend,
             "revenue_trend": formatted_revenue_trend,
             "cashier_performance": cashier_performance,
