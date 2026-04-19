@@ -106,7 +106,13 @@ const Reports = () => {
         return getProductCategoryNames(product).join(', ');
     };
 
-    const combinedSalesRevenue = toNumber(posDashboardData?.total_revenue_generated) + toNumber(ordersDashboardData?.total_revenue_generated);
+    const posRevenue = toNumber(posDashboardData?.total_revenue_generated);
+    const ordersRevenue = toNumber(ordersDashboardData?.total_revenue_generated);
+    const combinedSalesRevenue = posRevenue + ordersRevenue;
+    const posVatAmount = posRevenue * 0.12;
+    const ordersVatAmount = ordersRevenue * 0.12;
+    const totalVatAmount = combinedSalesRevenue * 0.12;
+    const totalDiscountAmount = toNumber(posDashboardData?.total_discount_amount);
 
     const escapeHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -573,8 +579,11 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Total Revenue</h5>
                         {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>₱ {(posDashboardData.total_revenue_generated).toFixed(2)}</h5>
-                    <h5 className='text-sm text-success'>Revenue Generated</h5>
+                    <h5 className='text-2xl font-bold mt-8'>₱ {formatNumber(posRevenue, 2, 2)}</h5>
+                    <div className='mt-1 flex items-center justify-between'>
+                        <h5 className='text-sm text-success'>Revenue Generated</h5>
+                        <h5 className='text-sm text-text/60'>VAT: ₱ {formatNumber(posVatAmount, 2, 2)}</h5>
+                    </div>
                 </div>
             </div>
 
@@ -621,15 +630,28 @@ const Reports = () => {
                         <h5 className='text-lg font-medium'>Total Revenue</h5>
                         {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>₱ {Number(ordersDashboardData.total_revenue_generated || 0).toFixed(2)}</h5>
-                    <h5 className='text-sm text-success'>Revenue Generated</h5>
+                    <h5 className='text-2xl font-bold mt-8'>₱ {formatNumber(ordersRevenue, 2, 2)}</h5>
+                    <div className='mt-1 flex items-center justify-between'>
+                        <h5 className='text-sm text-success'>Revenue Generated</h5>
+                        <h5 className='text-sm text-text/60'>VAT: ₱ {formatNumber(ordersVatAmount, 2, 2)}</h5>
+                    </div>
                 </div>
             </div>
 
-            <div className='flex justify-end -mt-1'>
-                <div className='w-full md:w-1/3 rounded-xl p-4 bg-accent shadow-lg shadow-accent-mute/35 border text-right border-main-white/20'>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 -mt-1'>
+                <div className='rounded-xl p-4 bg-accent shadow-lg shadow-accent-mute/35 border border-main-white/20'>
                     <h5 className='text-sm font-bold text-main-white'>Combined Revenue</h5>
-                    <h5 className='text-3xl font-extrabold mt-2 text-main-white'>₱ {combinedSalesRevenue.toFixed(2)}</h5>
+                    <h5 className='text-3xl font-extrabold mt-2 text-main-white'>₱ {formatNumber(combinedSalesRevenue, 2, 2)}</h5>
+                </div>
+
+                <div className='rounded-xl p-4 bg-main-white shadow-sm border border-border'>
+                    <h5 className='text-sm font-semibold text-text/70'>Total VAT</h5>
+                    <h5 className='text-2xl font-extrabold mt-2 text-text'>₱ {formatNumber(totalVatAmount, 2, 2)}</h5>
+                </div>
+
+                <div className='rounded-xl p-4 bg-main-white shadow-sm border border-border'>
+                    <h5 className='text-sm font-semibold text-text/70'>Total Discount Amount</h5>
+                    <h5 className='text-2xl font-extrabold mt-2 text-text'>₱ {formatNumber(totalDiscountAmount, 2, 2)}</h5>
                 </div>
             </div>
 

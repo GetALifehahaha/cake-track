@@ -868,6 +868,16 @@ class DashboardAnalyticsView(APIView):
             valid_transactions.aggregate(total=Sum('net_total'))['total'] or 0
         )
 
+        total_discount_amount = (
+            valid_transactions.aggregate(total=Sum('discount_amount'))['total'] or Decimal('0.00')
+        )
+
+        total_gross_revenue = (
+            valid_transactions.aggregate(total=Sum('gross_total'))['total'] or Decimal('0.00')
+        )
+
+        total_vat_amount = Decimal(str(total_gross_revenue)) * Decimal('0.12')
+
         order_payments = Payment.objects.filter(status='success')
         if start_date:
             order_payments = order_payments.filter(created_at__gte=start_date)
@@ -1075,6 +1085,8 @@ class DashboardAnalyticsView(APIView):
             "total_successful_transactions": successful_count,
             "total_products_sold": total_products_sold,
             "total_revenue_generated": round(total_revenue_generated, 2),
+            "total_discount_amount": round(total_discount_amount, 2),
+            "total_vat_amount": round(total_vat_amount, 2),
             "order_paid_revenue": round(order_paid_revenue, 2),
             "total_combined_revenue": round(total_combined_revenue, 2),
             "total_capital": round(total_capital, 2),

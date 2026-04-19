@@ -799,6 +799,8 @@ class DashboardMetricsSerializer(serializers.Serializer):
     total_products_sold = serializers.IntegerField()
     avg_daily_transactions = serializers.FloatField()
     total_revenue_generated = serializers.FloatField() 
+    total_discount_amount = serializers.FloatField()
+    total_vat_amount = serializers.FloatField()
     order_paid_revenue = serializers.FloatField()
     total_combined_revenue = serializers.FloatField()
     total_capital = serializers.FloatField()
