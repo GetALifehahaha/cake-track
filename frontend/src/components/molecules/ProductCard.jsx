@@ -3,6 +3,14 @@ import { AlertCircle } from 'lucide-react';
 
 const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived, selected = [], isPOS = false }) => {
     const isUnavailable = Boolean(product?.isUnavailable);
+    const parsedTopRank = Number(product?.top_seller_rank);
+    const showTopRank = Number.isFinite(parsedTopRank) && parsedTopRank >= 1 && parsedTopRank <= 3;
+
+    const topRankBadgeClass = {
+        1: 'bg-amber-100 text-amber-800 border-amber-200',
+        2: 'bg-slate-100 text-slate-700 border-slate-200',
+        3: 'bg-orange-100 text-orange-800 border-orange-200',
+    };
 
     const variantPrices = Array.isArray(product?.variants)
         ? product.variants
@@ -19,7 +27,7 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
     const formattedPrice = hasMultiplePrices
         ? `₱ ${minPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - ₱ ${maxPrice.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         : `₱ ${(maxPrice || minPrice || baseProductPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    
+
     const handleToggleClick = () => {
         if (isArchived) {
             onToggle(product.id)
@@ -29,13 +37,24 @@ const ProductCard = ({ product = { name: '', image: null }, onToggle, isArchived
     };
 
     return (
-        <div onClick={handleToggleClick} 
-            className={cn('relative flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 duration-200 ease-in-out min-h-60 bg-main-white border-2 border-white cursor-pointer', 
+        <div onClick={handleToggleClick}
+            className={cn('relative flex flex-col gap-4 px-2 py-2 rounded-4xl h-full shadow-md shadow-black/15 duration-200 ease-in-out min-h-60 bg-main-white border-2 border-white cursor-pointer',
                 isPOS && isUnavailable && 'opacity-60',
                 selected.some(select => select === product.id) && 'border-accent-mute cursor-pointer hover:shadow-black/25')}
         >
+            {showTopRank && (
+                <div
+                    className={cn(
+                        'absolute top-2 right-2 px-2 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide z-1',
+                        topRankBadgeClass[parsedTopRank],
+                    )}
+                >
+                    # {parsedTopRank}
+                </div>
+            )}
+
             {isUnavailable && (
-                <div className='absolute top-2 right-2 flex items-center gap-1 bg-error-fill text-error p-1.5 rounded-full z-10'>
+                <div className='absolute top-2 left-2 flex items-center gap-1 bg-error-fill text-error p-1.5 rounded-full z-10'>
                     <AlertCircle size={16} />
                 </div>
             )}

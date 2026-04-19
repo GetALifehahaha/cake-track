@@ -197,7 +197,7 @@ const Transactions = () => {
         const amount = Number.parseFloat(startingMoneyInput);
 
         if (!Number.isFinite(amount) || amount < 0) {
-            addToast('Enter a valid starting money amount.', 'error');
+            addToast('Enter a valid float money amount.', 'error');
             return;
         }
 
@@ -205,9 +205,9 @@ const Transactions = () => {
             await setStartingMoney(amount);
             await Promise.all([refreshRegisterMoney(), refreshRegisterTransactions()]);
             setStartingMoneyInput('');
-            addToast('Starting money updated.', 'success');
+            addToast('Float money updated.', 'success');
         } catch (err) {
-            const detail = err?.response?.data?.detail || 'Failed to update starting money.';
+            const detail = err?.response?.data?.detail || 'Failed to update float money.';
             addToast(detail, 'error');
         }
     };
@@ -222,7 +222,7 @@ const Transactions = () => {
         }
 
         if (!trimmedReason) {
-            addToast('Reason is required for register deduction.', 'error');
+            addToast('Reason is required for float money deduction.', 'error');
             return;
         }
 
@@ -300,17 +300,17 @@ const Transactions = () => {
                             Today's Revenue: <strong className='ml-2 text-white p-2'>₱ {(data.daily_total_revenue).toFixed(2)}</strong>
                         </h5>
                         <h5 className='text-white/80 font-medium text-md'>
-                            Register Money: <strong className='ml-2 text-white'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
+                            Float Money: <strong className='ml-2 text-white'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</strong>
                         </h5>
                     </div>
 
                     <div className='ml-auto flex items-center gap-2'>
-                        <Button variant='modalBlock' size='small' text='Set Register Money' onClick={() => setShowRegisterMoneyModal(true)} />
+                        <Button variant='modalBlock' size='small' text='Set Float Money' onClick={() => setShowRegisterMoneyModal(true)} />
                         {user?.is_staff && (
                             <Button
                                 variant='modalBlock'
                                 size='small'
-                                text='Register Transactions'
+                                text='Float Money Transactions'
                                 onClick={() => setShowRegisterTransactionsModal(true)}
                                 className='bg-white text-text shadow-sm'
                             />
@@ -390,24 +390,24 @@ const Transactions = () => {
 
             {showRegisterMoneyModal && (
                 <ModalBody
-                    title='Set Register Money'
-                    subtitle='Manage register balance for your shift.'
+                    title='Set Float Money'
+                    subtitle='Manage float money for your shift.'
                     onClose={() => setShowRegisterMoneyModal(false)}
                     className='w-[520px]'
                 >
                     <div className='flex flex-col gap-4'>
                         <div className='rounded-lg border border-border p-3'>
-                            <h5 className='text-sm font-medium text-text'>Register Money</h5>
+                            <h5 className='text-sm font-medium text-text'>Current Float Money</h5>
                             <h5 className='text-lg font-bold text-accent-dark'>₱ {formatToDecimal(registerMoney?.current_amount || 0)}</h5>
                         </div>
 
                         <div className='rounded-lg border border-border p-3'>
-                            <h5 className='text-sm font-medium text-text'>Starting Money</h5>
+                            <h5 className='text-sm font-medium text-text'>Float Money Start</h5>
                             <h5 className='text-lg font-bold text-accent-dark'>₱ {formatToDecimal(registerMoney?.starting_money || 0)}</h5>
                         </div>
 
                         <div className='flex flex-col gap-2 border-t border-border pt-3'>
-                            <h5 className='text-sm font-semibold text-text'>Set Starting Money</h5>
+                            <h5 className='text-sm font-semibold text-text'>Set Float Money</h5>
                             <div className='flex items-center gap-2'>
                                 <input
                                     type='text'
@@ -424,7 +424,7 @@ const Transactions = () => {
                         </div>
 
                         <div className='flex flex-col gap-2 border-t border-border pt-3'>
-                            <h5 className='text-sm font-semibold text-text'>Register Deduction</h5>
+                            <h5 className='text-sm font-semibold text-text'>Float Money Deduction</h5>
                             <div className='flex items-center gap-2'>
                                 <input
                                     type='text'
@@ -459,14 +459,14 @@ const Transactions = () => {
 
             {showRegisterTransactionsModal && user?.is_staff && (
                 <ModalBody
-                    title='Register Transactions'
-                    subtitle='History of additions and deductions.'
+                    title='Float Money Transactions'
+                    subtitle='History of float money additions and deductions.'
                     onClose={() => setShowRegisterTransactionsModal(false)}
                     className='w-[75vw]'
                 >
                     <div className='flex flex-col gap-3 max-h-[70vh]'>
                         <div className='grid grid-cols-4 gap-2 bg-accent-mute rounded-lg px-3 py-2'>
-                            <h5 className='text-main-white font-semibold text-sm'>Deductions/Additions</h5>
+                            <h5 className='text-main-white font-semibold text-sm'>Float Money Movements</h5>
                             <h5 className='text-main-white font-semibold text-sm'>Cashier</h5>
                             <h5 className='text-main-white font-semibold text-sm'>Amount</h5>
                             <h5 className='text-main-white font-semibold text-sm'>Timestamp</h5>
@@ -474,7 +474,7 @@ const Transactions = () => {
 
                         <div className='flex flex-col gap-2 overflow-y-auto'>
                             {registerTransactionItems.length === 0 && (
-                                <h5 className='font-medium text-text/50 py-8 text-center'>No register transactions found.</h5>
+                                <h5 className='font-medium text-text/50 py-8 text-center'>No float money transactions found.</h5>
                             )}
 
                             {registerTransactionItems.map((entry) => (

@@ -6,16 +6,25 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
 import useQueryFetch from "./useQueryFetch";
 
-export default function useProduct({isArchived=false} = {}) {
+export default function useProduct({isArchived=false, extraParams = {}} = {}) {
     const [searchParams] = useSearchParams();
 
     const apiParams = useMemo(() => {
         const params = Object.fromEntries(searchParams.entries());
+
+        Object.entries(extraParams || {}).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                return;
+            }
+
+            params[key] = String(value);
+        });
+
         if (isArchived) {
             params.is_archived = true;
         }
         return params;
-    }, [searchParams, isArchived]);
+    }, [searchParams, isArchived, extraParams]);
 
     const productQuery = useQuery({
         queryKey: ["products", apiParams],

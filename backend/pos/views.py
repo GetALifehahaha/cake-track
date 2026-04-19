@@ -8,7 +8,7 @@ from django.conf import settings
 import qrcode
 
 # Create your views here.
-from django.db.models import Sum, Count, F, DateTimeField, Case, When, Value, FloatField, ExpressionWrapper
+from django.db.models import Sum, Count, F, DateTimeField, Case, When, Value, FloatField, ExpressionWrapper, IntegerField
 from django.db import transaction as db_transaction
 from django.db.models.functions import TruncDate, Lower
 from django.utils import timezone
@@ -75,9 +75,7 @@ class ProductOrderingFilter(filters.OrderingFilter):
     """Map product name ordering to a lower-cased annotation for case-insensitive sorting."""
 
     def get_ordering(self, request, queryset, view):
-        ordering = super().get_ordering(request, queryset, view)
-        if not ordering:
-            return ordering
+        ordering = list(super().get_ordering(request, queryset, view) or [])
 
         mapped = []
         for field in ordering:
@@ -85,6 +83,10 @@ class ProductOrderingFilter(filters.OrderingFilter):
             field_name = field[1:] if descending else field
             mapped_field = 'name_sort' if field_name == 'name' else field_name
             mapped.append(f"-{mapped_field}" if descending else mapped_field)
+
+        prioritize_daily_top = str(request.query_params.get('prioritize_daily_top', 'false')).lower() == 'true'
+        if prioritize_daily_top and 'top_seller_rank' not in mapped:
+            mapped.insert(0, 'top_seller_rank')
 
         return mapped
     
@@ -197,12 +199,44 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ['name']
     
     def get_queryset(self):
+        prioritize_daily_top = str(self.request.query_params.get('prioritize_daily_top', 'false')).lower() == 'true'  #type: ignore
+
         queryset = (
             Product.objects
             .prefetch_related('variants__recipe', 'categories')
             .annotate(name_sort=Lower('name'))
             .all()
         )
+
+        if prioritize_daily_top:
+            now_local = timezone.localtime()
+            start_of_day = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = start_of_day + timedelta(days=1)
+
+            top_selling_today = list(
+                TransactionItem.objects
+                .filter(
+                    transaction__is_completed=True,
+                    transaction__is_void=False,
+                    transaction__created_at__gte=start_of_day,
+                    transaction__created_at__lt=end_of_day,
+                )
+                .values('product_id')
+                .annotate(total_sold=Sum('quantity'))
+                .order_by('-total_sold', 'product_id')[:3]
+            )
+
+            rank_cases = []
+            for index, row in enumerate(top_selling_today, start=1):
+                rank_cases.append(When(id=row['product_id'], then=Value(index)))
+
+            queryset = queryset.annotate(
+                top_seller_rank=Case(
+                    *rank_cases,
+                    default=Value(9999),
+                    output_field=IntegerField(),
+                )
+            )
         
         if self.action == "list":
             is_archived_param = self.request.query_params.get('is_archived'); #type: ignore
@@ -623,7 +657,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 cashier=request.user,
                 entry_type='addition' if delta > 0 else 'deduction',
                 amount=abs(delta),
-                note='Starting money adjusted',
+                note='Float money adjusted',
                 created_by=request.user,
             )
 
@@ -653,7 +687,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         if register_money.current_amount < amount:
             return Response(
-                {"detail": "Deduction amount exceeds cashier register money."},
+                {"detail": "Deduction amount exceeds cashier float money."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

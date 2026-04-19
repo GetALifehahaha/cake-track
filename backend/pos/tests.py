@@ -2,6 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import APITestCase, APIClient
 from decimal import Decimal
+from datetime import timedelta
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from .models import Category, Product, ProductVariant, Discount, Transaction, TransactionItem, DiscountUsage, RegisterMoney
@@ -593,3 +594,96 @@ class RegisterMoneyFlowTests(APITestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn('note', response.data)
+
+
+class ProductDailyTopRankingTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.cashier = User.objects.create_user(username="cashier_top_rank", password="password123")
+        self.client.force_authenticate(user=self.cashier)
+
+        self.category = Category.objects.create(name="Top Rank Category")
+
+        self.product_alpha = Product.objects.create(name="Alpha")
+        self.product_bravo = Product.objects.create(name="Bravo")
+        self.product_charlie = Product.objects.create(name="Charlie")
+        self.product_delta = Product.objects.create(name="Delta")
+        self.product_echo = Product.objects.create(name="Echo")
+
+        for product in [
+            self.product_alpha,
+            self.product_bravo,
+            self.product_charlie,
+            self.product_delta,
+            self.product_echo,
+        ]:
+            product.categories.add(self.category)
+
+        self.variant_alpha = ProductVariant.objects.create(product=self.product_alpha, label="Single", price=Decimal("10.00"))
+        self.variant_bravo = ProductVariant.objects.create(product=self.product_bravo, label="Single", price=Decimal("10.00"))
+        self.variant_charlie = ProductVariant.objects.create(product=self.product_charlie, label="Single", price=Decimal("10.00"))
+        self.variant_delta = ProductVariant.objects.create(product=self.product_delta, label="Single", price=Decimal("10.00"))
+        self.variant_echo = ProductVariant.objects.create(product=self.product_echo, label="Single", price=Decimal("10.00"))
+
+    def _create_transaction_item(self, product, variant, quantity, created_at, *, is_completed=True, is_void=False):
+        total = Decimal(quantity) * Decimal("10.00")
+
+        transaction = Transaction.objects.create(
+            cashier=self.cashier,
+            payment_method='cash',
+            order_type='dine-in',
+            gross_total=total,
+            discount_amount=Decimal('0.00'),
+            net_total=total,
+            paid_amount=total,
+            change=Decimal('0.00'),
+            is_completed=is_completed,
+            completed_at=created_at if is_completed else None,
+            is_void=is_void,
+        )
+
+        Transaction.objects.filter(pk=transaction.pk).update(created_at=created_at)
+
+        TransactionItem.objects.create(
+            transaction=transaction,
+            product=product,
+            product_variant=variant,
+            quantity=quantity,
+            discount_amount=Decimal('0.00'),
+            price_at_time=Decimal('10.00'),
+        )
+
+    def test_prioritize_daily_top_products_keeps_remaining_in_regular_order(self):
+        now = timezone.now()
+        yesterday = now - timedelta(days=1)
+
+        self._create_transaction_item(self.product_echo, self.variant_echo, 8, now, is_completed=True, is_void=False)
+        self._create_transaction_item(self.product_charlie, self.variant_charlie, 5, now, is_completed=True, is_void=False)
+        self._create_transaction_item(self.product_alpha, self.variant_alpha, 2, now, is_completed=True, is_void=False)
+
+        # Ignored: void transaction even if quantity is high.
+        self._create_transaction_item(self.product_delta, self.variant_delta, 20, now, is_completed=True, is_void=True)
+        # Ignored: not yet completed.
+        self._create_transaction_item(self.product_bravo, self.variant_bravo, 15, now, is_completed=False, is_void=False)
+        # Ignored: previous day sales.
+        self._create_transaction_item(self.product_bravo, self.variant_bravo, 30, yesterday, is_completed=True, is_void=False)
+
+        response = self.client.get('/pos/products/', {'prioritize_daily_top': 'true'})
+        self.assertEqual(response.status_code, 200)
+
+        names_in_order = [item['name'] for item in response.data['results']]
+        self.assertEqual(names_in_order, ['Echo', 'Charlie', 'Alpha', 'Bravo', 'Delta'])
+
+        rank_map = {item['name']: item.get('top_seller_rank') for item in response.data['results']}
+        self.assertEqual(rank_map['Echo'], 1)
+        self.assertEqual(rank_map['Charlie'], 2)
+        self.assertEqual(rank_map['Alpha'], 3)
+        self.assertIsNone(rank_map['Bravo'])
+        self.assertIsNone(rank_map['Delta'])
+
+    def test_regular_listing_order_without_prioritization(self):
+        response = self.client.get('/pos/products/')
+        self.assertEqual(response.status_code, 200)
+
+        names_in_order = [item['name'] for item in response.data['results']]
+        self.assertEqual(names_in_order, ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'])
