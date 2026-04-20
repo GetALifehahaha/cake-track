@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.db import models, transaction
 from django.db.models.deletion import ProtectedError
-from django.db.models import F
+from django.db.models import Prefetch
 from django.db.models.functions import Lower
 from django.utils import timezone
 from decimal import Decimal
@@ -80,6 +80,23 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return TransactionSerializer
 
 
+def _normalize_near_expiration_days(value):
+    try:
+        parsed_value = int(value)
+    except (TypeError, ValueError):
+        return 7
+
+    return parsed_value if parsed_value > 0 else 7
+
+
+def _is_near_expiration(expiration_date, today, near_expiration_days):
+    if not expiration_date or expiration_date <= today:
+        return False
+
+    near_threshold = today + timedelta(days=_normalize_near_expiration_days(near_expiration_days))
+    return expiration_date <= near_threshold
+
+
 def _get_filtered_ingredients_queryset(filter_value):
     today = timezone.now().date()
 
@@ -90,13 +107,34 @@ def _get_filtered_ingredients_queryset(filter_value):
         return Ingredient.objects.exclude(total_stock__gt=0).order_by(Lower('name'), 'name')
 
     if filter_value == 'near_expiration':
-        seven_days = today + timedelta(days=7)
-        return Ingredient.objects.filter(
+        candidates = Ingredient.objects.filter(
             transactions__transaction_type='in',
             transactions__remaining_amount__gt=0,
             transactions__expiration_date__gt=today,
-            transactions__expiration_date__lte=seven_days
-        ).distinct().order_by(Lower('name'), 'name')
+        ).prefetch_related(
+            Prefetch(
+                'transactions',
+                queryset=Transaction.objects.filter(
+                    transaction_type='in',
+                    remaining_amount__gt=0,
+                    expiration_date__gt=today,
+                ).only('id', 'ingredient_id', 'expiration_date').order_by('expiration_date', 'purchase_date', 'id'),
+            )
+        ).distinct()
+
+        ingredient_ids = [
+            ingredient.id
+            for ingredient in candidates
+            if any(
+                _is_near_expiration(batch.expiration_date, today, ingredient.near_expiration_days)
+                for batch in ingredient.transactions.all()
+            )
+        ]
+
+        if not ingredient_ids:
+            return Ingredient.objects.none().order_by(Lower('name'), 'name')
+
+        return Ingredient.objects.filter(id__in=ingredient_ids).order_by(Lower('name'), 'name')
 
     if filter_value == 'expired':
         return Ingredient.objects.filter(
@@ -240,6 +278,7 @@ class IngredientAllViewSet(viewsets.ModelViewSet):
                         'unit': unit_val,
                         'total_stock': str(ing.total_stock),
                         'low_amount': str(ing.low_amount),
+                        'near_expiration_days': ing.near_expiration_days,
                         'batches': [],
                         'containers': [],
                         'conversions': [],
@@ -293,7 +332,6 @@ class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         today = timezone.localdate()
-        near_threshold = today + timedelta(days=7)
 
         # Batch-level queries
         in_stock_batches = Transaction.objects.filter(
@@ -309,9 +347,18 @@ class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
 
         near_expiration_batches = Transaction.objects.filter(
             transaction_type='in',
-            expiration_date__gte=today,
-            expiration_date__lte=near_threshold,
+            expiration_date__gt=today,
             remaining_amount__gt=0
+        ).select_related('ingredient').only('id', 'expiration_date', 'ingredient__near_expiration_days')
+
+        near_expiration_count = sum(
+            1
+            for batch in near_expiration_batches
+            if _is_near_expiration(
+                batch.expiration_date,
+                today,
+                getattr(batch.ingredient, 'near_expiration_days', 7),
+            )
         )
 
         # Ingredient-level for out of stock
@@ -320,7 +367,7 @@ class InventoryDashboardViewSet(viewsets.ReadOnlyModelViewSet):
         summary_data = {
             "in_stock_count": in_stock_batches.count(),
             "out_of_stock_count": out_of_stock_ingredients.count(),
-            "near_expiration_count": near_expiration_batches.count(),
+            "near_expiration_count": near_expiration_count,
             "expired_count": expired_batches.count(),
         }
 

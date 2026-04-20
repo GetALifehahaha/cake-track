@@ -55,6 +55,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     const [unit, setUnit] = useState(String(item.unit.id));
     const [selectedDimension, setSelectedDimension] = useState(originalDimension);
     const [lowAmount, setLowAmount] = useState(String(item.low_amount ?? 0));
+    const [nearExpirationDays, setNearExpirationDays] = useState(String(item.near_expiration_days ?? 7));
     const [containers, setContainers] = useState(initialContainers);
     const [containersTouched, setContainersTouched] = useState(false);
 
@@ -175,6 +176,12 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
         setLowAmount(value);
     }
 
+    const handleNearExpirationDays = (e) => {
+        const value = limitedInput(e, { maxLength: 4, isNumber: true });
+        if (value === undefined) return;
+        setNearExpirationDays(value);
+    }
+
     const openUnitModal = () => {
         setShowUnitModal(true);
     }
@@ -207,8 +214,18 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
     };
 
     const handleConfirm = () => {
-        if (!name || !selectedDimension || !unit || lowAmount === '') {
+        if (!name || !selectedDimension || !unit || lowAmount === '' || nearExpirationDays === '') {
             setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
+            setShowModalFeedback(true);
+            return;
+        }
+
+        if (Number(nearExpirationDays) <= 0) {
+            setModalFeedbackContent({
+                type: "error",
+                label: "Invalid Near Expiry Threshold",
+                details: "Near expiry threshold must be at least 1 day.",
+            });
             setShowModalFeedback(true);
             return;
         }
@@ -234,6 +251,7 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
             id: item.id,
             name,
             low_amount: Number(lowAmount || 0),
+            near_expiration_days: Number(nearExpirationDays),
             unit_id: Number(unit),
         };
 
@@ -295,6 +313,17 @@ const EditInventoryItem = ({ item, onDelete, onConfirm, onClose }) => {
                             value={lowAmount}
                             placeholder='Enter low stock threshold'
                             onChange={handleLowAmount}
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                        />
+                    </div>
+
+                    <div className='flex flex-col gap-2'>
+                        <Label variant='modal' text='Near Expiry Threshold (Days)' />
+                        <input
+                            type='text'
+                            value={nearExpirationDays}
+                            placeholder='Enter days'
+                            onChange={handleNearExpirationDays}
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
                         />
                     </div>

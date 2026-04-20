@@ -108,6 +108,7 @@ class Ingredient(models.Model):
     name = models.CharField(max_length=20)
     total_stock = models.DecimalField(max_digits=18, decimal_places=4, default=0) #type: ignore
     low_amount = models.DecimalField(max_digits=18, decimal_places=4, default=0)
+    near_expiration_days = models.PositiveIntegerField(default=7)
 
     unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name="ingredients")
 

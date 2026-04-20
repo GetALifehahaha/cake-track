@@ -112,7 +112,17 @@ const Inventory = () => {
     const handleSetCloseInOut = () => { setShowInOut(false) }
     const toggleContainersModal = () => setShowContainersModal(!showContainersModal)
 
-    const getBatchStatus = (expirationDate) => {
+    const getNearExpirationDays = (item) => {
+        const parsedValue = Number.parseInt(item?.near_expiration_days, 10);
+
+        if (Number.isFinite(parsedValue) && parsedValue > 0) {
+            return parsedValue;
+        }
+
+        return 7;
+    }
+
+    const getBatchStatus = (expirationDate, nearExpirationDays = 7) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -122,7 +132,7 @@ const Inventory = () => {
         const diffInDays = (expiry - today) / (1000 * 60 * 60 * 24);
 
         if (diffInDays <= 0) return "expired";
-        if (diffInDays <= 7) return "near";
+        if (diffInDays <= nearExpirationDays) return "near";
         return "normal";
     };
 
@@ -135,76 +145,76 @@ const Inventory = () => {
         setSearchParams(params);
     }
 
+    const listIngredientData = (ingredientData.results || []).map((item, index) => {
+        const nearExpirationDays = getNearExpirationDays(item);
+        const hasExpiredBatch = item.batches.some((batch) => getBatchStatus(batch.expiration_date, nearExpirationDays) === 'expired');
+        const hasNearBatch = item.batches.some((batch) => getBatchStatus(batch.expiration_date, nearExpirationDays) === 'near');
 
-    const listIngredientData = (ingredientData.results || []).map((item, index) =>
-        <div className='flex flex-col gap-2' key={index}>
-            <div className='p-2.5 flex flex-row items-center text-text font-medium text-md text-center bg-main-white border-b-main-dark border-b-2 cursor-pointer border-x border-x-main-dark' onClick={() => handleSetActiveIndex(index)}>
-                <div className='w-1/25'><ChevronDown size={18} className={`cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} /></div>
-                <div className='flex-1 text-left flex gap-2'>
-                    <h5 >{item.name}</h5>
-                </div>
-                <h5 className='flex-1 text-left'>{formatQty(item.total_stock)} {item.unit.abbreviation}</h5>
-                <div className='flex-1 text-left flex items-center'>
-                    <StockLabel amount={item.total_stock} lowAmount={item.low_amount} />
+        return (
+            <div className='flex flex-col gap-2' key={index}>
+                <div className='p-2.5 flex flex-row items-center text-text font-medium text-md text-center bg-main-white border-b-main-dark border-b-2 cursor-pointer border-x border-x-main-dark' onClick={() => handleSetActiveIndex(index)}>
+                    <div className='w-1/25'><ChevronDown size={18} className={`cursor-pointer duration-75 ease-in ${index == activeIndex ? 'rotate-180' : 'rotate-0'}`} /></div>
+                    <div className='flex-1 text-left flex gap-2'>
+                        <h5 >{item.name}</h5>
+                    </div>
+                    <h5 className='flex-1 text-left'>{formatQty(item.total_stock)} {item.unit.abbreviation}</h5>
+                    <div className='flex-1 text-left flex items-center'>
+                        <StockLabel amount={item.total_stock} lowAmount={item.low_amount} />
 
-                    <div className='w-fit flex flex-row gap-2 ml-4'>
-                        {item.batches.some(batch => new Date(batch.expiration_date) < Date.now()) && (
-                            <Clock9 size={20} className='text-error' />
-                        )}
-                        {item.batches.some(batch => {
-                            const today = new Date();
-                            const exp = new Date(batch.expiration_date);
-                            const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
-                            return diffDays >= 0 && diffDays <= 7;
-                        }) && (
+                        <div className='w-fit flex flex-row gap-2 ml-4'>
+                            {hasExpiredBatch && (
+                                <Clock9 size={20} className='text-error' />
+                            )}
+                            {hasNearBatch && (
                                 <CircleAlert size={20} className='text-warning' />
                             )}
+                        </div>
+                    </div>
+                    <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}>
+                        <EllipsisVertical size={18} />
                     </div>
                 </div>
-                <div className='w-1/25' onClick={(e) => handlePrepEditItem(item, e)}>
-                    <EllipsisVertical size={18} />
-                </div>
+
+                {index == activeIndex &&
+                    <div className='border-b border-border border-x border-x-border'>
+                        <div className='p-2 px-12 flex flex-col gap-2'>
+                            <h5 className='text-sm font-medium text-text/50 mb-4'>Batch Details</h5>
+
+                            {item.batches.map((batch, batchIndex) => {
+                                const status = getBatchStatus(batch.expiration_date, nearExpirationDays);
+
+                                return (
+                                    <div
+                                        key={batchIndex}
+                                        className={cn(
+                                            'p-4 flex flex-row rounded-lg border text-sm',
+                                            status === 'expired' && 'border-error-border bg-error-fill',
+                                            status === 'near' && 'border-warning-border bg-yellow-50/50',
+                                            status === 'normal' && 'border-border bg-main-white'
+                                        )}
+                                    >
+                                        <div className='flex-1 flex flex-col items-start gap-2'>
+                                            <h5 className='text-text/50'>Remaining Amount</h5>
+                                            <h5 >{formatQty(batch.remaining_amount)} {item.unit.abbreviation}</h5>
+                                        </div>
+                                        <div className='flex-1 flex flex-col items-start gap-2'>
+                                            <h5 className='text-text/50'>Purchase Date</h5>
+                                            <h5 className='flex-1 break-all whitespace-normal'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
+                                        </div>
+                                        <div className='flex-1 flex flex-col items-start gap-2'>
+                                            <h5 className='text-text/50'>Expiration Date</h5>
+                                            <h5 className={cn('break-all whitespace-normal', status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text')}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status == 'expired' && '(Expired)'}{status == 'near' && '(Due soon)'}</h5>
+                                        </div>
+                                    </div>
+                                )
+                            }
+                            )}
+                        </div>
+                    </div>
+                }
             </div>
-
-            {index == activeIndex &&
-                <div className='border-b border-border border-x border-x-border'>
-                    <div className='p-2 px-12 flex flex-col gap-2'>
-                        <h5 className='text-sm font-medium text-text/50 mb-4'>Batch Details</h5>
-
-                        {item.batches.map((batch, batchIndex) => {
-                            const status = getBatchStatus(batch.expiration_date);
-
-                            return (
-                                <div
-                                    key={batchIndex}
-                                    className={cn(
-                                        'p-4 flex flex-row rounded-lg border text-sm',
-                                        status === 'expired' && 'border-error-border bg-error-fill',
-                                        status === 'near' && 'border-warning-border bg-yellow-50/50',
-                                        status === 'normal' && 'border-border bg-main-white'
-                                    )}
-                                >
-                                    <div className='flex-1 flex flex-col items-start gap-2'>
-                                        <h5 className='text-text/50'>Remaining Amount</h5>
-                                        <h5 >{formatQty(batch.remaining_amount)} {item.unit.abbreviation}</h5>
-                                    </div>
-                                    <div className='flex-1 flex flex-col items-start gap-2'>
-                                        <h5 className='text-text/50'>Purchase Date</h5>
-                                        <h5 className='flex-1 break-all whitespace-normal'>{new Date(batch.purchase_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}</h5>
-                                    </div>
-                                    <div className='flex-1 flex flex-col items-start gap-2'>
-                                        <h5 className='text-text/50'>Expiration Date</h5>
-                                        <h5 className={cn('break-all whitespace-normal', status === 'expired' && 'text-error', status === 'near' && 'text-warning', status === 'normal' && 'text-text')}>{new Date(batch.expiration_date).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} {status == 'expired' && '(Expired)'}{status == 'near' == '(Due soon)'}</h5>
-                                    </div>
-                                </div>
-                            )
-                        }
-                        )}
-                    </div>
-                </div>
-            }
-        </div>
-    )
+        )
+    })
 
     return (
         <div className='flex-1 flex p-2 gap-4 w-full h-full flex-col'>

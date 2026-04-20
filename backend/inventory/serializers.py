@@ -432,6 +432,11 @@ class IngredientSerializer(serializers.ModelSerializer):
         decimal_places=2, 
         validators=[MaxValueValidator(MAX_DECIMAL_VALUE)]
     )
+    near_expiration_days = serializers.IntegerField(
+        min_value=1,
+        max_value=MAX_INTEGER_VALUE,
+        required=False,
+    )
 
     class Meta:
         model = Ingredient
@@ -442,6 +447,7 @@ class IngredientSerializer(serializers.ModelSerializer):
             'unit_id',
             'total_stock',
             'low_amount',
+            'near_expiration_days',
             'batches',
             'containers',
             'conversions',
@@ -505,6 +511,11 @@ class IngredientSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Low stock threshold must be zero or greater.")
         return value
 
+    def validate_near_expiration_days(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Near expiry threshold must be at least 1 day.")
+        return value
+
     def _validate_conversions_data(self, base_unit, conversions_data):
         seen_from_units = set()
 
@@ -523,10 +534,17 @@ class IngredientSerializer(serializers.ModelSerializer):
         if self.instance is None:
             request = self.context.get("request")
             data = request.data if request else {}
+            incoming_data = data or getattr(self, 'initial_data', {}) or {}
 
             amount = data.get("amount")
             purchase_date = data.get("purchaseDate")
             expiration_date = data.get("expirationDate")
+            near_expiration_days = incoming_data.get("near_expiration_days")
+
+            if near_expiration_days in [None, '']:
+                raise serializers.ValidationError({
+                    "near_expiration_days": "Near expiry threshold (in days) is required for new ingredients."
+                })
 
             if amount is None or Decimal(str(amount)) <= 0:
                 raise serializers.ValidationError({"amount": "Initial amount must be greater than zero."})

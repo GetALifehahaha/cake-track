@@ -33,6 +33,7 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
     const [name, setName] = useState("");
     const [amount, setAmount] = useState(0);
     const [lowAmount, setLowAmount] = useState('0');
+    const [nearExpirationDays, setNearExpirationDays] = useState('');
     const [unit, setUnit] = useState(null);
     const [selectedDimension, setSelectedDimension] = useState('');
     const [containers, setContainers] = useState([]);
@@ -132,6 +133,7 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
             amount: parsedAmount,
             total_stock: parsedAmount,
             low_amount: Number(lowAmount || 0),
+            near_expiration_days: Number(nearExpirationDays),
             unit_id: Number(unit),
             purchaseDate: purchaseDate.toLocaleDateString("en-CA"),
             expirationDate: expirationDate.toLocaleDateString("en-CA"),
@@ -182,6 +184,12 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
         setLowAmount(value);
     }
 
+    const handleNearExpirationDays = (e) => {
+        const value = limitedInput(e, { maxLength: 4, isNumber: true });
+        if (value === undefined) return;
+        setNearExpirationDays(value);
+    }
+
     const openUnitModal = () => {
         setShowUnitModal(true);
     };
@@ -211,8 +219,13 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
     };
 
     const handleSetShowConfirm = () => {
-        if (!name || !amount || lowAmount === '' || !selectedDimension || !unit || !purchaseDate || !expirationDate) {
+        if (!name || !amount || lowAmount === '' || nearExpirationDays === '' || !selectedDimension || !unit || !purchaseDate || !expirationDate) {
             setModalFeedbackContent({ type: "error", label: "Incomplete Fields", details: `Please do not leave fields empty.` })
+            return;
+        }
+
+        if (Number(nearExpirationDays) <= 0) {
+            setModalFeedbackContent({ type: "error", label: "Invalid Near Expiry Threshold", details: 'Near expiry threshold must be at least 1 day.' })
             return;
         }
 
@@ -234,13 +247,13 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
                         className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
                 </div>
 
-                <div className='flex items-center gap-4'>
+                <div className='flex items-center gap-4 flex-wrap'>
                     <div className='flex-1 flex flex-col gap-2'>
                         <Label variant='modal' text='Amount' />
                         <input type='text' placeholder='Enter amount' value={amount} onChange={(e) => handleAmount(e)} onBlur={handleAmountBlur}
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full' />
                     </div>
-
+            
                     <div className='flex-1 flex flex-col gap-2'>
                         <Label variant='modal' text='Low Stock Threshold' />
                         <input
@@ -248,6 +261,17 @@ const InventoryAddItem = ({ onConfirm, onClose }) => {
                             placeholder='Enter low stock threshold'
                             value={lowAmount}
                             onChange={handleLowAmount}
+                            className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
+                        />
+                    </div>
+
+                    <div className='flex-1 flex flex-col gap-2'>
+                        <Label variant='modal' text='Near Expiry Threshold' />
+                        <input
+                            type='text'
+                            placeholder='Enter days (required)'
+                            value={nearExpirationDays}
+                            onChange={handleNearExpirationDays}
                             className='px-4 py-2 rounded-sm bg-main-dark/50 focus:outline-none w-full'
                         />
                     </div>
