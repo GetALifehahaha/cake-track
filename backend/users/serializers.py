@@ -7,6 +7,9 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from email_templates import send_activation_template_email
+from rest_framework import status
+from rest_framework.response import Response
 import uuid
 
 from .models import (
@@ -298,6 +301,7 @@ class CashierCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['is_active'] = False
         middle_name = validated_data.pop('middle_name', '')
+        email = validated_data.pop('email', '')
         user = User.objects.create_user(**validated_data)
         profile = UserProfile.objects.create(user=user, middle_name=middle_name, activation_token=str(uuid.uuid4()))
 
@@ -308,26 +312,22 @@ class CashierCreateSerializer(serializers.ModelSerializer):
 
         activation_link = f"{settings.FRONTEND_URL}/setAccount?token={profile.activation_token}"
 
-        subject = 'Activate Your Cashier Account'
-        
-        # Using html_message for a better UI
-        html_content = f"""
-            <p>Hi {user.first_name},</p>
-            <p>An admin has created a cashier account for you.</p>
-            <a href="{activation_link}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                Activate Account
-            </a>
-        """
-
-        send_mail(
-            subject,
-            f"Activate your account: {activation_link}",
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            html_message=html_content,
-            fail_silently=True
-        )
-
+        try:
+            send_activation_template_email(
+                recipient_email=user.email,
+                cashier_name=user.username,
+                activation_url=activation_link,
+            )
+        except Exception:
+            return Response(
+                {
+                    'type': 'error',
+                    'label': 'Failed to send OTP',
+                    'details': 'Unable to send OTP email via Resend. Please try again later.'
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+    
         return user
     
 
