@@ -7,7 +7,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from email_templates import send_activation_template_email
+from .email_templates import send_activation_template_email
 from rest_framework import status
 from rest_framework.response import Response
 import uuid
