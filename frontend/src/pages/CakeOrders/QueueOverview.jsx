@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button, Title } from '../../components/atoms'
 import { ArrowRight, Check, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { ConfirmationModal, ConfirmationModalWrapper, InputRejectModalWrapper } from '@/components/organisms'
+import { InputAcceptPriceModal, InputRejectModalWrapper } from '@/components/organisms'
 import useOrder from '@/hooks/useOrders'
 import useQueryFetch from '@/hooks/useQueryFetch'
 import API_ENDPOINTS from '@/api/endpoints'
@@ -25,6 +25,26 @@ const QueueOverview = () => {
 	const navigate = useNavigate();
 
 	const [removeId, setRemoveId] = useState(null);
+	const [pendingAcceptOrder, setPendingAcceptOrder] = useState(null);
+
+	const getErrorMessage = (error, fallback = 'Something went wrong.') => {
+		const responseData = error?.response?.data;
+
+		if (!responseData) return fallback;
+		if (typeof responseData === 'string') return responseData;
+
+		if (Array.isArray(responseData)) {
+			return responseData[0] || fallback;
+		}
+
+		if (typeof responseData === 'object') {
+			const firstValue = Object.values(responseData)[0];
+			if (Array.isArray(firstValue)) return firstValue[0] || fallback;
+			if (typeof firstValue === 'string') return firstValue;
+		}
+
+		return fallback;
+	}
 
 	if (overviewQuery.isPending || ingredientLoading) return <QueueOverviewSkeleton />
 	if (overviewQuery.error || ingredientError) return <h5>Error</h5>
@@ -57,13 +77,14 @@ const QueueOverview = () => {
 	};
 
 	// METHODS
-	const setOrderToAccepted = async (id) => {
+	const setOrderToAccepted = async (orderId, totalPrice) => {
 		try {
-			await patchOrder(id, { status: "accepted" });
+			await patchOrder(orderId, { status: "accepted", total_price: totalPrice });
 
 			addToast("Order accepted successfully")
+			setPendingAcceptOrder(null)
 		} catch (err) {
-			alert(err)
+			addToast(getErrorMessage(err, 'Failed to accept order.'), 'error')
 		}
 	}
 
@@ -94,9 +115,7 @@ const QueueOverview = () => {
 				<InputRejectModalWrapper onReject={() => setRemoveId(null)} onConfirm={setOrderToReject}>
 					<X className='text-red-500' onClick={() => setRemoveId(order.id)} size={18} />
 				</InputRejectModalWrapper>
-				<ConfirmationModalWrapper title='Accept order' content={`Confirm acceptance of Order #${order.id}. This action is irreversible and places the order into the active production schedule.`} onConfirm={() => setOrderToAccepted(order.id)}>
-					<Check className='text-green-500' size={18} />
-				</ConfirmationModalWrapper>
+				<Check className='text-green-500 cursor-pointer' size={18} onClick={() => setPendingAcceptOrder(order)} />
 			</div>
 		</div>
 	)
@@ -203,6 +222,14 @@ const QueueOverview = () => {
 					{listAccepted}
 				</div>
 			</div>
+
+			{pendingAcceptOrder && (
+				<InputAcceptPriceModal
+					order={pendingAcceptOrder}
+					onConfirm={(totalPrice) => setOrderToAccepted(pendingAcceptOrder.id, totalPrice)}
+					onReject={() => setPendingAcceptOrder(null)}
+				/>
+			)}
 		</div>
 	)
 }

@@ -12,6 +12,8 @@ export default function useDashboard() {
         frequency: searchParams.get('frequency') || undefined,
         start_date: searchParams.get('start_date') || undefined,
         end_date: searchParams.get('end_date') || undefined,
+        top_selling_category: searchParams.get('top_selling_category') || undefined,
+        least_selling_category: searchParams.get('least_selling_category') || undefined,
     }), [searchParams]);
 
     const posDashboardQuery = useQueryFetch('pos-dashboard', API_ENDPOINTS.POS_DASHBOARD, params, {

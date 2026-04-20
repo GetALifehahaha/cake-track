@@ -8,7 +8,7 @@ from django.conf import settings
 import qrcode
 
 # Create your views here.
-from django.db.models import Sum, Count, F, DateTimeField, Case, When, Value, FloatField, ExpressionWrapper
+from django.db.models import Sum, Count, F, DateTimeField, Case, When, Value, FloatField, ExpressionWrapper, IntegerField
 from django.db import transaction as db_transaction
 from django.db.models.functions import TruncDate, Lower
 from django.utils import timezone
@@ -75,9 +75,7 @@ class ProductOrderingFilter(filters.OrderingFilter):
     """Map product name ordering to a lower-cased annotation for case-insensitive sorting."""
 
     def get_ordering(self, request, queryset, view):
-        ordering = super().get_ordering(request, queryset, view)
-        if not ordering:
-            return ordering
+        ordering = list(super().get_ordering(request, queryset, view) or [])
 
         mapped = []
         for field in ordering:
@@ -85,6 +83,10 @@ class ProductOrderingFilter(filters.OrderingFilter):
             field_name = field[1:] if descending else field
             mapped_field = 'name_sort' if field_name == 'name' else field_name
             mapped.append(f"-{mapped_field}" if descending else mapped_field)
+
+        prioritize_daily_top = str(request.query_params.get('prioritize_daily_top', 'false')).lower() == 'true'
+        if prioritize_daily_top and 'top_seller_rank' not in mapped:
+            mapped.insert(0, 'top_seller_rank')
 
         return mapped
     
@@ -197,12 +199,44 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ['name']
     
     def get_queryset(self):
+        prioritize_daily_top = str(self.request.query_params.get('prioritize_daily_top', 'false')).lower() == 'true'  #type: ignore
+
         queryset = (
             Product.objects
             .prefetch_related('variants__recipe', 'categories')
             .annotate(name_sort=Lower('name'))
             .all()
         )
+
+        if prioritize_daily_top:
+            now_local = timezone.localtime()
+            start_of_day = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = start_of_day + timedelta(days=1)
+
+            top_selling_today = list(
+                TransactionItem.objects
+                .filter(
+                    transaction__is_completed=True,
+                    transaction__is_void=False,
+                    transaction__created_at__gte=start_of_day,
+                    transaction__created_at__lt=end_of_day,
+                )
+                .values('product_id')
+                .annotate(total_sold=Sum('quantity'))
+                .order_by('-total_sold', 'product_id')[:3]
+            )
+
+            rank_cases = []
+            for index, row in enumerate(top_selling_today, start=1):
+                rank_cases.append(When(id=row['product_id'], then=Value(index)))
+
+            queryset = queryset.annotate(
+                top_seller_rank=Case(
+                    *rank_cases,
+                    default=Value(9999),
+                    output_field=IntegerField(),
+                )
+            )
         
         if self.action == "list":
             is_archived_param = self.request.query_params.get('is_archived'); #type: ignore
@@ -623,7 +657,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 cashier=request.user,
                 entry_type='addition' if delta > 0 else 'deduction',
                 amount=abs(delta),
-                note='Starting money adjusted',
+                note='Float money adjusted',
                 created_by=request.user,
             )
 
@@ -653,7 +687,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         if register_money.current_amount < amount:
             return Response(
-                {"detail": "Deduction amount exceeds cashier register money."},
+                {"detail": "Deduction amount exceeds cashier float money."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -778,6 +812,8 @@ class DashboardAnalyticsView(APIView):
         frequency = request.query_params.get('frequency', 'daily')
         start_date_str = request.query_params.get('start_date')
         end_date_str = request.query_params.get('end_date')
+        top_selling_category = (request.query_params.get('top_selling_category') or '').strip()
+        least_selling_category = (request.query_params.get('least_selling_category') or '').strip()
 
         all_transactions = Transaction.objects.all()
         
@@ -832,6 +868,16 @@ class DashboardAnalyticsView(APIView):
             valid_transactions.aggregate(total=Sum('net_total'))['total'] or 0
         )
 
+        total_discount_amount = (
+            valid_transactions.aggregate(total=Sum('discount_amount'))['total'] or Decimal('0.00')
+        )
+
+        total_gross_revenue = (
+            valid_transactions.aggregate(total=Sum('gross_total'))['total'] or Decimal('0.00')
+        )
+
+        total_vat_amount = Decimal(str(total_gross_revenue)) * Decimal('0.12')
+
         order_payments = Payment.objects.filter(status='success')
         if start_date:
             order_payments = order_payments.filter(created_at__gte=start_date)
@@ -856,21 +902,49 @@ class DashboardAnalyticsView(APIView):
         total_combined_revenue = Decimal(str(total_revenue_generated)) + Decimal(str(order_paid_revenue))
         total_profit = total_combined_revenue - Decimal(str(total_capital))
 
-        top_products = (
-            TransactionItem.objects
-            .filter(transaction__in=valid_transactions)
-            .values('product__name')
+        top_products_base = TransactionItem.objects.filter(transaction__in=valid_transactions)
+        if top_selling_category:
+            top_products_base = top_products_base.filter(
+                product__categories__name__iexact=top_selling_category,
+            ).distinct()
+
+        top_products_qs = (
+            top_products_base
+            .values('product_id', 'product__name')
             .annotate(total_sold=Sum('quantity'))
             .order_by('-total_sold', 'product__name')
         )[:10]
 
-        least_products = (
-            TransactionItem.objects
-            .filter(transaction__in=valid_transactions)
-            .values('product__name')
+        least_products_base = TransactionItem.objects.filter(transaction__in=valid_transactions)
+        if least_selling_category:
+            least_products_base = least_products_base.filter(
+                product__categories__name__iexact=least_selling_category,
+            ).distinct()
+
+        least_products_qs = (
+            least_products_base
+            .values('product_id', 'product__name')
             .annotate(total_sold=Sum('quantity'))
             .order_by('total_sold', 'product__name')[:10]
         )
+
+        def _attach_product_categories(product_rows_qs):
+            product_rows = list(product_rows_qs)
+            product_ids = [row.get('product_id') for row in product_rows if row.get('product_id') is not None]
+
+            products_by_id = {
+                product.id: product
+                for product in Product.objects.filter(id__in=product_ids).prefetch_related('categories')
+            }
+
+            for row in product_rows:
+                product = products_by_id.get(row.get('product_id'))
+                row['product_categories'] = [category.name for category in product.categories.all()] if product else []
+
+            return product_rows
+
+        top_products = _attach_product_categories(top_products_qs)
+        least_products = _attach_product_categories(least_products_qs)
 
         # 5️⃣ Sales Trend
         if frequency == "monthly":
@@ -1011,12 +1085,14 @@ class DashboardAnalyticsView(APIView):
             "total_successful_transactions": successful_count,
             "total_products_sold": total_products_sold,
             "total_revenue_generated": round(total_revenue_generated, 2),
+            "total_discount_amount": round(total_discount_amount, 2),
+            "total_vat_amount": round(total_vat_amount, 2),
             "order_paid_revenue": round(order_paid_revenue, 2),
             "total_combined_revenue": round(total_combined_revenue, 2),
             "total_capital": round(total_capital, 2),
             "total_profit": round(total_profit, 2),
-            "top_selling_products": list(top_products),
-            "least_selling_products": list(least_products),
+            "top_selling_products": top_products,
+            "least_selling_products": least_products,
             "sales_trend": formatted_trend,
             "revenue_trend": formatted_revenue_trend,
             "cashier_performance": cashier_performance,

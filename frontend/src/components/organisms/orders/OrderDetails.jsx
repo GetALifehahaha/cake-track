@@ -83,6 +83,20 @@ const formatReferenceNumber = (value) => {
 
 const formatCurrency = (value) => `₱ ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const formatMoneyInput = (value = '') => {
+    const normalized = String(value).replace(/[^\d.]/g, '');
+
+    if (normalized.split('.').length > 2) {
+        return normalized.slice(0, -1);
+    }
+
+    if (!/^\d*\.?\d{0,2}$/.test(normalized)) {
+        return normalized.slice(0, -1);
+    }
+
+    return normalized.slice(0, 13);
+};
+
 const formatPaymentMethod = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
 
@@ -150,10 +164,16 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const [showAddRecipeModal, setShowAddRecipeModal] = useState(false);
     const [deducting, setDeducting] = useState(false);
     const [previewImage, setPreviewImage] = useState(null);
+    const [editingTotalPrice, setEditingTotalPrice] = useState(false);
+    const [totalPriceDraft, setTotalPriceDraft] = useState('');
+    const [savingTotalPrice, setSavingTotalPrice] = useState(false);
 
     useEffect(() => {
         setOrderSnapshot(orderDetails);
         setCurrentStep(1);
+        const initialTotalPrice = Number(orderDetails?.total_price || 0);
+        setTotalPriceDraft(initialTotalPrice > 0 ? String(initialTotalPrice.toFixed(2)) : '');
+        setEditingTotalPrice(false);
         const initialPremadeRecipes = Array.isArray(orderDetails?.premade_recipe_details)
             ? orderDetails.premade_recipe_details
             : [];
@@ -210,7 +230,7 @@ const OrderDetails = ({ orderDetails, onClose }) => {
     const showTotalAmountRow = isPremadeOrder || totalAmount > 0;
     const totalAmountDisplay = totalAmount > 0
         ? formatCurrency(totalAmount)
-        : (isPremadeOrder ? 'N/A' : 'Available after order is completed');
+        : (isPremadeOrder ? 'N/A' : 'Set during admin acceptance/negotiation');
     const referenceNumber = formatReferenceNumber(orderSnapshot?.reference_number || latestPayment?.reference_number);
     const refundReferenceNumber = formatReferenceNumber(orderSnapshot?.refund_reference_number);
     const showRefundReferenceRow = Boolean(orderSnapshot?.refund_reference_number);
@@ -343,6 +363,63 @@ const OrderDetails = ({ orderDetails, onClose }) => {
         }
 
         return true;
+    };
+
+    const getErrorMessage = (error, fallback = 'Failed to update total price.') => {
+        const responseData = error?.response?.data;
+
+        if (!responseData) return fallback;
+        if (typeof responseData === 'string') return responseData;
+
+        if (Array.isArray(responseData)) {
+            return responseData[0] || fallback;
+        }
+
+        if (typeof responseData === 'object') {
+            const firstValue = Object.values(responseData)[0];
+            if (Array.isArray(firstValue)) return firstValue[0] || fallback;
+            if (typeof firstValue === 'string') return firstValue;
+        }
+
+        return fallback;
+    };
+
+    const startEditingTotalPrice = () => {
+        const latestTotalPrice = Number(orderSnapshot?.total_price || 0);
+        setTotalPriceDraft(latestTotalPrice > 0 ? String(latestTotalPrice.toFixed(2)) : '');
+        setEditingTotalPrice(true);
+    };
+
+    const cancelEditingTotalPrice = () => {
+        setEditingTotalPrice(false);
+        const latestTotalPrice = Number(orderSnapshot?.total_price || 0);
+        setTotalPriceDraft(latestTotalPrice > 0 ? String(latestTotalPrice.toFixed(2)) : '');
+    };
+
+    const saveAcceptedTotalPrice = async () => {
+        const parsedPrice = Number(totalPriceDraft || 0);
+        if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+            addToast('Please enter a valid total price greater than 0.', 'error');
+            return;
+        }
+
+        try {
+            setSavingTotalPrice(true);
+            const patchedOrder = await patchOrder(orderSnapshot.id, { total_price: parsedPrice });
+
+            setOrderSnapshot(prev => ({
+                ...prev,
+                ...(patchedOrder || {}),
+                total_price: patchedOrder?.total_price ?? parsedPrice,
+            }));
+            setTotalPriceDraft(String(parsedPrice.toFixed(2)));
+            setEditingTotalPrice(false);
+            addToast('Total price updated successfully.', 'success');
+        } catch (error) {
+            addToast(getErrorMessage(error), 'error');
+        } finally {
+            setSavingTotalPrice(false);
+        }
     };
 
     const saveOrderRecipe = async () => {
@@ -568,6 +645,52 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                         <DetailRow label='Total Amount' value={totalAmountDisplay} isLast />
                     )}
                 </div>
+
+                {isAccepted && !isPremadeOrder && (
+                    <div className='mt-4 pt-4 border-t border-border'>
+                        <h5 className='text-[10px] uppercase tracking-widest text-text/60 font-bold mb-2'>Accepted Price Adjustment</h5>
+
+                        {editingTotalPrice ? (
+                            <div className='flex flex-wrap items-center gap-2'>
+                                <input
+                                    type='text'
+                                    value={totalPriceDraft}
+                                    onChange={(event) => setTotalPriceDraft(formatMoneyInput(event.target.value))}
+                                    placeholder='0.00'
+                                    disabled={savingTotalPrice}
+                                    className='w-40 px-3 py-2 text-sm border border-border rounded-lg bg-main-white focus:outline-none ml-auto'
+                                />
+                                <button
+                                    type='button'
+                                    onClick={saveAcceptedTotalPrice}
+                                    disabled={savingTotalPrice}
+                                    className='px-4 py-2 rounded-lg bg-accent-text text-main-white text-sm font-semibold disabled:opacity-50'
+                                >
+                                    {savingTotalPrice ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    type='button'
+                                    onClick={cancelEditingTotalPrice}
+                                    disabled={savingTotalPrice}
+                                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold text-text/70 bg-main-white disabled:opacity-50'
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <div className='flex flex-wrap items-center justify-between gap-2'>
+                                <p className='text-xs text-text/60'>Negotiated price can still be adjusted while this order is accepted.</p>
+                                <button
+                                    type='button'
+                                    onClick={startEditingTotalPrice}
+                                    className='px-4 py-2 rounded-lg border border-border text-sm font-semibold text-text bg-main-white hover:bg-main'
+                                >
+                                    Edit Price
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {isCancellationRequested && (
@@ -751,146 +874,146 @@ const OrderDetails = ({ orderDetails, onClose }) => {
                 </>
             ) : (
                 <>
-            <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
+                    <div className='p-4 border-b border-border bg-main flex items-center gap-3'>
 
-                <div className='ml-auto flex items-center gap-2'>
-                    <h5 className='text-sm font-semibold '>Load exiting recipe</h5>
-                    <div className='w-48'>
-                        <Button
-                            variant='modalOutline'
-                            size='full'
-                            text={selectedRecipeId ? recipeData?.results?.find(r => String(r.id) === String(selectedRecipeId))?.name || 'Select recipe' : 'Select recipe'}
-                            onClick={() => {
-                                if (hasDeducted) return;
-                                setShowRecipeSelectionModal(true);
-                            }}
-                            className='justify-center truncate'
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className='flex flex-1 overflow-hidden bg-main/50'>
-                <div className='basis-1/4 border-r border-border flex flex-col'>
-                    <div className='px-4 py-3 border-b border-border'>
-                        <h4 className='font-semibold text-sm text-text'>Available Ingredients</h4>
-                    </div>
-                    <div className='p-3'>
-                        <div className='relative'>
-                            <Search size={16} className='absolute left-3 top-2.5 text-text/50' />
-                            <input
-                                type='text'
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                disabled={hasDeducted}
-                                placeholder='Search an ingredient...'
-                                className='w-full pl-9 pr-3 py-2 text-sm bg-main-white border border-border rounded-lg focus:outline-none'
-                            />
+                        <div className='ml-auto flex items-center gap-2'>
+                            <h5 className='text-sm font-semibold '>Load exiting recipe</h5>
+                            <div className='w-48'>
+                                <Button
+                                    variant='modalOutline'
+                                    size='full'
+                                    text={selectedRecipeId ? recipeData?.results?.find(r => String(r.id) === String(selectedRecipeId))?.name || 'Select recipe' : 'Select recipe'}
+                                    onClick={() => {
+                                        if (hasDeducted) return;
+                                        setShowRecipeSelectionModal(true);
+                                    }}
+                                    className='justify-center truncate'
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className='flex-1 overflow-y-auto px-3 pb-3 space-y-2'>
-                        {filteredIngredients.map(ingredient => (
-                            <button
-                                key={ingredient.id}
-                                type='button'
-                                onClick={() => !hasDeducted && addIngredient(ingredient)}
-                                disabled={hasDeducted}
-                                className='w-full text-left p-3 rounded-lg border border-border bg-main-white hover:border-accent transition-colors'
-                            >
-                                <h5 className='text-sm font-semibold text-text'>{ingredient.name}</h5>
-                                <p className='text-[11px] text-text/60'>Stock: {formatQty(ingredient.total_stock)} {ingredient?.unit?.abbreviation}</p>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className='flex-1 flex flex-col'>
-                    <div className='px-4 py-3 border-b border-border bg-main-white'>
-                        <h4 className='font-semibold text-sm text-text'>Transaction Items ({selectedIngredients.length})</h4>
-                    </div>
-
-                    <div className='flex-1 overflow-y-auto'>
-                        {selectedIngredients.length === 0 ? (
-                            <div className='h-full flex items-center justify-center text-text/50'>
-                                <div className='text-center'>
-                                    <ShoppingBag size={26} className='mx-auto mb-3 opacity-40' />
-                                    <h5 className='text-sm font-semibold text-text/60'>No ingredients added yet</h5>
-                                    <p className='text-xs mt-1'>Click an ingredient from the left panel, or load a recipe above.</p>
+                    <div className='flex flex-1 overflow-hidden bg-main/50'>
+                        <div className='basis-1/4 border-r border-border flex flex-col'>
+                            <div className='px-4 py-3 border-b border-border'>
+                                <h4 className='font-semibold text-sm text-text'>Available Ingredients</h4>
+                            </div>
+                            <div className='p-3'>
+                                <div className='relative'>
+                                    <Search size={16} className='absolute left-3 top-2.5 text-text/50' />
+                                    <input
+                                        type='text'
+                                        value={search}
+                                        onChange={(event) => setSearch(event.target.value)}
+                                        disabled={hasDeducted}
+                                        placeholder='Search an ingredient...'
+                                        className='w-full pl-9 pr-3 py-2 text-sm bg-main-white border border-border rounded-lg focus:outline-none'
+                                    />
                                 </div>
                             </div>
-                        ) : (
-                            <table className='w-full text-sm'>
-                                <thead className='bg-main-white sticky top-0 z-10'>
-                                    <tr className='text-left text-text/60 text-[11px] uppercase'>
-                                        <th className='px-4 py-2'>Ingredient</th>
-                                        <th className='px-4 py-2'>Amount</th>
-                                        <th className='px-4 py-2'>Unit</th>
-                                        <th className='px-4 py-2'>In Stock</th>
-                                        <th className='px-4 py-2'>Status</th>
-                                        <th className='px-4 py-2' />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedIngredients.map(item => {
-                                        const amountNeeded = getAmountNeededInBaseUnit(item);
-                                        const stock = Number(item.ingredient_stock || 0);
-                                        const isMissing = amountNeeded > 0 && stock < amountNeeded;
 
-                                        return (
-                                            <tr key={item.ingredient_id} className='border-t border-border'>
-                                                <td className='px-4 py-2'>
-                                                    <h5 className='font-semibold text-text'>{item.ingredient_name}</h5>
-                                                    <p className='text-[11px] text-text/60'>Stock: {formatQty(item.ingredient_stock)} {item.ingredient_unit}</p>
-                                                </td>
-                                                <td className='px-4 py-2'>
-                                                    <input
-                                                        type='text'
-                                                        value={item.amount_needed}
-                                                        onChange={(event) => updateAmount(item.ingredient_id, event.target.value)}
-                                                        disabled={hasDeducted}
-                                                        className='w-16 px-2 py-1 border border-border rounded bg-main-white focus:outline-none'
-                                                    />
-                                                </td>
-                                                <td className='px-4 py-2'>
-                                                    <div className='w-24'>
-                                                        {hasDeducted ? (
-                                                            <div className='px-2 py-1 border border-border rounded bg-main text-xs text-text/70'>
-                                                                {item.display_unit_label || 'Unit'}
-                                                            </div>
-                                                        ) : (
-                                                            <Dropdown
-                                                                size='full'
-                                                                variant='modal'
-                                                                value={item.display_unit_id}
-                                                                selection={item.display_unit_label || 'Unit'}
-                                                                options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
-                                                                onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
-                                                                allowNone={false}
-                                                            />
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
-                                                <td className='px-4 py-2'>
-                                                    <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
-                                                        {isMissing ? 'Low' : 'OK'}
-                                                    </span>
-                                                </td>
-                                                <td className='px-4 py-2'>
-                                                    <button onClick={() => !hasDeducted && removeIngredient(item.ingredient_id)} disabled={hasDeducted} className='text-text/60 hover:text-error disabled:opacity-40 disabled:cursor-not-allowed'>
-                                                        <X size={16} />
-                                                    </button>
-                                                </td>
+                            <div className='flex-1 overflow-y-auto px-3 pb-3 space-y-2'>
+                                {filteredIngredients.map(ingredient => (
+                                    <button
+                                        key={ingredient.id}
+                                        type='button'
+                                        onClick={() => !hasDeducted && addIngredient(ingredient)}
+                                        disabled={hasDeducted}
+                                        className='w-full text-left p-3 rounded-lg border border-border bg-main-white hover:border-accent transition-colors'
+                                    >
+                                        <h5 className='text-sm font-semibold text-text'>{ingredient.name}</h5>
+                                        <p className='text-[11px] text-text/60'>Stock: {formatQty(ingredient.total_stock)} {ingredient?.unit?.abbreviation}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className='flex-1 flex flex-col'>
+                            <div className='px-4 py-3 border-b border-border bg-main-white'>
+                                <h4 className='font-semibold text-sm text-text'>Transaction Items ({selectedIngredients.length})</h4>
+                            </div>
+
+                            <div className='flex-1 overflow-y-auto'>
+                                {selectedIngredients.length === 0 ? (
+                                    <div className='h-full flex items-center justify-center text-text/50'>
+                                        <div className='text-center'>
+                                            <ShoppingBag size={26} className='mx-auto mb-3 opacity-40' />
+                                            <h5 className='text-sm font-semibold text-text/60'>No ingredients added yet</h5>
+                                            <p className='text-xs mt-1'>Click an ingredient from the left panel, or load a recipe above.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <table className='w-full text-sm'>
+                                        <thead className='bg-main-white sticky top-0 z-10'>
+                                            <tr className='text-left text-text/60 text-[11px] uppercase'>
+                                                <th className='px-4 py-2'>Ingredient</th>
+                                                <th className='px-4 py-2'>Amount</th>
+                                                <th className='px-4 py-2'>Unit</th>
+                                                <th className='px-4 py-2'>In Stock</th>
+                                                <th className='px-4 py-2'>Status</th>
+                                                <th className='px-4 py-2' />
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        )}
+                                        </thead>
+                                        <tbody>
+                                            {selectedIngredients.map(item => {
+                                                const amountNeeded = getAmountNeededInBaseUnit(item);
+                                                const stock = Number(item.ingredient_stock || 0);
+                                                const isMissing = amountNeeded > 0 && stock < amountNeeded;
+
+                                                return (
+                                                    <tr key={item.ingredient_id} className='border-t border-border'>
+                                                        <td className='px-4 py-2'>
+                                                            <h5 className='font-semibold text-text'>{item.ingredient_name}</h5>
+                                                            <p className='text-[11px] text-text/60'>Stock: {formatQty(item.ingredient_stock)} {item.ingredient_unit}</p>
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <input
+                                                                type='text'
+                                                                value={item.amount_needed}
+                                                                onChange={(event) => updateAmount(item.ingredient_id, event.target.value)}
+                                                                disabled={hasDeducted}
+                                                                className='w-16 px-2 py-1 border border-border rounded bg-main-white focus:outline-none'
+                                                            />
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <div className='w-24'>
+                                                                {hasDeducted ? (
+                                                                    <div className='px-2 py-1 border border-border rounded bg-main text-xs text-text/70'>
+                                                                        {item.display_unit_label || 'Unit'}
+                                                                    </div>
+                                                                ) : (
+                                                                    <Dropdown
+                                                                        size='full'
+                                                                        variant='modal'
+                                                                        value={item.display_unit_id}
+                                                                        selection={item.display_unit_label || 'Unit'}
+                                                                        options={(item.unit_options || []).map(option => ({ key: option.label, value: option.value }))}
+                                                                        onSelect={(value) => updateIngredientUnit(item.ingredient_id, value)}
+                                                                        allowNone={false}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className='px-4 py-2 text-text/70'>{formatQty(item.ingredient_stock)} {item.ingredient_unit}</td>
+                                                        <td className='px-4 py-2'>
+                                                            <span className={`text-[11px] px-2 py-1 rounded-full font-semibold ${isMissing ? 'bg-error-fill text-error' : 'bg-success-fill text-success'}`}>
+                                                                {isMissing ? 'Low' : 'OK'}
+                                                            </span>
+                                                        </td>
+                                                        <td className='px-4 py-2'>
+                                                            <button onClick={() => !hasDeducted && removeIngredient(item.ingredient_id)} disabled={hasDeducted} className='text-text/60 hover:text-error disabled:opacity-40 disabled:cursor-not-allowed'>
+                                                                <X size={16} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
                 </>
             )}
         </div>

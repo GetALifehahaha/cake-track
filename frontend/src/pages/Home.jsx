@@ -57,9 +57,10 @@ const Home = () => {
 
     const { addToast } = useToast();
     const { user } = useAuth();
+    const posListingParams = useMemo(() => ({ prioritize_daily_top: 'true' }), []);
 
     const [, setSearchParams] = useSearchParams();
-    const { data: productData, loading: productLoading, error: productError, refresh: refreshProducts } = useProduct();
+    const { data: productData, loading: productLoading, error: productError, refresh: refreshProducts } = useProduct({ extraParams: posListingParams });
     const {
         postTransaction,
         completeTransaction,
@@ -69,6 +70,8 @@ const Home = () => {
         refreshPending,
         loading: transactionLoading,
         registerMoney,
+        registerMoneyLoading,
+        setStartingMoney,
         refreshRegisterMoney,
     } = useTransaction();
     const { data: businessData, loading: businessLoading, error: businessError } = useBusinessDetails();
@@ -97,11 +100,15 @@ const Home = () => {
     const [variantInspectId, setVariantInspectId] = useState(null);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
+    const [showFloatMoneyPrompt, setShowFloatMoneyPrompt] = useState(false);
     const [completingOrderId, setCompletingOrderId] = useState(null);
     const [completingAllOrders, setCompletingAllOrders] = useState(false);
     const [accessCode, setAccessCode] = useState('');
     const [loadingAccessCode, setLoadingAccessCode] = useState(false);
     const [paymentLoading, setPaymentLoading] = useState(false);
+    const [floatMoneySaving, setFloatMoneySaving] = useState(false);
+    const [floatMoneyInput, setFloatMoneyInput] = useState('');
+    const [floatMoneyPromptChecked, setFloatMoneyPromptChecked] = useState(false);
 
     const [modalFeedbackContent, setModalFeedbackContent] = useState({});
     const [showModalFeedback, setShowModalFeedback] = useState(false);
@@ -495,6 +502,18 @@ const Home = () => {
         };
     }, []);
 
+    useEffect(() => {
+        if (floatMoneyPromptChecked) return;
+        if (registerMoneyLoading) return;
+        if (!registerMoney) return;
+
+        if (!registerMoney?.started_at) {
+            setShowFloatMoneyPrompt(true);
+        }
+
+        setFloatMoneyPromptChecked(true);
+    }, [floatMoneyPromptChecked, registerMoneyLoading, registerMoney]);
+
 
     // GUARDS
 
@@ -606,6 +625,30 @@ const Home = () => {
         }
 
         setShowPaymentModal(true);
+    }
+
+    const handleSubmitFloatMoney = async () => {
+        const amount = Number.parseFloat(floatMoneyInput);
+
+        if (!Number.isFinite(amount) || amount < 0) {
+            addToast('Enter a valid float money amount.', 'error');
+            return;
+        }
+
+        setFloatMoneySaving(true);
+
+        try {
+            await setStartingMoney(amount);
+            await refreshRegisterMoney();
+            setShowFloatMoneyPrompt(false);
+            setFloatMoneyInput('');
+            addToast('Float money updated.', 'success');
+        } catch (error) {
+            const detail = getApiErrorMessage(error, 'Failed to update float money.');
+            addToast(detail, 'error');
+        } finally {
+            setFloatMoneySaving(false);
+        }
     }
 
 
@@ -1027,7 +1070,7 @@ const Home = () => {
                         <div className='overflow-y-auto grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 p-2 gap-4 w-full flex-1 min-h-0 content-start'>
                             {listProduct}
                         </div>
-                        <Pagination prev={productData.previous} next={productData.next} count={productData?.count} />   
+                        <Pagination prev={productData.previous} next={productData.next} count={productData?.count} />
                     </div>
                 }
             </div>
@@ -1077,10 +1120,6 @@ const Home = () => {
                             { 'opacity-50 pointer-events-none': showVoid }
                         )}>
                             <div className='flex flex-col gap-2 '>
-                                <div className='font-semibold text-md flex items-center justify-between border-b-2 border-b-border pb-2'>
-                                    <h5 className='text-sm'>Register Money: </h5>
-                                    <h5>₱ {registerMoney.current_amount}</h5>
-                                </div>
                                 <div className='flex items-center justify-between'>
                                     <Label variant='small' text={`Items (${checkoutProducts.length})`} />
                                     <h5 className='text-text font-semibold text-sm'>₱ {Number(grossTotal || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h5>
@@ -1116,6 +1155,37 @@ const Home = () => {
                     onClose={() => setShowPaymentModal(false)}
                 />
             }
+
+            {showFloatMoneyPrompt && (
+                <Modal onClose={() => setShowFloatMoneyPrompt(false)} title='Set Float Money'>
+                    <div className='flex flex-col gap-4'>
+                        <h5 className='text-text/75 font-medium'>Set your opening float money.</h5>
+
+                        <input
+                            value={floatMoneyInput}
+                            onChange={(e) => {
+                                const nextValue = e.target.value;
+                                if (/^\d*(\.\d{0,2})?$/.test(nextValue)) {
+                                    setFloatMoneyInput(nextValue);
+                                }
+                            }}
+                            type='text'
+                            placeholder='0.00'
+                            className='w-full bg-accent-mute/20 p-3 rounded-xl border-2 border-border font-medium text-base focus:outline-none focus:border-accent-mute'
+                        />
+
+                        <div className='flex items-center gap-4 ml-auto'>
+                            <Button variant='modalOutline' size='modalSize' text='Later' onClick={() => setShowFloatMoneyPrompt(false)} />
+
+                            {floatMoneySaving ? (
+                                <h5 className='text-sm font-semibold text-accent-mute cursor-not-allowed'>Saving...</h5>
+                            ) : (
+                                <Button variant='modalBlock' size='modalSize' text='Save' onClick={handleSubmitFloatMoney} />
+                            )}
+                        </div>
+                    </div>
+                </Modal>
+            )}
 
             {showPaymentSuccessModal &&
                 <PaymentSuccessModal totalAmount={completedTransaction?.net_total ?? netTotal} amountReceived={completedTransaction?.paid_amount ?? receivedPayment} onClose={handleTogglePaymentSuccessModal} businessData={businessData}

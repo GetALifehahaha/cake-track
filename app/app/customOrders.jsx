@@ -99,9 +99,9 @@ const CustomOrders = () => {
         } else if (fillingValue === 'strawberry' && shape === 'round' && tier === 1) {
             return 'straw';
         } else if (fillingValue === 'strawberry') {
-            return 'straw'; 
+            return 'straw';
         }
-        return fillingValue; 
+        return fillingValue;
     };
 
     useFocusEffect(
@@ -137,7 +137,7 @@ const CustomOrders = () => {
             return;
         }
 
-        const tierKey = `tier${tier}`; 
+        const tierKey = `tier${tier}`;
         let newLayers = [];
 
         if (page === 2 || page === 3) {
@@ -260,7 +260,7 @@ const CustomOrders = () => {
             }
         }
 
-        setIsSubmitting(true); 
+        setIsSubmitting(true);
         let newOrderId = null;
 
         try {
@@ -365,7 +365,7 @@ const CustomOrders = () => {
                 showToast(orderErrorMessage, 'error');
             }
         } finally {
-            setIsSubmitting(false); 
+            setIsSubmitting(false);
         }
     };
 
@@ -578,7 +578,7 @@ const CustomOrders = () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsMultipleSelection: true,
-            selectionLimit: 5 - images.length, 
+            selectionLimit: 5 - images.length,
             quality: 1,
         });
 
@@ -673,15 +673,22 @@ const CustomOrders = () => {
 
     function formatText(str) {
         return str
-            .split('_')                 
+            .split('_')
             .map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             )
-            .join(' ');               
+            .join(' ');
     }
 
     const customDownpaymentAmount = 500;
     const selectedPaymentMethodLabel = selectedPaymentMethod === 'paymongo' ? 'PayMongo Checkout' : 'Reference Number';
+    const estimatedStartPriceByTier = {
+        1: 500,
+        2: 1000,
+        3: 1500,
+    };
+    const estimatedStartPrice = personallyDesign ? null : estimatedStartPriceByTier[Number(tier)] || null;
+    const showEstimatedStartPriceNote = Boolean(estimatedStartPrice && page >= 2 && page <= 10);
 
 
     return (
@@ -692,7 +699,7 @@ const CustomOrders = () => {
             >
                 <ScrollView
                     className="flex-1"
-  
+
                     contentContainerStyle={{ flexGrow: 1 }}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps="handled"
@@ -728,7 +735,7 @@ const CustomOrders = () => {
                                     <Text className='text-sm font-semibold text-gray-300'>CAKE PREVIEW</Text>
                                 )
                             )}
-                            
+
                         </View>
                     </View>
 
@@ -742,6 +749,8 @@ const CustomOrders = () => {
                             <TouchableOpacity onPress={() => router.back()}><X style={{ color: '#8B5A3C' }} /></TouchableOpacity>
                         </View>
 
+
+
                         <View className='min-h-[200px]'>
                             {page === 1 && (
                                 <CakeDetailPage
@@ -751,11 +760,20 @@ const CustomOrders = () => {
                                 />
                             )}
                             {page === 2 && (
-                                <FormPage
-                                    shape={shape} setShape={setShape}
-                                    specifyShape={specifyShape} setSpecifyShape={setSpecifyShape}
-                                    tier={tier} setTier={setTier}
-                                />
+                                <>
+                                    <FormPage
+                                        shape={shape} setShape={setShape}
+                                        specifyShape={specifyShape} setSpecifyShape={setSpecifyShape}
+                                        tier={tier} setTier={setTier}
+                                    />
+                                    {showEstimatedStartPriceNote && (
+                                        <View className='mt-2 mb-4 rounded-2xl border border-[#E5D3C1] bg-[#FAF3EC] p-4'>
+                                            <Text className='text-[#8B5A3C] text-sm font-semibold'>
+                                                Price may start at {estimatedStartPrice}.
+                                            </Text>
+                                        </View>
+                                    )}
+                                </>
                             )}
                             {page === 3 && (
                                 <FlavorPage

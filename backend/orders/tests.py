@@ -99,12 +99,104 @@ class ReadyStatusGuardTests(TestCase):
 		self.assertEqual(self.order.status, 'ready')
 
 
+class AcceptPricingRulesTests(TestCase):
+	def setUp(self):
+		self.client = APIClient()
+		self.admin = User.objects.create_user(username='admin_accept_price', password='secret123', is_staff=True)
+		self.customer = User.objects.create_user(username='customer_accept_price', password='secret123')
+		self.order = Order.objects.create(
+			customer=self.customer,
+			full_name='Pending Customer',
+			email='pending-customer@example.com',
+			phone_number='09177778888',
+			address='Pending Address',
+			due_date=date.today(),
+			pickup_time=time(13, 0),
+			status='pending',
+		)
+
+	def test_accept_requires_total_price(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{'status': 'accepted'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('total_price', response.data)
+
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.status, 'pending')
+
+	def test_accept_with_total_price_succeeds(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{'status': 'accepted', 'total_price': '2450.00'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.status, 'accepted')
+		self.assertEqual(self.order.total_price, Decimal('2450.00'))
+
+	def test_admin_can_edit_total_price_after_acceptance(self):
+		self.order.status = 'accepted'
+		self.order.total_price = Decimal('2000.00')
+		self.order.save(update_fields=['status', 'total_price'])
+
+		self.client.force_authenticate(user=self.admin)
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{'total_price': '2350.50'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.total_price, Decimal('2350.50'))
+
+	def test_customer_cannot_edit_total_price(self):
+		self.order.status = 'accepted'
+		self.order.total_price = Decimal('2000.00')
+		self.order.save(update_fields=['status', 'total_price'])
+
+		self.client.force_authenticate(user=self.customer)
+		response = self.client.patch(
+			f'/orders/orders/{self.order.id}/',
+			{'total_price': '2400.00'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('total_price', response.data)
+
+		self.order.refresh_from_db()
+		self.assertEqual(self.order.total_price, Decimal('2000.00'))
+
+
 class OrderBatchUpdateTests(TestCase):
 	def setUp(self):
 		self.client = APIClient()
 		self.admin = User.objects.create_user(username='admin_batch', password='secret123', is_staff=True)
 		self.customer = User.objects.create_user(username='customer_batch', password='secret123')
 		self.client.force_authenticate(user=self.admin)
+
+		self.pending_order = Order.objects.create(
+			customer=self.customer,
+			full_name='Pending Batch',
+			email='pending-batch@example.com',
+			phone_number='09123456782',
+			address='Pending Address',
+			due_date=date.today(),
+			pickup_time=time(8, 0),
+			status='pending',
+		)
 
 		self.accepted_ready = Order.objects.create(
 			customer=self.customer,
@@ -195,6 +287,22 @@ class OrderBatchUpdateTests(TestCase):
 
 		self.assertEqual(self.accepted_ready.status, 'completed')
 		self.assertEqual(self.accepted_not_ready.status, 'accepted')
+
+	def test_batch_update_accept_is_rejected(self):
+		response = self.client.post(
+			'/orders/orders/batch-update/',
+			{
+				'order_ids': [self.pending_order.id],
+				'status': 'accepted',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('status', response.data)
+
+		self.pending_order.refresh_from_db()
+		self.assertEqual(self.pending_order.status, 'pending')
 
 
 class ReferenceNumberPaymentTests(TestCase):

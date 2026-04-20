@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Info, RefreshCw } from 'lucide-react';
 import useDashboard from '@/hooks/useDashboard';
+import useCategory from '@/hooks/useCategory';
 import { DashboardChart, DownloadReportModal } from '@/components/organisms';
-import { Button, Label } from "@/components/atoms";
+import { Button, Dropdown, Label } from "@/components/atoms";
 import { useSearchParams } from "react-router-dom";
 import { DatePicker } from "@/components/molecules";
 import { formatDateForAPI } from "@/utils/date";
@@ -22,6 +23,7 @@ const Reports = () => {
         error,
         refreshReports,
     } = useDashboard();
+    const { categoryData } = useCategory();
 
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -31,18 +33,28 @@ const Reports = () => {
     const [downloadModal, setDownloadModal] = useState(false);
     const [showTopSellingModal, setShowTopSellingModal] = useState(false);
     const [showLeastSellingModal, setShowLeastSellingModal] = useState(false);
+    const [topSellingCategoryFilter, setTopSellingCategoryFilter] = useState(() => searchParams.get('top_selling_category') || null);
+    const [leastSellingCategoryFilter, setLeastSellingCategoryFilter] = useState(() => searchParams.get('least_selling_category') || null);
 
     useEffect(() => {
-        const params = new URLSearchParams(searchParams);
+        setSearchParams((prevParams) => {
+            const params = new URLSearchParams(prevParams);
 
-        if (startDate == null) params.delete('start_date');
-        else params.set('start_date', formatDateForAPI(startDate));
+            if (startDate == null) params.delete('start_date');
+            else params.set('start_date', formatDateForAPI(startDate));
 
-        if (endDate == null) params.delete('end_date');
-        else params.set('end_date', formatDateForAPI(endDate));
+            if (endDate == null) params.delete('end_date');
+            else params.set('end_date', formatDateForAPI(endDate));
 
-        setSearchParams(params);
-    }, [startDate, endDate])
+            if (topSellingCategoryFilter == null) params.delete('top_selling_category');
+            else params.set('top_selling_category', topSellingCategoryFilter);
+
+            if (leastSellingCategoryFilter == null) params.delete('least_selling_category');
+            else params.set('least_selling_category', leastSellingCategoryFilter);
+
+            return params;
+        });
+    }, [startDate, endDate, topSellingCategoryFilter, leastSellingCategoryFilter, setSearchParams])
 
     if (loading) return <ReportsSkeleton />;
     if (error) return <h5>Error...</h5>;
@@ -82,6 +94,26 @@ const Reports = () => {
         return `${name} (${count})`;
     };
 
+    const getProductCategoryNames = (product) => {
+        const categories = Array.isArray(product?.product_categories)
+            ? product.product_categories.filter(Boolean)
+            : [];
+
+        return categories.length > 0 ? categories : ['Uncategorized'];
+    };
+
+    const formatProductCategories = (product) => {
+        return getProductCategoryNames(product).join(', ');
+    };
+
+    const posRevenue = toNumber(posDashboardData?.total_revenue_generated);
+    const ordersRevenue = toNumber(ordersDashboardData?.total_revenue_generated);
+    const combinedSalesRevenue = posRevenue + ordersRevenue;
+    const posVatAmount = posRevenue * 0.12;
+    const ordersVatAmount = ordersRevenue * 0.12;
+    const totalVatAmount = combinedSalesRevenue * 0.12;
+    const totalDiscountAmount = toNumber(posDashboardData?.total_discount_amount);
+
     const escapeHtml = (value) => String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -115,6 +147,19 @@ const Reports = () => {
         const orders = ordersDashboardData || {};
         const selectedSet = new Set(selected);
         const today = new Date().toISOString().split('T')[0];
+        const posRevenueForReport = toNumber(pos.total_revenue_generated);
+        const ordersRevenueForReport = toNumber(orders.total_revenue_generated);
+        const combinedRevenueForReport = posRevenueForReport + ordersRevenueForReport;
+        const posVatForReport = posRevenueForReport * 0.12;
+        const ordersVatForReport = ordersRevenueForReport * 0.12;
+        const totalVatForReport = combinedRevenueForReport * 0.12;
+        const totalDiscountForReport = toNumber(pos.total_discount_amount);
+        const reportStartDate = startDate ? formatDateForAPI(startDate) : (searchParams.get('start_date') || null);
+        const reportEndDate = endDate ? formatDateForAPI(endDate) : (searchParams.get('end_date') || null);
+        const reportTopSellingCategory = topSellingCategoryFilter || searchParams.get('top_selling_category') || null;
+        const reportLeastSellingCategory = leastSellingCategoryFilter || searchParams.get('least_selling_category') || null;
+
+        const formatRevenueWithVat = (revenue, vat) => `${formatNumber(revenue, 2, 2)} (VAT: ${formatNumber(vat, 2, 2)})`;
 
         const sections = [];
 
@@ -144,7 +189,7 @@ const Reports = () => {
             }
 
             if (selectedSet.has('total_revenue')) {
-                posRows.push(['Total Revenue', formatNumber(pos.total_revenue_generated, 2, 2)]);
+                posRows.push(['Total Revenue', formatRevenueWithVat(posRevenueForReport, posVatForReport)]);
             }
 
             sections.push({
@@ -169,26 +214,40 @@ const Reports = () => {
         }
 
         if (selectedSet.has('top_selling_products')) {
-            const productRows = (pos.top_selling_products || []).map((product) => [
-                product.product__name || '-',
-                formatNumber(product.total_sold),
-            ]);
+            const productRows = [...(pos.top_selling_products || [])]
+                .sort((a, b) => {
+                    const soldDiff = toNumber(b?.total_sold) - toNumber(a?.total_sold);
+                    if (soldDiff !== 0) return soldDiff;
+                    return String(a?.product__name || '').localeCompare(String(b?.product__name || ''));
+                })
+                .map((product) => [
+                    product.product__name || '-',
+                    formatProductCategories(product),
+                    formatNumber(product.total_sold),
+                ]);
 
             sections.push({
                 title: 'Top Selling Products',
-                table: buildTable(['Product Name', 'Total Sold'], productRows),
+                table: buildTable(['Product Name', 'Category', 'Total Sold'], productRows),
             });
         }
 
         if (selectedSet.has('least_selling_products')) {
-            const leastRows = (pos.least_selling_products || []).map((product) => [
-                product.product__name || '-',
-                formatNumber(product.total_sold),
-            ]);
+            const leastRows = [...(pos.least_selling_products || [])]
+                .sort((a, b) => {
+                    const soldDiff = toNumber(a?.total_sold) - toNumber(b?.total_sold);
+                    if (soldDiff !== 0) return soldDiff;
+                    return String(a?.product__name || '').localeCompare(String(b?.product__name || ''));
+                })
+                .map((product) => [
+                    product.product__name || '-',
+                    formatProductCategories(product),
+                    formatNumber(product.total_sold),
+                ]);
 
             sections.push({
                 title: 'Least Selling Products',
-                table: buildTable(['Product Name', 'Total Sold'], leastRows),
+                table: buildTable(['Product Name', 'Category', 'Total Sold'], leastRows),
             });
         }
 
@@ -223,6 +282,18 @@ const Reports = () => {
             });
         }
 
+        if (selectedSet.has('cake_revenue_trend')) {
+            const cakeRevenueRows = (orders.revenue_trend || []).map((trendItem) => [
+                formatDateOnly(trendItem.period),
+                formatNumber(trendItem.amount, 2, 2),
+            ]);
+
+            sections.push({
+                title: 'Cake Revenue Trend',
+                table: buildTable(['Date', 'Revenue'], cakeRevenueRows),
+            });
+        }
+
         if (selected.some(key => ['total_orders', 'pending', 'completed', 'rejected', 'order_total_revenue'].includes(key))) {
             const orderRows = [];
 
@@ -243,12 +314,64 @@ const Reports = () => {
             }
 
             if (selectedSet.has('order_total_revenue')) {
-                orderRows.push(['Total Revenue Generated', formatNumber(orders.total_revenue_generated, 2, 2)]);
+                orderRows.push(['Cake Order Revenue', formatRevenueWithVat(ordersRevenueForReport, ordersVatForReport)]);
             }
 
             sections.push({
                 title: 'Orders Dashboard',
                 table: buildTable(['Metric', 'Value'], orderRows),
+            });
+        }
+
+        const includeRevenueSummary = selected.some((key) => [
+            'combined_revenue',
+            'total_discount_amount',
+        ].includes(key));
+
+        if (includeRevenueSummary) {
+            const summaryRows = [
+                ...(selectedSet.has('combined_revenue')
+                    ? [
+                        ['POS Revenue', formatRevenueWithVat(posRevenueForReport, posVatForReport)],
+                        ['Cake Order Revenue', formatRevenueWithVat(ordersRevenueForReport, ordersVatForReport)],
+                        ['Combined Revenue', formatRevenueWithVat(combinedRevenueForReport, totalVatForReport)],
+                    ]
+                    : []),
+                ...(selectedSet.has('total_discount_amount') ? [['Total Discount Amount', formatNumber(totalDiscountForReport, 2, 2)]] : []),
+            ];
+
+            if (summaryRows.length > 0) {
+                sections.unshift({
+                    title: 'Revenue Summary',
+                    table: buildTable(['Metric', 'Value'], summaryRows),
+                });
+            }
+        }
+
+        const filterRows = [];
+
+        if (reportStartDate || reportEndDate) {
+            const dateRangeLabel = reportStartDate && reportEndDate
+                ? `${reportStartDate} to ${reportEndDate}`
+                : reportStartDate
+                    ? `From ${reportStartDate}`
+                    : `Until ${reportEndDate}`;
+
+            filterRows.push(['Date Range', dateRangeLabel]);
+        }
+
+        if (reportTopSellingCategory) {
+            filterRows.push(['Top Selling Category Filter', reportTopSellingCategory]);
+        }
+
+        if (reportLeastSellingCategory) {
+            filterRows.push(['Least Selling Category Filter', reportLeastSellingCategory]);
+        }
+
+        if (filterRows.length > 0) {
+            sections.unshift({
+                title: 'Applied Filters',
+                table: buildTable(['Filter', 'Value'], filterRows),
             });
         }
 
@@ -284,6 +407,7 @@ const Reports = () => {
                             border: 1px solid #cbd5e1;
                             border-radius: 12px;
                             padding: 20px;
+                            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
                         }
 
                         h1 {
@@ -345,6 +469,7 @@ const Reports = () => {
                 <body>
                     <div class="wrapper">
                         <h1>Cake Track Report</h1>
+                        <p class="subtitle">Generated: ${escapeHtml(new Date().toLocaleString('en-PH'))}</p>
                         ${sectionHtml}
                     </div>
                 </body>
@@ -402,23 +527,31 @@ const Reports = () => {
         setEndDate(null);
     };
 
+    const rankingCategoryOptions = (categoryData || [])
+        .map((category) => category?.name)
+        .filter(Boolean)
+        .sort((a, b) => String(a).localeCompare(String(b)))
+        .map((categoryName) => ({ key: categoryName, value: categoryName }));
+
     // MAPS
 
-    const topSellingProducts = (posDashboardData.top_selling_products || []).slice(0, 5).map((item, index) => (
+    const topSellingProductCards = (posDashboardData.top_selling_products || []).slice(0, 5).map((item, index) => (
         <div className='flex gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
             <div className='w-8 h-8 font-semibold rounded-full aspect-square flex justify-center items-center bg-accent-mute text-white '><h5>{index + 1}</h5></div>
             <div className='text-sm'>
                 <h5 className='font-semibold'>{item.product__name}</h5>
+                <h5 className='text-xs text-text/70'>{formatProductCategories(item)}</h5>
                 <h5 className='text-xs text-text-light'>{item.total_sold} units sold</h5>
             </div>
         </div>
     ));
 
-    const leastSellingProducts = (posDashboardData.least_selling_products || []).slice(0, 5).map((item, index) => (
+    const leastSellingProductCards = (posDashboardData.least_selling_products || []).slice(0, 5).map((item, index) => (
         <div className='flex gap-4 p-2.5 rounded-sm bg-main-white shadow-sm border border-main-dark' key={index}>
             <div className='w-8 h-8 font-semibold rounded-full aspect-square flex justify-center items-center bg-main-dark text-white '><h5>{index + 1}</h5></div>
             <div className='text-sm'>
                 <h5 className='font-semibold'>{item.product__name}</h5>
+                <h5 className='text-xs text-text/70'>{formatProductCategories(item)}</h5>
                 <h5 className='text-xs text-text-light'>{item.total_sold} units sold</h5>
             </div>
         </div>
@@ -495,98 +628,113 @@ const Reports = () => {
 
             {/* Existing POS dashboards */}
             <Label variant="small" text="POS Sales Data" />
-            <div className='flex items-center gap-4 -mt-4'>
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 -mt-4'>
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Voided Transactions</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_void_amount}</h5>
                     <h5 className='text-sm text-error'>Cancelled Orders</h5>
                 </div>
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Orders</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_successful_transactions}</h5>
                     <h5 className='text-sm text-success'>Completed Transactions</h5>
                 </div>
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Products Sold</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.total_products_sold}</h5>
                     <h5 className='text-sm text-none-text'>Total Items</h5>
                 </div>
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Avg Daily Orders</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-
                     <h5 className='text-2xl font-bold mt-8'>{posDashboardData.avg_daily_transactions}</h5>
                     <h5 className='text-sm text-none-text'>Orders</h5>
                 </div>
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Revenue</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>₱ {(posDashboardData.total_revenue_generated).toFixed(2)}</h5>
-                    <h5 className='text-sm text-success'>Revenue Generated</h5>
+                    <h5 className='text-2xl font-bold mt-8'>₱ {formatNumber(posRevenue, 2, 2)}</h5>
+                    <div className='mt-3 flex items-center justify-between border-t border-border pt-2'>
+                        <h5 className='text-sm text-success'>Revenue Generated</h5>
+                        <h5 className='text-sm text-text/60'>VAT: ₱ {formatNumber(posVatAmount, 2, 2)}</h5>
+                    </div>
                 </div>
             </div>
 
             <Label variant="small" text="Cake Order Sales Data" />
-            <div className='flex items-center gap-4 -mt-4'>
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+            <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 -mt-4'>
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Orders</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.total_orders}</h5>
                     <h5 className='text-sm text-none-text'>All Orders</h5>
                 </div>
 
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Pending</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.pending_orders}</h5>
                     <h5 className='text-sm text-warning'>Waiting</h5>
                 </div>
 
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Completed</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.completed_orders}</h5>
                     <h5 className='text-sm text-success'>Success</h5>
                 </div>
 
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Rejected</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
                     <h5 className='text-2xl font-bold mt-8'>{ordersDashboardData.rejected_orders}</h5>
                     <h5 className='text-sm text-error'>Cancelled</h5>
                 </div>
 
-                <div className='flex-1 rounded-xl p-4 bg-main-white shadow-sm'>
+                <div className='rounded-xl p-4 bg-main-white shadow-sm'>
                     <div className='flex justify-between items-center'>
                         <h5 className='text-lg font-medium'>Total Revenue</h5>
-                        {/* <XCircle className='text-accent' size={16} /> */}
                     </div>
-                    <h5 className='text-2xl font-bold mt-8'>₱ {Number(ordersDashboardData.total_revenue_generated || 0).toFixed(2)}</h5>
-                    <h5 className='text-sm text-success'>Revenue Generated</h5>
+                    <h5 className='text-2xl font-bold mt-8'>₱ {formatNumber(ordersRevenue, 2, 2)}</h5>
+                    <div className='mt-3 flex items-center justify-between border-t border-border pt-2'>
+                        <h5 className='text-sm text-success'>Revenue Generated</h5>
+                        <h5 className='text-sm text-text/60'>VAT: ₱ {formatNumber(ordersVatAmount, 2, 2)}</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 -mt-1'>
+                <div className='relative overflow-hidden rounded-2xl p-5 bg-linear-to-br from-[#B9754A] via-[#A7633D] to-[#8D4F2E] shadow-xl border border-main-white/20'>
+                    <div className='absolute -top-8 -right-6 w-28 h-28 rounded-full bg-main-white/15' />
+                    <div className='absolute -bottom-10 -left-8 w-24 h-24 rounded-full bg-main-white/10' />
+                    <h5 className='text-sm font-bold text-main-white'>Combined Revenue</h5>
+                    <h5 className='text-3xl font-extrabold mt-2 text-main-white relative z-10'>₱ {formatNumber(combinedSalesRevenue, 2, 2)}</h5>
+                </div>
+
+                <div className='rounded-2xl p-5 bg-linear-to-br from-main-white to-[#F9F0E8] shadow-sm border border-[#E7D5C7]'>
+                    <h5 className='text-sm font-semibold text-text/70'>Total VAT</h5>
+                    <h5 className='text-2xl font-extrabold mt-2 text-text'>₱ {formatNumber(totalVatAmount, 2, 2)}</h5>
+                </div>
+
+                <div className='rounded-2xl p-5 bg-linear-to-br from-main-white to-[#F4EEE8] shadow-sm border border-[#E5DDD4]'>
+                    <h5 className='text-sm font-semibold text-text/70'>Total Discount Amount</h5>
+                    <h5 className='text-2xl font-extrabold mt-2 text-text'>₱ {formatNumber(totalDiscountAmount, 2, 2)}</h5>
                 </div>
             </div>
 
@@ -599,40 +747,70 @@ const Reports = () => {
                     <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full'>
                         <div className='flex items-center justify-between'>
                             <h5 className='font-semibold'>Top 5 Best Selling Products</h5>
-                            <button
-                                type='button'
-                                onClick={() => setShowTopSellingModal(true)}
-                                className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
-                                aria-label='View top 10 best selling products'
-                            >
-                                <Info size={16} />
-                            </button>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-44'>
+                                    <Dropdown
+                                        size='full'
+                                        variant='white'
+                                        selection='All categories'
+                                        value={topSellingCategoryFilter}
+                                        options={rankingCategoryOptions}
+                                        onSelect={setTopSellingCategoryFilter}
+                                        removeText='All categories'
+                                    />
+                                </div>
+                                <button
+                                    type='button'
+                                    onClick={() => setShowTopSellingModal(true)}
+                                    className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
+                                    aria-label='View top 10 best selling products'
+                                >
+                                    <Info size={16} />
+                                </button>
+                            </div>
                         </div>
                         <div className="py-2 px-1 flex flex-col gap-2 min-h-60">
-                            {topSellingProducts.length > 0 ? topSellingProducts : <h5 className='text-sm text-text/60'>No product sales data yet.</h5>}
+                            {topSellingProductCards.length > 0 ? topSellingProductCards : <h5 className='text-sm text-text/60'>No product sales data for this category.</h5>}
                         </div>
                     </div>
 
                     <div className='flex flex-col gap-2 bg-main-white p-4 rounded-xl shadow-sm h-full'>
                         <div className='flex items-center justify-between'>
                             <h5 className='font-semibold'>Top 5 Least Selling Products</h5>
-                            <button
-                                type='button'
-                                onClick={() => setShowLeastSellingModal(true)}
-                                className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
-                                aria-label='View top 10 least selling products'
-                            >
-                                <Info size={16} />
-                            </button>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-44'>
+                                    <Dropdown
+                                        size='full'
+                                        variant='white'
+                                        selection='All categories'
+                                        value={leastSellingCategoryFilter}
+                                        options={rankingCategoryOptions}
+                                        onSelect={setLeastSellingCategoryFilter}
+                                        removeText='All categories'
+                                    />
+                                </div>
+                                <button
+                                    type='button'
+                                    onClick={() => setShowLeastSellingModal(true)}
+                                    className='p-1.5 rounded-full border border-border bg-main-white text-text/70 hover:bg-main-dark/10'
+                                    aria-label='View top 10 least selling products'
+                                >
+                                    <Info size={16} />
+                                </button>
+                            </div>
                         </div>
                         <div className="py-2 px-1 flex flex-col gap-2 min-h-60">
-                            {leastSellingProducts.length > 0 ? leastSellingProducts : <h5 className='text-sm text-text/60'>No product sales data yet.</h5>}
+                            {leastSellingProductCards.length > 0 ? leastSellingProductCards : <h5 className='text-sm text-text/60'>No product sales data for this category.</h5>}
                         </div>
                     </div>
                 </div>
 
                 <div className='flex-1'>
-                    <DashboardChart salesData={posDashboardData.sales_trend} revenueData={posDashboardData.revenue_trend} />
+                    <DashboardChart
+                        salesData={posDashboardData.sales_trend}
+                        revenueData={posDashboardData.revenue_trend}
+                        cakeRevenueData={ordersDashboardData.revenue_trend}
+                    />
                 </div>
             </div>
 
@@ -655,11 +833,17 @@ const Reports = () => {
                 <Modal title='Top 10 Best Selling Products' onClose={() => setShowTopSellingModal(false)} className='w-[520px]'>
                     <div className='flex flex-col gap-2 max-h-[70vh] overflow-y-auto pr-1'>
                         {(posDashboardData.top_selling_products || []).map((product, index) => (
-                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white'>
-                                <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
-                                <h5 className='text-text/70 font-semibold'>{product.total_sold}</h5>
+                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white gap-2'>
+                                <div>
+                                    <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
+                                    <h5 className='text-xs text-text/70'>{formatProductCategories(product)}</h5>
+                                </div>
+                                <h5 className='text-text/70 font-semibold whitespace-nowrap'>{product.total_sold}</h5>
                             </div>
                         ))}
+                        {(posDashboardData.top_selling_products || []).length === 0 && (
+                            <h5 className='text-sm text-text/60 text-center py-6'>No products found for this category.</h5>
+                        )}
                     </div>
 
                     <div className='flex justify-end'>
@@ -672,11 +856,17 @@ const Reports = () => {
                 <Modal title='Top 10 Least Selling Products' onClose={() => setShowLeastSellingModal(false)} className='w-[520px]'>
                     <div className='flex flex-col gap-2 max-h-[70vh] overflow-y-auto pr-1'>
                         {(posDashboardData.least_selling_products || []).map((product, index) => (
-                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white'>
-                                <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
-                                <h5 className='text-text/70 font-semibold'>{product.total_sold}</h5>
+                            <div key={`${product.product__name}-${index}`} className='flex items-center justify-between border border-border rounded-lg p-3 bg-main-white gap-2'>
+                                <div>
+                                    <h5 className='text-text font-medium'>{index + 1}. {product.product__name}</h5>
+                                    <h5 className='text-xs text-text/70'>{formatProductCategories(product)}</h5>
+                                </div>
+                                <h5 className='text-text/70 font-semibold whitespace-nowrap'>{product.total_sold}</h5>
                             </div>
                         ))}
+                        {(posDashboardData.least_selling_products || []).length === 0 && (
+                            <h5 className='text-sm text-text/60 text-center py-6'>No products found for this category.</h5>
+                        )}
                     </div>
 
                     <div className='flex justify-end'>

@@ -210,13 +210,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
     variants = ProductVariantSerializer(many=True)
     recipe_available = serializers.SerializerMethodField()
+    top_seller_rank = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description',
             'categories', 'category_ids',
-            'image', 'is_archived', 'variants', 'has_recipe', 'recipe_available'
+            'image', 'is_archived', 'variants', 'has_recipe', 'recipe_available', 'top_seller_rank'
         ]
 
     def get_recipe_available(self, obj):
@@ -230,6 +231,19 @@ class ProductSerializer(serializers.ModelSerializer):
                 return False
 
         return True
+
+    def get_top_seller_rank(self, obj):
+        rank = getattr(obj, 'top_seller_rank', None)
+
+        try:
+            parsed_rank = int(rank)
+        except (TypeError, ValueError):
+            return None
+
+        if 1 <= parsed_rank <= 3:
+            return parsed_rank
+
+        return None
 
     def create(self, validated_data):
         categories = validated_data.pop("categories", [])
@@ -785,6 +799,8 @@ class DashboardMetricsSerializer(serializers.Serializer):
     total_products_sold = serializers.IntegerField()
     avg_daily_transactions = serializers.FloatField()
     total_revenue_generated = serializers.FloatField() 
+    total_discount_amount = serializers.FloatField()
+    total_vat_amount = serializers.FloatField()
     order_paid_revenue = serializers.FloatField()
     total_combined_revenue = serializers.FloatField()
     total_capital = serializers.FloatField()

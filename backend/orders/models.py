@@ -1,7 +1,8 @@
-from django.db import models, transaction, IntegrityError
+from django.db import models, transaction, IntegrityError, OperationalError
 from django.contrib.auth.models import User
 from inventory.models import Recipe
 from backend.utils import generate_id
+import time
 
 # Create your models here.
 class Order(models.Model):
@@ -31,6 +32,11 @@ class Order(models.Model):
         ('reference_number', 'Reference Number'),
         ('paymongo', 'PayMongo'),
     ]
+
+    FULFILLMENT_METHOD_CHOICES = [
+        ('pickup', 'Pickup'),
+        ('delivery', 'Delivery'),
+    ]
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -41,6 +47,7 @@ class Order(models.Model):
     reject_reason = models.TextField(null=True, blank=True)
     payment_source_id = models.CharField(max_length=255, blank=True, null=True)
     payment_method = models.CharField(max_length=30, choices=PAYMENT_METHOD_CHOICES, default='reference_number')
+    fulfillment_method = models.CharField(max_length=20, choices=FULFILLMENT_METHOD_CHOICES, default='pickup')
     reference_number = models.CharField(max_length=15, blank=True, null=True, db_index=True)
     cancellation_requested = models.BooleanField(default=False)
     cancellation_requested_at = models.DateTimeField(null=True, blank=True)
@@ -55,17 +62,29 @@ class Order(models.Model):
     ingredients_deducted_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.id:
-            while True:
-                self.id = generate_id("ORD")
-                try:
-                    with transaction.atomic():
-                        super().save(*args, **kwargs)
-                    break # Exit the loop if the save is successful
-                except IntegrityError:
-                    continue
-        else:
+        if self.id:
             super().save(*args, **kwargs)
+            return
+
+        max_retries = 6
+        for attempt in range(max_retries):
+            self.id = generate_id("ORD")
+
+            try:
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
+                return
+            except IntegrityError:
+                if attempt == max_retries - 1:
+                    raise
+                continue
+            except OperationalError as exc:
+                if 'database is locked' not in str(exc).lower() or attempt == max_retries - 1:
+                    raise
+
+                # Backoff retries for transient sqlite write contention.
+                self.id = None
+                time.sleep(0.1 * (attempt + 1))
     
 
 class OrderImage(models.Model):
